@@ -32,12 +32,13 @@ function audienceValue(s,kind){
 }
 function sheetRows(s,p){
  if(!s)return[];
- if(!isHistorical(s))return buildRows(s,p);
+ if(!isHistorical(s))return trackIds(s).map(id=>({id,name:s.names?.[id]||idName[id]||id,streams:s.tracks[id],gain:safeGain(s,p,id),kind:'track'}));
  const rows=[];
  for(const [id,value] of Object.entries(s.tracks)){
   const kind=historicalKind(s,id);
   if(kind==='grand'||kind==='audience')continue;
-  const name=s.names?.[id]||id;
+  let name=s.names?.[id]||id;
+  if(/love\s*&\s*letter\s*repackage\s*new\s*tracks\s*total/i.test(name))name='Love & Letter Repackage New Tracks Total:';
   rows.push({id,name,streams:value,gain:safeGain(s,p,id),kind});
  }
  return rows;
