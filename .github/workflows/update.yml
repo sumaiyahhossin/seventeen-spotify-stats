@@ -1,12 +1,12 @@
 name: Spotify stream snapshots
-# Selenium instrumentation syntax repaired; rerun collection
+# Automatic daily collection at 5 PM America/New_York, with hourly catch-up
 on:
   push:
     branches: [main]
     paths:
       - '.github/workflows/update.yml'
   schedule:
-    - cron: '52 * * * *' # Hourly at :52 UTC; first daily collection at 4:52 PM America/New_York
+    - cron: '0 * * * *' # Hourly UTC; local-time gate starts at 5 PM Eastern and retries hourly
   workflow_dispatch:
 permissions:
   contents: write
