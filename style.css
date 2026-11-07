@@ -232,3 +232,10 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #ffb8
 .sheet-toggle{min-height:44px;border:1px solid #ffffff35;border-radius:12px;background:#ffffff0b;color:#e8d9e8;font:inherit;font-size:12px;font-weight:700;padding:10px 14px;cursor:pointer}
 .sheet-toggle.active{background:#ffb8d72b;border-color:#ffb8d7;color:#ffe5f0}
 @media(max-width:480px){.ranking-pickers{width:100%;gap:8px}.rank-select{flex:1;min-width:0}.rank-select select{min-width:0;width:100%}.sheet-toggle{width:100%}}
+
+/* Separate, obvious Tracks / Albums sections */
+.ranking-category{display:inline-flex;align-items:center;gap:5px;background:#ffffff0e;border:1px solid #ffffff25;border-radius:14px;padding:5px}
+.ranking-category button{border:0;border-radius:10px;background:transparent;color:#cbd0e0;font:inherit;font-size:13px;font-weight:800;padding:11px 21px;cursor:pointer}
+.ranking-category button.active{background:linear-gradient(110deg,#ffb8d7,#b9d8ff);color:#111629;box-shadow:0 3px 12px #0003}
+.ranking-pickers{align-items:end}
+@media(max-width:480px){.ranking-category{width:100%;display:grid;grid-template-columns:1fr 1fr}.ranking-category button{width:100%}}
