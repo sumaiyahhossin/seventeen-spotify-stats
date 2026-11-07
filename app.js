@@ -186,7 +186,7 @@ function spotifyCover(id){
  return coverCache.get('fallback:'+id);
 }
 function fillArtwork(){
- if(!('IntersectionObserver' in window)){document.querySelectorAll('img[data-cover-track]').forEach(img=>{img.src=img.dataset.coverFallback?'https://open.spotify.com/oembed?url='+img.dataset.coverFallback:''});return;}
+ if(!('IntersectionObserver' in window)){document.querySelectorAll('img[data-cover-track]').forEach(img=>spotifyCover(img.dataset.coverFallback||img.dataset.coverTrack).then(url=>{if(url){img.src=url;img.classList.add('loaded')}}));return;}
  const observer=new IntersectionObserver(entries=>{
   for(const entry of entries){
    if(!entry.isIntersecting)continue;
