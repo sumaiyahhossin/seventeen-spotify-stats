@@ -1,7 +1,6 @@
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700;800&family=Playfair+Display:ital,wght@1,600&display=swap');
 :root{--navy:#18263d;--muted:#748199;--rose:#e8a7b9;--serenity:#a8c7e5;--line:#e8eaf0}*{box-sizing:border-box}body{margin:0;color:var(--navy);font-family:'DM Sans',sans-serif;background:#faf9fc}.glow{position:absolute;inset:0 0 auto;height:680px;z-index:-1;background:radial-gradient(ellipse at 10% 20%,#f8dce7 0,transparent 49%),radial-gradient(ellipse at 90% 0,#d9e8fa 0,transparent 53%)}header{max-width:1180px;margin:auto;display:flex;justify-content:space-between;align-items:center;padding:30px 25px}.logo{text-decoration:none;color:var(--navy);font-weight:800;font-size:22px;letter-spacing:1px}.logo span{font-size:12px;letter-spacing:3px;margin-left:9px}.tag,.eyebrow{font-size:11px;font-weight:800;letter-spacing:2.5px;color:#9c7d9b}main{max-width:1180px;margin:auto;padding:0 25px}.hero{text-align:center;padding:78px 0 85px}.hero h1{font-size:clamp(60px,9vw,112px);line-height:1.02;letter-spacing:-5px;margin:24px 0}.hero h1 em{font-family:'Playfair Display',serif;color:#dc93ad;font-weight:600}.hero p{color:#63738b;max-width:590px;margin:0 auto;line-height:1.8;font-size:16px}.hero-foot{display:flex;justify-content:center;gap:30px;margin-top:34px;color:#8291a5;font-size:12px}.hero-foot span:first-child:before{content:'●';color:#e5a4b7;margin-right:8px}.panel{background:white;border:1px solid #eff0f4;border-radius:28px;padding:36px;box-shadow:0 18px 80px #4154760b}.section-top,.controls,.archive{display:flex;align-items:center;justify-content:space-between;gap:24px}.section-top h2,.archive h2{font-size:32px;letter-spacing:-1px;margin:10px 0 0}.section-top h2 span,.archive h2 span{color:#e9b1c3}.seg{display:flex;background:#f5f6fa;border-radius:99px;padding:5px;gap:4px}.seg button,.ranktabs button{border:0;background:transparent;cursor:pointer;font:inherit;color:#7c8ba2;font-size:12px;font-weight:800;padding:12px 17px;border-radius:30px}.seg button.active{background:var(--navy);color:white}.stats{display:grid;grid-template-columns:repeat(4,1fr);gap:15px;margin:32px 0}.stat{border:1px solid var(--line);border-radius:18px;padding:24px 20px;background:linear-gradient(140deg,#fff,#fcfaff)}.stat small{font-size:10px;font-weight:800;letter-spacing:1.2px;color:#8b9aaf}.stat strong{display:block;font-size:clamp(22px,3vw,32px);letter-spacing:-1px;margin:14px 0 7px}.stat span{font-size:11px;color:#98a2b3}.controls{margin:30px 0 20px;flex-wrap:wrap}.ranktabs{display:flex;gap:7px;flex-wrap:wrap}.ranktabs button{border:1px solid var(--line);padding:11px 13px}.ranktabs button.active{background:#fbe9ef;border-color:#f1cbd8;color:#b56b85}.search{display:flex;align-items:center;border:1px solid var(--line);border-radius:12px;padding:0 14px;color:#9aabc0}.search input{border:0;outline:0;padding:13px 6px;font:inherit;font-size:12px;min-width:170px}.table-head,.rank-row{display:grid;grid-template-columns:1fr 180px 120px;align-items:center;gap:15px}.table-head{font-size:10px;font-weight:800;letter-spacing:1.4px;color:#a0aabd;padding:16px 20px;background:#f8f9fc;border-radius:12px}.table-head span:not(:first-child),.rank-row .num{text-align:right}.rank-row{padding:17px 20px;border-bottom:1px solid #f0f1f5;font-size:14px}.rank-row .track{display:flex;align-items:center;gap:18px;font-weight:700}.rank-row .place{color:#d79fb2;font-weight:800;width:24px}.rank-row .num{font-weight:700;font-variant-numeric:tabular-nums}.rank-row .change{color:#69a899}.empty{padding:55px 20px;text-align:center;color:#9ba6b5}.archive{margin:75px 0;padding:30px 5px}.archive p{color:#8b97aa;font-size:14px}.archive-picker{display:grid;gap:12px}.archive-picker label{font-size:10px;letter-spacing:2px;font-weight:800;color:#a4aabb}.archive-picker select{border:1px solid var(--line);padding:16px 20px;border-radius:13px;background:white;min-width:250px;color:var(--navy);font:inherit}footer{border-top:1px solid var(--line);padding:28px 0 45px;font-size:12px;color:#8a98aa;display:flex;justify-content:space-between}@media(max-width:800px){.stats{grid-template-columns:repeat(2,1fr)}.section-top,.archive{align-items:flex-start;flex-direction:column}.hero h1{letter-spacing:-2px}.panel{padding:20px}.table-head,.rank-row{grid-template-columns:1fr 110px 85px}.rank-row{padding:16px 8px}.tag{display:none}}@media(max-width:480px){.stats{grid-template-columns:1fr 1fr;gap:8px}.stat{padding:16px 12px}.table-head,.rank-row{grid-template-columns:1fr 100px}.table-head span:last-child,.rank-row .change{display:none}.hero{padding:65px 0}.hero-foot{flex-direction:column;gap:8px}.archive-picker select{min-width:100%}}
 
-/* Matching the OT13 military countdown palette */
 :root{--navy:#fff8fc;--muted:#c6c8dc;--rose:#ffb8d7;--serenity:#b9d8ff;--line:#ffffff24}
 body{color:#fff8fc;background:#101526}
 .glow{background:radial-gradient(ellipse at 10% 15%,#673c6280 0,transparent 53%),radial-gradient(ellipse at 90% 0,#2b446d88 0,transparent 55%)}
@@ -16,7 +15,6 @@ body{color:#fff8fc;background:#101526}
 .archive-picker select option{background:#101526;color:#fff8fc}
 footer{border-top-color:#ffffff25;color:#c8c8db}footer a{color:#ffb8d7;text-decoration:none;font-weight:800}footer a:hover{text-decoration:underline}
 
-/* Match the OT13 countdown typography and tighten the creator credit. */
 body{background:radial-gradient(ellipse at 15% 0%,#59334e80,transparent 35%),radial-gradient(ellipse at 90% 15%,#344a7680,transparent 40%),#101526}
 .logo{font-family:Outfit,'DM Sans',sans-serif;font-size:15px;font-weight:900;letter-spacing:.18em}
 .logo span{font-size:15px;letter-spacing:.18em;margin-left:0;color:#ffc3dd}
@@ -27,7 +25,6 @@ footer .credit{display:inline-flex;align-items:baseline;gap:4px;white-space:nowr
 footer .credit a{text-decoration:underline;text-underline-offset:3px}
 @media(max-width:580px){.logo,.logo span{font-size:12px;letter-spacing:.1em}header{gap:8px;flex-wrap:wrap}footer{gap:10px;flex-wrap:wrap}}
 
-/* Compact editorial layout: keep the countdown palette, reduce empty space. */
 header{padding-top:22px;padding-bottom:18px}
 .hero{padding:43px 0 48px}
 .hero h1{font-size:clamp(48px,7.1vw,88px);line-height:1.04;margin:16px 0 18px}
@@ -41,7 +38,7 @@ header{padding-top:22px;padding-bottom:18px}
 .controls{margin:23px 0 15px}
 .archive{margin:38px 0 25px;padding:18px 5px}
 footer{padding:22px 0 30px}
-/* Subtle, non-interactive falling diamonds, inspired by the countdown's flowers. */
+
 .diamond-fall{position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden}
 .diamond-fall i{position:absolute;top:-30px;left:var(--x);width:var(--s);height:var(--s);background:linear-gradient(145deg,#ffd1e8,#b9d8ff);transform:rotate(45deg);opacity:0;box-shadow:0 0 12px #ffb8d735;animation:diamond-drift var(--t) linear var(--d) infinite}
 @keyframes diamond-drift{0%{transform:translate3d(0,-30px,0) rotate(45deg);opacity:0}12%{opacity:.33}80%{opacity:.28}100%{transform:translate3d(var(--drift),105vh,0) rotate(315deg);opacity:0}}
@@ -50,8 +47,6 @@ header,main{position:relative;z-index:1}
 @media(max-width:480px){.hero{padding:34px 0 38px}.hero h1{font-size:clamp(38px,10vw,55px);letter-spacing:0}.hero-foot{margin-top:18px}.stat{padding:15px 11px}.archive{margin-top:30px}.diamond-fall i:nth-child(even){display:none}}
 @media(prefers-reduced-motion:reduce){.diamond-fall{display:none}}
 
-
-/* Gem-shaped floating diamonds, with the faceted look of the 💎 emoji. */
 .diamond-fall i{
  width:calc(var(--s) * 2.8);height:calc(var(--s) * 2.8);
  background:none;box-shadow:none;display:flex;align-items:center;justify-content:center;
@@ -64,7 +59,7 @@ header,main{position:relative;z-index:1}
   12%{opacity:.58}80%{opacity:.48}
   100%{transform:translate3d(var(--drift),105vh,0) rotate(25deg);opacity:0}
 }
-/* Date selection is now immediately above the rankings. */
+
 .archive-top{margin:0 0 18px;padding:18px 24px;border:1px solid #ffffff26;border-radius:22px;background:#ffffff0b}
 .archive-top h2{font-size:23px;margin:5px 0}
 .archive-top p{margin:5px 0 0;font-size:12px}
@@ -72,8 +67,6 @@ header,main{position:relative;z-index:1}
 .archive-top .archive-picker select{min-width:260px;padding:12px 15px}
 @media(max-width:800px){.archive-top{margin:0 0 16px;padding:18px}.archive-top .archive-picker{width:100%}.archive-top .archive-picker select{width:100%}}
 
-
-/* Six dashboard metrics and the original spreadsheet album-total grouping. */
 .stats{grid-template-columns:repeat(3,minmax(0,1fr))}
 .album-total-row{background:linear-gradient(90deg,#ffb8d71c,#b9d8ff10);border-top:1px solid #ffb8d75a;border-bottom:1px solid #ffb8d75a}
 .album-total-row .track{color:#ffd0e5;font-weight:800}
@@ -81,8 +74,6 @@ header,main{position:relative;z-index:1}
 @media(max-width:800px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:480px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
-
-/* Spotify artwork beside each ranked song or release. */
 .rank-row .track{min-width:0;gap:11px}
 .cover-slot{display:inline-flex;flex:0 0 42px;width:42px;height:42px;align-items:center;justify-content:center;border-radius:8px;background:linear-gradient(135deg,#ffb8d71e,#b9d8ff20);overflow:hidden}
 .cover{display:block;width:100%;height:100%;object-fit:cover;opacity:0;transition:opacity .2s}
@@ -93,3 +84,55 @@ header,main{position:relative;z-index:1}
 
 .cover-link{display:block;width:100%;height:100%;border-radius:8px;overflow:hidden}
 .cover-link:focus-visible{outline:2px solid #ffb8d7;outline-offset:2px}
+
+.header-credit{color:#ffd2e6;font-size:12px;font-weight:800;text-decoration:none;white-space:nowrap}
+.header-credit:hover{text-decoration:underline}
+.order-picker{display:flex;align-items:center;gap:8px;font-size:12px;font-weight:700;color:#c8c8db}
+.order-picker select{background:#ffffff10;border:1px solid #ffffff30;border-radius:12px;color:#fff8fc;padding:12px;font:inherit;cursor:pointer}
+.order-picker option{background:#101526;color:white}
+@media(max-width:680px){
+ header{padding:18px 16px 8px;gap:8px;align-items:flex-start}
+ .logo,.logo span{font-size:12px;line-height:1.5;letter-spacing:.04em}
+ .header-credit{font-size:10px;white-space:normal;text-align:right}
+ main{padding:0 12px}
+ .hero{padding:24px 0 26px}
+ .hero h1{font-size:clamp(34px,9vw,56px);letter-spacing:-.02em;margin:10px 0 12px}
+ .hero p{font-size:13px}
+ .hero-foot{margin-top:12px;font-size:11px}
+ .archive-top{padding:15px;margin-bottom:12px;border-radius:17px}
+ .archive-top h2{font-size:21px}
+ .archive-top .archive-picker select{min-width:0;width:100%;box-sizing:border-box}
+ .panel{padding:16px 11px;border-radius:18px}
+ .section-top{gap:13px}
+ .section-top h2{font-size:23px}
+ .seg{width:100%;display:grid;grid-template-columns:1fr 1fr}
+ .seg button{padding:10px 6px;font-size:11px}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px;margin:15px 0}
+ .stat{padding:13px 10px;min-width:0;border-radius:13px}
+ .stat small{font-size:9px;letter-spacing:.06em;line-height:1.35;display:block}
+ .stat strong{font-size:clamp(16px,4.1vw,25px);letter-spacing:-.04em;overflow-wrap:anywhere;margin:9px 0 5px}
+ .stat span{font-size:10px;line-height:1.35;display:block}
+ .controls{display:grid;grid-template-columns:1fr 1fr;gap:11px;margin:18px 0 12px}
+ .ranktabs{grid-column:1/-1;display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:6px}
+ .ranktabs button{font-size:11px;line-height:1.35;padding:11px 7px;border-radius:12px}
+ .ranktabs button:last-child{grid-column:1/-1}
+ .order-picker{grid-column:1/2;min-width:0;display:grid;gap:4px}
+ .order-picker select{min-width:0;width:100%;padding:10px 5px;font-size:11px}
+ .search{grid-column:2/3;min-width:0;padding:0 8px}
+ .search input{min-width:0;width:100%;padding:11px 2px;font-size:11px}
+ .table-head,.rank-row{grid-template-columns:minmax(0,1fr) 98px 70px;gap:5px}
+ .table-head{padding:12px 5px;font-size:8px;letter-spacing:.02em}
+ .rank-row{padding:11px 4px;font-size:11px}
+ .rank-row .track{gap:5px;min-width:0}
+ .rank-row .place{width:19px;flex:0 0 19px;font-size:10px}
+ .cover-slot{width:31px;height:31px;flex:0 0 31px}
+ .rank-row .num{font-size:10px;overflow-wrap:anywhere}
+ .rank-row .change{display:block}
+ .table-head span:last-child{display:block}
+ footer{font-size:10px}
+}
+@media(max-width:370px){
+ .table-head,.rank-row{grid-template-columns:minmax(0,1fr) 85px 62px;gap:3px}
+ .rank-row .num{font-size:9px}
+ .cover-slot{width:27px;height:27px;flex-basis:27px}
+}
