@@ -27,18 +27,18 @@ function resolveMissingNames(s,p){
   if(name&&normTrackName(name))idName[id]=name;
  }
 }
-function hydrateMissingNames(){
- const ids=[...new Set(Object.values(catalog).flat().flatMap(x=>x.tracks))].filter(unresolvedName);
- for(const id of ids){
-  fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/track/'+id))
-   .then(r=>r.ok?r.json():null).then(data=>{
-    const name=data?.title?.trim();
-    if(!name||unresolvedName(id)===false)return;
-    idName[id]=name;
-    document.querySelectorAll('[data-track-name-id]').forEach(el=>{
-     if(el.dataset.trackNameId===id)el.textContent=displayTrackName(name);
-    });
-   }).catch(()=>{});
+// Prefer archived Group titles; avoid hundreds of browser requests on startup.
+function hydrateMissingNames(){return}
+function restoreGroupNames(s,p){
+ if(tab!=='group'||!s||isHistorical(s)||!p||!isHistorical(p))return;
+ const old=Object.keys(p.tracks).filter(k=>historicalKind(p,k)==='track'&&p.names?.[k]);
+ for(const id of Object.keys(s.tracks)){
+  let key=p.tracks[id]!=null?id:null;
+  if(!key){
+   const same=old.filter(k=>{const d=s.tracks[id]-p.tracks[k];return d>=0&&d<100000});
+   if(same.length===1)key=same[0];
+  }
+  if(key&&p.names[key])idName[id]=p.names[key];
  }
 }
 function typeDates(type){return dates.filter(d=>history[type+'-'+d]!==null)}
@@ -252,6 +252,7 @@ function buildSpotifyTrackLinks(){
  spotifyTrackLinks.clear();
  for(const type of ['group','solo'])for(const item of catalog[type]||[]){
   const names=(item.description||'').split(':').slice(1).join(':').split(',').map(x=>x.trim());
+  if(names.length!==item.tracks.length)continue;
   item.tracks.forEach((id,i)=>{
    const key=coverKey(names[i]);
    if(key&&/^[a-zA-Z0-9]{22}$/.test(id)&&!spotifyTrackLinks.has(key))spotifyTrackLinks.set(key,id);
@@ -365,11 +366,11 @@ function renderArtistProfiles(){
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 let renderToken=0;
-async function render(){renderArtistProfiles();const token=++renderToken;$('#ranking').innerHTML='';const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);if(token!==renderToken)return;resolveMissingNames(s,p);
+async function render(){renderArtistProfiles();const token=++renderToken;$('#ranking').innerHTML='';const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);if(token!==renderToken)return;restoreGroupNames(s,p);
  $('#date').textContent=s?.date||'—';const ids=trackIds(s);$('#count').textContent=s?fmt(ids.length):'—';$('#listeners').textContent=fmt(audienceValue(s,'listeners'));$('#followers').textContent=fmt(audienceValue(s,'followers'));const listenerNow=audienceValue(s,'listeners'),listenerPrev=audienceValue(p,'listeners'),followerNow=audienceValue(s,'followers'),followerPrev=audienceValue(p,'followers');const showDelta=(selector,now,prev)=>{const n=now!=null&&prev!=null&&p&&s&&((Date.parse(s.date)-Date.parse(p.date))/86400000===1)?now-prev:null;$(selector).textContent=n==null?'Change from previous day unavailable':(n>=0?'+':'−')+fmt(Math.abs(n))+' vs previous day';};showDelta('#listenersChange',listenerNow,listenerPrev);showDelta('#followersChange',followerNow,followerPrev);const grandId=s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;$('#total').textContent=s?fmt(grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';const gains=s?ids.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];const grandGain=grandId?safeGain(s,p,grandId):null;$('#gain').textContent=grandGain!=null?'+'+fmt(grandGain):s&&p&&gains.length===ids.length?'+'+fmt(gains.reduce((a,b)=>a+b,0)):'—';
  $('#order').hidden=rank==='sheet';const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily');const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS':'STREAM COUNT';headers[2].textContent=daily||rank==='sheet'?'VS PREVIOUS DAY':'DAILY GAIN';const rows=buildRows(s,p,pp).filter(x=>x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,rank==='sheet'?500:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${rank==='sheet'?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${rank==='sheet'&&r.kind!=='album'?'':`<span class="cover-slot">${artworkTrack(r)?`<img class="cover" data-cover-track="${artworkTrack(r)}" data-cover-fallback="${artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy">`:`<span class="cover-placeholder">💎</span>`}</span>`}${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}</div><div class="num">${fmt(daily?r.gain:r.streams)}</div><div class="num change ${(daily||rank==='sheet'?r.change:r.gain)<0?'negative':''}">${(daily||rank==='sheet'?r.change:r.gain)==null?'—':((daily||rank==='sheet'?r.change:r.gain)>=0?'+':'−')+fmt(Math.abs(daily||rank==='sheet'?r.change:r.gain))}</div></div>`).join('') :'';fillArtwork()}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 $('#ranktabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rank=b.dataset.rank;$('#ranktabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 $('#order').addEventListener('change',e=>{sortOrder=e.target.value;render()});
 $('#search').addEventListener('input',render);$('#archiveDate').addEventListener('change',e=>{selection=e.target.value;render()});
-(async()=>{[catalog,artworkMap]=await Promise.all([load('data/catalog.json'),load('data/artwork-map.json')]);catalog=catalog||{};artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();hydrateMissingNames();buildCoverLookup();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();for(const d of dates){const o=document.createElement('option');o.value=d;o.textContent=d;$('#archiveDate').append(o)}render()})();
+(async()=>{[catalog,artworkMap]=await Promise.all([load('data/catalog.json'),load('data/artwork-map.json')]);catalog=catalog||{};artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();buildCoverLookup();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();for(const d of dates){const o=document.createElement('option');o.value=d;o.textContent=d;$('#archiveDate').append(o)}render()})();
