@@ -174,7 +174,7 @@ function sumDaily(s,p,ids){
 }
 function discographyRows(s,p,pp,baseline){
  if(!s)return [];
- const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly');
+ const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly');
  const rows=[];
  for(const item of catalog[tab]||[]){
   const ids=[...new Set(item.tracks||[])];
@@ -182,24 +182,24 @@ function discographyRows(s,p,pp,baseline){
   const streams=ids.every(id=>s.tracks?.[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
   const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
   const previousGain=sumDaily(p,pp,ids);
-  rows.push({name:albumDisplayName(item.title),streams,gain,change:gain!=null&&previousGain!=null&&!periodic?gain-previousGain:null,kind:'album',releaseOrder:rows.length});
+  rows.push({name:albumDisplayName(item.title),streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&previousGain!=null?gain-previousGain:null,kind:'album',releaseOrder:rows.length});
   for(const id of ids){
    if(s.tracks?.[id]==null)continue;
    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
-   rows.push({id,name:displayTrackName(s.names?.[id]||idName[id]||id),streams:s.tracks[id],gain:g,change:dailyChange(s,p,pp,id),kind:'track',releaseOrder:rows.length});
+   rows.push({id,name:displayTrackName(s.names?.[id]||idName[id]||id),streams:s.tracks[id],gain:g,change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),kind:'track',releaseOrder:rows.length});
   }
  }
  return rows;
 }
 function buildRows(s,p,pp,baseline){
  if(!s)return[];
- const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly'),albums=rank.startsWith('albums'),discography=rank.startsWith('discography');
+ const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),albums=rank.startsWith('albums'),discography=rank.startsWith('discography');
  if(discography)return discographyRows(s,p,pp,baseline);
  let rows=[];
  if(albums&&isHistorical(s)){
    rows=Object.entries(s.tracks).filter(([id])=>historicalKind(s,id)==='album'&&isAlbumTitle(s.names[id])).map(([id,streams])=>({
      id,name:(s.names[id]||id).replace(/\s*Total\s*:?$/i,'').trim(),streams,
-     gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:dailyChange(s,p,pp,id)
+     gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id)
    }));
  }else if(albums){
    for(const item of catalog[tab]||[]){
@@ -208,7 +208,7 @@ function buildRows(s,p,pp,baseline){
      if(!ids.every(id=>s.tracks[id]!=null))continue;
      const streams=ids.reduce((a,id)=>a+s.tracks[id],0);
      const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids),yesterday=sumDaily(p,pp,ids);
-     rows.push({name:albumDisplayName(item.title),streams,gain,change:gain!=null&&yesterday!=null?gain-yesterday:null});
+     rows.push({name:albumDisplayName(item.title),streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&yesterday!=null?gain-yesterday:null});
    }
  }else{
    rows=trackIds(s).map(id=>({
@@ -413,28 +413,49 @@ function renderArtistProfiles(){
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 let renderToken=0;
+async // Compare equal-length windows: last 7 days vs preceding 7 days,
+// current calendar month-to-date vs same days last month, and year-to-date
+// vs the same elapsed days in the preceding year.
+function utcDate(date){return new Date(date+'T00:00:00Z')}
+function isoDate(d){return d.toISOString().slice(0,10)}
+function shifted(date,days){const d=utcDate(date);d.setUTCDate(d.getUTCDate()+days);return isoDate(d)}
+function shiftedMonth(date,n){const d=utcDate(date),day=d.getUTCDate();d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+n);const month=d.getUTCMonth();d.setUTCDate(day);if(d.getUTCMonth()!==month)d.setUTCDate(0);return isoDate(d)}
+function shiftedYear(date,n){const d=utcDate(date),month=d.getUTCMonth();d.setUTCFullYear(d.getUTCFullYear()+n);if(d.getUTCMonth()!==month)d.setUTCDate(0);return isoDate(d)}
+function periodDates(date){
+ if(rank.endsWith('weekly'))return {start:shifted(date,-7),prevEnd:shifted(date,-7),prevStart:shifted(date,-14),label:'7 days'};
+ if(rank.endsWith('monthly'))return {start:shiftedMonth(date,-1),prevEnd:shiftedMonth(date,-1),prevStart:shiftedMonth(date,-2),label:'month'};
+ if(rank.endsWith('yearly'))return {start:shiftedYear(date,-1),prevEnd:shiftedYear(date,-1),prevStart:shiftedYear(date,-2),label:'year'};
+ return null;
+}
 async function periodBaseline(s){
- if(!s||!(rank.endsWith('weekly')||rank.endsWith('monthly')))return null;
- const days=rank.endsWith('weekly')?7:30;
- const target=new Date(Date.parse(s.date+'T00:00:00Z')-days*86400000).toISOString().slice(0,10);
- const candidate=dates.find(d=>d===target);
- return candidate?getDate(tab,candidate):null;
+ if(!s)return null;
+ const range=periodDates(s.date);if(!range)return null;
+ const available=new Set(dates);
+ const get=async d=>available.has(d)?getDate(tab,d):null;
+ const [start,prevStart]=await Promise.all([get(range.start),get(range.prevStart)]);
+ return {start,prevStart,range};
 }
-function periodGain(s,p,id){
- if(!s||!p||s.tracks?.[id]==null)return null;
- const prev=comparablePrevious(s,p,id);
- if(!prev||(s.anomalies||[]).includes(id)||(p.anomalies||[]).includes(prev.id))return null;
- const gap=(Date.parse(s.date)-Date.parse(p.date))/86400000;
- const required=rank.endsWith('weekly')?7:30;
- if(gap!==required)return null;
- const value=s.tracks[id]-prev.value;
- if(isHistorical(s)!==isHistorical(p)&&value>2000000)return null;
- return value>=0?value:null;
+function snapshotDelta(now,old,id){
+ if(!now||!old||now.tracks?.[id]==null)return null;
+ const prev=comparablePrevious(now,old,id);
+ if(!prev||(now.anomalies||[]).includes(id)||(old.anomalies||[]).includes(prev.id))return null;
+ const delta=now.tracks[id]-prev.value;
+ return delta>=0?delta:null;
 }
-function sumPeriod(s,p,ids){const values=ids.map(id=>periodGain(s,p,id));return values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null}
+function periodGain(s,context,id){
+ return context?snapshotDelta(s,context.start,id):null;
+}
+function periodChange(s,context,id){
+ if(!context?.start||!context.prevStart)return null;
+ const now=snapshotDelta(s,context.start,id);
+ const before=snapshotDelta(context.start,context.prevStart,id);
+ return now==null||before==null?null:now-before;
+}
+function sumPeriod(s,context,ids){const values=ids.map(id=>periodGain(s,context,id));return values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null}
+function sumPeriodChange(s,context,ids){const values=ids.map(id=>periodChange(s,context,id));return values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null}
 async function render(){renderArtistProfiles();const token=++renderToken;$('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;syncCalendar();restoreGroupNames(s,p);
  $('#date').textContent=s?.date||'—';const ids=s?trackIds(s):[];$('#count').textContent=s?fmt(ids.length):'—';$('#listeners').textContent=fmt(audienceValue(s,'listeners'));$('#followers').textContent=fmt(audienceValue(s,'followers'));const listenerNow=audienceValue(s,'listeners'),listenerPrev=audienceValue(p,'listeners'),followerNow=audienceValue(s,'followers'),followerPrev=audienceValue(p,'followers');const showDelta=(selector,now,prev)=>{const n=now!=null&&prev!=null&&p&&s&&((Date.parse(s.date)-Date.parse(p.date))/86400000===1)?now-prev:null;$(selector).textContent=n==null?'Change from previous day unavailable':(n>=0?'+':'−')+fmt(Math.abs(n))+' vs previous day';};showDelta('#listenersChange',listenerNow,listenerPrev);showDelta('#followersChange',followerNow,followerPrev);const grandId=s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;$('#total').textContent=s?fmt(grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';const gains=s?ids.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];const grandGain=grandId?safeGain(s,p,grandId):null;$('#gain').textContent=grandGain!=null?'+'+fmt(grandGain):s&&p&&gains.length===ids.length?'+'+fmt(gains.reduce((a,b)=>a+b,0)):'—';
- $('#order').hidden=rank.startsWith('discography');const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly'),discography=rank.startsWith('discography'),periodLabel=rank.endsWith('weekly')?'WEEKLY':'MONTHLY';const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS ADDED':periodic?periodLabel+' STREAMS ADDED':'TOTAL STREAMS';headers[2].textContent=daily?'VS PREVIOUS DAY':periodic?'':'DAILY GAIN';document.querySelector('.table-head').classList.toggle('period-ranking',periodic);$('#ranking').classList.toggle('period-ranking',periodic);const rows=buildRows(s,p,pp,baseline).filter(x=>discography||x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${discography&&r.kind!=='album'?'':`<span class="cover-slot">${artworkTrack(r)?`<img class="cover" data-cover-track="${artworkTrack(r)}" data-cover-fallback="${artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy">`:`<span class="cover-placeholder">💎</span>`}</span>`}${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}</div><div class="num">${periodic&&r.gain!=null?"+":""}${fmt(daily||periodic?r.gain:r.streams)}</div><div class="num change ${(daily?r.change:periodic?null:r.gain)<0?'negative':''}">${(daily?r.change:periodic?null:r.gain)==null?'—':((daily?r.change:r.gain)>=0?'+':'−')+fmt(Math.abs(daily?r.change:r.gain))}</div></div>`).join('') :'<div class="empty">'+(periodic?'No comparable '+(rank.endsWith('weekly')?'7-day':'30-day')+' snapshots for this date. Try another saved day.':'No matching entries found.')+'</div>';fillArtwork()}
+ $('#order').hidden=rank.startsWith('discography');const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),discography=rank.startsWith('discography'),periodLabel=rank.endsWith('weekly')?'WEEKLY':rank.endsWith('monthly')?'MONTHLY':'YEARLY';const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS ADDED':periodic?periodLabel+' STREAMS ADDED':'TOTAL STREAMS';headers[2].textContent=daily?'VS PREVIOUS DAY':periodic?'VS PREVIOUS PERIOD':'DAILY GAIN';document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=buildRows(s,p,pp,baseline).filter(x=>discography||x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${discography&&r.kind!=='album'?'':`<span class="cover-slot">${artworkTrack(r)?`<img class="cover" data-cover-track="${artworkTrack(r)}" data-cover-fallback="${artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy">`:`<span class="cover-placeholder">💎</span>`}</span>`}${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}</div><div class="num">${periodic&&r.gain!=null?"+":""}${fmt(daily||periodic?r.gain:r.streams)}</div><div class="num change ${(daily||periodic?r.change:r.gain)<0?'negative':''}">${(daily?r.change:periodic?null:r.gain)==null?'—':((daily||periodic?r.change:r.gain)>=0?'+':'−')+fmt(Math.abs(daily?r.change:r.gain))}</div></div>`).join('') :'<div class="empty">'+(periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork()}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 function syncRank(){rank=rankType+'-'+$('#rankPeriod').value;render()}
 $('#rankCategory').addEventListener('click',e=>{const button=e.target.closest('button[data-type]');if(!button)return;rankType=button.dataset.type;$('#rankCategory').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));syncRank()});
