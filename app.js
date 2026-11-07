@@ -168,6 +168,8 @@ const japaneseOriginalArtwork={
  'god of light music inst':'God of Light Music'
 };
 function artworkTrack(row){
+ const originalCoverKey=coverKey(row.name);
+ if(!rank.startsWith('albums')&&row.kind!=='album'&&['fallin flower','good to me japanese ver','smile flower japanese ver'].includes(originalCoverKey))return 'image:https://contents.perfect.ne.jp/media/974caa/qesyun3wko.jpg';
  const originalKey=coverKey(row.name);
  const isAlbum=row.kind==='album'||rank.startsWith('albums');
  if(!isAlbum&&japaneseOriginalArtwork[originalKey])return 'release:'+encodeURIComponent(japaneseOriginalArtwork[originalKey]);
