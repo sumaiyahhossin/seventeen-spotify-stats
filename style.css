@@ -224,3 +224,11 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #ffb8
 .table-head.period-ranking,.ranking.period-ranking .rank-row{grid-template-columns:minmax(0,1fr) minmax(120px,180px)}
 .table-head.period-ranking span:last-child,.ranking.period-ranking .rank-row>.num:last-child{display:none}
 @media(max-width:480px){.table-head.period-ranking,.ranking.period-ranking .rank-row{grid-template-columns:minmax(0,1fr) minmax(95px,125px)}}
+
+/* Compact ranking dropdown controls */
+.ranking-pickers{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
+.rank-select{display:grid;gap:7px;font-size:10px;letter-spacing:.12em;font-weight:800;color:#c6c9df}
+.rank-select select{min-width:140px;min-height:44px;border:1px solid #ffffff35;border-radius:12px;padding:10px 35px 10px 14px;background:#1b2339;color:#fff8fc;font:inherit;font-size:13px;font-weight:700;letter-spacing:normal;cursor:pointer;color-scheme:dark}
+.sheet-toggle{min-height:44px;border:1px solid #ffffff35;border-radius:12px;background:#ffffff0b;color:#e8d9e8;font:inherit;font-size:12px;font-weight:700;padding:10px 14px;cursor:pointer}
+.sheet-toggle.active{background:#ffb8d72b;border-color:#ffb8d7;color:#ffe5f0}
+@media(max-width:480px){.ranking-pickers{width:100%;gap:8px}.rank-select{flex:1;min-width:0}.rank-select select{min-width:0;width:100%}.sheet-toggle{width:100%}}
