@@ -160,3 +160,18 @@ header,main{position:relative;z-index:1}
  .table-head,.rank-row{grid-template-columns:minmax(0,1fr) 100px 86px}
  .table-head span:last-child,.rank-row .change{display:block}
 }
+
+/* Units & Solo: Spotify member and unit portraits. */
+.artist-profiles{margin:22px 0 26px}
+.artist-profiles[hidden]{display:none}
+.artist-profiles-heading{font-size:11px;font-weight:800;letter-spacing:.15em;color:#c5bfd8;margin:0 0 14px}
+.artist-profiles-heading span{color:#ffb8d7}
+.artist-profile-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(108px,1fr));gap:11px}
+.artist-profile{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-width:0;padding:13px 8px;border:1px solid #ffffff24;border-radius:16px;background:linear-gradient(145deg,#ffb8d711,#b9d8ff12);color:#fceaf5;text-decoration:none;transition:background .2s,transform .2s}
+a.artist-profile:hover,a.artist-profile:focus-visible{background:#ffb8d72c;transform:translateY(-2px);outline-color:#ffb8d7}
+.artist-profile-photo,.artist-profile-placeholder{width:64px;height:64px;border-radius:50%;object-fit:cover;background:#ffffff18;border:2px solid #ffb8d77a}
+.artist-profile-photo{opacity:0;transition:opacity .2s}
+.artist-profile-photo.loaded{opacity:1}
+.artist-profile-placeholder{display:flex;align-items:center;justify-content:center;font-size:27px}
+.artist-profile-name{font-size:12px;font-weight:800;text-align:center;overflow-wrap:anywhere}
+@media(max-width:480px){.artist-profile-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.artist-profile{padding:10px 3px}.artist-profile-photo,.artist-profile-placeholder{width:48px;height:48px}.artist-profile-name{font-size:10px}}
