@@ -180,7 +180,9 @@ const originalJapaneseReleases={
  'moonwalker':'You Make My Day',
  'do re mi':'Semicolon',
  'home run':'Semicolon',
- 'all my love':'Semicolon'
+ 'all my love':'Semicolon',
+ 'god of music':'Seventeenth Heaven',
+ 'god of light music':'God of Light Music'
 };
 function artworkTrack(row){
  const rawKey=coverKey(row.name);
