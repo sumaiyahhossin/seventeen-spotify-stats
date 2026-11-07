@@ -98,7 +98,26 @@ function audienceValue(s,kind){
  });
  return found?s.tracks[found]:null;
 }
-function displayTrackName(name){const key=coverKey(name);if(key==='20 0')return '20';if(key==='gom')return 'God of Music';if(key==='golm')return 'God of Light Music';if(key==='gom inst')return 'God of Music (Inst.)';if(key==='gom trot remix')return 'God of Music (Trot Remix)';if(key==='golm inst')return 'God of Light Music (Inst.)';return name;}
+function displayTrackName(name){
+ const raw=String(name||'').trim(),key=coverKey(raw);
+ const official={
+  '20 0':'20','247 0':'247','gom':'God of Music','golm':'God of Light Music',
+  'gom inst':'God of Music (Inst.)','gom trot remix':'God of Music (Trot Remix)',
+  'golm inst':'God of Light Music (Inst.)',
+  'super':'Super','hot':'HOT','thunder':'THUNDER','rock with you':'Rock with you',
+  'very nice':'VERY NICE','maestro':'MAESTRO',"don't wanna cry":"Don't Wanna Cry",
+  'darling':'Darl+ing','darl ing':'Darl+ing','shining diamond':'Shining Diamond',
+  'adore u':'Adore U','left right':'Left & Right','ready to love':'Ready to love',
+  'home run':'HOME;RUN','home':'Home','world':'_WORLD','shadow':'Shadow',
+  'clap':'CLAP','fear':'Fear','hit':'HIT','mansae':'MANSAE','pretty u':'Pretty U',
+  'oh my':'Oh My!','thanks':'THANKS','getting closer':'Getting Closer',
+  'fighting':'Fighting (Feat. Lee Young Ji)','spell':'Spell'
+ };
+ if(official[key])return official[key];
+ if(/^[a-z0-9\s&+'’!?.:;,_()\-]+$/.test(raw)&&/[a-z]/.test(raw)&&raw===raw.toLowerCase())
+  return raw.replace(/\b[a-z]/g,c=>c.toUpperCase()).replace(/\bAnd\b/g,'and').replace(/\bWith\b/g,'with');
+ return raw;
+}
 function sheetRows(s,p,pp){
  if(!s)return[];
  if(!isHistorical(s))return trackIds(s).map(id=>({id,name:displayTrackName(s.names?.[id]||idName[id]||id),streams:s.tracks[id],gain:safeGain(s,p,id),change:dailyChange(s,p,pp,id),kind:'track'}));
