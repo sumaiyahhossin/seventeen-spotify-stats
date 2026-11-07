@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),fmt=n=>n==null?'—':Number(n).toLocaleString('en-US');
-let artworkMap={tracks:{},albums:{}};let sortOrder='most';let tab='group',rank='tracks-overall',catalog={},current={},history={},dates=[],selection='latest';
+let artworkMap={tracks:{},albums:{}};let sortOrder='most';let tab='group',rank='tracks-overall',catalog={},current={},history={},dates=[],selection='latest',period='week';
 const load=async p=>{try{const r=await fetch(p+'?v='+Date.now());return r.ok?await r.json():null}catch{return null}};
 const idName={};
 function buildNames(){
@@ -366,11 +366,85 @@ function renderArtistProfiles(){
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 let renderToken=0;
-async function render(){renderArtistProfiles();const token=++renderToken;$('#ranking').innerHTML='';const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);if(token!==renderToken)return;restoreGroupNames(s,p);
+async function render(){renderArtistProfiles();const token=++renderToken;$('#ranking').innerHTML='';const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);if(token!==renderToken)return;syncCalendar();renderPeriod();restoreGroupNames(s,p);
  $('#date').textContent=s?.date||'—';const ids=trackIds(s);$('#count').textContent=s?fmt(ids.length):'—';$('#listeners').textContent=fmt(audienceValue(s,'listeners'));$('#followers').textContent=fmt(audienceValue(s,'followers'));const listenerNow=audienceValue(s,'listeners'),listenerPrev=audienceValue(p,'listeners'),followerNow=audienceValue(s,'followers'),followerPrev=audienceValue(p,'followers');const showDelta=(selector,now,prev)=>{const n=now!=null&&prev!=null&&p&&s&&((Date.parse(s.date)-Date.parse(p.date))/86400000===1)?now-prev:null;$(selector).textContent=n==null?'Change from previous day unavailable':(n>=0?'+':'−')+fmt(Math.abs(n))+' vs previous day';};showDelta('#listenersChange',listenerNow,listenerPrev);showDelta('#followersChange',followerNow,followerPrev);const grandId=s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;$('#total').textContent=s?fmt(grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';const gains=s?ids.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];const grandGain=grandId?safeGain(s,p,grandId):null;$('#gain').textContent=grandGain!=null?'+'+fmt(grandGain):s&&p&&gains.length===ids.length?'+'+fmt(gains.reduce((a,b)=>a+b,0)):'—';
  $('#order').hidden=rank==='sheet';const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily');const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS':'STREAM COUNT';headers[2].textContent=daily||rank==='sheet'?'VS PREVIOUS DAY':'DAILY GAIN';const rows=buildRows(s,p,pp).filter(x=>x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,rank==='sheet'?500:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${rank==='sheet'?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${rank==='sheet'&&r.kind!=='album'?'':`<span class="cover-slot">${artworkTrack(r)?`<img class="cover" data-cover-track="${artworkTrack(r)}" data-cover-fallback="${artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy">`:`<span class="cover-placeholder">💎</span>`}</span>`}${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}</div><div class="num">${fmt(daily?r.gain:r.streams)}</div><div class="num change ${(daily||rank==='sheet'?r.change:r.gain)<0?'negative':''}">${(daily||rank==='sheet'?r.change:r.gain)==null?'—':((daily||rank==='sheet'?r.change:r.gain)>=0?'+':'−')+fmt(Math.abs(daily||rank==='sheet'?r.change:r.gain))}</div></div>`).join('') :'';fillArtwork()}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 $('#ranktabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rank=b.dataset.rank;$('#ranktabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 $('#order').addEventListener('change',e=>{sortOrder=e.target.value;render()});
-$('#search').addEventListener('input',render);$('#archiveDate').addEventListener('change',e=>{selection=e.target.value;render()});
-(async()=>{[catalog,artworkMap]=await Promise.all([load('data/catalog.json'),load('data/artwork-map.json')]);catalog=catalog||{};artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();buildCoverLookup();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();for(const d of dates){const o=document.createElement('option');o.value=d;o.textContent=d;$('#archiveDate').append(o)}render()})();
+$('#search').addEventListener('input',render);function availableDates(){return [...new Set([...dates,...(current[tab]?.date?[current[tab].date]:[])])].filter(Boolean).sort()}
+function navigateDate(step){
+ const available=availableDates(),today=selection==='latest'?(current[tab]?.date||available.at(-1)):selection;
+ let i=available.indexOf(today);
+ if(i<0)i=available.findIndex(d=>d>today);
+ if(i<0)i=available.length;
+ const target=available[Math.max(0,Math.min(available.length-1,i+step))];
+ if(target){selection=target;syncCalendar();render()}
+}
+function syncCalendar(){
+ const available=availableDates(),date=selection==='latest'?(current[tab]?.date||available.at(-1)):selection;
+ const picker=$('#archiveDate');
+ if(!picker)return;
+ picker.value=date||'';
+ picker.min=available[0]||'';picker.max=available.at(-1)||'';
+ $('#prevDate').disabled=!date||available.indexOf(date)<=0;
+ $('#nextDate').disabled=!date||available.indexOf(date)>=available.length-1;
+ $('#dateNotice').textContent=selection==='latest'?'Latest confirmed snapshot':'Saved snapshot · '+(date||'');
+}
+$('#prevDate').addEventListener('click',()=>navigateDate(-1));
+$('#nextDate').addEventListener('click',()=>navigateDate(1));
+$('#latestDate').addEventListener('click',()=>{selection='latest';syncCalendar();render()});
+$('#archiveDate').addEventListener('change',e=>{
+ const requested=e.target.value,available=availableDates();
+ if(!requested||!available.length)return;
+ const target=available.includes(requested)?requested:available.reduce((best,d)=>Math.abs(Date.parse(d)-Date.parse(requested))<Math.abs(Date.parse(best)-Date.parse(requested))?d:best);
+ selection=target;syncCalendar();render();
+});
+$('#periodTabs').addEventListener('click',e=>{const b=e.target.closest('button[data-period]');if(!b)return;period=b.dataset.period;$('#periodTabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));renderPeriod()});
+let periodToken=0;
+function totalSnapshot(s){
+ if(!s)return null;
+ const grand=isHistorical(s)?Object.keys(s.tracks||{}).find(id=>historicalKind(s,id)==='grand'):null;
+ return grand?s.tracks[grand]:trackIds(s).reduce((a,id)=>a+s.tracks[id],0);
+}
+function periodKey(date){
+ const d=new Date(date+'T12:00:00Z');
+ if(period==='year')return date.slice(0,4);
+ if(period==='month')return date.slice(0,7);
+ const day=(d.getUTCDay()+6)%7;
+ d.setUTCDate(d.getUTCDate()-day);
+ return d.toISOString().slice(0,10);
+}
+function periodLabel(key){
+ if(period==='year')return key;
+ if(period==='month')return new Date(key+'-01T12:00:00Z').toLocaleString('en-US',{month:'short',year:'2-digit',timeZone:'UTC'});
+ return new Date(key+'T12:00:00Z').toLocaleString('en-US',{month:'short',day:'numeric',timeZone:'UTC'});
+}
+async function renderPeriod(){
+ const token=++periodToken;
+ const endDate=selection==='latest'?(current[tab]?.date||availableDates().at(-1)):selection;
+ const all=availableDates().filter(d=>d<=endDate);
+ const groups=new Map();
+ for(const date of all){const key=periodKey(date);if(!groups.has(key))groups.set(key,[]);groups.get(key).push(date)}
+ const keys=[...groups.keys()].slice(-12);
+ $('#periodGain').textContent='Loading…';$('#periodEnd').textContent='—';$('#periodChart').innerHTML='';
+ if(!keys.length){$('#periodGain').textContent='—';$('#periodRange').textContent='No snapshots yet';return}
+ const samples=[];
+ for(const key of keys){
+  const ds=groups.get(key),last=ds.at(-1);
+  const snap=current[tab]?.date===last?current[tab]:await getDate(tab,last);
+  if(token!==periodToken)return;
+  if(snap)samples.push({key,date:last,value:totalSnapshot(snap),count:trackIds(snap).length});
+ }
+ if(token!==periodToken)return;
+ const last=samples.at(-1),previous=samples.at(-2);
+ $('#periodEnd').textContent=fmt(last?.value);
+ $('#periodRange').textContent=last?periodLabel(last.key)+' · through '+last.date:'No available data';
+ const comparable=last&&previous&&last.count===previous.count&&last.value>=previous.value;
+ $('#periodGain').textContent=comparable?'+'+fmt(last.value-previous.value):'—';
+ $('#periodNote').textContent=comparable?'Change between the last two period-end snapshots':'Period growth unavailable when track coverage differs or a prior period is missing';
+ if(!samples.length){$('#periodChart').textContent='No saved totals available';return}
+ const min=Math.min(...samples.map(x=>x.value)),max=Math.max(...samples.map(x=>x.value)),span=max-min||1;
+ $('#periodChart').innerHTML=samples.map(x=>'<div class="period-bar-col" title="'+escapeHtml(x.date+' · '+fmt(x.value))+'"><div class="period-bar-track"><div class="period-bar" style="height:'+Math.max(8,((x.value-min)/span)*86+10)+'%"></div></div><span>'+escapeHtml(periodLabel(x.key))+'</span></div>').join('');
+}
+(async()=>{[catalog,artworkMap]=await Promise.all([load('data/catalog.json'),load('data/artwork-map.json')]);catalog=catalog||{};artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();buildCoverLookup();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();render()})();
