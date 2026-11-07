@@ -17,7 +17,18 @@ function historicalKind(s,id){
  return 'track';
 }
 function isHistorical(s){return s?.source==='historical spreadsheet'}
-function trackIds(s){return Object.keys(s?.tracks||{}).filter(id=>!isHistorical(s)||historicalKind(s,id)==='track')}
+function trackIds(s){
+ const ids=Object.keys(s?.tracks||{}).filter(id=>!isHistorical(s)||historicalKind(s,id)==='track');
+ if(!isHistorical(s))return ids;
+ const seen=new Set();
+ return ids.filter(id=>{
+   const name=(s.names?.[id]||id).trim().toLowerCase().replace(/\s+/g,' ');
+   const key=name+'|'+s.tracks[id];
+   if(seen.has(key))return false;
+   seen.add(key);
+   return true;
+ });
+}
 function buildRows(s,p){
  if(!s)return[];
  const daily=rank.endsWith('daily'),albums=rank.startsWith('albums');
