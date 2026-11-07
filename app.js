@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),fmt=n=>n==null?'—':Number(n).toLocaleString('en-US');
-let sortOrder='most';let tab='group',rank='tracks-overall',catalog={},current={},history={},dates=[],selection='latest';
+let artworkMap={tracks:{},albums:{}};let sortOrder='most';let tab='group',rank='tracks-overall',catalog={},current={},history={},dates=[],selection='latest';
 const load=async p=>{try{const r=await fetch(p+'?v='+Date.now());return r.ok?await r.json():null}catch{return null}};
 const idName={};
 function buildNames(){for(const type of ['group','solo'])for(const item of catalog[type]||[]){const raw=(item.description||'').split(':').slice(1).join(':');const names=raw.split(',').map(x=>x.trim());item.tracks.forEach((id,i)=>{if(!idName[id])idName[id]=names[i]||id})}}
@@ -134,6 +134,10 @@ function buildOriginalReleaseLookup(){
  }
 }
 function artworkTrack(row){
+ const exactKey=coverKey(row.name);
+ const isAlbum=row.kind==='album'||rank.startsWith('albums');
+ const mapped=isAlbum?artworkMap.albums[exactKey]||artworkMap.albums[exactKey.replace(/\\btotal\\b/g,'').trim()]:artworkMap.tracks[exactKey];
+ if(mapped?.id)return 'track:'+mapped.id;
  const normalized=coverKey(row.name).replace(/\\btotal\\b/g,'').trim();
  const originalRelease=originalReleaseLookup.get(normalized);
  if(row.kind!=='album'&&!rank.startsWith('albums')&&originalRelease)return 'track:'+originalRelease;
@@ -189,4 +193,4 @@ $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
 $('#ranktabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rank=b.dataset.rank;$('#ranktabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 $('#order').addEventListener('change',e=>{sortOrder=e.target.value;render()});
 $('#search').addEventListener('input',render);$('#archiveDate').addEventListener('change',e=>{selection=e.target.value;render()});
-(async()=>{catalog=await load('data/catalog.json')||{};buildNames();buildCoverLookup();buildOriginalReleaseLookup();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();for(const d of dates){const o=document.createElement('option');o.value=d;o.textContent=d;$('#archiveDate').append(o)}render()})();
+(async()=>{[catalog,artworkMap]=await Promise.all([load('data/catalog.json'),load('data/artwork-map.json')]);catalog=catalog||{};artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();buildCoverLookup();buildOriginalReleaseLookup();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();for(const d of dates){const o=document.createElement('option');o.value=d;o.textContent=d;$('#archiveDate').append(o)}render()})();
