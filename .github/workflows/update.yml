@@ -1,6 +1,7 @@
 name: Spotify stream snapshots
 on:
   schedule:
+    - cron: '49 19 7 11 *' # One-time Nov 7, 2026 2:49 PM EST (guarded in gate.py)
     - cron: '0 15 * * *' # 00:00 KST
     - cron: '15 * * * *' # retry pending collection hourly
   workflow_dispatch:
