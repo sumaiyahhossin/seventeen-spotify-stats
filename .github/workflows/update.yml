@@ -1,4 +1,5 @@
 name: Spotify stream snapshots
+# Selenium instrumentation syntax repaired; rerun collection
 on:
   push:
     branches: [main]
