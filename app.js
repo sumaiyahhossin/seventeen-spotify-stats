@@ -106,6 +106,33 @@ function buildCoverLookup(){
   item.tracks.forEach((id,i)=>{const key=coverKey(names[i]);if(key&&/^[a-zA-Z0-9]{22}$/.test(id)&&!coverLookup.has(key))coverLookup.set(key,id)});
  }
 }
+const originalReleaseSongs={
+ 'boys be album':['fronting','mansae','when i grow up','omg','rock'],
+ 'love & letter album':['chuck','pretty u','still lonely','hit song','say yes','drift away','love letter'],
+ 'love & letter repackage new tracks':['no f u n','very nice','healing','simple','space'],
+ 'going seventeen album':['beautiful','boomboom','boom boom','highlight','lean on me','fast pace','don t listen in secret','i don t know','smile flower'],
+ 'al1 album':['don t wanna cry','habit','if i','swimming fool','my i','crazy in love'],
+ 'teen, age album':['intro new world','change up','without you','clap','bring it','lilili yabbay','trauma','pinwheel','flower','rocket','hello','campfire','outro'],
+ "director's cut album":['thinkin about you','thanks','run to you','falling for u'],
+ 'you make my day album':['oh my','holiday','come to me','what s good','moonwalker','our dawn is hotter than day'],
+ 'you make my dawn album':['good to me','home','hug','chilli','shhh','getting closer'],
+ 'an ode new tracks album':['hit','lie again','fear','let me hear you say','247','second life','network love','back it up','lucky','snap shoot'],
+ 'heng':['fearless','left right','i wish','my my','kidult','together'],
+ ';[semicolon] album':['home run','do re mi','hey buddy','light a flame','ah love','all my love'],
+ 'your choice album':['heaven s cloud','ready to love','anyone','gam3 bo1','wave','same dream same mind same night'],
+ 'attacca album':['to you','rock with you','crush','pang','imperfect love','i can t run away','2 minus 1'],
+ 'face the sun album':['hot','don quixote','march','domino','shadow','bout you','if you leave me','ash'],
+ 'seventeenth heaven album':['sos','god of music','diamond days','back 2 back','monster','yawn','headliner'],
+ 'spill the feels album':['eyes on you','love money fame','1 to 13','candy','rain','water']
+};
+const originalReleaseLookup=new Map();
+function buildOriginalReleaseLookup(){
+ for(const [title,names] of Object.entries(originalReleaseSongs)){
+  const item=(catalog.group||[]).find(x=>x.title===title);
+  const id=item?.tracks?.find(x=>/^[a-zA-Z0-9]{22}$/.test(x));
+  if(id)for(const name of names)originalReleaseLookup.set(coverKey(name),id);
+ }
+}
 function artworkTrack(row){
  const normalized=coverKey(row.name).replace(/\\btotal\\b/g,'').trim();
  if(row.kind==='album'||rank.startsWith('albums')){
@@ -160,4 +187,4 @@ $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b
 $('#ranktabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rank=b.dataset.rank;$('#ranktabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 $('#order').addEventListener('change',e=>{sortOrder=e.target.value;render()});
 $('#search').addEventListener('input',render);$('#archiveDate').addEventListener('change',e=>{selection=e.target.value;render()});
-(async()=>{catalog=await load('data/catalog.json')||{};buildNames();buildCoverLookup();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();for(const d of dates){const o=document.createElement('option');o.value=d;o.textContent=d;$('#archiveDate').append(o)}render()})();
+(async()=>{catalog=await load('data/catalog.json')||{};buildNames();buildCoverLookup();buildOriginalReleaseLookup();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();for(const d of dates){const o=document.createElement('option');o.value=d;o.textContent=d;$('#archiveDate').append(o)}render()})();
