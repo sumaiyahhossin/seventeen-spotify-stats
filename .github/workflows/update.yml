@@ -1,5 +1,9 @@
 name: Spotify stream snapshots
 on:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/update.yml'
   schedule:
     - cron: '49 19 7 11 *' # One-time Nov 7, 2026 2:49 PM EST (guarded in gate.py)
     - cron: '0 15 * * *' # 00:00 KST
