@@ -44,7 +44,8 @@ if kind=='group':
             System.out.println("Followers metric unavailable: " + e.getClass().getSimpleName());
         }
     }
-    source=source.replace('private static void fetchMonthlyListeners()', follower_java+'\\n    private static void fetchMonthlyListeners()')
-    source=source.replace('fetchMonthlyListeners();','fetchMonthlyListeners();\\n        fetchFollowersMetric();',1)
+    '''
+    source=source.replace('private static void fetchMonthlyListeners()', follower_java+'\n    private static void fetchMonthlyListeners()')
+    source=source.replace('fetchMonthlyListeners();','fetchMonthlyListeners();\n        fetchFollowersMetric();',1)
 out=root/'build';out.mkdir(exist_ok=True)
 (out/('Stream_Stats.java' if kind=='group' else 'Stream_Stats_Units_Duos.java')).write_text(source)
