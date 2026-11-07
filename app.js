@@ -30,10 +30,10 @@ function audienceValue(s,kind){
  });
  return found?s.tracks[found]:null;
 }
-function displayTrackName(name){const key=coverKey(name);if(key==='gom')return 'God of Music';if(key==='golm')return 'God of Light Music';if(key==='gom inst')return 'God of Music (Inst.)';if(key==='gom trot remix')return 'God of Music (Trot Remix)';if(key==='golm inst')return 'God of Light Music (Inst.)';return name;}
+function displayTrackName(name){const key=coverKey(name);if(key==='20 0')return '20';if(key==='gom')return 'God of Music';if(key==='golm')return 'God of Light Music';if(key==='gom inst')return 'God of Music (Inst.)';if(key==='gom trot remix')return 'God of Music (Trot Remix)';if(key==='golm inst')return 'God of Light Music (Inst.)';return name;}
 function sheetRows(s,p){
  if(!s)return[];
- if(!isHistorical(s))return trackIds(s).map(id=>({id,name:s.names?.[id]||idName[id]||id,streams:s.tracks[id],gain:safeGain(s,p,id),kind:'track'}));
+ if(!isHistorical(s))return trackIds(s).map(id=>({id,name:displayTrackName(s.names?.[id]||idName[id]||id),streams:s.tracks[id],gain:safeGain(s,p,id),kind:'track'}));
  const rows=[];
  for(const [id,value] of Object.entries(s.tracks)){
   const kind=historicalKind(s,id);
@@ -137,9 +137,41 @@ function buildOriginalReleaseLookup(){
   if(id)for(const name of names)originalReleaseLookup.set(coverKey(name),id);
  }
 }
+const japaneseOriginalArtwork={
+ 'call call call':'WE MAKE YOU',
+ 'happy ending':'Happy Ending',
+ 'fallin flower':'Fallin Flower',
+ '24h':'24H',
+ 'hitorijanai':'Not Alone',
+ 'power of love':'Power of Love',
+ 'dream':'DREAM',
+ 'highlight japanese ver':'WE MAKE YOU',
+ 'lean on me japanese ver':'WE MAKE YOU',
+ '20 japanese ver':'WE MAKE YOU',
+ 'love letter japanese ver':'WE MAKE YOU',
+ 'oh my japanese ver':'Happy Ending',
+ 'healing japanese ver':'Happy Ending',
+ 'good to me japanese ver':'Fallin Flower',
+ 'smile flower japanese ver':'Fallin Flower',
+ 'pinwheel japanese ver':'24H',
+ '247 japanese ver':'24H',
+ 'chilli japanese ver':'24H',
+ 'together japanese ver':'24H',
+ 'run to you japanese ver':'Not Alone',
+ 'home run japanese ver':'Not Alone',
+ 'home japanese ver':'Power of Love',
+ 'snap shoot japanese ver':'Power of Love',
+ 'rock with you japanese ver':'DREAM',
+ 'all my love japanese ver':'DREAM',
+ 'darl ing holiday ver':'DREAM',
+ 'god of light music':'God of Light Music',
+ 'god of light music inst':'God of Light Music'
+};
 function artworkTrack(row){
- const exactKey=coverKey(row.name)==='247'?'247 0':coverKey(row.name);
+ const originalKey=coverKey(row.name);
  const isAlbum=row.kind==='album'||rank.startsWith('albums');
+ if(!isAlbum&&japaneseOriginalArtwork[originalKey])return 'release:'+encodeURIComponent(japaneseOriginalArtwork[originalKey]);
+ const exactKey=originalKey==='247'?'247 0':originalKey;
  const mapped=isAlbum?artworkMap.albums[exactKey]||artworkMap.albums[exactKey.replace(/\btotal\b/g,'').trim()]:artworkMap.tracks[exactKey];
  if(mapped?.id){
   const release=releaseArtNames[mapped.release];
