@@ -100,6 +100,15 @@ function buildCoverLookup(){
  }
 }
 function artworkTrack(row){
+ const normalized=coverKey(row.name);
+ if(!row.kind&& !rank.startsWith('albums') && ['super','f ck my life','fire','i don t understand but i luv u','dust','april shower'].includes(normalized))return 'album:1JBzeeCJ3axQMVkqWbKh0I';
+ if(!row.kind&& !rank.startsWith('albums') && ['shining diamond','adore u','ah yeah','jam jam','20'].includes(normalized))return 'album:0H2K2JrzdvJcxBEPyxC2sl';
+ if(row.kind==='album'||rank.startsWith('albums')){
+  if(normalized.includes('fml'))return 'album:1JBzeeCJ3axQMVkqWbKh0I';
+  if(normalized.includes('17 carat'))return 'album:0H2K2JrzdvJcxBEPyxC2sl';
+ }
+ const original=coverLookup.get(normalized);
+ if(!row.kind&&!rank.startsWith('albums')&&original)return original;
  if(row.id&&/^[a-zA-Z0-9]{22}$/.test(row.id))return row.id;
  if(row.kind==='album'||rank.startsWith('albums')){
   const name=coverKey(row.name);
@@ -115,7 +124,7 @@ function fillArtwork(){
    if(!entry.isIntersecting)continue;
    observer.unobserve(entry.target);
    const img=entry.target,id=img.dataset.coverTrack;
-   if(!coverCache.has(id))coverCache.set(id,fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/track/'+id)).then(r=>r.ok?r.json():null).then(d=>d?.thumbnail_url||null).catch(()=>null));
+   if(!coverCache.has(id))coverCache.set(id,fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/'+(id.startsWith('album:')?'album/'+id.slice(6):'track/'+id))).then(r=>r.ok?r.json():null).then(d=>d?.thumbnail_url||null).catch(()=>null));
    coverCache.get(id).then(url=>{if(url&&img.isConnected){img.src=url;img.classList.add('loaded')}});
   }
  },{rootMargin:'180px'});
