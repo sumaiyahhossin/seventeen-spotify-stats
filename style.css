@@ -175,3 +175,41 @@ a.artist-profile:hover,a.artist-profile:focus-visible{background:#ffb8d72c;trans
 .artist-profile-placeholder{display:flex;align-items:center;justify-content:center;font-size:27px}
 .artist-profile-name{font-size:12px;font-weight:800;text-align:center;overflow-wrap:anywhere}
 @media(max-width:480px){.artist-profile-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.artist-profile{padding:10px 3px}.artist-profile-photo,.artist-profile-placeholder{width:48px;height:48px}.artist-profile-name{font-size:10px}}
+
+/* Midnight CARAT archive refresh */
+body{background:radial-gradient(ellipse at 10% -10%,#51304955,transparent 36%),radial-gradient(ellipse at 100% 0%,#233a6655,transparent 38%),#090e1b}
+.glow{opacity:.6}
+.panel{background:linear-gradient(145deg,#192038e8,#11172be8);border:1px solid #ffffff20;box-shadow:0 26px 90px #0008,0 0 0 1px #ffb8d709}
+.archive-top{background:linear-gradient(120deg,#22283e,#1b2035);border:1px solid #ffb8d736;box-shadow:0 16px 55px #0004}
+.archive-picker{min-width:min(100%,280px)}
+.date-navigation{display:flex;align-items:center;gap:8px}
+.date-navigation input{min-width:0;flex:1;width:170px;color-scheme:dark;background:#0e1528;color:#fff8fc;border:1px solid #ffffff3d;border-radius:13px;padding:12px 13px;font:inherit;font-weight:700;min-height:47px}
+.date-navigation input::-webkit-calendar-picker-indicator{cursor:pointer;filter:invert(1)}
+.date-arrow{border:1px solid #ffffff35;background:#ffffff10;color:#ffd4e7;border-radius:13px;min-width:44px;min-height:47px;font-size:28px;cursor:pointer;transition:background .2s,transform .2s}
+.date-arrow:hover:not(:disabled){background:#ffb8d72e;transform:translateY(-2px)}
+.date-arrow:disabled{opacity:.3;cursor:not-allowed}
+.latest-date{border:0;background:transparent;color:#ffc7e0;text-align:left;padding:3px 0;font:inherit;font-weight:800;font-size:12px;cursor:pointer}
+.latest-date:hover{text-decoration:underline}
+.date-notice{font-size:10px;color:#b7b8cf}
+.period-panel{margin:20px 0 26px;border-radius:23px;border:1px solid #ffffff22;background:linear-gradient(130deg,#1a2239,#121a2d);padding:24px;box-shadow:0 12px 45px #0004}
+.period-intro{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap}
+.period-intro h3{font-size:23px;margin:6px 0 5px;letter-spacing:-.04em}
+.period-intro h3 span{color:#ffb8d7}
+.period-intro p{color:#bdc2d5;font-size:12px;margin:0}
+.period-tabs{display:flex;gap:4px;padding:5px;background:#ffffff0b;border-radius:99px}
+.period-tabs button{border:0;border-radius:99px;padding:10px 16px;background:transparent;color:#c8c5dc;font:inherit;font-size:12px;font-weight:800;cursor:pointer}
+.period-tabs button.active{background:linear-gradient(110deg,#ffb8d7,#b9d8ff);color:#101526}
+.period-results{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px;margin:20px 0}
+.period-total{border:1px solid #ffffff1b;border-radius:17px;background:#ffffff08;padding:19px;min-width:0}
+.period-total small{display:block;font-size:10px;letter-spacing:.12em;color:#b8bcd2;font-weight:800}
+.period-total strong{display:block;font-size:clamp(21px,3vw,31px);letter-spacing:-.035em;margin:10px 0;color:#ffe4f1;overflow-wrap:anywhere}
+.period-total span{display:block;font-size:11px;color:#c2c5d6}
+.period-chart{display:flex;align-items:end;gap:9px;min-height:155px;overflow-x:auto;padding:8px 0 0}
+.period-bar-col{flex:1 0 42px;min-width:42px;max-width:110px;display:flex;flex-direction:column;align-items:center;gap:8px;color:#c8c8dc;font-size:10px;font-weight:700;text-align:center}
+.period-bar-track{height:110px;width:100%;display:flex;align-items:end;background:#ffffff08;border-radius:10px 10px 4px 4px;overflow:hidden}
+.period-bar{width:100%;background:linear-gradient(0deg,#a5c5ec,#ffb8d7);border-radius:8px 8px 3px 3px;box-shadow:0 0 15px #ffb8d72a}
+.rank-row{transition:background .18s}
+.rank-row:hover{background:#ffffff0b}
+button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #ffb8d7;outline-offset:3px}
+@media(max-width:680px){.archive-picker{width:100%}.date-navigation input{width:100%;flex:1}.period-panel{padding:16px}.period-results{gap:8px}.period-total{padding:13px}.period-total small{font-size:9px}.period-total strong{font-size:21px}.period-tabs button{padding:9px 13px}}
+@media(max-width:390px){.period-results{grid-template-columns:1fr}}
