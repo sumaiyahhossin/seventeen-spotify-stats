@@ -30,6 +30,16 @@ function audienceValue(s,kind){
  });
  return found?s.tracks[found]:null;
 }
+function displayTrackName(name){
+ const raw=String(name||'');
+ const key=coverKey(raw);
+ if(key==='gom'||key==='god of music')return 'God of Music';
+ if(key==='golm'||key==='god of light music')return 'God of Light Music';
+ if(key==='gom inst')return 'God of Music (Inst.)';
+ if(key==='gom trot remix')return 'God of Music (Trot Remix)';
+ if(key==='golm inst')return 'God of Light Music (Inst.)';
+ return raw;
+}
 function sheetRows(s,p){
  if(!s)return[];
  if(!isHistorical(s))return trackIds(s).map(id=>({id,name:s.names?.[id]||idName[id]||id,streams:s.tracks[id],gain:safeGain(s,p,id),kind:'track'}));
@@ -40,7 +50,7 @@ function sheetRows(s,p){
   let name=s.names?.[id]||id;
   if(name==='247.0')name='247';
   if(/love\s*&\s*letter\s*repackage\s*new\s*tracks\s*total/i.test(name))name='Love & Letter Repackage Original Tracks Total:';
-  rows.push({id,name,streams:value,gain:safeGain(s,p,id),kind});
+  rows.push({id,name:displayTrackName(name),streams:value,gain:safeGain(s,p,id),kind});
  }
  return rows;
 }
@@ -86,7 +96,7 @@ function buildRows(s,p){
      rows.push({name:item.title,streams:complete?streams:null,gain:complete&&gains.every(n=>n!=null)?gains.reduce((a,b)=>a+b,0):null});
    }
  }else{
-   rows=trackIds(s).map(id=>({id,name:(s.names?.[id]||idName[id]||id)==='247.0'?'247':s.names?.[id]||idName[id]||id,streams:s.tracks[id],gain:safeGain(s,p,id)}));
+   rows=trackIds(s).map(id=>({id,name:displayTrackName((s.names?.[id]||idName[id]||id)==='247.0'?'247':s.names?.[id]||idName[id]||id),streams:s.tracks[id],gain:safeGain(s,p,id)}));
  }
  rows=uniqueRows(rows).filter(r=>daily?r.gain!=null:r.streams!=null);
  rows.sort((a,b)=>sortOrder==='least'?(daily?a.gain-b.gain:a.streams-b.streams):(daily?b.gain-a.gain:b.streams-a.streams));
@@ -94,7 +104,7 @@ function buildRows(s,p){
 }
 
 const coverCache=new Map(),coverLookup=new Map(),releaseCoverLookup=new Map();
-const releaseArtNames={'fml album':'FML','al1 album':'Al1','you make my day album':'YOU MAKE MY DAY',';[semicolon] album':'Semicolon','we make you album':'WE MAKE YOU','24h single':'24H','24h mini album':'24H','fallin\' flower single':'Fallin\' Flower','hitorijanai single':'Not Alone','an ode new tracks album':'An Ode'};
+const releaseArtNames={'fml album':'FML','al1 album':'Al1','you make my day album':'You Make My Day',';[semicolon] album':'Semicolon','we make you album':'We Make You','24h single':'24H','24h mini album':'24H','fallin\\' flower single':'Fallin Flower','hitorijanai single':'Not Alone','an ode new tracks album':'An Ode','seventeenth heaven album':'Seventeenth Heaven'};
 const releaseArtCache=new Map();
 const releaseArtwork={
  'love letter repackage':'https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02eb366517758754ca13a4adf5',
@@ -136,9 +146,47 @@ function buildOriginalReleaseLookup(){
   if(id)for(const name of names)originalReleaseLookup.set(coverKey(name),id);
  }
 }
+const originalJapaneseReleases={
+ 'call call call':'We Make You',
+ 'highlight japanese ver':'We Make You',
+ 'lean on me japanese ver':'We Make You',
+ '20 japanese ver':'We Make You',
+ 'love letter japanese ver':'We Make You',
+ 'happy ending':'Happy Ending',
+ 'oh my japanese ver':'Happy Ending',
+ 'healing japanese ver':'Happy Ending',
+ 'fallin flower':'Fallin Flower',
+ 'good to me japanese ver':'Fallin Flower',
+ 'smile flower japanese ver':'Fallin Flower',
+ '24h':'24H',
+ 'pinwheel japanese ver':'24H',
+ '247 japanese ver':'24H',
+ 'chilli japanese ver':'24H',
+ 'together japanese ver':'24H',
+ 'hitorijanai':'Not Alone',
+ 'run to you japanese ver':'Not Alone',
+ 'home run japanese ver':'Not Alone',
+ 'power of love':'Power of Love',
+ 'home japanese ver':'Power of Love',
+ 'snap shoot japanese ver':'Power of Love',
+ 'dream':'DREAM',
+ 'rock with you japanese ver':'DREAM',
+ 'all my love japanese ver':'DREAM',
+ 'darl ing holiday ver':'DREAM',
+ 'ima even if the world ends tomorrow':'Always Yours',
+ 'sara sara':'Always Yours',
+ 'oh my':'You Make My Day',
+ 'holiday':'You Make My Day',
+ 'moonwalker':'You Make My Day',
+ 'do re mi':'Semicolon',
+ 'home run':'Semicolon',
+ 'all my love':'Semicolon'
+};
 function artworkTrack(row){
- const exactKey=coverKey(row.name)==='247'?'247 0':coverKey(row.name);
+ const rawKey=coverKey(row.name);
  const isAlbum=row.kind==='album'||rank.startsWith('albums');
+ if(!isAlbum&&originalJapaneseReleases[rawKey])return 'release:'+encodeURIComponent(originalJapaneseReleases[rawKey]);
+ const exactKey=rawKey==='247'?'247 0':rawKey;
  const mapped=isAlbum?artworkMap.albums[exactKey]||artworkMap.albums[exactKey.replace(/\\btotal\\b/g,'').trim()]:artworkMap.tracks[exactKey];
  if(mapped?.id){
   const release=releaseArtNames[mapped.release];
@@ -197,27 +245,8 @@ function fillArtwork(){
   if(source.startsWith('image:')){show(source.slice(6));return}
   if(source.startsWith('release:')){
    const title=decodeURIComponent(source.slice(8));
-   if(!releaseArtCache.has(title))releaseArtCache.set(title,fetch('https://itunes.apple.com/search?'+new URLSearchParams({term:'SEVENTEEN '+title,entity:'album',limit:'50'})).then(r=>r.ok?r.json():null).then(data=>{
-    const matches=(data?.results||[]).filter(x=>/seventeen/i.test(x.artistName||'')&&coverKey(x.collectionName).replace(/\\b(ep|single|album)\\b/g,'').trim()===coverKey(title));
+   if(!releaseArtCache.has(title))releaseArtCache.set(title,fetch('https://itunes.apple.com/search?'+new URLSearchParams({term:'SEVENTEEN '+title,entity:'album',limit:'100',country:'US'})).then(r=>r.ok?r.json():null).then(data=>{
+    const clean=t=>coverKey(t).replace(/\\b(ep|single|album|mini|the|1st|2nd|3rd)\\b/g,'').trim();
+    const matches=(data?.results||[]).filter(x=>/seventeen/i.test(x.artistName||'')&&clean(x.collectionName)===clean(title));
     return matches[0]?.artworkUrl100?.replace('100x100bb','600x600bb')||null;
    }).catch(()=>null));
-   releaseArtCache.get(title).then(url=>{if(!show(url))spotifyCover(fallback).then(show)});
-   return;
-  }
-  spotifyCover(source).then(url=>{if(!show(url)&&fallback)spotifyCover(fallback).then(show)});
- };
- if(!('IntersectionObserver' in window)){document.querySelectorAll('img[data-cover-track]').forEach(loadImage);return}
- const observer=new IntersectionObserver(entries=>{for(const entry of entries){if(!entry.isIntersecting)continue;observer.unobserve(entry.target);loadImage(entry.target)}},{rootMargin:'250px'});
- document.querySelectorAll('img[data-cover-track]').forEach(img=>observer.observe(img));
-}
-
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-let renderToken=0;
-async function render(){const token=++renderToken;$('#ranking').innerHTML='<div class="empty">Loading saved statistics… ♡</div>';const s=await selectedSnapshot(),p=await prior(s);if(token!==renderToken)return;
- $('#status').textContent='Created by snowkhoshi';$('#last').textContent='';$('#date').textContent=s?.date||'—';const ids=trackIds(s);$('#count').textContent=s?fmt(ids.length):'—';$('#listeners').textContent=fmt(audienceValue(s,'listeners'));$('#followers').textContent=fmt(audienceValue(s,'followers'));const listenerNow=audienceValue(s,'listeners'),listenerPrev=audienceValue(p,'listeners'),followerNow=audienceValue(s,'followers'),followerPrev=audienceValue(p,'followers');const showDelta=(selector,now,prev)=>{const n=now!=null&&prev!=null&&p&&s&&((Date.parse(s.date)-Date.parse(p.date))/86400000===1)?now-prev:null;$(selector).textContent=n==null?'Change from previous day unavailable':(n>=0?'+':'−')+fmt(Math.abs(n))+' vs previous day';};showDelta('#listenersChange',listenerNow,listenerPrev);showDelta('#followersChange',followerNow,followerPrev);const grandId=s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;$('#total').textContent=s?fmt(grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';const gains=s?ids.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];const grandGain=grandId?safeGain(s,p,grandId):null;$('#gain').textContent=grandGain!=null?'+'+fmt(grandGain):s&&p&&gains.length===ids.length?'+'+fmt(gains.reduce((a,b)=>a+b,0)):'—';
- $('#order').hidden=rank==='sheet';const q=$('#search').value.toLowerCase();const rows=buildRows(s,p).filter(x=>x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,rank==='sheet'?500:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${rank==='sheet'?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${rank==='sheet'&&r.kind!=='album'?'':`<span class="cover-slot">${artworkTrack(r)?`<img class="cover" data-cover-track="${artworkTrack(r)}" data-cover-fallback="${artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||r.id||''}" alt="" loading="lazy">`:`<span class="cover-placeholder">💎</span>`}</span>`}<span class="track-name">${escapeHtml(r.name)}</span></div><div class="num">${fmt(rank.endsWith('daily')?r.gain:r.streams)}</div><div class="num change">${r.gain==null?'—':'+'+fmt(r.gain)}</div></div>`).join(''):'<div class="empty">No verified data for this ranking and date. ♡</div>';fillArtwork()}
-$('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
-$('#ranktabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rank=b.dataset.rank;$('#ranktabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
-$('#order').addEventListener('change',e=>{sortOrder=e.target.value;render()});
-$('#search').addEventListener('input',render);$('#archiveDate').addEventListener('change',e=>{selection=e.target.value;render()});
-(async()=>{[catalog,artworkMap]=await Promise.all([load('data/catalog.json'),load('data/artwork-map.json')]);catalog=catalog||{};artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();buildCoverLookup();buildOriginalReleaseLookup();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();for(const d of dates){const o=document.createElement('option');o.value=d;o.textContent=d;$('#archiveDate').append(o)}render()})();
