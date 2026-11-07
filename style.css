@@ -239,3 +239,11 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #ffb8
 .ranking-category button.active{background:linear-gradient(110deg,#ffb8d7,#b9d8ff);color:#111629;box-shadow:0 3px 12px #0003}
 .ranking-pickers{align-items:end}
 @media(max-width:480px){.ranking-category{width:100%;display:grid;grid-template-columns:1fr 1fr}.ranking-category button{width:100%}}
+
+/* Three equal ranking destinations; chronological discography stays grouped. */
+.ranking-category{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
+.ranking-category button{padding:11px 15px}
+.rank-row.album-total-row{margin-top:15px;background:#ffb8d711;border-top:1px solid #ffb8d740}
+.rank-row.album-total-row .track-name{font-weight:850;color:#ffe4f0}
+.ranking-category button[data-type="discography"]{white-space:nowrap}
+@media(max-width:480px){.ranking-category{grid-template-columns:repeat(3,minmax(0,1fr))}.ranking-category button{padding:11px 5px;font-size:12px}}
