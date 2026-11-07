@@ -104,7 +104,7 @@ function buildRows(s,p){
 }
 
 const coverCache=new Map(),coverLookup=new Map(),releaseCoverLookup=new Map();
-const releaseArtNames={'fml album':'FML','al1 album':'Al1','you make my day album':'You Make My Day',';[semicolon] album':'Semicolon','we make you album':'We Make You','24h single':'24H','24h mini album':'24H','fallin\\' flower single':'Fallin Flower','hitorijanai single':'Not Alone','an ode new tracks album':'An Ode','seventeenth heaven album':'Seventeenth Heaven'};
+const releaseArtNames={'fml album':'FML','al1 album':'Al1','you make my day album':'You Make My Day',';[semicolon] album':'Semicolon','we make you album':'We Make You','24h single':'24H','24h mini album':'24H',"fallin' flower single":'Fallin Flower','hitorijanai single':'Not Alone','an ode new tracks album':'An Ode','seventeenth heaven album':'Seventeenth Heaven'};
 const releaseArtCache=new Map();
 const releaseArtwork={
  'love letter repackage':'https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02eb366517758754ca13a4adf5',
