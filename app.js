@@ -91,11 +91,13 @@ function buildRows(s,p){
  return rows;
 }
 
-const coverCache=new Map(),coverLookup=new Map();
+const coverCache=new Map(),coverLookup=new Map(),releaseCoverLookup=new Map();
 const coverKey=n=>String(n||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 function buildCoverLookup(){
  for(const type of ['group','solo'])for(const item of catalog[type]||[]){
   const names=(item.description||'').split(':').slice(1).join(':').split(',').map(x=>x.trim());
+  const first=item.tracks.find(id=>/^[a-zA-Z0-9]{22}$/.test(id));
+  if(first){const title=coverKey(item.title).replace(/\\b(album|mini|ep)\\b/g,'').trim();if(title&&!releaseCoverLookup.has(title))releaseCoverLookup.set(title,first)}
   item.tracks.forEach((id,i)=>{const key=coverKey(names[i]);if(key&&/^[a-zA-Z0-9]{22}$/.test(id)&&!coverLookup.has(key))coverLookup.set(key,id)});
  }
 }
@@ -112,7 +114,9 @@ function artworkTrack(row){
  if(row.id&&/^[a-zA-Z0-9]{22}$/.test(row.id))return row.id;
  if(row.kind==='album'||rank.startsWith('albums')){
   const name=coverKey(row.name);
-  const album=(catalog[tab]||[]).find(x=>{const title=coverKey(x.title);return title===name||(name.length>5&&title.includes(name))||(title.length>5&&name.includes(title))});
+  const simplified=name.replace(/\\b(album|mini|ep|total)\\b/g,'').trim();
+  const exact=releaseCoverLookup.get(simplified);if(exact)return exact;
+  const album=(catalog[tab]||[]).find(x=>{const title=coverKey(x.title);return title===name||(name.length>8&&title.includes(name))||(title.length>8&&name.includes(title))});
   return album?.tracks?.find(id=>/^[a-zA-Z0-9]{22}$/.test(id))||null;
  }
  return coverLookup.get(coverKey(row.name))||null;
