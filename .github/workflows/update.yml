@@ -5,9 +5,7 @@ on:
     paths:
       - '.github/workflows/update.yml'
   schedule:
-    - cron: '49 19 7 11 *' # One-time Nov 7, 2026 2:49 PM EST (guarded in gate.py)
-    - cron: '0 15 * * *' # 00:00 KST
-    - cron: '15 * * * *' # retry pending collection hourly
+    - cron: '47 * * * *' # 4:47 PM America/New_York daily; hourly retries until new counts arrive
   workflow_dispatch:
 permissions:
   contents: write
