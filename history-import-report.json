@@ -1,0 +1,2037 @@
+{
+  "source_file": "SEVENTEEN Spotify Streams.xlsx",
+  "source_sha256": "175b6771a4dfebff6b9cb0c50b57d3cfc19d95885409b891522bf99b72891523",
+  "dataset": "group",
+  "historical_dates_imported": 334,
+  "first_date": "2025-11-16",
+  "last_date": "2026-11-04",
+  "total_track_observations": 121394,
+  "non_numeric_total_cells_skipped": 9,
+  "duplicate_date_headers_skipped": [
+    [
+      "2026-05-01",
+      7
+    ],
+    [
+      "2026-05-02",
+      7
+    ],
+    [
+      "2026-05-03",
+      7
+    ],
+    [
+      "2026-11-01",
+      13
+    ],
+    [
+      "2026-11-02",
+      13
+    ]
+  ],
+  "invalid_date_headers": [],
+  "cumulative_decreases_flagged": 746,
+  "issues_sample": [
+    {
+      "date": "2025-11-18",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-11-17",
+      "previous": 5688151,
+      "current": 5668064
+    },
+    {
+      "date": "2025-11-19",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-11-18",
+      "previous": 5668064,
+      "current": 5644137
+    },
+    {
+      "date": "2025-11-20",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-11-19",
+      "previous": 5644137,
+      "current": 5627747
+    },
+    {
+      "date": "2025-11-21",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-11-20",
+      "previous": 5627747,
+      "current": 5610166
+    },
+    {
+      "date": "2025-11-22",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-11-21",
+      "previous": 5610166,
+      "current": 5584899
+    },
+    {
+      "date": "2025-11-23",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-11-22",
+      "previous": 5584899,
+      "current": 5565303
+    },
+    {
+      "date": "2025-11-24",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-11-23",
+      "previous": 5565303,
+      "current": 5547578
+    },
+    {
+      "date": "2025-11-25",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-11-24",
+      "previous": 5547578,
+      "current": 5531339
+    },
+    {
+      "date": "2025-11-26",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-11-25",
+      "previous": 5531339,
+      "current": 5512293
+    },
+    {
+      "date": "2025-11-28",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-11-26",
+      "previous": 5512293,
+      "current": 5464533
+    },
+    {
+      "date": "2025-11-29",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-11-28",
+      "previous": 5464533,
+      "current": 5453111
+    },
+    {
+      "date": "2025-11-30",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-11-29",
+      "previous": 5453111,
+      "current": 5443291
+    },
+    {
+      "date": "2025-12-01",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-11-30",
+      "previous": 5443291,
+      "current": 5431545
+    },
+    {
+      "date": "2025-12-03",
+      "track": "Darl+ing",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-01",
+      "previous": 197046060,
+      "current": 195099371
+    },
+    {
+      "date": "2025-12-03",
+      "track": "Darl+ing Single Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-01",
+      "previous": 197046060,
+      "current": 195099371
+    },
+    {
+      "date": "2025-12-03",
+      "track": "Darl+ing",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-01",
+      "previous": 197046060,
+      "current": 195099371
+    },
+    {
+      "date": "2025-12-03",
+      "track": "4th Full Album - Face the Sun Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-01",
+      "previous": 823255581,
+      "current": 821848499
+    },
+    {
+      "date": "2025-12-03",
+      "track": "Darl+ing",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-01",
+      "previous": 197046060,
+      "current": 195099371
+    },
+    {
+      "date": "2025-12-03",
+      "track": "4th Full Album Repackage SECTOR 17 Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-01",
+      "previous": 1154941352,
+      "current": 1153768774
+    },
+    {
+      "date": "2025-12-03",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-01",
+      "previous": 5431545,
+      "current": 5420770
+    },
+    {
+      "date": "2025-12-18",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-09",
+      "previous": 5450298,
+      "current": 5444307
+    },
+    {
+      "date": "2025-12-19",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-18",
+      "previous": 5444307,
+      "current": 5441375
+    },
+    {
+      "date": "2025-12-20",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-19",
+      "previous": 5441375,
+      "current": 5439459
+    },
+    {
+      "date": "2025-12-21",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-20",
+      "previous": 5439459,
+      "current": 5433437
+    },
+    {
+      "date": "2025-12-24",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-23",
+      "previous": 5443398,
+      "current": 5436258
+    },
+    {
+      "date": "2025-12-25",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-24",
+      "previous": 5436258,
+      "current": 5422036
+    },
+    {
+      "date": "2025-12-26",
+      "track": "To you",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-25",
+      "previous": 102077521,
+      "current": 102058924
+    },
+    {
+      "date": "2025-12-26",
+      "track": "Rock with you",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-25",
+      "previous": 221047210,
+      "current": 221029977
+    },
+    {
+      "date": "2025-12-26",
+      "track": "9th Mini Album - Attacca Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-25",
+      "previous": 514556660,
+      "current": 514543084
+    },
+    {
+      "date": "2025-12-26",
+      "track": "Rock with you",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-25",
+      "previous": 221047210,
+      "current": 221029977
+    },
+    {
+      "date": "2025-12-26",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-25",
+      "previous": 5422036,
+      "current": 5418485
+    },
+    {
+      "date": "2025-12-27",
+      "track": "GOLM (Inst.)",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-26",
+      "previous": 763041,
+      "current": 755774
+    },
+    {
+      "date": "2025-12-27",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-26",
+      "previous": 5418485,
+      "current": 5418440
+    },
+    {
+      "date": "2025-12-30",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-27",
+      "previous": 5418440,
+      "current": 5406713
+    },
+    {
+      "date": "2025-12-31",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-30",
+      "previous": 5406713,
+      "current": 5401887
+    },
+    {
+      "date": "2026-01-01",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2025-12-31",
+      "previous": 5401887,
+      "current": 5371111
+    },
+    {
+      "date": "2026-01-02",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-01",
+      "previous": 5371111,
+      "current": 5348012
+    },
+    {
+      "date": "2026-01-03",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-02",
+      "previous": 5348012,
+      "current": 5335423
+    },
+    {
+      "date": "2026-01-04",
+      "track": "Together - Japanese ver.",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-03",
+      "previous": 4995568,
+      "current": 4995467
+    },
+    {
+      "date": "2026-01-04",
+      "track": "Together - Japanese ver.",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-03",
+      "previous": 4995568,
+      "current": 4995467
+    },
+    {
+      "date": "2026-01-04",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-03",
+      "previous": 5335423,
+      "current": 5325506
+    },
+    {
+      "date": "2026-01-05",
+      "track": "Dirty Dancing (fear. Joshua, DK & Dino)",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-04",
+      "previous": 5469520,
+      "current": 5468319
+    },
+    {
+      "date": "2026-01-05",
+      "track": "Dirty Dancing (fear. Joshua, DK & Dino) Remix Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-04",
+      "previous": 5469520,
+      "current": 5468319
+    },
+    {
+      "date": "2026-01-05",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-04",
+      "previous": 5325506,
+      "current": 5324808
+    },
+    {
+      "date": "2026-01-06",
+      "track": "Shohikigen",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-05",
+      "previous": 15350948,
+      "current": 15343933
+    },
+    {
+      "date": "2026-01-06",
+      "track": "Circles - Japanese ver.",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-05",
+      "previous": 2062318,
+      "current": 2061095
+    },
+    {
+      "date": "2026-01-06",
+      "track": "MAESTRO - Japanese ver.",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-05",
+      "previous": 2122870,
+      "current": 2121863
+    },
+    {
+      "date": "2026-01-06",
+      "track": "4th Japan Single Album - Shohikigen Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-05",
+      "previous": 19536136,
+      "current": 19526891
+    },
+    {
+      "date": "2026-01-06",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-05",
+      "previous": 5324808,
+      "current": 5316335
+    },
+    {
+      "date": "2026-01-07",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-06",
+      "previous": 5316335,
+      "current": 5313643
+    },
+    {
+      "date": "2026-01-08",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-07",
+      "previous": 5313643,
+      "current": 5309358
+    },
+    {
+      "date": "2026-01-09",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-08",
+      "previous": 5309358,
+      "current": 5306773
+    },
+    {
+      "date": "2026-01-15",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-14",
+      "previous": 5320099,
+      "current": 5312114
+    },
+    {
+      "date": "2026-01-19",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-18",
+      "previous": 5322343,
+      "current": 5321691
+    },
+    {
+      "date": "2026-01-20",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-19",
+      "previous": 5321691,
+      "current": 5307162
+    },
+    {
+      "date": "2026-01-21",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-20",
+      "previous": 5307162,
+      "current": 5298615
+    },
+    {
+      "date": "2026-01-24",
+      "track": "MAESTRO",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-23",
+      "previous": 121876996,
+      "current": 121455006
+    },
+    {
+      "date": "2026-01-24",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-23",
+      "previous": 5317836,
+      "current": 5311161
+    },
+    {
+      "date": "2026-01-25",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-24",
+      "previous": 5311161,
+      "current": 5305967
+    },
+    {
+      "date": "2026-01-26",
+      "track": "Ima -Even if the world ends tomorrow- (Korean Ver.)",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-25",
+      "previous": 10488931,
+      "current": 10469478
+    },
+    {
+      "date": "2026-01-26",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-25",
+      "previous": 5305967,
+      "current": 5301677
+    },
+    {
+      "date": "2026-01-27",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-26",
+      "previous": 5301677,
+      "current": 5296997
+    },
+    {
+      "date": "2026-01-28",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-27",
+      "previous": 5296997,
+      "current": 5282022
+    },
+    {
+      "date": "2026-01-30",
+      "track": "Adore U (Inst.) (Digital Only)",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-29",
+      "previous": 2879770,
+      "current": 2874103
+    },
+    {
+      "date": "2026-01-30",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-29",
+      "previous": 5291631,
+      "current": 5286799
+    },
+    {
+      "date": "2026-01-31",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-01-30",
+      "previous": 5286799,
+      "current": 5283545
+    },
+    {
+      "date": "2026-02-02",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-01",
+      "previous": 5276169,
+      "current": 5269267
+    },
+    {
+      "date": "2026-02-03",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-02",
+      "previous": 5269267,
+      "current": 5259949
+    },
+    {
+      "date": "2026-02-04",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-03",
+      "previous": 5259949,
+      "current": 5251714
+    },
+    {
+      "date": "2026-02-05",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-04",
+      "previous": 5251714,
+      "current": 5243179
+    },
+    {
+      "date": "2026-02-06",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-05",
+      "previous": 5243179,
+      "current": 5233434
+    },
+    {
+      "date": "2026-02-07",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-06",
+      "previous": 5233434,
+      "current": 5225797
+    },
+    {
+      "date": "2026-02-08",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-07",
+      "previous": 5225797,
+      "current": 5218482
+    },
+    {
+      "date": "2026-02-09",
+      "track": "BRING IT",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-08",
+      "previous": 18221671,
+      "current": 18220231
+    },
+    {
+      "date": "2026-02-09",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-08",
+      "previous": 5218482,
+      "current": 5207194
+    },
+    {
+      "date": "2026-02-10",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-09",
+      "previous": 5207194,
+      "current": 5202993
+    },
+    {
+      "date": "2026-02-11",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-10",
+      "previous": 5202993,
+      "current": 5195629
+    },
+    {
+      "date": "2026-02-12",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-11",
+      "previous": 5195629,
+      "current": 5183040
+    },
+    {
+      "date": "2026-02-13",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-12",
+      "previous": 5183040,
+      "current": 5168375
+    },
+    {
+      "date": "2026-02-14",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-13",
+      "previous": 5168375,
+      "current": 5157593
+    },
+    {
+      "date": "2026-02-15",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-14",
+      "previous": 5157593,
+      "current": 5149759
+    },
+    {
+      "date": "2026-02-16",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-15",
+      "previous": 5149759,
+      "current": 5136906
+    },
+    {
+      "date": "2026-02-17",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-16",
+      "previous": 5136906,
+      "current": 5129894
+    },
+    {
+      "date": "2026-02-18",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-17",
+      "previous": 5129894,
+      "current": 5122917
+    },
+    {
+      "date": "2026-02-19",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-18",
+      "previous": 5122917,
+      "current": 5109646
+    },
+    {
+      "date": "2026-02-20",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-19",
+      "previous": 5109646,
+      "current": 5098868
+    },
+    {
+      "date": "2026-02-21",
+      "track": "MAESTRO - Japanese ver.",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-20",
+      "previous": 2165398,
+      "current": 2165220
+    },
+    {
+      "date": "2026-02-21",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-20",
+      "previous": 5098868,
+      "current": 5086902
+    },
+    {
+      "date": "2026-02-22",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-21",
+      "previous": 5086902,
+      "current": 5084290
+    },
+    {
+      "date": "2026-02-23",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-22",
+      "previous": 5084290,
+      "current": 5082543
+    },
+    {
+      "date": "2026-02-24",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-23",
+      "previous": 5082543,
+      "current": 5074088
+    },
+    {
+      "date": "2026-02-25",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-24",
+      "previous": 5074088,
+      "current": 5064233
+    },
+    {
+      "date": "2026-02-26",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-25",
+      "previous": 5064233,
+      "current": 5053564
+    },
+    {
+      "date": "2026-03-01",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-02-28",
+      "previous": 5063160,
+      "current": 5060557
+    },
+    {
+      "date": "2026-03-02",
+      "track": "Fronting",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-01",
+      "previous": 16630948,
+      "current": 16564974
+    },
+    {
+      "date": "2026-03-02",
+      "track": "Mansae",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-01",
+      "previous": 86544851,
+      "current": 86157403
+    },
+    {
+      "date": "2026-03-02",
+      "track": "When I Grow up",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-01",
+      "previous": 16765245,
+      "current": 16703494
+    },
+    {
+      "date": "2026-03-02",
+      "track": "OMG",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-01",
+      "previous": 10576504,
+      "current": 10540052
+    },
+    {
+      "date": "2026-03-02",
+      "track": "Rock",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-01",
+      "previous": 15381348,
+      "current": 15229262
+    },
+    {
+      "date": "2026-03-02",
+      "track": "2nd Mini Album - BOYS BE Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-01",
+      "previous": 145898896,
+      "current": 145195185
+    },
+    {
+      "date": "2026-03-02",
+      "track": "MANSAE",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-01",
+      "previous": 86544851,
+      "current": 86157403
+    },
+    {
+      "date": "2026-03-05",
+      "track": "Fallin' Flower (Korean Ver.)",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-04",
+      "previous": 28885491,
+      "current": 28867501
+    },
+    {
+      "date": "2026-03-09",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-08",
+      "previous": 5087800,
+      "current": 5087203
+    },
+    {
+      "date": "2026-03-10",
+      "track": "Darl+ing - Holiday Ver.",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-09",
+      "previous": 3800108,
+      "current": 3739560
+    },
+    {
+      "date": "2026-03-10",
+      "track": "1st Japan EP Album - DREAM Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-09",
+      "previous": 36260533,
+      "current": 36208621
+    },
+    {
+      "date": "2026-03-10",
+      "track": "LOVE, MONEY, FAME (Hitchhiker Remix)",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-09",
+      "previous": 1711367,
+      "current": 1710399
+    },
+    {
+      "date": "2026-03-16",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-15",
+      "previous": 5111559,
+      "current": 5107734
+    },
+    {
+      "date": "2026-03-16",
+      "track": "SEVENTEEN FOLLOWERS",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-15",
+      "previous": 13944645,
+      "current": 13944449
+    },
+    {
+      "date": "2026-03-22",
+      "track": "Chuck",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-21",
+      "previous": 13999504,
+      "current": 13997607
+    },
+    {
+      "date": "2026-03-22",
+      "track": "Chuck",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-21",
+      "previous": 13999504,
+      "current": 13997607
+    },
+    {
+      "date": "2026-03-27",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-26",
+      "previous": 5236366,
+      "current": 5235536
+    },
+    {
+      "date": "2026-04-01",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-03-31",
+      "previous": 5278232,
+      "current": 5278202
+    },
+    {
+      "date": "2026-04-04",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-04-03",
+      "previous": 5279772,
+      "current": 5279267
+    },
+    {
+      "date": "2026-04-11",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-04-10",
+      "previous": 5336516,
+      "current": 5335570
+    },
+    {
+      "date": "2026-04-14",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-04-13",
+      "previous": 5349710,
+      "current": 5346522
+    },
+    {
+      "date": "2026-04-15",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-04-14",
+      "previous": 5346522,
+      "current": 5338808
+    },
+    {
+      "date": "2026-04-16",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-04-15",
+      "previous": 5338808,
+      "current": 5330019
+    },
+    {
+      "date": "2026-04-17",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-04-16",
+      "previous": 5330019,
+      "current": 5323384
+    },
+    {
+      "date": "2026-04-20",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-04-19",
+      "previous": 5330269,
+      "current": 5330046
+    },
+    {
+      "date": "2026-04-21",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-04-20",
+      "previous": 5330046,
+      "current": 5310724
+    },
+    {
+      "date": "2026-04-22",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-04-21",
+      "previous": 5310724,
+      "current": 5289894
+    },
+    {
+      "date": "2026-04-23",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-04-22",
+      "previous": 5289894,
+      "current": 5283788
+    },
+    {
+      "date": "2026-04-24",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-04-23",
+      "previous": 5283788,
+      "current": 5276383
+    },
+    {
+      "date": "2026-04-25",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-04-24",
+      "previous": 5276383,
+      "current": 5266875
+    },
+    {
+      "date": "2026-04-26",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-04-25",
+      "previous": 5266875,
+      "current": 5256200
+    },
+    {
+      "date": "2026-04-30",
+      "track": "Ah Yeah",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-04-29",
+      "previous": 10237363,
+      "current": 10232220
+    },
+    {
+      "date": "2026-05-02",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-01",
+      "previous": 5288604,
+      "current": 5286287
+    },
+    {
+      "date": "2026-05-03",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-02",
+      "previous": 5286287,
+      "current": 5276582
+    },
+    {
+      "date": "2026-05-04",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-03",
+      "previous": 5276582,
+      "current": 5275713
+    },
+    {
+      "date": "2026-05-05",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-04",
+      "previous": 5275713,
+      "current": 5273991
+    },
+    {
+      "date": "2026-05-06",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-05",
+      "previous": 5273991,
+      "current": 5254057
+    },
+    {
+      "date": "2026-05-07",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-06",
+      "previous": 5254057,
+      "current": 5235285
+    },
+    {
+      "date": "2026-05-08",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-07",
+      "previous": 5235285,
+      "current": 5226002
+    },
+    {
+      "date": "2026-05-10",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-08",
+      "previous": 5226002,
+      "current": 5216939
+    },
+    {
+      "date": "2026-05-22",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-21",
+      "previous": 5232476,
+      "current": 5222693
+    },
+    {
+      "date": "2026-05-23",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-22",
+      "previous": 5222693,
+      "current": 5220291
+    },
+    {
+      "date": "2026-05-24",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-23",
+      "previous": 5220291,
+      "current": 5200326
+    },
+    {
+      "date": "2026-05-25",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-24",
+      "previous": 5200326,
+      "current": 5185345
+    },
+    {
+      "date": "2026-05-26",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-25",
+      "previous": 5185345,
+      "current": 5173734
+    },
+    {
+      "date": "2026-05-27",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-26",
+      "previous": 5173734,
+      "current": 5159866
+    },
+    {
+      "date": "2026-05-28",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-27",
+      "previous": 5159866,
+      "current": 5152260
+    },
+    {
+      "date": "2026-05-29",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-28",
+      "previous": 5152260,
+      "current": 5135401
+    },
+    {
+      "date": "2026-05-30",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-29",
+      "previous": 5135401,
+      "current": 5129745
+    },
+    {
+      "date": "2026-05-31",
+      "track": "SEVENTEEN MONTHLY LISTENER",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-30",
+      "previous": 5129745,
+      "current": 5127001
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Adore U",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 86305217,
+      "current": 10320655
+    },
+    {
+      "date": "2026-06-01",
+      "track": "1st Mini Album - 17 CARAT Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 150027896,
+      "current": 16924306
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Mansae",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 88085933,
+      "current": 17040562
+    },
+    {
+      "date": "2026-06-01",
+      "track": "When I Grow up",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 17004842,
+      "current": 10732969
+    },
+    {
+      "date": "2026-06-01",
+      "track": "2nd Mini Album - BOYS BE Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 148479052,
+      "current": 20729451
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Q&A Single Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 20688356,
+      "current": 8631853
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Pretty U",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 158938409,
+      "current": 20913927
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Still Lonely",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 20867478,
+      "current": 17233253
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Say Yes",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 24328995,
+      "current": 13180032
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Adore U (Vocal Team Ver.)",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 14023431,
+      "current": 10279878
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Monday to Saturday (Hiphop Team Ver.)",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 10261385,
+      "current": 6102003
+    },
+    {
+      "date": "2026-06-01",
+      "track": "1st Full Album - Love & Letter Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 303600566,
+      "current": 14428636
+    },
+    {
+      "date": "2026-06-01",
+      "track": "VERY NICE",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 236275809,
+      "current": 24348914
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Healing",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 24292070,
+      "current": 23356250
+    },
+    {
+      "date": "2026-06-01",
+      "track": "SIMPLE",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 23292105,
+      "current": 11976554
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Pretty U",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 158938409,
+      "current": 20913927
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Still Lonely",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 20867478,
+      "current": 17233253
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Say Yes",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 24328995,
+      "current": 13180032
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Adore U (Vocal Team Ver.)",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 14023431,
+      "current": 10279878
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Monday to Saturday (Hiphop Team Ver.)",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 10261385,
+      "current": 6102003
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Love & Letter Repackage Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 613815550,
+      "current": 311059188
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Love & Letter Repackage New Tracks Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 310214984,
+      "current": 37146982
+    },
+    {
+      "date": "2026-06-01",
+      "track": "BOOMBOOM",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 66458798,
+      "current": 37616461
+    },
+    {
+      "date": "2026-06-01",
+      "track": "HIGHLIGHT",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 37552891,
+      "current": 24289522
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Fast Pace",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 32304281,
+      "current": 30089180
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Don't listen in secret",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 30015187,
+      "current": 19439456
+    },
+    {
+      "date": "2026-06-01",
+      "track": "3rd Mini Album - Going Seventeen Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 289333430,
+      "current": 256170449
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Don't Wanna Cry",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 255626274,
+      "current": 39645787
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Habit",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 39518528,
+      "current": 19090668
+    },
+    {
+      "date": "2026-06-01",
+      "track": "4th Mini Album - Al1 Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 384592226,
+      "current": 10887540
+    },
+    {
+      "date": "2026-06-01",
+      "track": "CHANGE UP",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 37442715,
+      "current": 18382928
+    },
+    {
+      "date": "2026-06-01",
+      "track": "CLAP",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 160087271,
+      "current": 18663854
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Pinwheel",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 47244151,
+      "current": 23559927
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Flower",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 23511100,
+      "current": 17587940
+    },
+    {
+      "date": "2026-06-01",
+      "track": "ROCKET",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 17560983,
+      "current": 16428107
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Campfire",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 41915385,
+      "current": 8996688
+    },
+    {
+      "date": "2026-06-01",
+      "track": "2nd Full Album - TEEN, AGE Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 468292705,
+      "current": 24215845
+    },
+    {
+      "date": "2026-06-01",
+      "track": "THANKS",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 90118814,
+      "current": 38295031
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Run to you",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 38168268,
+      "current": 23836011
+    },
+    {
+      "date": "2026-06-01",
+      "track": "1st Special Album - DIRECTOR'S CUT Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 176186372,
+      "current": 44938052
+    },
+    {
+      "date": "2026-06-01",
+      "track": "CALL CALL CALL!",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 44827814,
+      "current": 5449147
+    },
+    {
+      "date": "2026-06-01",
+      "track": "HIGHLIGHT - Japanese ver.",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 5435409,
+      "current": 4427963
+    },
+    {
+      "date": "2026-06-01",
+      "track": "20 - Japanese ver.",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 5522748,
+      "current": 4919806
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Oh My!",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 97481768,
+      "current": 34204909
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Holiday",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 34107421,
+      "current": 18597181
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Come to me",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 18551705,
+      "current": 14787854
+    },
+    {
+      "date": "2026-06-01",
+      "track": "5th Mini Album - YOU MAKE MY DAY Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 247654901,
+      "current": 39118090
+    },
+    {
+      "date": "2026-06-01",
+      "track": "A-TEEN OST Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 39026786,
+      "current": 1569979
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Home",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 119721700,
+      "current": 75717664
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Hug",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 75579201,
+      "current": 16414225
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Chilli",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 16385592,
+      "current": 15457621
+    },
+    {
+      "date": "2026-06-01",
+      "track": "6th Mini Album - YOU MAKE MY DAWN Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 343101063,
+      "current": 22852116
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Happy Ending",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 27572783,
+      "current": 5849674
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Oh My! - Japanese Ver.",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 5821017,
+      "current": 4218721
+    },
+    {
+      "date": "2026-06-01",
+      "track": "HIT",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 106216413,
+      "current": 29493263
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Fear",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 80288598,
+      "current": 25763056
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Let me hear you say",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 25670982,
+      "current": 24910957
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Second Life",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 29150402,
+      "current": 16652536
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Back it up",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 24179498,
+      "current": 15610452
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Snap Shoot",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 54128703,
+      "current": 17262344
+    },
+    {
+      "date": "2026-06-01",
+      "track": "3rd Full Album - An Ode Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 423314458,
+      "current": 15117284
+    },
+    {
+      "date": "2026-06-01",
+      "track": "SWEETEST THING",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 15081069,
+      "current": 450202
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Fallin' Flower",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 59327218,
+      "current": 5365104
+    },
+    {
+      "date": "2026-06-01",
+      "track": "2nd Japan Single Album - Fallin' FlowerAlbum Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 70748275,
+      "current": 27743591
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Left & Right",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 168222594,
+      "current": 24918607
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Kidult",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 92058416,
+      "current": 38476752
+    },
+    {
+      "date": "2026-06-01",
+      "track": "7th Mini Album - Heng:garæ Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 394827485,
+      "current": 43636995
+    },
+    {
+      "date": "2026-06-01",
+      "track": "24H",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 43553875,
+      "current": 5544126
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Pinwheel - Japanese ver.",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 5528068,
+      "current": 3922342
+    },
+    {
+      "date": "2026-06-01",
+      "track": "247 - Japanese ver.",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 3910568,
+      "current": 3055150
+    },
+    {
+      "date": "2026-06-01",
+      "track": "2nd Japan Mini Album - 24H Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 61320828,
+      "current": 28977850
+    },
+    {
+      "date": "2026-06-01",
+      "track": "HOME;RUN",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 87973419,
+      "current": 25233617
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Do Re Mi",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 25178589,
+      "current": 16554131
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Light a Flame",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 65061601,
+      "current": 20191301
+    },
+    {
+      "date": "2026-06-01",
+      "track": "2nd Special Album - ;[Semicolon] Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 251371057,
+      "current": 38202171
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Hitorijanai",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 38115347,
+      "current": 7392517
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Run to You - Japanese Ver.",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 7349093,
+      "current": 5007303
+    },
+    {
+      "date": "2026-06-01",
+      "track": "3rd Japan Single Album - Hitorijanai Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 50439248,
+      "current": 47486540
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Ready to love",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 130359294,
+      "current": 60326864
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Anyone",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 60179763,
+      "current": 29393724
+    },
+    {
+      "date": "2026-06-01",
+      "track": "GAM3 BO1",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 29311027,
+      "current": 17535870
+    },
+    {
+      "date": "2026-06-01",
+      "track": "8th Mini Album - YOUR CHOICE Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 332362316,
+      "current": 9282925
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Is It Still Beautiful",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 18938902,
+      "current": 621026
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Rock with you",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 232325193,
+      "current": 56078276
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Crush",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 55960366,
+      "current": 22487976
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Imperfect Love",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 48487254,
+      "current": 29315005
+    },
+    {
+      "date": "2026-06-01",
+      "track": "9th Mini Album - Attacca Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 541173357,
+      "current": 19557517
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Power of Love",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 19510475,
+      "current": 3726970
+    },
+    {
+      "date": "2026-06-01",
+      "track": "HOT",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 294648475,
+      "current": 91310957
+    },
+    {
+      "date": "2026-06-01",
+      "track": "DON QUIXOTE",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 91057983,
+      "current": 45821008
+    },
+    {
+      "date": "2026-06-01",
+      "track": "March",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 45692304,
+      "current": 28453700
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Shadow",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 93998825,
+      "current": 37447043
+    },
+    {
+      "date": "2026-06-01",
+      "track": "bout you",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 37348431,
+      "current": 33754077
+    },
+    {
+      "date": "2026-06-01",
+      "track": "4th Full Album - Face the Sun Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 870685198,
+      "current": 53578704
+    },
+    {
+      "date": "2026-06-01",
+      "track": "_WORLD",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 152578631,
+      "current": 29685866
+    },
+    {
+      "date": "2026-06-01",
+      "track": "HOT",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 294648475,
+      "current": 91310957
+    },
+    {
+      "date": "2026-06-01",
+      "track": "DON QUIXOTE",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 91057983,
+      "current": 45821008
+    },
+    {
+      "date": "2026-06-01",
+      "track": "March",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 45692304,
+      "current": 28453700
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Shadow",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 93998825,
+      "current": 37447043
+    },
+    {
+      "date": "2026-06-01",
+      "track": "bout you",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 37348431,
+      "current": 33754077
+    },
+    {
+      "date": "2026-06-01",
+      "track": "4th Full Album Repackage SECTOR 17 Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 1218619745,
+      "current": 348831777
+    },
+    {
+      "date": "2026-06-01",
+      "track": "4th Full Album Repackage SECTOR 17 New Tracks Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 347934547,
+      "current": 21348866
+    },
+    {
+      "date": "2026-06-01",
+      "track": "DREAM",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 23612305,
+      "current": 5319000
+    },
+    {
+      "date": "2026-06-01",
+      "track": "Rock with you - Japanese Ver.",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 5303554,
+      "current": 4338603
+    },
+    {
+      "date": "2026-06-01",
+      "track": "All My Love - Japanese Ver.",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 4307650,
+      "current": 3804774
+    },
+    {
+      "date": "2026-06-01",
+      "track": "1st Japan EP Album - DREAM Album Total:",
+      "issue": "cumulative streams decreased",
+      "previous_date": "2026-05-31",
+      "previous": 37020765,
+      "current": 6676844
+    }
+  ],
+  "note": "Daily growth is a difference between available snapshots, not necessarily a one-day gain if dates are missing. Original cumulative values are preserved. Workbook (1) was byte-identical, not Unit/Duo."
+}
