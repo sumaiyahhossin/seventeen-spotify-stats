@@ -70,25 +70,40 @@ function trackIds(s){
    return true;
  });
 }
-function buildRows(s,p){
+// The daily ranking compares two consecutive daily stream counts, not
+// a daily stream count with zero. Missing days or values remain unavailable.
+function dailyChange(s,p,pp,id){
+ const today=safeGain(s,p,id),yesterday=safeGain(p,pp,id);
+ return today==null||yesterday==null?null:today-yesterday;
+}
+function sumDaily(s,p,ids){
+ const gains=ids.map(id=>safeGain(s,p,id));
+ return gains.every(n=>n!=null)?gains.reduce((a,b)=>a+b,0):null;
+}
+function buildRows(s,p,pp){
  if(!s)return[];
  const daily=rank.endsWith('daily'),albums=rank.startsWith('albums');
  if(rank==='sheet')return sheetRows(s,p);
  let rows=[];
  if(albums&&isHistorical(s)){
-   rows=Object.entries(s.tracks).filter(([id])=>historicalKind(s,id)==='album'&&isAlbumTitle(s.names[id])).map(([id,streams])=>({id,name:(s.names[id]||id).replace(/\s*Total\s*:?$/i,'').trim(),streams,gain:safeGain(s,p,id)}));
+   rows=Object.entries(s.tracks).filter(([id])=>historicalKind(s,id)==='album'&&isAlbumTitle(s.names[id])).map(([id,streams])=>({
+     id,name:(s.names[id]||id).replace(/\s*Total\s*:?$/i,'').trim(),streams,
+     gain:safeGain(s,p,id),change:dailyChange(s,p,pp,id)
+   }));
  }else if(albums){
    for(const item of catalog[tab]||[]){
      if(!isAlbumTitle(item.title))continue;
-     const ids=[...new Set(item.tracks)];const present=ids.filter(id=>s.tracks[id]!=null);
-     if(!present.length)continue;
-     const complete=present.length===ids.length;
-     const streams=present.reduce((a,id)=>a+s.tracks[id],0);
-     const gains=ids.map(id=>safeGain(s,p,id));
-     rows.push({name:item.title,streams:complete?streams:null,gain:complete&&gains.every(n=>n!=null)?gains.reduce((a,b)=>a+b,0):null});
+     const ids=[...new Set(item.tracks)];
+     if(!ids.every(id=>s.tracks[id]!=null))continue;
+     const streams=ids.reduce((a,id)=>a+s.tracks[id],0);
+     const gain=sumDaily(s,p,ids),yesterday=sumDaily(p,pp,ids);
+     rows.push({name:item.title,streams,gain,change:gain!=null&&yesterday!=null?gain-yesterday:null});
    }
  }else{
-   rows=trackIds(s).map(id=>({id,name:displayTrackName((s.names?.[id]||idName[id]||id)==='247.0'?'247':s.names?.[id]||idName[id]||id),streams:s.tracks[id],gain:safeGain(s,p,id)}));
+   rows=trackIds(s).map(id=>({
+     id,name:displayTrackName((s.names?.[id]||idName[id]||id)==='247.0'?'247':s.names?.[id]||idName[id]||id),
+     streams:s.tracks[id],gain:safeGain(s,p,id),change:dailyChange(s,p,pp,id)
+   }));
  }
  rows=uniqueRows(rows).filter(r=>daily?r.gain!=null:r.streams!=null);
  rows.sort((a,b)=>sortOrder==='least'?(daily?a.gain-b.gain:a.streams-b.streams):(daily?b.gain-a.gain:b.streams-a.streams));
@@ -267,9 +282,9 @@ function fillArtwork(){
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 let renderToken=0;
-async function render(){const token=++renderToken;$('#ranking').innerHTML='';const s=await selectedSnapshot(),p=await prior(s);if(token!==renderToken)return;
+async function render(){const token=++renderToken;$('#ranking').innerHTML='';const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);if(token!==renderToken)return;
  $('#date').textContent=s?.date||'—';const ids=trackIds(s);$('#count').textContent=s?fmt(ids.length):'—';$('#listeners').textContent=fmt(audienceValue(s,'listeners'));$('#followers').textContent=fmt(audienceValue(s,'followers'));const listenerNow=audienceValue(s,'listeners'),listenerPrev=audienceValue(p,'listeners'),followerNow=audienceValue(s,'followers'),followerPrev=audienceValue(p,'followers');const showDelta=(selector,now,prev)=>{const n=now!=null&&prev!=null&&p&&s&&((Date.parse(s.date)-Date.parse(p.date))/86400000===1)?now-prev:null;$(selector).textContent=n==null?'Change from previous day unavailable':(n>=0?'+':'−')+fmt(Math.abs(n))+' vs previous day';};showDelta('#listenersChange',listenerNow,listenerPrev);showDelta('#followersChange',followerNow,followerPrev);const grandId=s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;$('#total').textContent=s?fmt(grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';const gains=s?ids.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];const grandGain=grandId?safeGain(s,p,grandId):null;$('#gain').textContent=grandGain!=null?'+'+fmt(grandGain):s&&p&&gains.length===ids.length?'+'+fmt(gains.reduce((a,b)=>a+b,0)):'—';
- $('#order').hidden=rank==='sheet';const q=$('#search').value.toLowerCase();const rows=buildRows(s,p).filter(x=>x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,rank==='sheet'?500:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${rank==='sheet'?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${rank==='sheet'&&r.kind!=='album'?'':`<span class="cover-slot">${artworkTrack(r)?`<img class="cover" data-cover-track="${artworkTrack(r)}" data-cover-fallback="${artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy">`:`<span class="cover-placeholder">💎</span>`}</span>`}${streamTrackUrl(r)?`<a class="track-name track-stream-link" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name">${escapeHtml(r.name)}</span>`}</div><div class="num">${fmt(rank.endsWith('daily')?r.gain:r.streams)}</div><div class="num change">${r.gain==null?'—':'+'+fmt(r.gain)}</div></div>`).join('') :'';fillArtwork()}
+ $('#order').hidden=rank==='sheet';const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily');const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS':'STREAM COUNT';headers[2].textContent=daily?'VS PREVIOUS DAY':'DAILY GAIN';const rows=buildRows(s,p,pp).filter(x=>x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,rank==='sheet'?500:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${rank==='sheet'?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${rank==='sheet'&&r.kind!=='album'?'':`<span class="cover-slot">${artworkTrack(r)?`<img class="cover" data-cover-track="${artworkTrack(r)}" data-cover-fallback="${artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy">`:`<span class="cover-placeholder">💎</span>`}</span>`}${streamTrackUrl(r)?`<a class="track-name track-stream-link" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name">${escapeHtml(r.name)}</span>`}</div><div class="num">${fmt(daily?r.gain:r.streams)}</div><div class="num change">${(daily?r.change:r.gain)==null?'—':((daily?r.change:r.gain)>=0?'+':'−')+fmt(Math.abs(daily?r.change:r.gain))}</div></div>`).join('') :'';fillArtwork()}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 $('#ranktabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rank=b.dataset.rank;$('#ranktabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 $('#order').addEventListener('change',e=>{sortOrder=e.target.value;render()});
