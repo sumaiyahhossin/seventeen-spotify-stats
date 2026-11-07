@@ -71,3 +71,12 @@ header,main{position:relative;z-index:1}
 .archive-top .archive-picker{gap:7px}
 .archive-top .archive-picker select{min-width:260px;padding:12px 15px}
 @media(max-width:800px){.archive-top{margin:0 0 16px;padding:18px}.archive-top .archive-picker{width:100%}.archive-top .archive-picker select{width:100%}}
+
+
+/* Six dashboard metrics and the original spreadsheet album-total grouping. */
+.stats{grid-template-columns:repeat(3,minmax(0,1fr))}
+.album-total-row{background:linear-gradient(90deg,#ffb8d71c,#b9d8ff10);border-top:1px solid #ffb8d75a;border-bottom:1px solid #ffb8d75a}
+.album-total-row .track{color:#ffd0e5;font-weight:800}
+.album-total-row .place{color:#b9d8ff}
+@media(max-width:800px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:480px){.stats{grid-template-columns:repeat(2,minmax(0,1fr))}}
