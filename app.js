@@ -8,7 +8,30 @@ async function getDate(type,date){if(!date)return null;const key=type+'-'+date;i
 async function latest(type){if(current[type])return current[type];for(const d of dates){const s=await getDate(type,d);if(s)return s}return null}
 async function selectedSnapshot(){return selection==='latest'?latest(tab):getDate(tab,selection)}
 async function prior(s){if(!s)return null;for(const d of dates){if(d>=s.date)continue;const p=await getDate(tab,d);if(p)return p}return null}
-function safeGain(s,p,id){if(!p||!s||!s.tracks||!p.tracks||s.tracks[id]==null||p.tracks[id]==null)return null;if((s.anomalies||[]).includes(id)||(p.anomalies||[]).includes(id))return null;const days=(Date.parse(s.date)-Date.parse(p.date))/86400000;if(days!==1)return null;const delta=s.tracks[id]-p.tracks[id];return delta>=0?delta:null}
+function normTrackName(name){return String(name||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+function comparablePrevious(s,p,id){
+ if(p?.tracks?.[id]!=null)return {id,value:p.tracks[id]};
+ // Historical Excel rows may have legacy row IDs rather than Spotify track IDs.
+ if(!isHistorical(s)&&isHistorical(p)){
+  const name=normTrackName(s.names?.[id]||idName[id]);
+  if(!name||name===normTrackName(id))return null;
+  const candidates=Object.keys(p.tracks).filter(k=>historicalKind(p,k)==='track'&&normTrackName(p.names?.[k])===name&&p.tracks[k]<=s.tracks[id]);
+  if(!candidates.length)return null;
+  const best=candidates.sort((a,b)=>p.tracks[b]-p.tracks[a])[0];
+  if(s.tracks[id]-p.tracks[best]>1000000)return null;
+  return {id:best,value:p.tracks[best]};
+ }
+ return null;
+}
+function safeGain(s,p,id){
+ if(!p||!s||!s.tracks||!p.tracks||s.tracks[id]==null)return null;
+ const prev=comparablePrevious(s,p,id);
+ if(!prev||(s.anomalies||[]).includes(id)||(p.anomalies||[]).includes(prev.id))return null;
+ const days=(Date.parse(s.date)-Date.parse(p.date))/86400000;
+ if(days!==1)return null;
+ const delta=s.tracks[id]-prev.value;
+ return delta>=0?delta:null;
+}
 function historicalKind(s,id){
  const name=(s?.names?.[id]||'').trim();
  if(!name)return 'track';
@@ -60,11 +83,14 @@ function uniqueRows(rows){
 }
 function trackIds(s){
  const ids=Object.keys(s?.tracks||{}).filter(id=>!isHistorical(s)||historicalKind(s,id)==='track');
- if(!isHistorical(s))return ids;
  const seen=new Set();
+ const namedValues=new Set(ids.filter(id=>normTrackName(s.names?.[id]||idName[id])!==normTrackName(id)).map(id=>s.tracks[id]));
  return ids.filter(id=>{
-   const name=(s.names?.[id]||id).trim().toLowerCase().replace(/\s+/g,' ');
-   const key=name+'|'+s.tracks[id];
+   const name=normTrackName(s.names?.[id]||idName[id]);
+   // The catalog has alternate Spotify IDs for the same recordings; some
+   // aliases have no title and exactly repeat a named recording's count.
+   if(!isHistorical(s)&&(!name||name===normTrackName(id))&&namedValues.has(s.tracks[id]))return false;
+   const key=(name||id)+'|'+s.tracks[id];
    if(seen.has(key))return false;
    seen.add(key);
    return true;
