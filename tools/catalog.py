@@ -12,7 +12,6 @@ def build(kind):
             var=m.group(1); urls=re.findall(r'https://open\.spotify\.com/track/([A-Za-z0-9]+)',m.group(2))
             if not urls: continue
             arrays[var]=urls
-            # Use nearby descriptive comments rather than inventing names.
             prefix=s[:s.find(line)]
             prior=[x.strip().lstrip('/').strip() for x in prefix.splitlines()[-4:] if x.strip().startswith('//')]
             description=prior[-1] if prior else var
