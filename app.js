@@ -344,9 +344,28 @@ function fillArtwork(){
  },{rootMargin:'180px'});
  document.querySelectorAll('img[data-cover-track]').forEach(img=>observer.observe(img));
 }
+const soloArtists=[["Jeonghan","6KDLlQYeeqUe5OQ2JrdNzF"],["Joshua","74AwWFYdjQ3ER5vHO4H7b0"],["Jun","38Gn0ZVC8TQwuaMxBK1yRV"],["Hoshi","6nWKAdMv1BDq1zHfZzkdbR"],["Wonwoo","3rHcBT06Vb1XGVUWhDALZt"],["Woozi","4TdiASPlU3QdZvGQBothcQ"],["DK","7G1kUsPtQCdolV6CPwHmh2"],["Mingyu","5gUpo0BRmo6EOTbyU3z5Ay"],["The8","4DqFd6XE3dX4LWXHJVVpLk"],["Seungkwan","0Vb2DjojEYsasFpc3aTZb6"],["Vernon","2Y34b9AOK30zXgL7cAH4NG"],["Dino","5YaeXxzvqGNBCguELlKo6G"],["BSS","1uAT5bTSp6dWbNmixIUP5t"],["JxW","7GvlsjcgBrsE578yghOq7D"],["HxW","1EReYiseDwE51FzGm7EK9n"],["CxM","7kjuLdYbtTkWBToMu2ebZN"],["DxS","4wBjmEkWhY4T22q00CiF5V"],["V8",null],["Picheolin","3V2EC4dPYLgtbi0TtrB1RA"],["Gilboard",null]];
+const artistPhotoCache=new Map();
+function renderArtistProfiles(){
+ const area=$('#artistProfiles');
+ if(!area)return;
+ area.hidden=tab!=='solo';
+ if(tab!=='solo')return;
+ area.innerHTML='<div class="artist-profiles-heading">MEMBERS & UNITS <span>✦</span></div><div class="artist-profile-grid">'+soloArtists.map(([name,id])=>{
+  const photo=id?'<img class="artist-profile-photo" data-artist-photo="'+id+'" alt="" loading="lazy">':'<span class="artist-profile-placeholder">💎</span>';
+  const label='<span class="artist-profile-name">'+escapeHtml(name)+'</span>';
+  return id?'<a class="artist-profile" href="https://open.spotify.com/artist/'+id+'" target="_blank" rel="noopener noreferrer" title="Open '+escapeHtml(name)+' on Spotify">'+photo+label+'</a>':'<div class="artist-profile">'+photo+label+'</div>';
+ }).join('')+'</div>';
+ area.querySelectorAll('img[data-artist-photo]').forEach(img=>{
+  const id=img.dataset.artistPhoto;
+  if(!artistPhotoCache.has(id))artistPhotoCache.set(id,fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/artist/'+id))
+    .then(r=>r.ok?r.json():null).then(d=>d?.thumbnail_url||null).catch(()=>null));
+  artistPhotoCache.get(id).then(url=>{if(url&&img.isConnected){img.src=url;img.classList.add('loaded')}else if(img.isConnected){img.style.display='none';img.insertAdjacentHTML('afterend','<span class="artist-profile-placeholder">💎</span>')}})
+ });
+}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 let renderToken=0;
-async function render(){const token=++renderToken;$('#ranking').innerHTML='';const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);if(token!==renderToken)return;resolveMissingNames(s,p);
+async function render(){renderArtistProfiles();const token=++renderToken;$('#ranking').innerHTML='';const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);if(token!==renderToken)return;resolveMissingNames(s,p);
  $('#date').textContent=s?.date||'—';const ids=trackIds(s);$('#count').textContent=s?fmt(ids.length):'—';$('#listeners').textContent=fmt(audienceValue(s,'listeners'));$('#followers').textContent=fmt(audienceValue(s,'followers'));const listenerNow=audienceValue(s,'listeners'),listenerPrev=audienceValue(p,'listeners'),followerNow=audienceValue(s,'followers'),followerPrev=audienceValue(p,'followers');const showDelta=(selector,now,prev)=>{const n=now!=null&&prev!=null&&p&&s&&((Date.parse(s.date)-Date.parse(p.date))/86400000===1)?now-prev:null;$(selector).textContent=n==null?'Change from previous day unavailable':(n>=0?'+':'−')+fmt(Math.abs(n))+' vs previous day';};showDelta('#listenersChange',listenerNow,listenerPrev);showDelta('#followersChange',followerNow,followerPrev);const grandId=s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;$('#total').textContent=s?fmt(grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';const gains=s?ids.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];const grandGain=grandId?safeGain(s,p,grandId):null;$('#gain').textContent=grandGain!=null?'+'+fmt(grandGain):s&&p&&gains.length===ids.length?'+'+fmt(gains.reduce((a,b)=>a+b,0)):'—';
  $('#order').hidden=rank==='sheet';const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily');const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS':'STREAM COUNT';headers[2].textContent=daily||rank==='sheet'?'VS PREVIOUS DAY':'DAILY GAIN';const rows=buildRows(s,p,pp).filter(x=>x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,rank==='sheet'?500:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${rank==='sheet'?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${rank==='sheet'&&r.kind!=='album'?'':`<span class="cover-slot">${artworkTrack(r)?`<img class="cover" data-cover-track="${artworkTrack(r)}" data-cover-fallback="${artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy">`:`<span class="cover-placeholder">💎</span>`}</span>`}${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}</div><div class="num">${fmt(daily?r.gain:r.streams)}</div><div class="num change ${(daily||rank==='sheet'?r.change:r.gain)<0?'negative':''}">${(daily||rank==='sheet'?r.change:r.gain)==null?'—':((daily||rank==='sheet'?r.change:r.gain)>=0?'+':'−')+fmt(Math.abs(daily||rank==='sheet'?r.change:r.gain))}</div></div>`).join('') :'';fillArtwork()}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
