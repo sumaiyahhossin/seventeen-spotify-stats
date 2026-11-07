@@ -18,5 +18,38 @@ if kind=='group':
     source=source.replace('System.out.println(nf.format(listenersCount));','System.out.println("STAT_LISTENERS|7nqOGRxlXj7N2JYbgNEjYH|" + listenersCount);\n            System.out.println(nf.format(listenersCount));')
 else:
     source=source.replace('System.out.println(nf.format(listenersCount));','System.out.println("STAT_LISTENERS|" + listenerUrl.split(java.util.regex.Pattern.quote("?"))[0].replace("https://open.spotify.com/artist/", "") + "|" + listenersCount);\n            System.out.println(nf.format(listenersCount));')
+if kind=='group':
+    # Read the number next to Spotify's visible Followers label, avoiding brittle hashed classes.
+    follower_java = '''
+    private static void fetchFollowersMetric() {
+        try {
+            driver.get("https://open.spotify.com/artist/7nqOGRxlXj7N2JYbgNEjYH");
+            Thread.sleep(2800);
+            for (int attempt=0; attempt<5; attempt++) {
+                java.util.List<org.openqa.selenium.WebElement> labels = driver.findElements(
+                    org.openqa.selenium.By.xpath("//*[normalize-space(text())='Followers']"));
+                for (org.openqa.selenium.WebElement label : labels) {
+                    org.openqa.selenium.WebElement container = label.findElement(
+                        org.openqa.selenium.By.xpath(".."));
+                    String raw = container.getText();
+                    java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                        "(\\\\d[\\\\d,]*)\\\\s*Followers", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(raw);
+                    if (m.find()) {
+                        long count = Long.parseLong(m.group(1).replace(",", ""));
+                        if (count > 0) {
+                            System.out.println("STAT_FOLLOWERS|" + count);
+                            return;
+                        }
+                    }
+                }
+                Thread.sleep(1200);
+            }
+        } catch (Exception e) {
+            System.out.println("Followers metric unavailable: " + e.getClass().getSimpleName());
+        }
+    }
+    '''
+    source=source.replace('private static void fetchMonthlyListeners()', follower_java+'\\n    private static void fetchMonthlyListeners()')
+    source=source.replace('fetchMonthlyListeners();','fetchMonthlyListeners();\\n        fetchFollowersMetric();',1)
 out=root/'build';out.mkdir(exist_ok=True)
 (out/('Stream_Stats.java' if kind=='group' else 'Stream_Stats_Units_Duos.java')).write_text(source)
