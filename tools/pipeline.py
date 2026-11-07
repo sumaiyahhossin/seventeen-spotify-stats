@@ -10,7 +10,6 @@ kind=sys.argv[1]
 entry=state.setdefault(kind,{})
 current_path=DATA/f'{kind}.json'
 previous=json.loads(current_path.read_text()) if current_path.exists() else None
-# A daily run at 00:00 NY time begins checking; pending remains until fresh data is confirmed.
 if not entry.get('pending') and entry.get('checked_date')!=today:
     entry['pending']=today
 if not entry.get('pending'):
@@ -41,7 +40,6 @@ if previous:
     if not any(tracks.get(k,0)>old.get(k,0) for k in expected):
         print(kind,'Spotify counts unchanged; retry next hour')
         entry['last_attempt']=now.isoformat();state_path.write_text(json.dumps(state,indent=2));sys.exit(0)
-    # Block large regressions from partial / corrupted reads.
     regressions=sum(tracks[k]<old.get(k,0) for k in expected)
     if regressions>max(2,len(expected)//20):
         print(kind,'too many decreased counts; retry next hour')
@@ -51,7 +49,6 @@ if kind=='group':
     artist='7nqOGRxlXj7N2JYbgNEjYH'
     if listeners.get(artist): snapshot['monthly_listeners']=listeners[artist]
     if followers: snapshot['followers']=followers
-# Archive previous confirmed data by its own date, never overwrite that snapshot.
 if previous:
     p=DATA/'history'/f'{kind}-{previous["date"]}.json'
     if not p.exists():p.write_text(json.dumps(previous,ensure_ascii=False,indent=2))
