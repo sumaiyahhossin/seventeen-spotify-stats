@@ -1,4 +1,3 @@
-Does not change the original workbook or pretend that spreadsheet names are Spotify IDs.
 import collections,datetime,hashlib,json,pathlib,re,sys,zipfile,xml.etree.ElementTree as ET
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 SOURCE=pathlib.Path(sys.argv[1]) if len(sys.argv)>1 else ROOT.parent/'SEVENTEEN Spotify Streams.xlsx'
