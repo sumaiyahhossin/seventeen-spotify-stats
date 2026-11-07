@@ -219,3 +219,8 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #ffb8
 .period-list-row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:12px 17px;border-bottom:1px solid #ffffff12;font-size:12px;color:#cdd1e3}
 .period-list-row:last-child{border-bottom:0}
 .period-list-row strong{color:#ffe2f0;font-size:14px;font-variant-numeric:tabular-nums}
+
+/* Period rankings show streams gained, never cumulative stream counts. */
+.table-head.period-ranking,.ranking.period-ranking .rank-row{grid-template-columns:minmax(0,1fr) minmax(120px,180px)}
+.table-head.period-ranking span:last-child,.ranking.period-ranking .rank-row>.num:last-child{display:none}
+@media(max-width:480px){.table-head.period-ranking,.ranking.period-ranking .rank-row{grid-template-columns:minmax(0,1fr) minmax(95px,125px)}}
