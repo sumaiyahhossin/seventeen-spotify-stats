@@ -144,7 +144,9 @@ function trackIds(s){
 // The daily ranking compares two consecutive daily stream counts, not
 // a daily stream count with zero. Missing days or values remain unavailable.
 function dailyChange(s,p,pp,id){
- const today=safeGain(s,p,id),yesterday=safeGain(p,pp,id);
+ const today=safeGain(s,p,id);
+ const matched=comparablePrevious(s,p,id);
+ const yesterday=matched?safeGain(p,pp,matched.id):null;
  return today==null||yesterday==null?null:today-yesterday;
 }
 function sumDaily(s,p,ids){
