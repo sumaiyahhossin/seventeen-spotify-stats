@@ -49,3 +49,25 @@ header,main{position:relative;z-index:1}
 @media(max-width:800px){.hero{padding:39px 0 42px}.panel{padding:22px}.hero h1{font-size:clamp(43px,8vw,70px)}}
 @media(max-width:480px){.hero{padding:34px 0 38px}.hero h1{font-size:clamp(38px,10vw,55px);letter-spacing:0}.hero-foot{margin-top:18px}.stat{padding:15px 11px}.archive{margin-top:30px}.diamond-fall i:nth-child(even){display:none}}
 @media(prefers-reduced-motion:reduce){.diamond-fall{display:none}}
+
+
+/* Gem-shaped floating diamonds, with the faceted look of the 💎 emoji. */
+.diamond-fall i{
+ width:calc(var(--s) * 2.8);height:calc(var(--s) * 2.8);
+ background:none;box-shadow:none;display:flex;align-items:center;justify-content:center;
+ font-style:normal;filter:drop-shadow(0 0 5px #b9d8ff66);
+}
+.diamond-fall i::before{content:'💎';font-size:calc(var(--s) * 2.8);line-height:1}
+.diamond-fall i:nth-child(3n)::before{filter:hue-rotate(45deg) saturate(.85)}
+@keyframes diamond-drift{
+  0%{transform:translate3d(0,-35px,0) rotate(-15deg);opacity:0}
+  12%{opacity:.58}80%{opacity:.48}
+  100%{transform:translate3d(var(--drift),105vh,0) rotate(25deg);opacity:0}
+}
+/* Date selection is now immediately above the rankings. */
+.archive-top{margin:0 0 18px;padding:18px 24px;border:1px solid #ffffff26;border-radius:22px;background:#ffffff0b}
+.archive-top h2{font-size:23px;margin:5px 0}
+.archive-top p{margin:5px 0 0;font-size:12px}
+.archive-top .archive-picker{gap:7px}
+.archive-top .archive-picker select{min-width:260px;padding:12px 15px}
+@media(max-width:800px){.archive-top{margin:0 0 16px;padding:18px}.archive-top .archive-picker{width:100%}.archive-top .archive-picker select{width:100%}}
