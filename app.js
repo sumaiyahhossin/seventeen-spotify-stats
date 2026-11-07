@@ -135,6 +135,8 @@ function buildOriginalReleaseLookup(){
 }
 function artworkTrack(row){
  const normalized=coverKey(row.name).replace(/\\btotal\\b/g,'').trim();
+ const originalRelease=originalReleaseLookup.get(normalized);
+ if(row.kind!=='album'&&!rank.startsWith('albums')&&originalRelease)return 'track:'+originalRelease;
  if(row.kind==='album'||rank.startsWith('albums')){
   if(normalized.includes('love letter repackage'))return 'image:'+releaseArtwork['love letter repackage'];
   if(normalized.includes('we make you'))return 'track:31d4AK9HwMELTaoTZKVz5v';
