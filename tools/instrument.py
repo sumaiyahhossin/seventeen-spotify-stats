@@ -1,4 +1,3 @@
-"""Add machine-readable metrics without changing the source collectors' calculations."""
 import pathlib,re,sys
 root=pathlib.Path(__file__).resolve().parents[1]
 kind=sys.argv[1]
@@ -9,9 +8,7 @@ end=source.index('\n    private static ',start+10)
 block=source[start:end]
 for variable in ('cachedValue','value','parsedValue'):
     block=re.sub(r'(return '+variable+r';)',r'System.out.println("STAT_TRACK|" + songUrl.split("\\\\?")[0] + "|" + '+variable+r');\n            \1',block)
-# The URL is normalized upstream in the solo collector; use a stable split on the literal question mark.
 block=block.replace('songUrl.split("\\\\?")[0]', 'songUrl.split("\\\\?")[0]')
-# avoid fragile Java regex escaping; use split with Pattern.quote
 block=block.replace('songUrl.split("\\\\?")[0]', 'songUrl.split(java.util.regex.Pattern.quote("?"))[0]')
 source=source[:start]+block+source[end:]
 if kind=='group':
@@ -19,7 +16,6 @@ if kind=='group':
 else:
     source=source.replace('System.out.println(nf.format(listenersCount));','System.out.println("STAT_LISTENERS|" + listenerUrl.split(java.util.regex.Pattern.quote("?"))[0].replace("https://open.spotify.com/artist/", "") + "|" + listenersCount);\n            System.out.println(nf.format(listenersCount));')
 if kind=='group':
-    # Read the number next to Spotify's visible Followers label, avoiding brittle hashed classes.
     follower_java = '''
     private static void fetchFollowersMetric() {
         try {
@@ -48,7 +44,6 @@ if kind=='group':
             System.out.println("Followers metric unavailable: " + e.getClass().getSimpleName());
         }
     }
-    '''
     source=source.replace('private static void fetchMonthlyListeners()', follower_java+'\\n    private static void fetchMonthlyListeners()')
     source=source.replace('fetchMonthlyListeners();','fetchMonthlyListeners();\\n        fetchFollowersMetric();',1)
 out=root/'build';out.mkdir(exist_ok=True)
