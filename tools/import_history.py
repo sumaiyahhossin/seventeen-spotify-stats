@@ -1,6 +1,4 @@
-"""Import independently dated cumulative song totals from the Group workbook.
 Does not change the original workbook or pretend that spreadsheet names are Spotify IDs.
-"""
 import collections,datetime,hashlib,json,pathlib,re,sys,zipfile,xml.etree.ElementTree as ET
 ROOT=pathlib.Path(__file__).resolve().parents[1]
 SOURCE=pathlib.Path(sys.argv[1]) if len(sys.argv)>1 else ROOT.parent/'SEVENTEEN Spotify Streams.xlsx'
@@ -17,7 +15,6 @@ def asnum(v):
   return int(n) if n>=0 and n.is_integer() else None
  except (ValueError,TypeError):return None
 catalog=json.loads((DATA/'catalog.json').read_text())['group']
-# Track names in collector descriptions are positional. Only map unambiguous names.
 lookup=collections.defaultdict(set)
 for album in catalog:
  desc=album.get('description','');names=desc.split(':',1)[-1].split(',')
@@ -69,7 +66,6 @@ with zipfile.ZipFile(SOURCE) as z:
      continue
     snap['tracks'][key]=value;snap['names'][key]=name
   if si in (1,13):print('Parsed month',si,'dates',len(blocks),flush=True)
- # Keep workbook counts as recorded, but flag drops and suppress false daily gains in the UI.
  previous={};regressions=0
  for date in sorted(snapshots):
   s=snapshots[date];s['anomalies']=[]
