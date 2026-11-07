@@ -4,7 +4,7 @@ const load=async p=>{try{const r=await fetch(p+'?v='+Date.now());return r.ok?awa
 const idName={};
 function buildNames(){
  for(const type of ['group','solo'])for(const item of catalog[type]||[]){
-  const raw=(item.description||'').split(':').slice(1).join(':').trim();
+  const raw=((item.description||'').match(/\(\d+\s+tracks?\)\s*:\s*(.*)$/i)||[])[1]||'';
   // A comma inside a song title is not a separator. Do not shift every
   // subsequent track name when the list is incomplete or ambiguous.
   const names=raw.split(/,\s*/).map(x=>x.trim());
@@ -12,6 +12,10 @@ function buildNames(){
   item.tracks.forEach((id,i)=>{if(names[i]&&!idName[id])idName[id]=names[i]});
  }
 }
+const albumTitles={
+ '17 carat album':'17 CARAT','boys be album':'BOYS BE','love & letter album':'LOVE & LETTER','love & letter repackage new tracks':'LOVE & LETTER (Repackage)','going seventeen album':'Going Seventeen','al1 album':'Al1','teen, age album':'TEEN, AGE',"director's cut album":"DIRECTOR'S CUT",'we make you album':'WE MAKE YOU','you make my day album':'YOU MAKE MY DAY','you make my dawn album':'YOU MADE MY DAWN','an ode new tracks album':'An Ode','heng':'Heng:garæ','24h mini album':'24H',';[semicolon] album':'; [Semicolon]','your choice album':'Your Choice','attacca album':'Attacca','face the sun album':'Face the Sun','sector 17 repackage album new tracks':'SECTOR 17','dream ep album':'DREAM','fml album':'FML','always yours new tracks album':'ALWAYS YOURS','always yours best album':'ALWAYS YOURS','seventeenth heaven album':'SEVENTEENTH HEAVEN','17 is right here best album':'17 IS RIGHT HERE','spill the feels album':'SPILL THE FEELS','love, money, fame remixes album':'LOVE, MONEY, FAME (Remixes)','shohikigen album':'消費期限 (Shohikigen)','happy burstday album':'HAPPY BURSTDAY','maestro remix single':'MAESTRO (Remixes)'
+};
+function albumDisplayName(name){return albumTitles[String(name||'').toLowerCase()]||name.replace(/\b(?:album|new tracks)\b/gi,'').replace(/\s+/g,' ').trim()}
 function unresolvedName(id){const n=idName[id];return !n||n===id||/^[A-Za-z0-9]{22}$/.test(n)}
 function resolveMissingNames(s,p){
  if(!s||isHistorical(s)||!p||!isHistorical(p))return;
@@ -161,7 +165,7 @@ function buildRows(s,p,pp){
      if(!ids.every(id=>s.tracks[id]!=null))continue;
      const streams=ids.reduce((a,id)=>a+s.tracks[id],0);
      const gain=sumDaily(s,p,ids),yesterday=sumDaily(p,pp,ids);
-     rows.push({name:item.title,streams,gain,change:gain!=null&&yesterday!=null?gain-yesterday:null});
+     rows.push({name:albumDisplayName(item.title),streams,gain,change:gain!=null&&yesterday!=null?gain-yesterday:null});
    }
  }else{
    rows=trackIds(s).map(id=>({
@@ -445,6 +449,6 @@ async function renderPeriod(){
  $('#periodNote').textContent=comparable?'Change between the last two period-end snapshots':'Period growth unavailable when track coverage differs or a prior period is missing';
  if(!samples.length){$('#periodChart').textContent='No saved totals available';return}
  const min=Math.min(...samples.map(x=>x.value)),max=Math.max(...samples.map(x=>x.value)),span=max-min||1;
- $('#periodChart').innerHTML=samples.map(x=>'<div class="period-bar-col" title="'+escapeHtml(x.date+' · '+fmt(x.value))+'"><div class="period-bar-track"><div class="period-bar" style="height:'+Math.max(8,((x.value-min)/span)*86+10)+'%"></div></div><span>'+escapeHtml(periodLabel(x.key))+'</span></div>').join('');
+ $('#periodChart').innerHTML=samples.slice(-6).reverse().map(x=>'<div class="period-list-row"><span>'+escapeHtml(periodLabel(x.key))+'</span><strong>'+fmt(x.value)+'</strong></div>').join('');
 }
 (async()=>{[catalog,artworkMap]=await Promise.all([load('data/catalog.json'),load('data/artwork-map.json')]);catalog=catalog||{};artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();buildCoverLookup();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();render()})();
