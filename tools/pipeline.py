@@ -22,12 +22,14 @@ classname='Stream_Stats' if kind=='group' else 'Stream_Stats_Units_Duos'
 subprocess.run(['javac','-cp',os.environ['COLLECTOR_CLASSPATH'],'-d',str(ROOT/'build'),str(ROOT/'build'/f'{classname}.java')],check=True)
 result=subprocess.run(['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],classname],capture_output=True,text=True,timeout=18000)
 (ROOT/'build'/f'{kind}.log').write_text(result.stdout+'\n'+result.stderr)
-tracks={};listeners={}
+tracks={};listeners={};followers=None
 for line in result.stdout.splitlines():
     m=re.match(r'STAT_TRACK\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|(\d+)',line)
     if m: tracks[m.group(1)]=int(m.group(2))
     m=re.match(r'STAT_LISTENERS\|([A-Za-z0-9]+)\|(\d+)',line)
     if m: listeners[m.group(1)]=int(m.group(2))
+    m=re.match(r'STAT_FOLLOWERS\|(\d+)',line)
+    if m: followers=int(m.group(1))
 cat=json.loads((DATA/'catalog.json').read_text())[kind]
 expected={id for item in cat for id in item['tracks']}
 missing=expected-set(tracks)
@@ -45,6 +47,10 @@ if previous:
         print(kind,'too many decreased counts; retry next hour')
         entry['last_attempt']=now.isoformat();state_path.write_text(json.dumps(state,indent=2));sys.exit(0)
 snapshot={'date':report_date,'captured_at':now.isoformat(),'tracks':tracks,'listeners':listeners}
+if kind=='group':
+    artist='7nqOGRxlXj7N2JYbgNEjYH'
+    if listeners.get(artist): snapshot['monthly_listeners']=listeners[artist]
+    if followers: snapshot['followers']=followers
 # Archive previous confirmed data by its own date, never overwrite that snapshot.
 if previous:
     p=DATA/'history'/f'{kind}-{previous["date"]}.json'
