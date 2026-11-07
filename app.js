@@ -9,14 +9,41 @@ async function latest(type){if(current[type])return current[type];for(const d of
 async function selectedSnapshot(){return selection==='latest'?latest(tab):getDate(tab,selection)}
 async function prior(s){if(!s)return null;for(const d of dates){if(d>=s.date)continue;const p=await getDate(tab,d);if(p)return p}return null}
 function safeGain(s,p,id){if(!p||!s||!s.tracks||!p.tracks||s.tracks[id]==null||p.tracks[id]==null)return null;if((s.anomalies||[]).includes(id)||(p.anomalies||[]).includes(id))return null;const days=(Date.parse(s.date)-Date.parse(p.date))/86400000;if(days!==1)return null;const delta=s.tracks[id]-p.tracks[id];return delta>=0?delta:null}
-function buildRows(s,p){if(!s)return[];const daily=rank.endsWith('daily'),albums=rank.startsWith('albums');let rows=[];
- if(albums){for(const item of catalog[tab]||[]){const ids=[...new Set(item.tracks)];const present=ids.filter(id=>s.tracks[id]!=null);if(!present.length)continue;const complete=present.length===ids.length;const streams=present.reduce((a,id)=>a+s.tracks[id],0);const gains=ids.map(id=>safeGain(s,p,id));rows.push({name:item.title,streams:complete?streams:null,gain:complete&&gains.every(n=>n!=null)?gains.reduce((a,b)=>a+b,0):null})}}
- else rows=Object.entries(s.tracks).map(([id,streams])=>({name:s.names?.[id]||idName[id]||id,streams,gain:safeGain(s,p,id)}));
- rows=rows.filter(r=>daily?r.gain!=null:r.streams!=null);rows.sort((a,b)=>daily?b.gain-a.gain:b.streams-a.streams);return rows}
+function historicalKind(s,id){
+ const name=(s?.names?.[id]||'').trim();
+ if(!name)return 'track';
+ if(/^SEVENTEEN TOTAL STREAMS$/i.test(name))return 'grand';
+ if(/\btotal\s*:?$/i.test(name))return 'album';
+ return 'track';
+}
+function isHistorical(s){return s?.source==='historical spreadsheet'}
+function trackIds(s){return Object.keys(s?.tracks||{}).filter(id=>!isHistorical(s)||historicalKind(s,id)==='track')}
+function buildRows(s,p){
+ if(!s)return[];
+ const daily=rank.endsWith('daily'),albums=rank.startsWith('albums');
+ let rows=[];
+ if(albums&&isHistorical(s)){
+   rows=Object.entries(s.tracks).filter(([id])=>historicalKind(s,id)==='album').map(([id,streams])=>({name:(s.names[id]||id).replace(/\s*Total\s*:?$/i,'').trim(),streams,gain:safeGain(s,p,id)}));
+ }else if(albums){
+   for(const item of catalog[tab]||[]){
+     const ids=[...new Set(item.tracks)];const present=ids.filter(id=>s.tracks[id]!=null);
+     if(!present.length)continue;
+     const complete=present.length===ids.length;
+     const streams=present.reduce((a,id)=>a+s.tracks[id],0);
+     const gains=ids.map(id=>safeGain(s,p,id));
+     rows.push({name:item.title,streams:complete?streams:null,gain:complete&&gains.every(n=>n!=null)?gains.reduce((a,b)=>a+b,0):null});
+   }
+ }else{
+   rows=trackIds(s).map(id=>({name:s.names?.[id]||idName[id]||id,streams:s.tracks[id],gain:safeGain(s,p,id)}));
+ }
+ rows=rows.filter(r=>daily?r.gain!=null:r.streams!=null);
+ rows.sort((a,b)=>daily?b.gain-a.gain:b.streams-a.streams);
+ return rows;
+}
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
 let renderToken=0;
 async function render(){const token=++renderToken;$('#ranking').innerHTML='<div class="empty">Loading saved statistics… ♡</div>';const s=await selectedSnapshot(),p=await prior(s);if(token!==renderToken)return;
- $('#status').textContent=s?(s.source==='historical spreadsheet'?'Historical spreadsheet snapshot':'Latest confirmed snapshot available'):'Waiting for first confirmed snapshot';$('#last').textContent=s?.captured_at?'Captured '+new Date(s.captured_at).toLocaleString():s?'Imported from spreadsheet':'—';$('#date').textContent=s?.date||'—';$('#count').textContent=s?fmt(Object.keys(s.tracks).length):'—';$('#total').textContent=s?fmt(Object.values(s.tracks).reduce((a,b)=>a+b,0)):'—';const gains=s?Object.keys(s.tracks).map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];$('#gain').textContent=s&&p&&gains.length===Object.keys(s.tracks).length?'+'+fmt(gains.reduce((a,b)=>a+b,0)):'—';
+ $('#status').textContent=s?(s.source==='historical spreadsheet'?'Historical spreadsheet snapshot':'Latest confirmed snapshot available'):'Waiting for first confirmed snapshot';$('#last').textContent=s?.captured_at?'Captured '+new Date(s.captured_at).toLocaleString():s?'Imported from spreadsheet':'—';$('#date').textContent=s?.date||'—';const ids=trackIds(s);$('#count').textContent=s?fmt(ids.length):'—';const grandId=s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;$('#total').textContent=s?fmt(grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';const gains=s?ids.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];const grandGain=grandId?safeGain(s,p,grandId):null;$('#gain').textContent=grandGain!=null?'+'+fmt(grandGain):s&&p&&gains.length===ids.length?'+'+fmt(gains.reduce((a,b)=>a+b,0)):'—';
  const q=$('#search').value.toLowerCase();const rows=buildRows(s,p).filter(x=>x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,250).map((r,i)=>`<div class="rank-row"><div class="track"><span class="place">${String(i+1).padStart(2,'0')}</span><span>${escapeHtml(r.name)}</span></div><div class="num">${fmt(rank.endsWith('daily')?r.gain:r.streams)}</div><div class="num change">${r.gain==null?'—':'+'+fmt(r.gain)}</div></div>`).join(''):'<div class="empty">No verified data for this ranking and date. ♡</div>'}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 $('#ranktabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rank=b.dataset.rank;$('#ranktabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
