@@ -213,3 +213,9 @@ body{background:radial-gradient(ellipse at 10% -10%,#51304955,transparent 36%),r
 button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #ffb8d7;outline-offset:3px}
 @media(max-width:680px){.archive-picker{width:100%}.date-navigation input{width:100%;flex:1}.period-panel{padding:16px}.period-results{gap:8px}.period-total{padding:13px}.period-total small{font-size:9px}.period-total strong{font-size:21px}.period-tabs button{padding:9px 13px}}
 @media(max-width:390px){.period-results{grid-template-columns:1fr}}
+
+/* Calm period-by-period history instead of decorative bars. */
+.period-chart{display:grid;gap:0;min-height:0;overflow:visible;padding:0;border:1px solid #ffffff1b;border-radius:15px;background:#ffffff05}
+.period-list-row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:12px 17px;border-bottom:1px solid #ffffff12;font-size:12px;color:#cdd1e3}
+.period-list-row:last-child{border-bottom:0}
+.period-list-row strong{color:#ffe2f0;font-size:14px;font-variant-numeric:tabular-nums}
