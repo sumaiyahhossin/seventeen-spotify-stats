@@ -6,7 +6,7 @@ on:
     paths:
       - '.github/workflows/update.yml'
   schedule:
-    - cron: '48 * * * *' # Check hourly at :48 UTC; gate starts at 4:48 PM New York time
+    - cron: '52 * * * *' # Hourly at :52 UTC; first daily collection at 4:52 PM America/New_York
   workflow_dispatch:
 permissions:
   contents: write
