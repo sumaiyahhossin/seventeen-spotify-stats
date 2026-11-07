@@ -17,6 +17,18 @@ function historicalKind(s,id){
  return 'track';
 }
 function isHistorical(s){return s?.source==='historical spreadsheet'}
+function isAlbumTitle(name){
+ const n=String(name||'').toLowerCase();
+ return /\balbum\b|\brepackage\b|\bmini\b|\bep\b/.test(n)&&!/\bsingle\b|\bost\b/.test(n);
+}
+function uniqueRows(rows){
+ const seen=new Set();
+ return rows.filter(row=>{
+  const key=row.name.toLowerCase().replace(/[^a-z0-9]/g,'')+'|'+row.streams;
+  if(seen.has(key))return false;
+  seen.add(key);return true;
+ });
+}
 function trackIds(s){
  const ids=Object.keys(s?.tracks||{}).filter(id=>!isHistorical(s)||historicalKind(s,id)==='track');
  if(!isHistorical(s))return ids;
@@ -34,9 +46,10 @@ function buildRows(s,p){
  const daily=rank.endsWith('daily'),albums=rank.startsWith('albums');
  let rows=[];
  if(albums&&isHistorical(s)){
-   rows=Object.entries(s.tracks).filter(([id])=>historicalKind(s,id)==='album').map(([id,streams])=>({name:(s.names[id]||id).replace(/\s*Total\s*:?$/i,'').trim(),streams,gain:safeGain(s,p,id)}));
+   rows=Object.entries(s.tracks).filter(([id])=>historicalKind(s,id)==='album'&&isAlbumTitle(s.names[id])).map(([id,streams])=>({name:(s.names[id]||id).replace(/\s*Total\s*:?$/i,'').trim(),streams,gain:safeGain(s,p,id)}));
  }else if(albums){
    for(const item of catalog[tab]||[]){
+     if(!isAlbumTitle(item.title))continue;
      const ids=[...new Set(item.tracks)];const present=ids.filter(id=>s.tracks[id]!=null);
      if(!present.length)continue;
      const complete=present.length===ids.length;
@@ -47,7 +60,7 @@ function buildRows(s,p){
  }else{
    rows=trackIds(s).map(id=>({name:s.names?.[id]||idName[id]||id,streams:s.tracks[id],gain:safeGain(s,p,id)}));
  }
- rows=rows.filter(r=>daily?r.gain!=null:r.streams!=null);
+ rows=uniqueRows(rows).filter(r=>daily?r.gain!=null:r.streams!=null);
  rows.sort((a,b)=>daily?b.gain-a.gain:b.streams-a.streams);
  return rows;
 }
