@@ -10,8 +10,8 @@ state = json.loads(state_file.read_text()) if state_file.exists() else {}
 entry = state.get('group', {})
 today = now.date().isoformat()
 pending = bool(entry.get('pending')) and entry.get('checked_date') != today
-# GitHub cron uses UTC; two daily entries cover both EST and EDT.
-daily_window = now.hour == 16 and now.minute >= 47
+# GitHub cron uses UTC; the hourly schedule and local-time gate handle EST/EDT.
+daily_window = now.hour == 16 and now.minute >= 48
 retry_window = now.hour >= 16 and entry.get('checked_date') != today
 manual = os.getenv('GITHUB_EVENT_NAME') in ('workflow_dispatch', 'push')
 run = manual or daily_window or (pending and retry_window)
