@@ -38,6 +38,7 @@ function sheetRows(s,p){
   const kind=historicalKind(s,id);
   if(kind==='grand'||kind==='audience')continue;
   let name=s.names?.[id]||id;
+  if(name==='247.0')name='247';
   if(/love\s*&\s*letter\s*repackage\s*new\s*tracks\s*total/i.test(name))name='Love & Letter Repackage Original Tracks Total:';
   rows.push({id,name,streams:value,gain:safeGain(s,p,id),kind});
  }
@@ -85,7 +86,7 @@ function buildRows(s,p){
      rows.push({name:item.title,streams:complete?streams:null,gain:complete&&gains.every(n=>n!=null)?gains.reduce((a,b)=>a+b,0):null});
    }
  }else{
-   rows=trackIds(s).map(id=>({id,name:s.names?.[id]||idName[id]||id,streams:s.tracks[id],gain:safeGain(s,p,id)}));
+   rows=trackIds(s).map(id=>({id,name:(s.names?.[id]||idName[id]||id)==='247.0'?'247':s.names?.[id]||idName[id]||id,streams:s.tracks[id],gain:safeGain(s,p,id)}));
  }
  rows=uniqueRows(rows).filter(r=>daily?r.gain!=null:r.streams!=null);
  rows.sort((a,b)=>sortOrder==='least'?(daily?a.gain-b.gain:a.streams-b.streams):(daily?b.gain-a.gain:b.streams-a.streams));
@@ -93,6 +94,8 @@ function buildRows(s,p){
 }
 
 const coverCache=new Map(),coverLookup=new Map(),releaseCoverLookup=new Map();
+const releaseArtNames={'fml album':'FML','al1 album':'Al1','you make my day album':'YOU MAKE MY DAY',';[semicolon] album':'Semicolon','we make you album':'WE MAKE YOU','24h single':'24H','24h mini album':'24H','fallin\' flower single':'Fallin\' Flower','hitorijanai single':'Not Alone','an ode new tracks album':'An Ode'};
+const releaseArtCache=new Map();
 const releaseArtwork={
  'love letter repackage':'https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02eb366517758754ca13a4adf5',
  'love letter repackage original tracks':'https://image-cdn-ak.spotifycdn.com/image/ab67616d00001e02eb366517758754ca13a4adf5'
@@ -134,10 +137,14 @@ function buildOriginalReleaseLookup(){
  }
 }
 function artworkTrack(row){
- const exactKey=coverKey(row.name);
+ const exactKey=coverKey(row.name)==='247 0'?'247':coverKey(row.name);
  const isAlbum=row.kind==='album'||rank.startsWith('albums');
  const mapped=isAlbum?artworkMap.albums[exactKey]||artworkMap.albums[exactKey.replace(/\\btotal\\b/g,'').trim()]:artworkMap.tracks[exactKey];
- if(mapped?.id)return 'track:'+mapped.id;
+ if(mapped?.id){
+  const release=releaseArtNames[mapped.release];
+  if(release)return 'release:'+encodeURIComponent(release);
+  return 'track:'+mapped.id;
+ }
  const normalized=coverKey(row.name).replace(/\\btotal\\b/g,'').trim();
  const originalRelease=originalReleaseLookup.get(normalized);
  if(row.kind!=='album'&&!rank.startsWith('albums')&&originalRelease)return 'track:'+originalRelease;
@@ -178,6 +185,15 @@ function fillArtwork(){
    observer.unobserve(entry.target);
    const img=entry.target,id=img.dataset.coverTrack;
    if(id.startsWith('image:')){img.src=id.slice(6);img.classList.add('loaded');continue}
+   if(id.startsWith('release:')){
+    const title=decodeURIComponent(id.slice(8));
+    if(!releaseArtCache.has(title))releaseArtCache.set(title,fetch('https://itunes.apple.com/search?'+new URLSearchParams({term:'SEVENTEEN '+title,entity:'album',limit:'50'})).then(r=>r.ok?r.json():null).then(data=>{
+     const matches=(data?.results||[]).filter(x=>/seventeen/i.test(x.artistName||'')&&coverKey(x.collectionName).replace(/\\b(ep|single|album)\\b/g,'').trim()===coverKey(title));
+     return matches[0]?.artworkUrl100?.replace('100x100bb','600x600bb')||null;
+    }).catch(()=>null));
+    releaseArtCache.get(title).then(url=>{if(url&&img.isConnected){img.src=url;img.classList.add('loaded')}});
+    continue;
+   }
    if(!coverCache.has(id))coverCache.set(id,fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/'+(id.startsWith('album:')?'album/'+id.slice(6):'track/'+id.replace(/^track:/,'')))).then(r=>r.ok?r.json():null).then(d=>d?.thumbnail_url||null).catch(()=>null));
    coverCache.get(id).then(url=>{if(url&&img.isConnected){img.src=url;img.classList.add('loaded')}});
   }
