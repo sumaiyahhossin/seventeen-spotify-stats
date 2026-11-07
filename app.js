@@ -425,17 +425,17 @@ function periodDates(date){
  const d=utcDate(date),day=d.getUTCDay(),elapsed=(day+6)%7;
  if(rank.endsWith('weekly')){
   const start=shifted(date,-elapsed-1);
-  return {start,prevStart:shifted(start,-7),label:'week to date'};
+  return {start,prevStart:shifted(start,-7),prevEnd:shifted(date,-7),label:'week to date'};
  }
  if(rank.endsWith('monthly')){
   const first=isoDate(new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1)));
   const start=shifted(first,-1);
-  return {start,prevStart:shiftedMonth(start,-1),label:'month to date'};
+  return {start,prevStart:shiftedMonth(start,-1),prevEnd:shiftedMonth(date,-1),label:'month to date'};
  }
  if(rank.endsWith('yearly')){
   const first=isoDate(new Date(Date.UTC(d.getUTCFullYear(),0,1)));
   const start=shifted(first,-1);
-  return {start,prevStart:shiftedYear(start,-1),label:'year to date'};
+  return {start,prevStart:shiftedYear(start,-1),prevEnd:shiftedYear(date,-1),label:'year to date'};
  }
  return null;
 }
@@ -444,8 +444,8 @@ async function periodBaseline(s){
  const range=periodDates(s.date);if(!range)return null;
  const available=new Set(dates);
  const get=async d=>available.has(d)?getDate(tab,d):null;
- const [start,prevStart]=await Promise.all([get(range.start),get(range.prevStart)]);
- return {start,prevStart,range};
+ const [start,prevStart,prevEnd]=await Promise.all([get(range.start),get(range.prevStart),get(range.prevEnd)]);
+ return {start,prevStart,prevEnd,range};
 }
 function snapshotDelta(now,old,id){
  if(!now||!old||now.tracks?.[id]==null)return null;
@@ -458,9 +458,9 @@ function periodGain(s,context,id){
  return context?snapshotDelta(s,context.start,id):null;
 }
 function periodChange(s,context,id){
- if(!context?.start||!context.prevStart)return null;
+ if(!context?.start||!context.prevStart||!context.prevEnd)return null;
  const now=snapshotDelta(s,context.start,id);
- const before=snapshotDelta(context.start,context.prevStart,id);
+ const before=snapshotDelta(context.prevEnd,context.prevStart,id);
  return now==null||before==null?null:now-before;
 }
 function sumPeriod(s,context,ids){const values=ids.map(id=>periodGain(s,context,id));return values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null}
