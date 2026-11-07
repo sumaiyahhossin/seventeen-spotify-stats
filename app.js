@@ -41,6 +41,7 @@ function sheetRows(s,p){
   let name=s.names?.[id]||id;
   if(name==='247.0')name='247';
   if(/love\s*&\s*letter\s*repackage\s*new\s*tracks\s*total/i.test(name))name='Love & Letter Repackage Original Tracks Total:';
+  if(/sector\s*17\s*new\s*tracks\s*total/i.test(name))name=name.replace(/New Tracks/i,'Original Tracks');
   rows.push({id,name:displayTrackName(name),streams:value,gain:safeGain(s,p,id),kind});
  }
  return rows;
