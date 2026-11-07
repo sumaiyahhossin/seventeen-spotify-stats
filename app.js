@@ -12,7 +12,7 @@ function safeGain(s,p,id){if(!p||!s||!s.tracks||!p.tracks||s.tracks[id]==null||p
 function historicalKind(s,id){
  const name=(s?.names?.[id]||'').trim();
  if(!name)return 'track';
- if(/^SEVENTEEN TOTAL STREAMS$/i.test(name))return 'grand';
+ if(/\bTOTAL STREAMS\s*$/i.test(name))return 'grand';
  if(/monthly\s+listeners?|followers?/i.test(name))return 'audience';
  if(/\btotal\s*:?$/i.test(name))return 'album';
  return 'track';
