@@ -64,7 +64,7 @@ function buildRows(s,p){
  rows.sort((a,b)=>daily?b.gain-a.gain:b.streams-a.streams);
  return rows;
 }
-function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]))}
+function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 let renderToken=0;
 async function render(){const token=++renderToken;$('#ranking').innerHTML='<div class="empty">Loading saved statistics… ♡</div>';const s=await selectedSnapshot(),p=await prior(s);if(token!==renderToken)return;
  $('#status').textContent=s?(s.source==='historical spreadsheet'?'Historical spreadsheet snapshot':'Latest confirmed snapshot available'):'Waiting for first confirmed snapshot';$('#last').textContent=s?.captured_at?'Captured '+new Date(s.captured_at).toLocaleString():s?'Imported from spreadsheet':'—';$('#date').textContent=s?.date||'—';const ids=trackIds(s);$('#count').textContent=s?fmt(ids.length):'—';const grandId=s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;$('#total').textContent=s?fmt(grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';const gains=s?ids.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];const grandGain=grandId?safeGain(s,p,grandId):null;$('#gain').textContent=grandGain!=null?'+'+fmt(grandGain):s&&p&&gains.length===ids.length?'+'+fmt(gains.reduce((a,b)=>a+b,0)):'—';
