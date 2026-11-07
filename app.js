@@ -13,10 +13,35 @@ function historicalKind(s,id){
  const name=(s?.names?.[id]||'').trim();
  if(!name)return 'track';
  if(/^SEVENTEEN TOTAL STREAMS$/i.test(name))return 'grand';
+ if(/monthly\s+listeners?|followers?/i.test(name))return 'audience';
  if(/\btotal\s*:?$/i.test(name))return 'album';
  return 'track';
 }
 function isHistorical(s){return s?.source==='historical spreadsheet'}
+function audienceValue(s,kind){
+ if(!s)return null;
+ if(!isHistorical(s)){
+  const v=kind==='listeners'?(s.monthly_listeners??s.listeners):(s.followers);
+  return Number.isFinite(Number(v))&&v!=null?Number(v):null;
+ }
+ const found=Object.keys(s.tracks).find(id=>{
+  const name=s.names?.[id]||'';
+  return kind==='listeners'?/monthly\s+listeners?/i.test(name):/followers?/i.test(name);
+ });
+ return found?s.tracks[found]:null;
+}
+function sheetRows(s,p){
+ if(!s)return[];
+ if(!isHistorical(s))return buildRows(s,p);
+ const rows=[];
+ for(const [id,value] of Object.entries(s.tracks)){
+  const kind=historicalKind(s,id);
+  if(kind==='grand'||kind==='audience')continue;
+  const name=s.names?.[id]||id;
+  rows.push({name,streams:value,gain:safeGain(s,p,id),kind});
+ }
+ return rows;
+}
 function isAlbumTitle(name){
  const n=String(name||'').toLowerCase();
  return /\balbum\b|\brepackage\b|\bmini\b|\bep\b/.test(n)&&!/\bsingle\b|\bost\b/.test(n);
@@ -44,6 +69,7 @@ function trackIds(s){
 function buildRows(s,p){
  if(!s)return[];
  const daily=rank.endsWith('daily'),albums=rank.startsWith('albums');
+ if(rank==='sheet')return sheetRows(s,p);
  let rows=[];
  if(albums&&isHistorical(s)){
    rows=Object.entries(s.tracks).filter(([id])=>historicalKind(s,id)==='album'&&isAlbumTitle(s.names[id])).map(([id,streams])=>({name:(s.names[id]||id).replace(/\s*Total\s*:?$/i,'').trim(),streams,gain:safeGain(s,p,id)}));
@@ -67,8 +93,8 @@ function buildRows(s,p){
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 let renderToken=0;
 async function render(){const token=++renderToken;$('#ranking').innerHTML='<div class="empty">Loading saved statistics… ♡</div>';const s=await selectedSnapshot(),p=await prior(s);if(token!==renderToken)return;
- $('#status').textContent=s?(s.source==='historical spreadsheet'?'Historical spreadsheet snapshot':'Latest confirmed snapshot available'):'Waiting for first confirmed snapshot';$('#last').textContent=s?.captured_at?'Captured '+new Date(s.captured_at).toLocaleString():s?'Imported from spreadsheet':'—';$('#date').textContent=s?.date||'—';const ids=trackIds(s);$('#count').textContent=s?fmt(ids.length):'—';const grandId=s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;$('#total').textContent=s?fmt(grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';const gains=s?ids.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];const grandGain=grandId?safeGain(s,p,grandId):null;$('#gain').textContent=grandGain!=null?'+'+fmt(grandGain):s&&p&&gains.length===ids.length?'+'+fmt(gains.reduce((a,b)=>a+b,0)):'—';
- const q=$('#search').value.toLowerCase();const rows=buildRows(s,p).filter(x=>x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,250).map((r,i)=>`<div class="rank-row"><div class="track"><span class="place">${String(i+1).padStart(2,'0')}</span><span>${escapeHtml(r.name)}</span></div><div class="num">${fmt(rank.endsWith('daily')?r.gain:r.streams)}</div><div class="num change">${r.gain==null?'—':'+'+fmt(r.gain)}</div></div>`).join(''):'<div class="empty">No verified data for this ranking and date. ♡</div>'}
+ $('#status').textContent=s?(s.source==='historical spreadsheet'?'Historical spreadsheet snapshot':'Latest confirmed snapshot available'):'Waiting for first confirmed snapshot';$('#last').textContent=s?.captured_at?'Captured '+new Date(s.captured_at).toLocaleString():s?'Imported from spreadsheet':'—';$('#date').textContent=s?.date||'—';const ids=trackIds(s);$('#count').textContent=s?fmt(ids.length):'—';$('#listeners').textContent=fmt(audienceValue(s,'listeners'));$('#followers').textContent=fmt(audienceValue(s,'followers'));const grandId=s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;$('#total').textContent=s?fmt(grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';const gains=s?ids.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];const grandGain=grandId?safeGain(s,p,grandId):null;$('#gain').textContent=grandGain!=null?'+'+fmt(grandGain):s&&p&&gains.length===ids.length?'+'+fmt(gains.reduce((a,b)=>a+b,0)):'—';
+ const q=$('#search').value.toLowerCase();const rows=buildRows(s,p).filter(x=>x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,rank==='sheet'?500:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${rank==='sheet'?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span><span>${escapeHtml(r.name)}</span></div><div class="num">${fmt(rank.endsWith('daily')?r.gain:r.streams)}</div><div class="num change">${r.gain==null?'—':'+'+fmt(r.gain)}</div></div>`).join(''):'<div class="empty">No verified data for this ranking and date. ♡</div>'}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 $('#ranktabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;rank=b.dataset.rank;$('#ranktabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 $('#search').addEventListener('input',render);$('#archiveDate').addEventListener('change',e=>{selection=e.target.value;render()});
