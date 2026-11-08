@@ -2020,6 +2020,7 @@ $('#archiveDate').addEventListener('change',e=>{
  buildArchiveCanonicalIds(verifiedArchiveReference||current.group);
  const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();await render();
  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,savedScroll)));
- // To refresh streams every five minutes and keep the selected view.
- setInterval(()=>{saveView();window.location.reload()},300000);
+ // Refresh only while the page is visible, and never interrupt a historical view.
+ // Daily snapshots update far less often than every five minutes.
+ setInterval(()=>{if(document.visibilityState==='visible'&&selection==='latest'){saveView();window.location.reload()}},1800000);
 })();
