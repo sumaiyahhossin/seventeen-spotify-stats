@@ -610,29 +610,29 @@ function historicalArtworkId(row){
   if(releaseAliases[key])return {release:releaseAliases[key]};
   // Legacy spreadsheet album totals use long ordinal labels. Match the
   // actual album title, not the "1st Mini Album" prefix.
-  const original=String(row.name||'').replace(/\\s*total\\s*:?$/i,'').trim();
+  const original=String(row.name||'').replace(/\s*total\s*:?$/i,'').trim();
   const releaseNames=[
    ['17 IS RIGHT HERE',/17 is right here/i],
    ['ALWAYS YOURS',/always yours/i],
-   ['SECTOR 17',/sector\\s*17/i],
-   ['LOVE & LETTER (Repackage)',/love\\s*(?:&|and)\\s*letter.*repackage|love\\s*letter\\s*repackage/i],
-   ['LOVE & LETTER',/love\\s*(?:&|and)\\s*letter/i],
+   ['SECTOR 17',/sector\s*17/i],
+   ['LOVE & LETTER (Repackage)',/love\s*(?:&|and)\s*letter.*repackage|love\s*letter\s*repackage/i],
+   ['LOVE & LETTER',/love\s*(?:&|and)\s*letter/i],
    ['17 CARAT',/17 carat/i],['BOYS BE',/boys be/i],
-   ['Going Seventeen',/going seventeen/i],['Al1',/\\bal1\\b/i],
-   ['TEEN, AGE',/teen,?\\s*age/i],["DIRECTOR'S CUT",/director.s cut/i],
+   ['Going Seventeen',/going seventeen/i],['Al1',/\bal1\b/i],
+   ['TEEN, AGE',/teen,?\s*age/i],["DIRECTOR'S CUT",/director.s cut/i],
    ['WE MAKE YOU',/we make you/i],['YOU MAKE MY DAY',/you make my day/i],
    ['YOU MADE MY DAWN',/you made my dawn/i],['An Ode',/an ode/i],
    ['Heng:garæ',/heng.?gar/i],['Semicolon',/semicolon/i],
    ['Your Choice',/your choice/i],['Attacca',/attacca/i],
-   ['Face the Sun',/face the sun/i],['FML',/\\bfml\\b/i],
+   ['Face the Sun',/face the sun/i],['FML',/\bfml\b/i],
    ['SEVENTEENTH HEAVEN',/seventeenth heaven/i],
    ['SPILL THE FEELS',/spill the feels/i],['HAPPY BURSTDAY',/happy burstday/i],
-   ['24H',/\\b24h\\b/i],['DREAM',/\\bdream\\b/i],
-   ['Shohikigen',/shohikigen/i],['Fallin Flower',/fallin.?\\s*flower/i],
+   ['24H',/\b24h\b/i],['DREAM',/\bdream\b/i],
+   ['Shohikigen',/shohikigen/i],['Fallin Flower',/fallin.?\s*flower/i],
    ['Not Alone',/hitorijanai|not alone/i],['Happy Ending',/happy ending/i],
-   ['Power of Love',/power of love/i],['Q&A',/q\\s*&\\s*a/i],
+   ['Power of Love',/power of love/i],['Q&A',/q\s*&\s*a/i],
    ['Chocolate',/chocolate/i],['9-TEEN',/9.teen/i],['A-TEEN',/a.teen/i],
-   ['HIT',/\\bhit\\b/i],['Darl+ing',/darl\\+?ing/i],
+   ['HIT',/\bhit\b/i],['Darl+ing',/darl\+?ing/i],
    ['God of Light Music',/golm|god of light music/i],
    ['Sweetest Thing',/sweetest thing/i]
   ];
