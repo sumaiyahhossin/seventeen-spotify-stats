@@ -1195,7 +1195,7 @@ function renderArtistProfiles(){
  if(!area)return;
  area.hidden=tab!=='solo';
  if(tab!=='solo')return;
- area.innerHTML='<div class="artist-profiles-heading">MEMBERS & UNITS <span>✦</span></div>'+(selectedSoloArtist?'<div class="artist-selection-heading"><button type="button" id="allSoloArtists">← All units & solos</button><strong>'+escapeHtml(selectedSoloArtist)+' · STREAMING STATS</strong></div>':'')+'<div class="artist-profile-grid">'+soloArtists.map(([name,id])=>{
+ area.innerHTML='<div class="artist-profiles-heading">SOLOS & UNITS <span>✦</span></div>'+(selectedSoloArtist?'<div class="artist-selection-heading"><button type="button" id="allSoloArtists">← All units & solos</button><strong>'+escapeHtml(selectedSoloArtist)+' · STREAMING STATS</strong></div>':'')+'<div class="artist-profile-grid">'+soloArtists.map(([name,id])=>{
   const photo=name==='V8'||name==='JxJ'?'<img class="artist-profile-photo" data-unit-photo="'+name+'" alt="'+name+' unit concept photo" loading="lazy">':id?'<img class="artist-profile-photo" data-artist-photo="'+id+'" alt="" loading="lazy">':'<span class="artist-profile-placeholder">💎</span>';
   const label='<span class="artist-profile-name">'+escapeHtml(name)+'</span>';
   return '<button type="button" class="artist-profile'+(selectedSoloArtist===name?' selected':'')+'" data-solo-artist="'+escapeHtml(name)+'" aria-pressed="'+(selectedSoloArtist===name)+'" title="View '+escapeHtml(name)+' statistics">'+photo+label+'</button>';
