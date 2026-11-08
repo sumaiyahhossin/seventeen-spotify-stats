@@ -12,7 +12,7 @@ current_path=DATA/f'{kind}.json'
 previous=json.loads(current_path.read_text()) if current_path.exists() else None
 if entry.get('checked_date')!=today:
     entry['pending']=today
-force_collect = os.getenv('FORCE_COLLECT') == 'true' or (kind == 'group' and today == '2026-11-07')
+force_collect = os.getenv('FORCE_COLLECT') == 'true' or (kind == 'group' and not (previous or {}).get('followers'))
 if not entry.get('pending') and not force_collect:
     print(kind,'already updated today');sys.exit(0)
 if force_collect:
