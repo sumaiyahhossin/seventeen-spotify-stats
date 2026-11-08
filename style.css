@@ -538,3 +538,16 @@ footer{margin-top:64px!important;padding-block:34px!important}
 /* Slightly larger portraits without resizing profile cards. */
 .artist-profile-photo,.artist-profile-placeholder{width:72px;height:72px}
 @media(max-width:480px){.artist-profile-photo,.artist-profile-placeholder{width:54px;height:54px}}
+
+
+/* To keep the same date navigation layout for daily, weekly, monthly and yearly. */
+#dailyPickerWrap{width:min(100%,520px);min-width:0;gap:8px}
+#dailyPickerWrap .date-navigation{display:flex;align-items:center;gap:8px;width:100%;min-width:0}
+#dailyPickerWrap .date-navigation input,
+#dailyPickerWrap .date-navigation select{flex:1;min-width:0;width:100%;min-height:47px;height:47px;box-sizing:border-box;border:1px solid #ffffff3d;border-radius:13px;background:#0e1528;color:#fff8fc;padding:10px 13px;font:inherit;font-size:13px;font-weight:700;letter-spacing:normal;color-scheme:dark}
+#dailyPickerWrap .date-navigation select{appearance:auto;cursor:pointer}
+#dailyPickerWrap .date-navigation input::-webkit-calendar-picker-indicator{cursor:pointer;filter:invert(1)}
+#dailyPickerWrap [hidden]{display:none!important}
+#dailyPickerWrap .date-arrow{flex:0 0 44px}
+#dailyPickerWrap .latest-date{justify-self:start}
+@media(max-width:480px){#dailyPickerWrap{width:100%}#dailyPickerWrap .date-navigation{gap:6px}#dailyPickerWrap .date-arrow{flex-basis:38px;min-width:38px}}
