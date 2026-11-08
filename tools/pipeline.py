@@ -36,6 +36,8 @@ if kind=='group' and followers is None:
     reasons=[line for line in result.stdout.splitlines() if line.startswith('STAT_FOLLOWERS_UNAVAILABLE|')]
     reason=reasons[-1].split('|',1)[1] if reasons else 'no exact follower metric emitted'
     print(f'group: exact Spotify followers unavailable ({reason}); streams and monthly listeners can still be saved')
+    if not (os.getenv('SPOTIFY_CLIENT_ID') and os.getenv('SPOTIFY_CLIENT_SECRET')):
+        print('group: Spotify API credentials not configured; Selenium About-dialog extraction is the only follower source')
 # Prefer Spotify's exact artist follower count when API credentials are configured.
 # The public artist page often displays only a rounded number.
 if kind=='group' and followers is None and os.getenv('SPOTIFY_CLIENT_ID') and os.getenv('SPOTIFY_CLIENT_SECRET'):
@@ -82,6 +84,18 @@ if previous:
     old=previous['tracks']
     comparable=[k for k in expected if k in old]
     if comparable and not any(tracks[k]>old[k] for k in comparable):
+        # Followers may update before Spotify publishes fresh track streams.
+        # Save a newly obtained exact follower count without overwriting the
+        # existing track counts or falsely completing the daily collection.
+        if kind=='group' and followers and followers != previous.get('followers'):
+            previous['followers']=followers
+            current_path.write_text(json.dumps(previous,ensure_ascii=False,indent=2))
+            archive=DATA/'history'/f'{kind}-{previous["date"]}.json'
+            if archive.exists():
+                archived=json.loads(archive.read_text())
+                archived['followers']=followers
+                archive.write_text(json.dumps(archived,ensure_ascii=False,indent=2))
+            print(kind,'saved exact follower count',followers,'without replacing unchanged streams')
         print(kind,'Spotify counts unchanged; retry next hour')
         entry['last_attempt']=now.isoformat();state_path.write_text(json.dumps(state,indent=2));sys.exit(0)
     regressions=sum(tracks[k]<old.get(k,0) for k in expected)
@@ -93,6 +107,7 @@ if kind=='group':
     artist='7nqOGRxlXj7N2JYbgNEjYH'
     if listeners.get(artist): snapshot['monthly_listeners']=listeners[artist]
     if followers: snapshot['followers']=followers
+    elif previous and previous.get('followers'): snapshot['followers']=previous['followers']
 if previous:
     p=DATA/'history'/f'{kind}-{previous["date"]}.json'
     if not p.exists():p.write_text(json.dumps(previous,ensure_ascii=False,indent=2))
