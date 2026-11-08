@@ -348,6 +348,18 @@ function discographyRows(s,p,pp,baseline){
     artworkRelease:item.key,streams:newStreams,gain:newGain,
     change:periodic?sumPeriodChange(s,baseline,newIds):newGain!=null&&newPrevious!=null?newGain-newPrevious:null,
     kind:'album',releaseOrder:rows.length});
+   // Show the original album's songs *inside* the repackage section,
+   // after the new-song subtotal and before the complete 15/13-track total.
+   const baseKey=item.key==='g7'?'g5':'g35';
+   const baseIds=[...new Set(releasesByKey.get(baseKey)?.tracks||[])];
+   for(const id of baseIds){
+    if(s.tracks?.[id]==null)continue;
+    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
+    rows.push({id,name:displayTrackName(s.names?.[id]||idName[id]||id),
+     streams:s.tracks[id],gain:g,
+     change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),
+     kind:'track',releaseOrder:rows.length});
+   }
    rows.push({...albumTotalRow,releaseOrder:rows.length});
   }else if(item.key!=='g6'&&item.key!=='g37')rows.push(albumTotalRow);
  }
