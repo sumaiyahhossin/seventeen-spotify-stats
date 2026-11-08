@@ -825,3 +825,49 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid #f3b
   height:46px!important;padding:8px 12px!important;
  }
 }
+
+/* v84 — compact period selector; matching elegant date-picker field */
+@media(min-width:621px){
+ .archive-top-controls{
+  grid-template-columns:minmax(220px,320px) minmax(280px,480px)!important;
+  justify-content:center!important;
+  align-items:start!important;
+  column-gap:clamp(18px,3vw,42px)!important;
+ }
+ .archive-top-controls .rank-select,
+ .archive-top-controls #dailyPickerWrap{width:100%!important;min-width:0!important}
+}
+.archive-top-controls .rank-select select,
+.archive-top-controls #dailyPickerWrap .date-navigation{
+ height:64px!important;
+ border-radius:16px!important;
+ background:linear-gradient(135deg,rgba(48,47,85,.9),rgba(37,42,79,.94))!important;
+ border:1px solid rgba(161,143,215,.7)!important;
+ box-shadow:inset 0 1px 0 rgba(255,255,255,.05)!important;
+}
+.archive-top-controls #dailyPickerWrap .date-navigation{
+ padding:7px!important;gap:7px!important;
+ display:flex!important;align-items:center!important;
+}
+.archive-top-controls #archiveDate{
+ height:48px!important;
+ border-radius:12px!important;
+ background:#f2ecff!important;
+ background-color:#f2ecff!important;
+ color:#25163e!important;
+ -webkit-text-fill-color:#25163e!important;
+ border:1px solid rgba(174,148,225,.75)!important;
+ box-shadow:none!important;
+ font-size:16px!important;
+}
+.archive-top-controls #dailyPickerWrap .date-arrow{
+ height:48px!important;
+ width:38px!important;min-width:38px!important;
+ flex:0 0 38px!important;
+ border-radius:11px!important;
+ background:rgba(51,44,86,.8)!important;
+}
+@media(max-width:620px){
+ .archive-top-controls{grid-template-columns:1fr!important;justify-content:stretch!important}
+ .archive-top-controls .rank-select,.archive-top-controls #dailyPickerWrap{width:100%!important}
+}
