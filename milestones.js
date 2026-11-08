@@ -38,7 +38,7 @@ for(const [song,date,url,source] of [
  ['VERY NICE','2022-11-09','https://www.reddit.com/r/seventeen/comments/yqtt7l/221110_seventeens_very_nice_has_now_surpassed_100/','r/seventeen dated announcement'],
  ['Rock with you','2023-04-03','https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html','Korean Sales milestone archive'],
  ['Left & Right','2023-06-11','https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html','Historical milestone listing'],
- ['CLAP','2023-06-10','https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html','Historical milestone listing'],
+ ['CLAP','2023-06-12','https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html','Historical milestone listing'],
  ['HOT','2023-02-02','https://x.com/WORLDMUSICAWARD/status/1621335112515190786','World Music Awards dated announcement']
 ]){
  (externalEvidence['name:'+norm(song)]??={})[100000000]={date,url,source};
