@@ -12,25 +12,29 @@ concurrency:
 jobs:
   update:
     runs-on: ubuntu-latest
-    timeout-minutes: 350
+    timeout-minutes: 120
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: true
-      - uses: actions/setup-java@v4
-        with:
-          distribution: temurin
-          java-version: '17'
-      - uses: actions/setup-python@v5
-        with:
-          python-version: '3.12'
-      - uses: browser-actions/setup-chrome@v1
-      - name: Install dependencies
-        run: |
-          mvn -q dependency:build-classpath -Dmdep.outputFile=classpath.txt
       - name: Check daily schedule and pending state
         id: gate
         run: python tools/gate.py >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@v4
+        if: steps.gate.outputs.run == 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - uses: actions/setup-python@v5
+        if: steps.gate.outputs.run == 'true'
+        with:
+          python-version: '3.12'
+      - uses: browser-actions/setup-chrome@v1
+        if: steps.gate.outputs.run == 'true'
+      - name: Install dependencies
+        if: steps.gate.outputs.run == 'true'
+        run: mvn -q dependency:build-classpath -Dmdep.outputFile=classpath.txt
       - name: Remove follower values before November 6, 2026
         run: python tools/clean_followers_history.py
       - name: Collect Group streams
