@@ -1798,6 +1798,7 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
  }
  // Rank movement compares the same Tracks/Albums chart with the immediately
  // preceding calendar day, week, month, or year (not the previous saved date).
+ const positionKeyForDisplay=r=>r.id&&String(r.id).startsWith('legacy:')?'name:'+normTrackName(r.name):r.id||'name:'+normTrackName(r.name);
  const rankMovements=new Map();
  if(!discography&&s){
   const priorDate=daily?shifted(s.date,-1):periodic?baseline?.prevEnd?.date:null;
@@ -1807,16 +1808,29 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
    const previousPriorPrior=await prior(previousPrior);
    const previousBaseline=periodic?await periodBaseline(previousSnapshot):null;
    const priorRows=soloArtistRows(buildRows(previousSnapshot,previousPrior,previousPriorPrior,previousBaseline),previousSnapshot,previousPrior,previousBaseline);
+   // Rank changes belong to streaming positions, not the visible sort order.
    const positionKey=r=>r.id&&String(r.id).startsWith('legacy:')?'name:'+normTrackName(r.name):r.id||'name:'+normTrackName(r.name);
+   const streamValue=r=>daily||periodic?r.gain:r.streams;
+   const byStreams=list=>[...list].sort((a,b)=>{
+    const x=streamValue(a),y=streamValue(b);
+    if(x==null)return y==null?0:1;
+    if(y==null)return -1;
+    return (sortOrder==='least'?x-y:y-x)||String(a.name||'').localeCompare(String(b.name||''),'en',{sensitivity:'base',numeric:true});
+   });
    const positions=new Map();
-   priorRows.forEach((r,i)=>{const key=positionKey(r);if(!positions.has(key))positions.set(key,i+1)});
-   rows.forEach((r,i)=>{const key=positionKey(r);let old=positions.get(key);
-    if(old==null)old=positions.get('name:'+normTrackName(r.name));
-    if(old!=null)rankMovements.set(i,old-(i+1));
+   byStreams(priorRows).forEach((r,i)=>{
+    positions.set(positionKey(r),i+1);
+    const nameKey='name:'+normTrackName(r.name);
+    if(!positions.has(nameKey))positions.set(nameKey,i+1);
+   });
+   byStreams(rows).forEach((r,i)=>{
+    const key=positionKey(r);
+    const old=positions.get(key)??positions.get('name:'+normTrackName(r.name));
+    if(old!=null)rankMovements.set(key,old-(i+1));
    });
   }
  }
- $('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="rank-position"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${!discography?`<span class="rank-trend ${rankMovements.has(i)?rankMovements.get(i)>0?'rank-up':rankMovements.get(i)<0?'rank-down':'rank-same':'rank-unknown'}" title="${rankMovements.has(i)?'Rank change versus previous '+(daily?'day':rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'period'):'Previous ranking unavailable'}">${rankMovements.has(i)?rankMovements.get(i)>0?'↑ '+rankMovements.get(i):rankMovements.get(i)<0?'↓ '+Math.abs(rankMovements.get(i)):'=':'—'}</span>`:''}</span>${`<span class="cover-slot">${true?`<img class="cover" data-cover-track="${artworkTrack(r)||'missing'}" data-cover-name="${escapeHtml(r.name)}" data-cover-kind="${r.kind==='album'?'album':'track'}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden>💎</span>`:`<span class="cover-placeholder">💎</span>`}</span>`}<span class="track-copy">${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}${(rankType==="albums"||rankType==="tracks"||discography||r.kind==="album")&&originalReleaseDate(r)?`<span class="release-date">Released ${formatOriginalRelease(originalReleaseDate(r))}</span>`:""}</span></div><div class="num ${(daily||periodic?r.gain:r.streams)==null?'missing-value':''}">${r.estimatedGain?"≈":periodic&&r.gain!=null?"+":""}${fmt(daily||periodic?r.gain:r.streams)}</div><div class="num change ${(daily||periodic?r.change:r.gain)==null?'missing-value':(daily||periodic?r.change:r.gain)<0?'negative':''}">${(daily||periodic?r.change:r.gain)==null?'—':((daily||periodic?r.change:r.gain)>=0?'+':'−')+fmt(Math.abs(daily||periodic?r.change:r.gain))+(r.changePartial?'*':'')}</div></div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
+ $('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="rank-position"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${!discography?`<span class="rank-trend ${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'rank-up':rankMovements.get(positionKeyForDisplay(r))<0?'rank-down':'rank-same':'rank-unknown'}" title="${rankMovements.has(positionKeyForDisplay(r))?'Streaming rank change versus previous '+(daily?'day':rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'period'):'Previous streaming rank unavailable'}">${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'↑ '+rankMovements.get(positionKeyForDisplay(r)):rankMovements.get(positionKeyForDisplay(r))<0?'↓ '+Math.abs(rankMovements.get(positionKeyForDisplay(r))):'=':'—'}</span>`:''}</span>${`<span class="cover-slot">${true?`<img class="cover" data-cover-track="${artworkTrack(r)||'missing'}" data-cover-name="${escapeHtml(r.name)}" data-cover-kind="${r.kind==='album'?'album':'track'}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden>💎</span>`:`<span class="cover-placeholder">💎</span>`}</span>`}<span class="track-copy">${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}${(rankType==="albums"||rankType==="tracks"||discography||r.kind==="album")&&originalReleaseDate(r)?`<span class="release-date">Released ${formatOriginalRelease(originalReleaseDate(r))}</span>`:""}</span></div><div class="num ${(daily||periodic?r.gain:r.streams)==null?'missing-value':''}">${r.estimatedGain?"≈":periodic&&r.gain!=null?"+":""}${fmt(daily||periodic?r.gain:r.streams)}</div><div class="num change ${(daily||periodic?r.change:r.gain)==null?'missing-value':(daily||periodic?r.change:r.gain)<0?'negative':''}">${(daily||periodic?r.change:r.gain)==null?'—':((daily||periodic?r.change:r.gain)>=0?'+':'−')+fmt(Math.abs(daily||periodic?r.change:r.gain))+(r.changePartial?'*':'')}</div></div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 function syncRank(){rank=rankType+'-'+$('#rankPeriod').value;syncPeriodPicker();saveView();render()}
 $('#rankCategory').addEventListener('click',e=>{const button=e.target.closest('button[data-type]');if(!button)return;rankType=button.dataset.type;$('#rankCategory').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));syncRank()});
