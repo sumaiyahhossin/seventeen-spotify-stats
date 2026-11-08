@@ -47,6 +47,8 @@ jobs:
           export COLLECTOR_CLASSPATH="$(cat classpath.txt)"
           python tools/catalog.py
           python tools/pipeline.py group
+      - name: Validate song snapshot integrity
+        run: python tools/validate_song_data.py
       - name: Commit updated snapshots
         run: |
           git config user.name 'github-actions[bot]'
