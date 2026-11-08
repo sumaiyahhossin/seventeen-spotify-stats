@@ -457,6 +457,15 @@ public class Stream_Stats {
 
 
         // Final extraction step: Monthly Listeners
+        // Total group streams use original releases and standalone singles.
+        // Best-of compilations repeat recordings under alternative Spotify IDs;
+        // including all of those IDs inflates the artist-wide total.
+        printTotalStreams(new String[][]{
+            g1,g2,g3,g4,g5,g6,g7,g8,g9,g10,g11,g12,g13,g14,g15,g16,
+            g17,g18,g19,g20,g21,g22,g23,g24,g25,g26,g27,g28,g29,g30,g31,g32,
+            g33,g34,g35,g36,g37,g38,g39,g40,g41,g42,g43,g44,g45,g46,g47,g48,
+            g55,g56,g57,g58,g59,g60,g61,g62,g63,g64
+        });
         fetchMonthlyListeners();
 
 
@@ -624,6 +633,34 @@ public class Stream_Stats {
         return Long.parseLong(digitsOnly);
     }
 
+
+    // Count each Spotify track only once across original releases.
+    // Compilation-specific IDs remain available in their album totals,
+    // but are not automatically treated as new songs in the artist total.
+    private static void printTotalStreams(String[][] releases) {
+        java.util.Set<String> ids = new java.util.HashSet<>();
+        for (String[] release : releases) {
+            for (String url : release) {
+                ids.add(url.split(java.util.regex.Pattern.quote("?"))[0]);
+            }
+        }
+        long total = 0;
+        int missing = 0;
+        for (String id : ids) {
+            String value = streamCache.get(id);
+            if (value == null) {
+                missing++;
+                continue;
+            }
+            total += parseNumber(value);
+        }
+        if (missing > 0) {
+            System.out.println("Total Streams: unavailable (" + missing + " tracks missing)");
+            return;
+        }
+        System.out.println("Total Streams: " + nf.format(total));
+        System.out.println("STAT_TOTAL_STREAMS|" + total);
+    }
 
     private static void restartDriver() {
         try {
