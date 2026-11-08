@@ -30,7 +30,15 @@ function saveView(){
 window.addEventListener('pagehide',saveView);
 let scrollSavePending=false;
 window.addEventListener('scroll',()=>{if(!scrollSavePending){scrollSavePending=true;requestAnimationFrame(()=>{scrollSavePending=false;saveView()})}},{passive:true});
-const load=async p=>{try{const r=await fetch(p+'?v='+Date.now());return r.ok?await r.json():null}catch{return null}};
+// Immutable archive snapshots can use the browser cache; live files are revalidated.
+// Avoid unique timestamp URLs, which forced full downloads on every visit.
+const load=async p=>{
+ try{
+  const archive=p.startsWith('data/history/');
+  const r=await fetch(p,{cache:archive?'force-cache':'no-cache'});
+  return r.ok?await r.json():null;
+ }catch(e){console.warn('Data load failed:',p,e);return null}
+};
 const idName={};
 function buildNames(){
  // Artwork metadata is not a reliable track-ID title source: some artwork
@@ -155,7 +163,13 @@ function restoreGroupNames(s,p){
  }
 }
 function typeDates(type){return dates.filter(d=>history[type+'-'+d]!==null)}
-async function getDate(type,date){if(!date)return null;const key=type+'-'+date;if(!(key in history))history[key]=await load('data/history/'+key+'.json');return history[key]}
+async function getDate(type,date){
+ if(!date)return null;
+ const key=type+'-'+date;
+ // Store the in-flight promise so simultaneous charts request a date only once.
+ if(!(key in history))history[key]=load('data/history/'+key+'.json');
+ return await history[key];
+}
 async function latest(type){
  if(current[type]){
   const archived=await getDate(type,current[type].date);
@@ -1957,6 +1971,5 @@ $('#archiveDate').addEventListener('change',e=>{
  });
  buildCoverLookup();buildFirstReleaseCovers();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();await render();
  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,savedScroll)));
- // To refresh streams every five minutes and keep the selected view.
- setInterval(()=>{saveView();window.location.reload()},300000);
+ // Keep the current view stable. New snapshots appear on the next page visit or manual refresh.
 })();
