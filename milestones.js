@@ -22,6 +22,8 @@ for(const [song,date,url,source] of [
 ]){
  (externalEvidence['name:'+norm(song)]??={})[100000000]={date,url,source};
 }
+// Earliest documented date when reporting dates differ.
+(externalEvidence['name:'+norm('Darl+ing')]??={})[100000000]={date:'2023-07-19',url:'https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html',source:'Korean Sales milestone archive'};
 // Additional cross-checked milestones from independent reports.
 for(const [song,threshold,date,url,source] of [
  ['Pretty U',100000000,'2023-12-22','https://www.allkpop.com/article/2023/12/seventeens-pretty-u-surpasses-100-million-streams-on-spotify','Allkpop, December 22, 2023'],
