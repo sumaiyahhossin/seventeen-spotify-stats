@@ -43,6 +43,8 @@ for(const [song,date,url,source] of [
 ]){
  (externalEvidence['name:'+norm(song)]??={})[100000000]={date,url,source};
 }
+// Korean Sales milestone listing, entry #474.
+(externalEvidence['name:'+norm('Ready to love')]??={})[100000000]={date:'2024-08-04',url:'https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html',source:'Korean Sales #474'};
 // Additional published Spotify track milestones (not music-video views).
 for(const [song,threshold,date] of [
  ['HIT',100000000,'2025-09-25'],
