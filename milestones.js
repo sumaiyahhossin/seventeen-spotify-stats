@@ -70,12 +70,33 @@ for(const [song,threshold,date] of [
  const key='name:'+norm(song);
  (externalEvidence[key]??={})[threshold]={date,source:'ChartMasters Spotify streams milestone',url:'https://chartmasters.org/artist/seventeen/'};
 }
+// Use the original release artwork from the same artwork-map as the Tracks view.
 const milestoneCoverCache=new Map();
-async function loadMilestoneCovers(){
- for(const img of document.querySelectorAll('.song-cover[data-spotify-id]')){
-  const id=img.dataset.spotifyId;if(!id)continue;
-  if(!milestoneCoverCache.has(id))milestoneCoverCache.set(id,fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/track/'+id)).then(r=>r.ok?r.json():null).then(d=>d?.thumbnail_url||'').catch(()=>'') );
-  milestoneCoverCache.get(id).then(url=>{if(url&&img.isConnected)img.src=url});
+let milestoneArtwork={tracks:{}};
+const coverKey=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+const releaseAliases={'fml album':'FML','al1 album':'Al1','you make my day album':'YOU MAKE MY DAY','you made my dawn album':'YOU MADE MY DAWN','an ode album':'An Ode','seventeenth heaven album':'SEVENTEENTH HEAVEN','17 is right here best album':'17 IS RIGHT HERE','spill the feels album':'SPILL THE FEELS','happy burstday album':'HAPPY BURSTDAY','love & letter album':'LOVE & LETTER','attacca album':'Attacca','face the sun album':'Face the Sun','your choice album':'Your Choice','heng garae album':'Heng:garæ','you make my dawn':'YOU MADE MY DAWN'};
+async function originalArtwork(name){
+ const entry=milestoneArtwork.tracks[coverKey(name)];
+ if(!entry?.release)return '';
+ const release=releaseAliases[coverKey(entry.release)]||entry.release.replace(/\\s+(?:album|single|mini album|ep)$/i,'').trim();
+ const cacheKey='release:'+release;
+ if(!milestoneCoverCache.has(cacheKey))milestoneCoverCache.set(cacheKey,(async()=>{
+  try{
+   const params=new URLSearchParams({term:'SEVENTEEN '+release,entity:'album',limit:'100',country:'US'});
+   const response=await fetch('https://itunes.apple.com/search?'+params);
+   if(!response.ok)return '';
+   const data=await response.json();
+   const clean=x=>coverKey(x).replace(/\\b(album|single|ep|mini)\\b/g,'').trim();
+   const matches=(data.results||[]).filter(x=>/seventeen/i.test(x.artistName||'')&&clean(x.collectionName)===clean(release));
+   const selected=matches.find(x=>String(x.artistName).toLowerCase()==='seventeen')||matches[0];
+   return selected?.artworkUrl100?.replace(/\\d+x\\d+bb/,'600x600bb')||'';
+  }catch{return ''}
+ })());
+ return milestoneCoverCache.get(cacheKey);
+}
+function loadMilestoneCovers(){
+ for(const img of document.querySelectorAll('.song-cover[data-song-name]')){
+  originalArtwork(img.dataset.songName).then(url=>{if(url&&img.isConnected)img.src=url});
  }
 }
 let records=[], releases=new Map(), trackNames=new Map(), first=new Map(), latestValues=new Map(), observations=new Map(), ready=false;
@@ -136,7 +157,7 @@ function build(){
  });
  $('rows').innerHTML=rows.length?rows.map(r=>{
   const id=/^[a-zA-Z0-9]{22}$/.test(r.id||'')?r.id:'';
-  const image='<img class="song-cover" data-spotify-id="'+esc(id)+'" alt="" loading="lazy">';
+  const image='<img class="song-cover" data-song-name="'+esc(r.name)+'" alt="" loading="lazy">';
   return '<tr><td><div class="song-cell">'+image+'<span class="song-title">'+esc(r.name)+'</span></div></td>'+
    '<td>'+(r.release?format(r.release):'Unknown')+'</td>'+
    '<td>'+(r.date?format(r.date):r.range?format(r.range.from)+' – '+format(r.range.date):'Unknown')+'</td>'+
@@ -161,10 +182,12 @@ async function start(){
  // Older history is an optional enhancement, never a loading prerequisite.
  let latest;
  try{
-  const [catalog,group]=await Promise.all([
+  const [catalog,group,artwork]=await Promise.all([
    jsonWithTimeout('data/catalog.json',12000).catch(()=>({group:[]})),
-   jsonWithTimeout('data/group.json',15000)
+   jsonWithTimeout('data/group.json',15000),
+   jsonWithTimeout('data/artwork-map.json',12000).catch(()=>({tracks:{}}))
   ]);
+  milestoneArtwork=artwork;
   latest=group;
   buildReleases(catalog);
   const latestRows=trackRows(latest);
