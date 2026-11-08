@@ -15,6 +15,13 @@ const externalEvidence={
  'name:'+norm('To you'):{100000000:{date:'2025-11-22',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
  'name:'+norm('THUNDER'):{100000000:{date:'2026-04-18',source:'Pledis confirmation reported Apr 20 (Saturday crossing)',url:'https://www.koreaherald.com/article/10720987'}}
 };
+// Cross-checked 100M Spotify milestones, distinct from YouTube views.
+for(const [song,date,url,source] of [
+ ['Don\'t Wanna Cry','2021-03-13','https://koreansalestwt.blogspot.com/2022/01/k-pop-artist-song-milestones-on-spotify.html','Korean Sales Spotify milestone archive'],
+ ['Super','2023-08-05','https://www.ptkorea.com/123870/','chartdata Spotify milestone announcement']
+]){
+ (externalEvidence['name:'+norm(song)]??={})[100000000]={date,url,source};
+}
 // Additional cross-checked milestones from independent reports.
 for(const [song,threshold,date,url,source] of [
  ['Pretty U',100000000,'2023-12-22','https://www.allkpop.com/article/2023/12/seventeens-pretty-u-surpasses-100-million-streams-on-spotify','Allkpop, December 22, 2023'],
