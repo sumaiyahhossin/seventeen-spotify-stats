@@ -1759,6 +1759,12 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
    else gainNote.textContent=partialGain!=null?'Partial gain; previous-day comparison unavailable':'Daily gain unavailable';
   }
  }
+ // This dashboard card is the track inventory, not a second stream-growth comparison.
+ // Keep the existing growth comparison in the growth card's supporting text.
+ comparisonHeading.textContent=tab==='group'?'TOTAL TRACKS':selectedSoloArtist?'ARTIST TRACKS':'UNIT & SOLO TRACKS';
+ const displayedTrackCount=tab==='group'?groupTrackCount:memberIds.length;
+ comparisonValue.textContent=s?fmt(displayedTrackCount):'—';
+ comparisonDetail.textContent=s?(tab==='group'?'Unique group tracks in the selected archive':'Tracks included in the selected profile'):'No saved snapshot available';
  $('#order').hidden=rank.startsWith('discography');const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),discography=rank.startsWith('discography'),periodLabel=rank.endsWith('weekly')?'WEEKLY':rank.endsWith('monthly')?'MONTHLY':'YEARLY';const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS ADDED':periodic?periodLabel+' STREAMS ADDED':'TOTAL STREAMS';headers[2].textContent=daily?'GAIN VS DAY BEFORE':periodic?rank.endsWith('weekly')?'GAIN VS LAST WEEK':rank.endsWith('monthly')?'GAIN VS LAST MONTH':'GAIN VS LAST YEAR':'GAIN VS YESTERDAY';document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=soloArtistRows(buildRows(s,p,pp,baseline),s,p,baseline).filter(x=>discography||x.name.toLowerCase().includes(q));
  // Estimates are displayed only for missing growth, never recorded totals.
  if(daily||periodic){
