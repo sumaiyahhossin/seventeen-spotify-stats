@@ -284,10 +284,10 @@ function discographyRows(s,p,pp,baseline){
  if(isHistorical(s)){
   // Imported spreadsheet rows already contain full-album and split totals.
   // Preserve every original/new/full row in Discography.
-  return Object.entries(s.tracks||{}).filter(([id])=>historicalKind(s,id)==='album')
+  return Object.entries(s.tracks||{}).filter(([id])=>['album','track'].includes(historicalKind(s,id)))
    .map(([id,streams],i)=>({id,name:albumDisplayName((s.names?.[id]||id).replace(/\\s*Total\\s*:?$/i,'').trim()),streams,
     gain:periodGain(s,baseline,id)??safeGain(s,p,id),
-    change:dailyChange(s,p,pp,id),kind:'album',releaseOrder:i}));
+    change:dailyChange(s,p,pp,id),kind:historicalKind(s,id),releaseOrder:i}));
  }
 
  const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly');
