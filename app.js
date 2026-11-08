@@ -324,7 +324,8 @@ function audienceValue(s,kind){
  if(!s)return null;
  // Followers were first tracked on November 6, 2026. Never use older
  // spreadsheet follower rows or display a made-up historical baseline.
- if(kind==='followers' && (!s.date || s.date < '2026-11-06'))return null;
+ // Show any follower values actually saved in an archive snapshot, regardless of date.
+ // Never infer a follower count when the historical source has none.
  if(!isHistorical(s)){
   const v=kind==='listeners'?(s.monthly_listeners??s.listeners):(s.followers);
   return Number.isFinite(Number(v))&&v!=null?Number(v):null;
