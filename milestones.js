@@ -166,13 +166,14 @@ function build(){
   return (a.date==null?1:0)-(b.date==null?1:0)||(a.date&&b.date?(sort==='earliest'?a.date.localeCompare(b.date):b.date.localeCompare(a.date)):0)||a.name.localeCompare(b.name);
  });
  $('rows').innerHTML=rows.length?rows.map(r=>{
-  const id=/^[a-zA-Z0-9]{22}$/.test(r.id||'')?r.id:'';
   const image='<img class="song-cover" data-song-name="'+esc(r.name)+'" alt="" loading="lazy">';
-  return '<tr><td><div class="song-cell">'+image+'<span class="song-title">'+esc(r.name)+'</span></div></td>'+
-   '<td>'+(r.release?format(r.release):'Unknown')+'</td>'+
-   '<td>'+(r.date?format(r.date):r.range?format(r.range.from)+' – '+format(r.range.date):'Unknown')+'</td>'+
-   '<td>'+(r.duration!=null?'<span class="days-value">'+r.duration.toLocaleString()+' days</span>':'—')+'</td></tr>';
- }).join(''):'<tr><td colspan="4">No songs with a recorded milestone at this level.</td></tr>';
+  const released=r.release?format(r.release):'Release date unavailable';
+  const reached=r.date?format(r.date):r.range?format(r.range.from)+' – '+format(r.range.date):'Unknown';
+  const elapsed=r.duration!=null?r.duration.toLocaleString()+' days':'—';
+  return '<tr><td><div class="song-cell">'+image+'<div class="song-meta"><span class="song-title">'+esc(r.name)+'</span><span class="song-release">Released '+esc(released)+'</span></div></div></td>'+
+   '<td data-label="MILESTONE REACHED"><span class="reached-value">'+esc(reached)+'</span></td>'+
+   '<td data-label="TIME FROM RELEASE"><span class="days-value">'+esc(elapsed)+'</span></td></tr>';
+ }).join(''):'<tr><td colspan="3">No songs with a recorded milestone at this level.</td></tr>';
  loadMilestoneCovers();
 
  const verified=rows.filter(x=>x.date).length;
