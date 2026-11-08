@@ -75,7 +75,14 @@ function albumDisplayName(name){
  if(n.includes('always yours'))return 'ALWAYS YOURS — '+(n.includes('new tracks')?'New Tracks':n.includes('original tracks')?'Original Tracks':'All Tracks');
  return albumTitles[n]||raw.replace(/\b(?:album|new tracks)\b/gi,'').replace(/\s+/g,' ').trim();
 }
+function properReleaseName(item){
+ const title=String(item.title||'').toLowerCase();
+ if(title==='q&a single')return 'Q&A';
+ if(title==='chocolate single')return 'Chocolate';
+ return null;
+}
 function catalogReleaseLabel(item){
+ const proper=properReleaseName(item);if(proper)return proper;
  const name=String(item.title||'').toLowerCase(),count=(item.tracks||[]).length;
  if(name.includes('love & letter repackage'))return 'LOVE & LETTER (Repackage) — '+(count===5?'New Tracks':count===10?'All Catalogued Tracks':'Partial Track List');
  if(name.includes('sector 17 repackage'))return 'SECTOR 17 — '+(count===4?'New Tracks':count===9?'All Catalogued Tracks':'Partial Track List');
@@ -332,7 +339,7 @@ function buildRows(s,p,pp,baseline){
 const coverCache=new Map(),coverLookup=new Map(),releaseCoverLookup=new Map();
 const releaseArtNames={'fml album':'FML','al1 album':'Al1','you make my day album':'YOU MAKE MY DAY',';[semicolon] album':'Semicolon','we make you album':'WE MAKE YOU','24h single':'24H','24h mini album':'24H','fallin\' flower single':'Fallin\' Flower','hitorijanai single':'Not Alone','an ode new tracks album':'An Ode'};
 const releaseArtCache=new Map();
-const persistentCoverKey='svt-artwork-cache-v6-discography-audit';
+const persistentCoverKey='svt-artwork-cache-v7-verified-albums';
 let persistentCovers={};
 try{persistentCovers=JSON.parse(localStorage.getItem(persistentCoverKey)||'{}')||{}}catch{}
 function rememberCover(key,url){
@@ -503,10 +510,16 @@ function artworkTrack(row){
     'we make you album':'WE MAKE YOU','24h mini album':'24H',
     'hitorijanai single':'Not Alone','happy ending single':'Happy Ending',
     'dream ep album':'DREAM','power of love single':'Power of Love',
-    'shohikigen album':'Shohikigen'
+    'shohikigen album':'Shohikigen',
+    'q&a single':'Q&A','chocolate single':'Chocolate'
    };
    if(aliases[title])return 'release:'+encodeURIComponent(aliases[title]);
   }
+ }
+ if(isAlbum&&tab==='group'){
+  const match=(catalog.group||[]).find(item=>coverKey(catalogReleaseLabel(item))===name);
+  if(match?.title==='q&a single')return 'release:'+encodeURIComponent('Q&A');
+  if(match?.title==='chocolate single')return 'release:'+encodeURIComponent('Chocolate');
  }
  if(isAlbum){
   // Album rows must display their own release, including compilations.
@@ -523,6 +536,7 @@ function artworkTrack(row){
   // Use the actual original release title, never a track ID that Spotify
   // may serve with the later 17 IS RIGHT HERE compilation artwork.
   const originalAlbumTitles={
+   'q&a single':'Q&A','chocolate single':'Chocolate',
    'fml album':'FML','al1 album':'Al1',
    '17 carat album':'17 CARAT','boys be album':'BOYS BE',
    'love & letter album':'LOVE & LETTER',
@@ -543,6 +557,8 @@ function artworkTrack(row){
    if(songs.includes(name)&&originalAlbumTitles[release])
     return 'release:'+encodeURIComponent(originalAlbumTitles[release]);
   }
+  if(name==='q a')return 'release:'+encodeURIComponent('Q&A');
+  if(name==='chocolate')return 'release:'+encodeURIComponent('Chocolate');
   // Explicit first-release artwork, independent of Spotify anthology track IDs.
   const originalCover=verifiedOriginalCovers[name];
   if(originalCover){
@@ -615,6 +631,8 @@ function fillArtwork(){
       const aliases={
        'Semicolon':['; [Semicolon]','Semicolon','; [Semicolon] - EP','SEVENTEEN Special Album ; [Semicolon]'],
        'Al1':['Al1','Al1 - EP'],
+       'Q&A':['Q&A','Q&A - Single'],
+       'Chocolate':['Chocolate (2016 월간 윤종신 2월호)','Chocolate'],
        'FML':['FML','FML - EP'],
        'LOVE & LETTER (Repackage)':['Love & Letter Repackage Album','Love & Letter'],
        'Not Alone':['ひとりじゃない','Hitorijanai','Not Alone'],
@@ -635,11 +653,24 @@ function fillArtwork(){
         if(!response.ok)continue;
         const data=await response.json();
         const matches=(data.results||[]).filter(x=>{
-         if(!/seventeen/i.test(x.artistName||''))return false;
+         const artist=String(x.artistName||'');
+         // Collaborations credit SEVENTEEN alongside their collaborators.
+         if(!/seventeen/i.test(artist))return false;
          const found=clean(x.collectionName);
          return candidates.some(t=>found===clean(t));
         });
-        const picked=matches[0];
+        // Prefer the canonical release rather than a later compilation,
+        // remaster, remix or an unrelated artist's similarly named album.
+        const picked=matches.sort((a,b)=>{
+         const score=x=>{
+          const n=String(x.collectionName||'').toLowerCase();
+          const artist=String(x.artistName||'').toLowerCase();
+          return (artist==='seventeen'?20:artist.includes('seventeen')?10:0)
+           +(n===title.toLowerCase()?8:0)
+           +(/remix|instrumental|karaoke|tribute/.test(n)?-30:0);
+         };
+         return score(b)-score(a);
+        })[0];
         if(picked?.artworkUrl100){
          const url=picked.artworkUrl100.replace(/\d+x\d+bb/,'600x600bb');
          rememberCover(cacheKey,url);
