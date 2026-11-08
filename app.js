@@ -1723,7 +1723,7 @@ async function updateYear2026Streams(){
    return;
   }
   value.textContent=(latestTotal-previousTotal).toLocaleString('en-US');
-  note.textContent='Streams* · Year still counting · Updated through '+now.date+' · Refreshes with daily snapshots';
+  note.textContent='S* · Year still counting · Updated through '+now.date+' · Refreshes with daily snapshots';
  }catch(e){
   value.textContent='Unavailable';
   note.textContent='Streams* · Year still counting · Data temporarily unavailable';
