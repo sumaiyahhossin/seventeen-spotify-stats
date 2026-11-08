@@ -585,6 +585,8 @@ const groupStandaloneReleaseDates={
 };
 const groupOriginalReleaseDates={"g7":"2016-07-04","g23":"2020-06-22","g24":"2020-08-24","g37":"2022-07-18","g44":"2023-08-23","g50":"2024-04-29","g51":"2024-04-29","g52":"2024-04-29","g53":"2024-04-29","g54":"2024-04-29","g1":"2015-05-29","g2":"2015-09-10","g5":"2016-04-25","g6":"2016-07-04","g8":"2016-12-05","g9":"2017-05-22","g10":"2017-11-06","g11":"2018-02-05","g12":"2018-05-30","g13":"2018-07-16","g16":"2019-01-21","g18":"2019-05-29","g20":"2019-09-16","g22":"2020-04-01","g23":"2020-06-22","g25":"2020-09-09","g27":"2020-10-19","g28":"2021-04-21","g29":"2021-06-18","g32":"2021-10-22","g33":"2021-12-08","g35":"2022-05-27","g36":"2022-07-18","g39":"2022-11-09","g41":"2023-04-24","g43":"2023-08-23","g46":"2023-10-23","g49":"2024-04-29","g56":"2024-10-14","g58":"2024-11-27","g59":"2025-05-26"};
 function originalReleaseDate(row){
+ // Exact Spotify recording: Chinese single released August 28, 2018.
+ if(row.id==='65QDnqGpWrHhnViAM1D4Sd'||(tab==='group'&&/oh my/i.test(row.name||'')&&/chinese/i.test(row.name||'')))return '2018-08-28';
  if(row.releaseDate)return row.releaseDate;
  const key=row.artworkRelease;
  if(rank.startsWith('discography')&&tab==='group'&&key==='g62'&&row.id==='0L3tD2Sc15kj9WQyUF7uTm')return '2025-08-15';
