@@ -1405,3 +1405,30 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  display:flex!important;align-items:center!important;justify-content:center!important;
  box-sizing:border-box!important;
 }
+
+/* v119: names are background rain particles, visually matching the diamonds */
+.name-fall{position:fixed!important;inset:0!important;z-index:0!important;overflow:hidden!important;pointer-events:none!important}
+.name-fall>.falling-name{
+ position:absolute!important;display:block!important;top:-110px!important;
+ left:var(--nx)!important;width:max-content!important;max-width:260px!important;
+ margin:0!important;padding:0!important;
+ color:#d4d8f7!important;
+ background:linear-gradient(145deg,#ffd1e8,#b9d8ff)!important;
+ -webkit-background-clip:text!important;background-clip:text!important;
+ -webkit-text-fill-color:transparent!important;
+ font-size:clamp(10px,.95vw,13px)!important;font-weight:600!important;
+ line-height:1.4!important;letter-spacing:.04em!important;white-space:nowrap!important;
+ opacity:0!important;text-shadow:none!important;
+ animation:svt-name-rain var(--nt) linear var(--nd) infinite!important;
+}
+@keyframes svt-name-rain{
+ 0%{transform:translate3d(0,-100px,0) scale(.8);opacity:0}
+ 9%{opacity:.33}
+ 85%{opacity:.3}
+ 100%{transform:translate3d(32px,calc(100vh + 190px),0) scale(.8);opacity:0}
+}
+@media(max-width:680px){
+ .name-fall>.falling-name{font-size:10px!important}
+ .name-fall>.falling-name:nth-child(2n){display:none!important}
+}
+@media(prefers-reduced-motion:reduce){.name-fall{display:none!important}}
