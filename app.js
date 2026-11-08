@@ -88,6 +88,8 @@ function properReleaseName(item){
  if(title==='chocolate single')return 'Chocolate';
  if(title==='oh my!')return 'Oh My! (Chinese Ver.)';
  if(title==='24h single')return '24H';
+ if(title==='g53')return '17 IS RIGHT HERE — Original Tracks';
+ if(title==='g54')return '17 IS RIGHT HERE — Additional Track';
  return null;
 }
 function catalogReleaseLabel(item){
