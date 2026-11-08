@@ -551,10 +551,12 @@ const groupStandaloneReleaseDates={
  g34:'2022-04-15',g38:'2022-08-26',g40:'2022-12-08',
  g42:'2023-08-16',g55:'2024-05-01'
 };
-const groupOriginalReleaseDates={"g7":"2016-07-04","g23":"2020-06-22","g24":"2020-08-24","g37":"2022-07-18","g44":"2023-08-23","g50":"2024-04-29","g51":"2024-04-29","g52":"2024-04-29","g1":"2015-05-29","g2":"2015-09-10","g5":"2016-04-25","g6":"2016-07-04","g8":"2016-12-05","g9":"2017-05-22","g10":"2017-11-06","g11":"2018-02-05","g12":"2018-05-30","g13":"2018-07-16","g16":"2019-01-21","g18":"2019-05-29","g20":"2019-09-16","g22":"2020-04-01","g23":"2020-06-22","g25":"2020-09-09","g27":"2020-10-19","g28":"2021-04-21","g29":"2021-06-18","g32":"2021-10-22","g33":"2021-12-08","g35":"2022-05-27","g36":"2022-07-18","g39":"2022-11-09","g41":"2023-04-24","g43":"2023-08-23","g46":"2023-10-23","g49":"2024-04-29","g56":"2024-10-14","g58":"2024-11-27","g59":"2025-05-26"};
+const groupOriginalReleaseDates={"g7":"2016-07-04","g23":"2020-06-22","g24":"2020-08-24","g37":"2022-07-18","g44":"2023-08-23","g50":"2024-04-29","g51":"2024-04-29","g52":"2024-04-29","g53":"2024-04-29","g54":"2024-04-29","g1":"2015-05-29","g2":"2015-09-10","g5":"2016-04-25","g6":"2016-07-04","g8":"2016-12-05","g9":"2017-05-22","g10":"2017-11-06","g11":"2018-02-05","g12":"2018-05-30","g13":"2018-07-16","g16":"2019-01-21","g18":"2019-05-29","g20":"2019-09-16","g22":"2020-04-01","g23":"2020-06-22","g25":"2020-09-09","g27":"2020-10-19","g28":"2021-04-21","g29":"2021-06-18","g32":"2021-10-22","g33":"2021-12-08","g35":"2022-05-27","g36":"2022-07-18","g39":"2022-11-09","g41":"2023-04-24","g43":"2023-08-23","g46":"2023-10-23","g49":"2024-04-29","g56":"2024-10-14","g58":"2024-11-27","g59":"2025-05-26"};
 function originalReleaseDate(row){
  if(row.releaseDate)return row.releaseDate;
  const key=row.artworkRelease;
+ // A track shown inside a reissue is dated to that edition, not its debut.
+ if(rank.startsWith('discography')&&tab==='group'&&/^g(49|50|51|52|53|54)$/.test(key||''))return '2024-04-29';
  if(tab==='group'&&key&&(groupOriginalReleaseDates[key]||groupStandaloneReleaseDates[key]))return groupOriginalReleaseDates[key]||groupStandaloneReleaseDates[key];
  const item=(catalog[tab]||[]).find(x=>x.key===key);
  const date=item?.release_date||item?.releaseDate||item?.first_release_date;
@@ -911,6 +913,8 @@ function historicalAlbumCoverFallback(row){
  return /^[A-Za-z0-9]{22}$/.test(id||'')?'track:'+id:null;
 }
 function artworkTrack(row){
+ // Compilation artwork applies to the specific Discography appearance only.
+ if(rank.startsWith('discography')&&tab==='group'&&/^g(49|50|51|52|53|54)$/.test(row.artworkRelease||''))return 'release:'+encodeURIComponent('17 IS RIGHT HERE');
  // Release-specific artwork must win over anthology/legacy ID matching.
  // The same recording can appear on several releases with different sleeves.
  if(tab==='group'){
@@ -918,16 +922,16 @@ function artworkTrack(row){
   const release=row.artworkRelease;
   const albumRow=row.kind==='album'||rank.startsWith('albums');
   const direct={g5:'LOVE & LETTER',g6:'LOVE & LETTER (Repackage)',g7:'LOVE & LETTER (Repackage)',g19:'HIT',g20:'An Ode',g24:'24H',g25:'24H',g35:'Face the Sun',g36:'SECTOR 17',g37:'SECTOR 17',g43:'ALWAYS YOURS',g44:'ALWAYS YOURS'};
-  if(release&&direct[release])return 'release:'+encodeURIComponent(direct[release]);
-  if(release==='g34')return 'release:'+encodeURIComponent('Darl+ing');
-  if(!albumRow){
+  if(rank.startsWith('discography')&&release&&direct[release])return 'release:'+encodeURIComponent(direct[release]);
+  if(rank.startsWith('discography')&&release==='g34')return 'release:'+encodeURIComponent('Darl+ing');
+  if(rank.startsWith('discography')&&!albumRow){
    if(key==='hit'&&release==='g19')return 'release:'+encodeURIComponent('HIT');
    if(key==='darl ing'||key==='darling')return 'release:'+encodeURIComponent('Darl+ing');
    if(key==='24h'&&release!=='g44')return 'release:'+encodeURIComponent('24H');
   }
  }
  // Happy Ending (Korean Ver.) debuted on An Ode, not 17 IS RIGHT HERE.
- if(tab==='group'&&/happy\s*ending/i.test(row.name||'')&&/korean\s*(?:ver(?:sion)?\.?|version)/i.test(row.name||''))return 'release:'+encodeURIComponent('An Ode');
+ if(rank.startsWith('discography')&&tab==='group'&&/happy\s*ending/i.test(row.name||'')&&/korean\s*(?:ver(?:sion)?\.?|version)/i.test(row.name||''))return 'release:'+encodeURIComponent('An Ode');
  const historical=historicalArtworkId(row);
  if(historical?.release)return 'release:'+encodeURIComponent(historical.release);
  if(historical?.artworkRelease)row={...row,artworkRelease:historical.artworkRelease};
