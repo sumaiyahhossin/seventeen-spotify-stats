@@ -974,3 +974,82 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
 .rank-trend.rank-up{color:#77dfaa;background:rgba(60,190,126,.13)}
 .rank-trend.rank-down{color:#ff9ca8;background:rgba(220,78,95,.13)}
 .rank-trend.rank-same{color:#d8e1f2}
+
+/* v112 compact matching archive controls */
+.archive-top-controls{
+ display:grid!important;
+ grid-template-columns:minmax(0,285px) minmax(0,650px)!important;
+ align-items:start!important;justify-content:center!important;
+ column-gap:24px!important;row-gap:12px!important;
+ max-width:1020px!important;margin:0 auto 22px!important;
+}
+.archive-top-controls .rank-select,.archive-top-controls #dailyPickerWrap{
+ width:100%!important;min-width:0!important;max-width:none!important;
+}
+.archive-top-controls .rank-select select{
+ appearance:none!important;-webkit-appearance:none!important;
+ width:100%!important;max-width:none!important;
+ height:54px!important;min-height:54px!important;
+ padding:0 46px 0 17px!important;
+ border-radius:16px!important;
+ background:#292c50!important;color:#f8f4ff!important;
+ border:1px solid #7b70ad!important;
+ box-shadow:none!important;
+ background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23f5efff' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E")!important;
+ background-repeat:no-repeat!important;background-position:right 17px center!important;
+ background-size:16px!important;
+}
+.archive-top-controls #dailyPickerWrap .date-navigation{
+ display:flex!important;align-items:center!important;gap:8px!important;
+ width:100%!important;min-width:0!important;
+ padding:0!important;border:0!important;
+ background:transparent!important;box-shadow:none!important;
+}
+.archive-top-controls #archiveDate{
+ flex:1 1 170px!important;min-width:0!important;width:100%!important;
+ height:54px!important;min-height:54px!important;
+ padding:0 13px!important;
+ border-radius:16px!important;
+ background:#292c50!important;background-color:#292c50!important;
+ color:#f8f4ff!important;-webkit-text-fill-color:#f8f4ff!important;
+ border:1px solid #7b70ad!important;
+ box-shadow:none!important;font-size:16px!important;color-scheme:dark!important;
+}
+.archive-top-controls #archiveDate::-webkit-datetime-edit,
+.archive-top-controls #archiveDate::-webkit-datetime-edit-text,
+.archive-top-controls #archiveDate::-webkit-datetime-edit-month-field,
+.archive-top-controls #archiveDate::-webkit-datetime-edit-day-field,
+.archive-top-controls #archiveDate::-webkit-datetime-edit-year-field{
+ color:#f8f4ff!important;-webkit-text-fill-color:#f8f4ff!important;
+}
+.archive-top-controls #archiveDate::-webkit-calendar-picker-indicator{
+ filter:invert(1)!important;opacity:.85!important;cursor:pointer!important;
+}
+.archive-top-controls #dailyPickerWrap .date-arrow{
+ flex:0 0 40px!important;width:40px!important;min-width:40px!important;
+ height:54px!important;border-radius:14px!important;
+ background:#292c50!important;border:1px solid #7b70ad!important;
+}
+.archive-top-controls #dailyPickerWrap #latestDate{
+ display:inline-flex!important;align-items:center!important;justify-content:center!important;
+ flex:0 0 auto!important;align-self:center!important;
+ height:54px!important;padding:0 12px!important;
+ margin:0!important;white-space:nowrap!important;text-align:center!important;
+ border-radius:14px!important;border:1px solid #7b70ad!important;
+ background:#292c50!important;color:#ffb1e5!important;
+ font-size:12px!important;font-weight:800!important;
+}
+.archive-top-controls #dailyPickerWrap #dateNotice{
+ display:block!important;text-align:left!important;justify-self:start!important;
+ margin-top:6px!important;font-size:11px!important;
+}
+@media(max-width:760px){
+ .archive-top-controls{grid-template-columns:minmax(0,1fr)!important;max-width:520px!important;gap:16px!important}
+ .archive-top-controls #dailyPickerWrap #latestDate{padding:0 8px!important;font-size:11px!important}
+}
+@media(max-width:420px){
+ .archive-top-controls #dailyPickerWrap .date-navigation{gap:5px!important}
+ .archive-top-controls #dailyPickerWrap .date-arrow{width:31px!important;min-width:31px!important;flex-basis:31px!important}
+ .archive-top-controls #dailyPickerWrap #latestDate{font-size:10px!important;padding:0 6px!important}
+ .archive-top-controls #archiveDate{font-size:13px!important;padding:0 7px!important}
+}
