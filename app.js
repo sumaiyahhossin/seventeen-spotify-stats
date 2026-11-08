@@ -1671,7 +1671,9 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
    const last=new Date(Date.UTC(year,month-1,0)).getUTCDate();
    return new Date(Date.UTC(year,month-2,Math.min(day,last))).toISOString().slice(0,10);
   })():rank.endsWith('yearly')?shifted(s.date,-365):null;
-  const priorPeriodEnd=priorPeriodEndDate?await getDate(tab,priorPeriodEndDate):null;
+  // Reuse the validated prior-period endpoint found by periodBaseline.
+  // An exact-date lookup can fail even when a usable saved snapshot exists.
+  const priorPeriodEnd=baseline?.prevEnd||null;
   const previousStartTotal=archivedGroupTotal(comparisonStart);
   const previousEndTotal=archivedGroupTotal(priorPeriodEnd);
   const previousPeriodGain=previousStartTotal!=null&&previousEndTotal!=null&&previousEndTotal>=previousStartTotal?previousEndTotal-previousStartTotal:null;
