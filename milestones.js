@@ -48,12 +48,15 @@ for(const [song,date,url,source] of [
 // Earliest dates recorded in Korean Sales milestones #386 and #399.
 (externalEvidence['name:'+norm('Pretty U')]??={})[100000000]={date:'2023-12-21',url:'https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html',source:'Korean Sales #386'};
 (externalEvidence['name:'+norm('_WORLD')]??={})[100000000]={date:'2024-01-23',url:'https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html',source:'Korean Sales #399'};
+// User-supplied 100M dates; source confirmation pending.
+(externalEvidence['name:'+norm('MAESTRO')]??={})[100000000]={date:'2025-04-11',source:'User-provided milestone date',url:''};
+(externalEvidence['name:'+norm('God of Music')]??={})[100000000]={date:'2025-01-22',source:'User-provided milestone date',url:''};
 // Additional published Spotify track milestones (not music-video views).
 for(const [song,threshold,date] of [
  ['HIT',100000000,'2025-09-25'],
  ['Rock with you',200000000,'2025-05-12'],
  ['CHEERS',100000000,'2025-04-12'],
- ['MAESTRO',100000000,'2025-04-10'],
+ ['MAESTRO',100000000,'2025-04-11'],
  ['VERY NICE',200000000,'2025-02-28']
 ]){
  const key='name:'+norm(song);
