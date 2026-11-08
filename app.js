@@ -602,12 +602,22 @@ function originalReleaseDate(row){
  // Historical spreadsheets do not carry artworkRelease keys. Match their
  // stable Spotify IDs or unique track titles to the original catalog so
  // release dates display on every archived day, not only the latest snapshot.
- if(tab==='group'&&row.kind!=='album'&&row.kind!=='grand'){
+ if(row.kind!=='album'&&row.kind!=='grand'){
   const chronology=trackOriginalReleaseDates();
   const byId=chronology.byId.get(row.id);
   if(byId)return byId;
   const byName=chronology.byName.get(normTrackName(row.name||''));
   if(byName)return byName;
+ }
+ // Archive album rows may not have a release key. Resolve the exact catalog
+ // title before using legacy aliases, for both group and solo/unit archives.
+ if(row.kind==='album'||rank.startsWith('albums')){
+  const title=normTrackName(row.name||'');
+  const matched=(catalog[tab]||[]).find(item=>normTrackName(item.title||'')===title||normTrackName(catalogReleaseLabel(item))===title);
+  if(matched){
+   const dated=tab==='group'?(groupOriginalReleaseDates[matched.key]||groupStandaloneReleaseDates[matched.key]):(matched.release_date||matched.releaseDate||matched.first_release_date);
+   if(/^\\d{4}-\\d{2}-\\d{2}$/.test(dated||''))return dated;
+  }
  }
  // Older spreadsheet album rows have no catalog key: identify their
  // original release from the album title, never their spreadsheet row order.
