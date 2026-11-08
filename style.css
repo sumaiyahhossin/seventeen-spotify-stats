@@ -763,3 +763,13 @@ body{
 .archive-top-controls .latest-date{margin-top:0!important}
 .release-date{display:block;font-size:10px;letter-spacing:.02em;color:#b6accb;opacity:.78;margin-top:4px;font-weight:500}
 @media(max-width:620px){.archive-top-controls{grid-template-columns:1fr!important;gap:15px!important}}
+
+/* v79: match period selector to calendar's top row, not its footer */
+@media(min-width:621px){
+ .archive-top-controls{align-items:start!important}
+ .archive-top-controls .rank-select{align-self:start!important;margin-top:0!important}
+ .archive-top-controls #dailyPickerWrap{align-self:start!important}
+}
+.archive-top-controls #dailyPickerWrap .latest-date,
+.archive-top-controls #latestDate{justify-self:end!important;text-align:right!important;margin-left:auto!important;display:block!important}
+.archive-top-controls #dailyPickerWrap #dateNotice{text-align:right!important;justify-self:end!important}
