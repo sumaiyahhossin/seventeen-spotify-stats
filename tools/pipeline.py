@@ -31,7 +31,7 @@ if kind=='group' and previous:
     if isinstance(first_old,int) and first_old>0:
         collector_env['SVT_FIRST_TRACK_PREVIOUS']=str(first_old)
 result=subprocess.run(['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],classname],capture_output=True,text=True,timeout=18000,env=collector_env)
-if kind=='group' and ('STAT_FIRST_UNCHANGED|' in result.stdout or 'STAT_FIRST_REGRESSED|' in result.stdout or 'STAT_FIRST_PROBE_FAILED|' in result.stdout):
+if kind=='group' and ('STAT_FIRST_UNCHANGED|' in result.stdout or 'STAT_FIRST_PROBE_FAILED|' in result.stdout):
     print('group: first song has not refreshed (or probe failed); skip remaining songs and retry next hour')
     entry['last_attempt']=now.isoformat()
     state_path.write_text(json.dumps(state,indent=2))
