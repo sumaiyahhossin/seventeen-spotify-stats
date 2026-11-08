@@ -237,6 +237,16 @@ function comparablePrevious(s,p,id){
   const legacyId=verifiedAliases[id];
   if(legacyId&&p.tracks?.[legacyId]!=null)return {id:legacyId,value:p.tracks[legacyId]};
  }
+ // November 6's canonical tracks all have explicit, preserved November 5
+ // workbook mappings. Use those recorded identifiers at the exact boundary
+ // even where display titles differ in punctuation, credits or spelling.
+ // Never extrapolate this shortcut to earlier archive dates.
+ if(isHistorical(p)&&p.date==='2026-11-05'&&s.date==='2026-11-06'){
+  const mapped=s.baseline_ids_2026_11_05?.[id];
+  if(mapped&&p.tracks?.[mapped]!=null&&historicalKind(p,mapped)==='track'&&
+     Number.isFinite(s.tracks[id])&&s.tracks[id]>=p.tracks[mapped])
+   return {id:mapped,value:p.tracks[mapped]};
+ }
  // Imported spreadsheet IDs stay stable across the historical workbook.
  // The verified Nov 5 ID mapping is therefore valid for earlier months too.
  if(isHistorical(p)&&s.baseline_ids_2026_11_05?.[id]){
