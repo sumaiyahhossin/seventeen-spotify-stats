@@ -37,20 +37,23 @@ if kind=='group':
                 }
                 Thread.sleep(1200);
             }
-            // The exact follower number appears inside Spotify's About dialog.
-            // Read its title-sized number only after opening the artist About panel.
+            // Wait for the About popup, then read its exact follower number.
+            // Avoid searching the whole page: other sections contain large numbers.
+            org.openqa.selenium.By popup = org.openqa.selenium.By.cssSelector(
+                "[role='dialog'], [data-testid='modal'], [data-testid='artist-about-modal']");
             org.openqa.selenium.By exactNumber = org.openqa.selenium.By.cssSelector(
-                "[role='dialog'] [data-encore-id='text'].encore-text-title-medium, " +
-                "[role='dialog'] .encore-text-title-medium, " +
-                "[data-testid='modal'] .encore-text-title-medium");
-            for (int attempt = 0; attempt < 12; attempt++) {
-                for (org.openqa.selenium.WebElement element : driver.findElements(exactNumber)) {
-                    String value = element.getText().trim();
-                    if (!value.matches("[0-9]{1,3}(?:,[0-9]{3})+|[0-9]{7,10}")) continue;
-                    long followers = Long.parseLong(value.replace(",", ""));
-                    if (followers >= 1000000L && followers <= 1000000000L) {
-                        System.out.println("STAT_FOLLOWERS|" + followers);
-                        return;
+                "div[data-encore-id='text'].encore-text-title-medium");
+            for (int attempt = 0; attempt < 15; attempt++) {
+                for (org.openqa.selenium.WebElement dialog : driver.findElements(popup)) {
+                    if (!dialog.isDisplayed()) continue;
+                    for (org.openqa.selenium.WebElement element : dialog.findElements(exactNumber)) {
+                        String value = element.getText().trim();
+                        if (!value.matches("(?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]{7,10})")) continue;
+                        long followers = Long.parseLong(value.replace(",", ""));
+                        if (followers >= 1000000L && followers <= 1000000000L) {
+                            System.out.println("STAT_FOLLOWERS|" + followers);
+                            return;
+                        }
                     }
                 }
                 Thread.sleep(1000);
