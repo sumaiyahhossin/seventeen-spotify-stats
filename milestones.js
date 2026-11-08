@@ -215,6 +215,18 @@ const upcomingTargets=[1000000,10000000,20000000,30000000,40000000,50000000,6000
 let currentSnapshot=null,previousSnapshot=null;
 const shortStreams=n=>n>=1000000000?(n/1000000000)+'B':(n/1000000)+'M';
 function nextTarget(value){return upcomingTargets.find(target=>value<target)||null}
+function updateMilestoneOptions(){
+ if(!currentSnapshot)return;
+ const values=[...trackRows(currentSnapshot).values()].map(row=>row.value);
+ const max=Math.max(0,...values);
+ const reached=$('threshold'),upcoming=$('upcomingThreshold');
+ const previousReached=reached.value,previousUpcoming=upcoming.value;
+ reached.innerHTML=milestones.filter(target=>target<=300000000||max>=target).map(target=>'<option value="'+target+'">'+shortStreams(target)+'</option>').join('');
+ upcoming.innerHTML='<option value="0">All next milestones</option>'+upcomingTargets.filter(target=>target<=400000000||max>=upcomingTargets[upcomingTargets.indexOf(target)-1]).map(target=>'<option value="'+target+'">'+shortStreams(target)+'</option>').join('');
+ if([...reached.options].some(o=>o.value===previousReached))reached.value=previousReached;
+ if([...upcoming.options].some(o=>o.value===previousUpcoming))upcoming.value=previousUpcoming;
+}
+
 function renderUpcoming(){
  const filter=Number($('upcomingThreshold').value),sort=$('upcomingSort').value,query=norm($('upcomingSearch').value);
  if(!currentSnapshot){$('upcomingStatus').textContent='Loading latest Spotify snapshot…';return}
@@ -343,6 +355,7 @@ async function start(){
    first.set(key,{...item,firstValue:item.value});
    latestValues.set(key,item.value);
   }
+  updateMilestoneOptions();
   ready=true;build();renderUpcoming();
   // Only one previous daily snapshot is used to calculate the current growth rate.
   // Upcoming milestones never wait for the historical milestone scan.
