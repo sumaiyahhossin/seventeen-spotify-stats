@@ -94,11 +94,8 @@ if kind=='group':
                     driver.quit();
                     return;
                 }
-                if (newCount < oldCount) {
-                    System.out.println("STAT_FIRST_REGRESSED|retry-next-hour");
-                    driver.quit();
-                    return;
-                }
+                // Spotify can remove streams during corrections. Any change,
+                // upward or downward, means the full collection should run.
                 System.out.println("STAT_FIRST_CHANGED|collect-all");
             } catch (Exception probeError) {
                 System.out.println("STAT_FIRST_PROBE_FAILED|" + probeError.getClass().getSimpleName());
