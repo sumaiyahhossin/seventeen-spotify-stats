@@ -70,6 +70,8 @@ function buildNames(){
   '5ZwXgb8dQuK1GC15s7tG5L':'Til My Fingers Bleed (with DINO, Duckwrth & Telle)'
  };
  Object.assign(idName,verifiedNames);
+ // The final greatest-hits entry has no title in the source description.
+ idName['6KNp9wSUGYhtbE33su6xZv']='God of Music';
  // Preserve the proper display name for the Dirty Dancing remix.
  idName['6KfYVOicblNB8CaDZwbxiT']='Dirty Dancing (feat. JOSHUA, DK & DINO)';
 }
@@ -88,8 +90,7 @@ function properReleaseName(item){
  if(title==='chocolate single')return 'Chocolate';
  if(title==='oh my!')return 'Oh My! (Chinese Ver.)';
  if(title==='24h single')return '24H';
- if(title==='g53')return '17 IS RIGHT HERE — Original Tracks';
- if(title==='g54')return '17 IS RIGHT HERE — Additional Track';
+ if(title==='_world')return '_WORLD (feat. Anne-Marie)';
  return null;
 }
 function catalogReleaseLabel(item){
@@ -306,6 +307,8 @@ function formatDiscographyAlbumName(name){
  if(/sector\s*17.*repackage/i.test(raw))
   return 'SECTOR 17 — '+(/new tracks/i.test(raw)?'New Tracks':'All Tracks');
  if(/oh my/i.test(raw)&&/chinese/i.test(raw))return 'Oh My! (Chinese Ver.)';
+ if(/^9[ -]teen(?:\\s+ost)?$/i.test(raw))return '9-TEEN';
+ if(/^_world(?:\\s+single)?$/i.test(raw))return '_WORLD (feat. Anne-Marie)';
  const withoutType=raw.replace(/\s+(?:ost|single)(?:\s+album)?$/i,'').trim();
  const formatted=albumDisplayName(withoutType);
  const special={
@@ -362,6 +365,22 @@ function discographyRows(s,p,pp,baseline){
     releaseOrder:rows.length});
   }else if(item.key==='g7'||item.key==='g37'){
    rows.push({...albumTotalRow,releaseOrder:rows.length});
+  }else if(tab==='group'&&/^g(49|50|51|52|53|54)$/.test(item.key)){
+   // The six 17 IS RIGHT HERE catalog segments form one 33-track album.
+   // Display no intermediate totals; append one full-album total after Adore U (Inst.).
+   if(item.key==='g54'){
+    const allIds=[...new Set(['g49','g50','g51','g52','g53','g54']
+     .flatMap(k=>releasesByKey.get(k)?.tracks||[]))];
+    const allStreams=allIds.every(id=>s.tracks?.[id]!=null)
+     ?allIds.reduce((total,id)=>total+s.tracks[id],0):null;
+    const allGain=periodic?sumPeriod(s,baseline,allIds):sumDaily(s,p,allIds);
+    const prevGain=sumDaily(p,pp,allIds);
+    rows.push({name:'17 IS RIGHT HERE — All Tracks',artworkRelease:'g49',
+     streams:allStreams,gain:allGain,
+     change:periodic?sumPeriodChange(s,baseline,allIds):
+      allGain!=null&&prevGain!=null?allGain-prevGain:null,
+     kind:'album',releaseOrder:rows.length});
+   }
   }else rows.push(albumTotalRow);
  }
  return rows;
