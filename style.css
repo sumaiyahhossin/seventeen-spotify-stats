@@ -678,3 +678,55 @@ footer a{color:#ffb6df!important}
 button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{outline:3px solid #f4b4e2!important;outline-offset:3px}
 @media(max-width:680px){body{background-attachment:scroll!important}.panel{border-radius:22px!important}.stat{border-radius:17px!important}.archive-top-controls{border-radius:18px!important}.hero h1{letter-spacing:-.065em!important}}
 @media(prefers-reduced-motion:reduce){.stat,.rank-row{transition:none!important}.stat:hover{transform:none}}
+
+/* v71: deeper obsidian-lavender glass and guaranteed readable date picker. */
+body{
+ background:radial-gradient(ellipse 60% 35% at 8% 2%,rgba(70,35,107,.23),transparent 80%),
+ radial-gradient(ellipse 56% 40% at 94% 16%,rgba(29,52,115,.24),transparent 80%),
+ linear-gradient(145deg,#060713 0%,#0b0d20 48%,#070a18 100%)!important;
+}
+.panel{
+ background:linear-gradient(145deg,rgba(22,23,49,.92),rgba(12,17,39,.92))!important;
+ border-color:rgba(184,160,237,.21)!important;
+ box-shadow:0 28px 85px rgba(0,0,0,.48),inset 0 1px 0 rgba(255,255,255,.075)!important;
+}
+.archive-top-controls{
+ background:linear-gradient(115deg,rgba(41,34,75,.91),rgba(25,37,76,.9))!important;
+ border-color:rgba(180,153,236,.32)!important;
+ box-shadow:0 18px 50px rgba(0,0,0,.34),inset 0 1px 0 rgba(237,217,255,.09)!important;
+}
+.stat{background:linear-gradient(135deg,rgba(43,38,77,.67),rgba(21,27,58,.79))!important}
+.controls{background:rgba(13,17,40,.75)!important}
+.archive-top-controls .date-navigation{
+ background:rgba(10,13,34,.56)!important;
+ border:1px solid rgba(192,169,244,.24)!important;
+ box-shadow:inset 0 1px 6px rgba(0,0,0,.2)!important;
+}
+.archive-top-controls input#archiveDate,
+#dailyPickerWrap input[type="date"],
+.archive-top-controls .date-navigation input{
+ appearance:auto!important;-webkit-appearance:auto!important;
+ background:#171a36!important;
+ background-color:#171a36!important;
+ color:#ffffff!important;
+ -webkit-text-fill-color:#ffffff!important;
+ border:2px solid #8b78c3!important;
+ border-radius:14px!important;
+ box-shadow:inset 0 1px 8px rgba(0,0,0,.22),0 0 0 1px rgba(196,170,250,.08)!important;
+ color-scheme:dark!important;
+ opacity:1!important;
+}
+.archive-top-controls input#archiveDate::-webkit-datetime-edit,
+.archive-top-controls input#archiveDate::-webkit-datetime-edit-fields-wrapper,
+.archive-top-controls input#archiveDate::-webkit-datetime-edit-text,
+.archive-top-controls input#archiveDate::-webkit-datetime-edit-month-field,
+.archive-top-controls input#archiveDate::-webkit-datetime-edit-day-field,
+.archive-top-controls input#archiveDate::-webkit-datetime-edit-year-field{
+ color:#fff!important;-webkit-text-fill-color:#fff!important;opacity:1!important;
+}
+.archive-top-controls input#archiveDate::-webkit-calendar-picker-indicator{
+ filter:invert(1) brightness(1.4)!important;opacity:1!important;cursor:pointer!important;
+}
+.archive-top-controls input#archiveDate:focus{outline:2px solid #efb2e9!important;outline-offset:2px!important}
+.archive-top-controls .date-arrow{background:#30284f!important;border-color:#8170b2!important;color:#fff!important}
+.archive-top-controls .latest-date{color:#f7aedc!important}
