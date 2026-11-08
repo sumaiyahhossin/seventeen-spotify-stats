@@ -564,3 +564,6 @@ footer{margin-top:64px!important;padding-block:34px!important}
 /* v63: cool periwinkle-blue increases and soft rose-pink decreases. */
 .rank-row .change{color:#a9caff!important}
 .rank-row .change.negative{color:#ffb0d5!important}
+
+/* Missing values are bright white, never gain/loss colors. */
+.rank-row .num.missing-value,.rank-row .change.missing-value{color:#ffffff!important}
