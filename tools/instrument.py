@@ -21,40 +21,39 @@ if kind=='group':
         final String artist = "https://open.spotify.com/artist/7nqOGRxlXj7N2JYbgNEjYH";
         try {
             driver.get(artist);
-            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
-                "(?i)(?:([0-9][0-9,\\.]*\\s*[KMB]?)\\s*(?:followers|follower)|(?:followers|follower)\\s*[:\\u00b7]?\\s*([0-9][0-9,\\.]*\\s*[KMB]?))");
-            for (int attempt=0; attempt<8; attempt++) {
-                // Embedded HTML can contain unrelated counts; only read visible text.
-                String[] sources = {
-                    driver.findElement(org.openqa.selenium.By.tagName("body")).getText()
-                };
-                for (String raw : sources) {
-                    java.util.regex.Matcher matcher = pattern.matcher(raw);
-                    while (matcher.find()) {
-                        String value = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
-                        value = value.replace(",", "").trim().toUpperCase(java.util.Locale.ROOT);
-                        java.util.regex.Matcher digits = java.util.regex.Pattern.compile("([0-9]+(?:\\.[0-9]+)?)\\s*([KMB]?)").matcher(value);
-                        if (!digits.matches()) continue;
-                        double count = Double.parseDouble(digits.group(1));
-                        String unit = digits.group(2);
-                        if ("K".equals(unit)) count *= 1000;
-                        if ("M".equals(unit)) count *= 1000000;
-                        if ("B".equals(unit)) count *= 1000000000;
-                        long followers = Math.round(count);
-                        // A rounded K/M display is not an exact daily metric.
-                        if (!unit.isEmpty()) {
-                            // Rounded values must never become exact daily snapshots.
-                            continue;
+            org.openqa.selenium.By aboutButton = org.openqa.selenium.By.cssSelector("button[aria-label='SEVENTEEN']");
+            for (int attempt = 0; attempt < 10; attempt++) {
+                java.util.List<org.openqa.selenium.WebElement> buttons = driver.findElements(aboutButton);
+                if (!buttons.isEmpty()) {
+                    try {
+                        org.openqa.selenium.WebElement button = buttons.get(0);
+                        if (button.isDisplayed()) {
+                            ((org.openqa.selenium.JavascriptExecutor)driver).executeScript("arguments[0].click();", button);
+                            break;
                         }
-                        if (followers >= 1000000 && followers <= 1000000000L) {
-                            System.out.println("STAT_FOLLOWERS|" + followers);
-                            return;
-                        }
+                    } catch (org.openqa.selenium.StaleElementReferenceException ignored) {}
+                }
+                Thread.sleep(1200);
+            }
+            // The exact follower number appears inside Spotify's About dialog.
+            // Read its title-sized number only after opening the artist About panel.
+            org.openqa.selenium.By exactNumber = org.openqa.selenium.By.cssSelector(
+                "[role='dialog'] [data-encore-id='text'].encore-text-title-medium, " +
+                "[role='dialog'] .encore-text-title-medium, " +
+                "[data-testid='modal'] .encore-text-title-medium");
+            for (int attempt = 0; attempt < 12; attempt++) {
+                for (org.openqa.selenium.WebElement element : driver.findElements(exactNumber)) {
+                    String value = element.getText().trim();
+                    if (!value.matches("[0-9]{1,3}(?:,[0-9]{3})+|[0-9]{7,10}")) continue;
+                    long followers = Long.parseLong(value.replace(",", ""));
+                    if (followers >= 1000000L && followers <= 1000000000L) {
+                        System.out.println("STAT_FOLLOWERS|" + followers);
+                        return;
                     }
                 }
-                Thread.sleep(1500);
+                Thread.sleep(1000);
             }
-            System.out.println("STAT_FOLLOWERS_UNAVAILABLE|not-visible-on-artist-page");
+            System.out.println("STAT_FOLLOWERS_UNAVAILABLE|artist-about-dialog-number-not-found");
         } catch (Exception e) {
             System.out.println("STAT_FOLLOWERS_UNAVAILABLE|" + e.getClass().getSimpleName());
         }
