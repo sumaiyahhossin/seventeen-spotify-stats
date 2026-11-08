@@ -22,6 +22,7 @@ if kind=='group':
         try {
             driver.get(artist);
             org.openqa.selenium.By aboutButton = org.openqa.selenium.By.cssSelector("button[aria-label='SEVENTEEN']");
+            boolean opened = false;
             for (int attempt = 0; attempt < 10; attempt++) {
                 java.util.List<org.openqa.selenium.WebElement> buttons = driver.findElements(aboutButton);
                 if (!buttons.isEmpty()) {
@@ -29,6 +30,7 @@ if kind=='group':
                         org.openqa.selenium.WebElement button = buttons.get(0);
                         if (button.isDisplayed()) {
                             ((org.openqa.selenium.JavascriptExecutor)driver).executeScript("arguments[0].click();", button);
+                            opened = true;
                             break;
                         }
                     } catch (org.openqa.selenium.StaleElementReferenceException ignored) {}
