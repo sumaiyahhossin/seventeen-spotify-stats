@@ -718,7 +718,9 @@ function buildRows(s,p,pp,baseline){
   const releaseDates=trackOriginalReleaseDates();
   rows.forEach(row=>{
    const normalized=normTrackName(row.name);
-   row.releaseDate=releaseDates.byId.get(row.id)||
+   // Keep verified original-date overrides (including remixes and OSTs)
+   // when sorting oldest/newest; do not overwrite them with catalog defaults.
+   row.releaseDate=row.releaseDate||releaseDates.byId.get(row.id)||
     releaseDates.byName.get(normalized)||null;
    row.releaseOrder=releaseDates.orderById.get(row.id)??
     releaseDates.orderByName.get(normalized)??null;
