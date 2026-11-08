@@ -24,18 +24,26 @@ window.addEventListener('scroll',()=>{if(!scrollSavePending){scrollSavePending=t
 const load=async p=>{try{const r=await fetch(p+'?v='+Date.now());return r.ok?await r.json():null}catch{return null}};
 const idName={};
 function buildNames(){
- // The artwork index provides verified track-ID/title pairs even when a
- // release description is incomplete or has commas inside a song title.
- for(const [title,entry] of Object.entries(artworkMap.tracks||{})){
-  if(entry?.id&&/^[a-zA-Z0-9]{22}$/.test(entry.id)&&title&&!idName[entry.id])
-   idName[entry.id]=title;
- }
+ // Artwork metadata is not a reliable track-ID title source: some artwork
+ // entries reuse an album's first Spotify ID for several different songs.
+ // Use catalog track order when the description has a complete track list.
  for(const type of ['group','solo'])for(const item of catalog[type]||[]){
   const raw=((item.description||'').match(/\(\d+\s+tracks?\)\s*:\s*(.*)$/i)||[])[1]||'';
   const names=raw.split(/,\s*/).map(x=>x.trim());
   if(names.length!==item.tracks.length)continue;
   item.tracks.forEach((id,i)=>{if(names[i]&&!idName[id])idName[id]=names[i]});
  }
+ // Explicit names for catalog entries whose descriptions are missing or
+ // malformed. These IDs are grounded in the corresponding release listings.
+ const verifiedNames={
+  '5Pqo2Fel77vnFY03uGFtiD':'Ready to Love',
+  '6KfYVOicblNB8CaDZwbxiT':'Dirty Dancing (feat. JOSHUA, DK & DINO)',
+  '0xZ4WU5UfctiSeETi6pMEo':'God of Light Music',
+  '6P7m3AZlTUm39hkeAgQNMk':'Super (Workout Remix)',
+  '3CEm0R0huTRT1IcxYhuTWv':'Candy',
+  '5ZwXgb8dQuK1GC15s7tG5L':'Til My Fingers Bleed (with DINO, Duckwrth & Telle)'
+ };
+ Object.assign(idName,verifiedNames);
  // Preserve the proper display name for the Dirty Dancing remix.
  idName['6KfYVOicblNB8CaDZwbxiT']='Dirty Dancing (feat. JOSHUA, DK & DINO)';
 }
