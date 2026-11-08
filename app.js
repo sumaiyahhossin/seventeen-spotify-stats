@@ -1635,6 +1635,15 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
  const grandId=s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;
  $('#total').textContent=s?fmt(tab==='solo'&&selectedSoloArtist?memberIds.reduce((a,id)=>a+Number(s.tracks[id]||0),0):grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';
  const gainNote=$('#gain').nextElementSibling;
+ const comparisonCard=$('#periodComparisonCard');
+ const comparisonValue=$('#periodComparisonValue');
+ const comparisonHeading=$('#periodComparisonHeading');
+ const comparisonDetail=$('#periodComparisonDetail');
+ comparisonCard.hidden=false;
+ comparisonHeading.textContent=isPeriod?'VS PREVIOUS '+periodName.toUpperCase()+' PERIOD':'VS PREVIOUS DAY';
+ comparisonValue.textContent='—';
+ comparisonDetail.textContent='Comparison unavailable';
+ if(gainNote)gainNote.textContent='';
  if(isPeriod){
   const summary=memberIds.map(id=>periodGain(s,baseline,id));
   const valid=summary.filter(n=>n!=null);
@@ -1655,6 +1664,17 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
     return canonical.reduce((sum,id)=>sum+snapshot.tracks[id],0);
    return null;
   };
+  // Compare equal elapsed windows, never a partial week/month with a full one.
+  const comparisonStart=baseline?.prevStart;
+  const priorPeriodEndDate=rank.endsWith('weekly')?shifted(s.date,-7):rank.endsWith('monthly')?(()=>{
+   const [year,month,day]=s.date.split('-').map(Number);
+   const last=new Date(Date.UTC(year,month-1,0)).getUTCDate();
+   return new Date(Date.UTC(year,month-2,Math.min(day,last))).toISOString().slice(0,10);
+  })():rank.endsWith('yearly')?shifted(s.date,-365):null;
+  const priorPeriodEnd=priorPeriodEndDate?await getDate(tab,priorPeriodEndDate):null;
+  const previousStartTotal=archivedGroupTotal(comparisonStart);
+  const previousEndTotal=archivedGroupTotal(priorPeriodEnd);
+  const previousPeriodGain=previousStartTotal!=null&&previousEndTotal!=null&&previousEndTotal>=previousStartTotal?previousEndTotal-previousStartTotal:null;
   const currentTotal=archivedGroupTotal(s);
   const historicTotal=archivedGroupTotal(baseline?.start);
   const groupTotalGain=tab==='group'&&currentTotal!=null&&historicTotal!=null&&
@@ -1668,7 +1688,11 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
    const periodLast=rank.endsWith('monthly')?lastDayOfMonth:s.date;
    const completePeriod=rank.endsWith('monthly')&&s.date===lastDayOfMonth;
    const fmtPeriodDate=d=>new Date(d+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'long',day:'numeric',year:'numeric'});
-   if(gainNote)gainNote.textContent=fmtPeriodDate(periodFirst)+' – '+fmtPeriodDate(s.date);
+   if(previousPeriodGain!=null){
+    const difference=groupTotalGain-previousPeriodGain;
+    comparisonValue.textContent=(difference>=0?'+':'−')+fmt(Math.abs(difference));
+    comparisonDetail.textContent=difference>=0?'More streams than previous equivalent period':'Fewer streams than previous equivalent period';
+   }
   }else{
    $('#gain').textContent=valid.length?'+'+fmt(valid.reduce((a,b)=>a+b,0))+(valid.length<memberIds.length?'*':''):'—';
    if(gainNote)gainNote.textContent=!baseline?.start
@@ -1698,7 +1722,8 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
    const consecutive=s&&p&&pp&&shifted(s.date,-1)===p.date&&shifted(p.date,-1)===pp.date;
    if(today!=null&&yesterday!=null&&consecutive){
     const change=today-yesterday;
-    gainNote.textContent=(change>=0?'+':'−')+fmt(Math.abs(change))+' vs previous day ('+p.date+')';
+    comparisonValue.textContent=(change>=0?'+':'−')+fmt(Math.abs(change));
+    comparisonDetail.textContent=change>=0?'More streams than previous day':'Fewer streams than previous day';
    }else if(today!=null)gainNote.textContent='Previous-day comparison unavailable';
    else gainNote.textContent=partialGain!=null?'Partial gain; previous-day comparison unavailable':'Daily gain unavailable';
   }
