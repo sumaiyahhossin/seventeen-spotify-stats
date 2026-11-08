@@ -1432,3 +1432,99 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  .name-fall>.falling-name:nth-child(2n){display:none!important}
 }
 @media(prefers-reduced-motion:reduce){.name-fall{display:none!important}}
+
+/* v120: three aligned, equal-height controls, including on narrow screens */
+.archive-top-controls{
+ display:grid!important;grid-template-columns:minmax(0,220px) minmax(0,440px) minmax(0,175px)!important;
+ justify-content:center!important;align-items:start!important;
+ gap:14px!important;width:100%!important;max-width:980px!important;
+ padding:12px!important;margin:16px auto 22px!important;
+}
+.archive-top-controls>.rank-select,.archive-top-controls>#dailyPickerWrap{
+ width:100%!important;min-width:0!important;max-width:none!important;
+ margin:0!important;align-self:start!important;
+}
+.archive-top-controls>.milestone-nav-link{
+ align-self:start!important;justify-self:stretch!important;
+ display:flex!important;justify-content:center!important;align-items:center!important;
+ width:100%!important;min-width:0!important;height:46px!important;
+ margin:22px 0 0!important;padding:0 8px!important;
+ border-radius:12px!important;white-space:nowrap!important;
+ font-size:12px!important;
+}
+.archive-top-controls .rank-select select{width:100%!important;height:46px!important;min-height:46px!important}
+.archive-top-controls #dailyPickerWrap .date-navigation{
+ display:flex!important;align-items:center!important;gap:5px!important;
+ width:100%!important;min-width:0!important;
+}
+.archive-top-controls .pretty-date-wrap{
+ position:relative!important;flex:1 1 0!important;min-width:0!important;
+ height:46px!important;
+}
+.archive-top-controls .pretty-date-wrap #prettyDate{
+ position:absolute;inset:0;z-index:1;
+ display:flex;align-items:center;padding:0 30px 0 12px;
+ overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+ background:#292c50;border:1px solid #7b70ad;border-radius:12px;
+ color:#f8f4ff;font-size:13px;font-weight:750;pointer-events:none;
+}
+.archive-top-controls .pretty-date-wrap #archiveDate{
+ position:absolute!important;inset:0!important;
+ width:100%!important;height:46px!important;min-height:46px!important;
+ opacity:.015!important;cursor:pointer!important;z-index:2!important;
+ padding:0!important;margin:0!important;
+}
+.archive-top-controls #dailyPickerWrap .date-arrow{
+ width:30px!important;min-width:30px!important;flex:0 0 30px!important;
+ height:46px!important;
+}
+.archive-top-controls #dailyPickerWrap #latestDate{
+ height:46px!important;min-height:46px!important;
+ padding:0 7px!important;font-size:10px!important;
+}
+.archive-top-controls #dailyPickerWrap #dateNotice{font-size:10px!important;margin-top:5px!important}
+@media(max-width:760px){
+ .archive-top-controls{
+  grid-template-columns:minmax(0,1fr) minmax(0,1.65fr) minmax(0,.75fr)!important;
+  gap:6px!important;max-width:none!important;
+  padding:8px 5px!important;
+ }
+ .archive-top-controls>.rank-select,.archive-top-controls>#dailyPickerWrap{
+  width:100%!important;min-width:0!important;
+ }
+ .archive-top-controls .rank-select>span,.archive-top-controls #dailyPickerWrap>label{
+  font-size:8px!important;letter-spacing:.4px!important;white-space:nowrap!important;
+ }
+ .archive-top-controls .rank-select select{
+  height:38px!important;min-height:38px!important;
+  padding:0 17px 0 5px!important;font-size:11px!important;
+  background-position:right 4px center!important;background-size:11px!important;
+ }
+ .archive-top-controls .pretty-date-wrap{height:38px!important}
+ .archive-top-controls .pretty-date-wrap #prettyDate{
+  font-size:10px!important;padding:0 4px!important;
+ }
+ .archive-top-controls .pretty-date-wrap #archiveDate{
+  height:38px!important;min-height:38px!important;
+ }
+ .archive-top-controls #dailyPickerWrap .date-arrow{
+  width:17px!important;min-width:17px!important;flex-basis:17px!important;
+  height:38px!important;padding:0!important;font-size:15px!important;
+ }
+ .archive-top-controls #dailyPickerWrap .date-navigation{gap:2px!important}
+ .archive-top-controls #dailyPickerWrap #latestDate{
+  height:38px!important;min-height:38px!important;
+  width:23px!important;min-width:23px!important;flex:0 0 23px!important;
+  font-size:0!important;padding:0!important;
+ }
+ .archive-top-controls #dailyPickerWrap #latestDate::before{
+  content:'✦'!important;font-size:15px!important;color:#ffb1e5!important;
+ }
+ .archive-top-controls>.milestone-nav-link{
+  height:38px!important;margin-top:17px!important;
+  font-size:9px!important;padding:0 3px!important;
+ }
+ .archive-top-controls #dailyPickerWrap #dateNotice{
+  font-size:8px!important;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
+ }
+}
