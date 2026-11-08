@@ -968,3 +968,9 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  header .logo span{font-size:6px!important}
  header .concert-sound{font-size:8px!important;padding:5px 3px!important}
 }
+
+/* Rank movement in Tracks and Albums charts */
+.rank-trend{display:inline-flex;align-items:center;justify-content:center;min-width:38px;margin-right:8px;padding:3px 6px;border-radius:7px;font-size:11px;font-weight:800;white-space:nowrap;background:rgba(140,155,180,.12);color:#b8c2d5}
+.rank-trend.rank-up{color:#77dfaa;background:rgba(60,190,126,.13)}
+.rank-trend.rank-down{color:#ff9ca8;background:rgba(220,78,95,.13)}
+.rank-trend.rank-same{color:#d8e1f2}
