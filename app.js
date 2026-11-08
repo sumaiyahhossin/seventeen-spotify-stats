@@ -167,7 +167,7 @@ function displayTrackName(name){
   'gom inst':'God of Music (Inst.)','gom trot remix':'God of Music (Trot Remix)',
   'golm inst':'God of Light Music (Inst.)',
   'f ck my life':'F*ck My Life','fuck my life':'F*ck My Life','super':'Super','hot':'HOT','thunder':'THUNDER','rock with you':'Rock with you',
-  'very nice':'VERY NICE','maestro':'MAESTRO','don t wanna cry':"Don't Wanna Cry",
+  'very nice':'VERY NICE','maestro':'MAESTRO',"don't wanna cry":"Don't Wanna Cry",
   'darling':'Darl+ing','darl ing':'Darl+ing','shining diamond':'Shining Diamond',
   'adore u':'Adore U','left right':'Left & Right','ready to love':'Ready to love',
   'home run':'HOME;RUN','home':'Home','world':'_WORLD','shadow':'Shadow',
@@ -271,11 +271,11 @@ function discographyRows(s,p,pp,baseline){
   const streams=ids.every(id=>s.tracks?.[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
   const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
   const previousGain=sumDaily(p,pp,ids);
-  const albumTotalRow={name:catalogReleaseLabel(item),streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&previousGain!=null?gain-previousGain:null,kind:'album',releaseKey:item.key,releaseOrder:rows.length};
+  const albumTotalRow={name:catalogReleaseLabel(item),streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&previousGain!=null?gain-previousGain:null,kind:'album',releaseOrder:rows.length};
   for(const id of ids){
    if(s.tracks?.[id]==null)continue;
    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
-   rows.push({id,name:displayTrackName(s.names?.[id]||idName[id]||id),streams:s.tracks[id],gain:g,change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),kind:'track',releaseKey:item.key,releaseOrder:rows.length});
+   rows.push({id,name:displayTrackName(s.names?.[id]||idName[id]||id),streams:s.tracks[id],gain:g,change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),kind:'track',releaseOrder:rows.length});
   }
   rows.push(albumTotalRow);
  }
@@ -297,7 +297,7 @@ function buildRows(s,p,pp,baseline){
      const ids=[...new Set(item.tracks)];
      const streams=ids.every(id=>s.tracks[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
      const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids),yesterday=sumDaily(p,pp,ids);
-     rows.push({name:catalogReleaseLabel(item),releaseKey:item.key,kind:'album',streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&yesterday!=null?gain-yesterday:null});
+     rows.push({name:catalogReleaseLabel(item),streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&yesterday!=null?gain-yesterday:null});
    }
  }else{
    rows=trackIds(s).map(id=>({
@@ -313,7 +313,7 @@ function buildRows(s,p,pp,baseline){
 const coverCache=new Map(),coverLookup=new Map(),releaseCoverLookup=new Map();
 const releaseArtNames={'fml album':'FML','al1 album':'Al1','you make my day album':'YOU MAKE MY DAY',';[semicolon] album':'Semicolon','we make you album':'WE MAKE YOU','24h single':'24H','24h mini album':'24H','fallin\' flower single':'Fallin\' Flower','hitorijanai single':'Not Alone','an ode new tracks album':'An Ode'};
 const releaseArtCache=new Map();
-const persistentCoverKey='svt-artwork-cache-v5-original-album-images';
+const persistentCoverKey='svt-artwork-cache-v3-discography';
 let persistentCovers={};
 try{persistentCovers=JSON.parse(localStorage.getItem(persistentCoverKey)||'{}')||{}}catch{}
 function rememberCover(key,url){
@@ -378,28 +378,6 @@ const originalReleaseSongs={
  'seventeenth heaven album':['sos','god of music','diamond days','back 2 back','monster','yawn','headliner'],
  'spill the feels album':['eyes on you','love money fame','1 to 13','candy','rain','water']
 };
-// Original album art is looked up by release title, not by a track ID
-// (the same song can be catalogued under a later compilation).
-const originalArtworkTitles={
- '17 carat album':'17 CARAT','boys be album':'BOYS BE',
- 'love & letter album':'LOVE&LETTER',
- 'love & letter repackage new tracks':'Love&Letter Repackage Album',
- 'going seventeen album':'Going Seventeen','al1 album':'Al1',
- 'teen, age album':'TEEN, AGE',"director's cut album":"DIRECTOR'S CUT",
- 'you make my day album':'YOU MAKE MY DAY','you make my dawn album':'YOU MADE MY DAWN',
- 'an ode new tracks album':'An Ode','heng':'Heng:garæ',
- ';[semicolon] album':'Semicolon','your choice album':'Your Choice',
- 'attacca album':'Attacca','face the sun album':'Face the Sun',
- 'sector 17 repackage album new tracks':'SECTOR 17',
- 'fml album':'FML','seventeenth heaven album':'SEVENTEENTH HEAVEN',
- 'spill the feels album':'SPILL THE FEELS',
- '17 is right here best album':'17 IS RIGHT HERE'
-};
-const originalArtworkBySong=new Map();
-for(const [release,songs] of Object.entries(originalReleaseSongs)){
- const title=originalArtworkTitles[release];
- if(title)for(const song of songs)originalArtworkBySong.set(coverKey(song),title);
-}
 const originalReleaseLookup=new Map();
 function buildOriginalReleaseLookup(){
  for(const [title,names] of Object.entries(originalReleaseSongs)){
@@ -461,53 +439,50 @@ function streamTrackUrl(row){
    ||(mapped?.id&&/^[a-zA-Z0-9]{22}$/.test(mapped.id)?mapped.id:null);
  return id?'https://open.spotify.com/track/'+id:null;
 }
-// Artwork is resolved from the discography release, never from an
-// anthology track or a fuzzy search result for a similarly named release.
 function artworkTrack(row){
- const valid=id=>/^[A-Za-z0-9]{22}$/.test(id||'');
- const key=coverKey(row.name).replace(/\btotal\b/g,'').trim();
- const items=catalog[tab]||[];
- const album=row.kind==='album'||rank.startsWith('albums');
- if(album){
-  // The exact catalog item is carried by ranking/discography rows.
-  let release=row.releaseKey?items.find(x=>x.key===row.releaseKey):null;
-  if(!release){
-   release=items.find(x=>coverKey(catalogReleaseLabel(x))===key)
-    ||items.find(x=>coverKey(x.title)===key)
-    ||items.find(x=>key.includes(coverKey(x.title))&&coverKey(x.title).length>7);
-  }
-  const first=release?.tracks?.find(valid);
-  if(first)return 'track:'+first;
-  const mapped=artworkMap.albums[key];
-  return mapped?.id?'track:'+mapped.id:null;
+ const name=coverKey(row.name).replace(/\btotal\b/g,'').trim();
+ const isAlbum=row.kind==='album'||rank.startsWith('albums');
+ const validId=id=>/^[A-Za-z0-9]{22}$/.test(id||'');
+ const isVersion=/\b(remix|instrumental|inst|sped up|slowed|workout|orchestra|feat|with|holiday|korean ver|chinese ver|japanese ver)\b/.test(name);
+ const releases=catalog[tab]||[];
+ if(isAlbum){
+  // Album rows must display their own release, including compilations.
+  const release=releases.find(item=>coverKey(item.title)===name)
+   ||releases.find(item=>coverKey(catalogReleaseLabel(item))===name)
+   ||releases.find(item=>coverKey(item.title).replace(/\b(album|ep|single|mini|new tracks)\b/g,'').trim()===name);
+  const id=release?.tracks?.find(validId);
+  if(id)return 'track:'+id;
+  const mapped=artworkMap.albums[name];
+  if(mapped?.id)return 'track:'+mapped.id;
+  return null;
  }
- if(tab==='solo'){
-  // The solo/unit catalog's Spotify IDs retain each member's own artwork.
-  if(valid(row.id))return 'track:'+row.id;
-  const matched=items.find(x=>coverKey(x.title)===key);
-  const first=matched?.tracks?.find(valid);
-  return first?'track:'+first:null;
+ if(tab==='group'){
+  // The discography's first release wins over anthology Spotify track IDs.
+  // Japanese versions, remixes and other distinct recordings stay separate.
+  if(japaneseOriginalArtwork[name])return 'release:'+encodeURIComponent(japaneseOriginalArtwork[name]);
+  const original=originalReleaseLookup.get(name);
+  if(original&&!isVersion)return 'track:'+original;
+  const first=firstReleaseByTitle.get(name);
+  if(first&&!isVersion)return first;
+  const byId=firstReleaseById.get(row.id);
+  if(byId&&!isVersion)return byId;
+  // For songs exclusive to 17 IS RIGHT HERE, use the actual compilation.
+  if(['maestro','lalali','spell','cheers to youth','call call call korean ver',
+      'happy ending korean ver','24h korean ver','not alone korean ver',
+      'power of love korean ver','dream korean ver',
+      'ima even if the world ends tomorrow korean ver','adore u inst'].includes(name))
+   return 'release:'+encodeURIComponent('17 IS RIGHT HERE');
+  return validId(row.id)?'track:'+row.id:null;
  }
- const version=/\b(remix|instrumental|inst|sped up|slowed|workout|orchestra|feat|with|holiday|korean ver|chinese ver|japanese ver)\b/.test(key);
- // Specific Japanese versions have their own original Japanese release.
- if(japaneseOriginalArtwork[key])return 'release:'+encodeURIComponent(japaneseOriginalArtwork[key]);
- // This map follows the song-to-original-album discography listing.
- const releaseTitle=originalArtworkBySong.get(key);
- if(releaseTitle&&!version)return 'release:'+encodeURIComponent(releaseTitle);
- const first=originalReleaseLookup.get(key);
- if(first&&!version)return 'track:'+first;
- const discography=firstReleaseByTitle.get(key);
- if(discography&&!version)return discography;
- // Anthology-only recordings must not be assigned an older album.
- if(['maestro','lalali','spell','cheers to youth','call call call korean ver',
- 'happy ending korean ver','24h korean ver','not alone korean ver',
- 'power of love korean ver','dream korean ver',
- 'ima even if the world ends tomorrow korean ver','adore u inst'].includes(key))
- return 'track:2UE9XGbAzicJIyo4bB6sqM';
- // The original release of this exact Spotify ID is used when catalogued.
- const byId=firstReleaseById.get(row.id);
- if(byId&&!version)return byId;
- return valid(row.id)?'track:'+row.id:null;
+ // Solo/unit: preserve the member and track ID, never borrow another artist's cover.
+ if(validId(row.id))return 'track:'+row.id;
+ const matches=releases.flatMap(item=>{
+  const desc=(item.description||'').split(':').slice(1).join(':');
+  const titles=desc.split(/,\s*/).map(coverKey);
+  if(titles.length!==item.tracks.length)return [];
+  return item.tracks.map((id,i)=>({id,title:titles[i]}));
+ }).filter(item=>item.title===name&&validId(item.id));
+ return matches.length===1?'track:'+matches[0].id:null;
 }
 function spotifyCover(id){
  if(!id)return Promise.resolve(null);
@@ -527,9 +502,7 @@ function fillArtwork(){
    else if(id?.startsWith('release:')){
     const title=decodeURIComponent(id.slice(8));
     if(!releaseArtCache.has(title))releaseArtCache.set(title,persistentCovers['release:'+title]?Promise.resolve(persistentCovers['release:'+title]):fetch('https://itunes.apple.com/search?'+new URLSearchParams({term:'SEVENTEEN '+title,entity:'album',limit:'50'})).then(r=>r.ok?r.json():null).then(data=>{
-     const clean=t=>coverKey(t).replace(/\\b(ep|single|album|mini)\\b/g,'').trim();
-     const wanted=clean(title);
-     const matches=(data?.results||[]).filter(x=>/seventeen/i.test(x.artistName||'')&&clean(x.collectionName)===wanted);
+     const matches=(data?.results||[]).filter(x=>/seventeen/i.test(x.artistName||'')&&coverKey(x.collectionName).replace(/\\b(ep|single|album)\\b/g,'').trim()===coverKey(title));
      const url=matches[0]?.artworkUrl100?.replace('100x100bb','600x600bb')||null;rememberCover('release:'+title,url);return url;
     }).catch(()=>null));
     url=await releaseArtCache.get(title);
