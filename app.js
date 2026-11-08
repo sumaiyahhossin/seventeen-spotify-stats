@@ -84,10 +84,10 @@ function properReleaseName(item){
 function catalogReleaseLabel(item){
  const proper=properReleaseName(item);if(proper)return proper;
  const name=String(item.title||'').toLowerCase(),count=(item.tracks||[]).length;
- if(name.includes('love & letter repackage'))return 'LOVE & LETTER (Repackage) — '+(count===5?'New Tracks':'All Tracks');
- if(name.includes('sector 17 repackage'))return 'SECTOR 17 — '+(count===4?'New Tracks':'All Tracks');
+ if(name.includes('love & letter repackage'))return 'LOVE & LETTER (Repackage) — New Tracks';
+ if(name.includes('sector 17 repackage'))return 'SECTOR 17 — New Tracks';
  if(name.includes('17 is right here'))return '17 IS RIGHT HERE — '+(count===4?'New Tracks (4)':count===1?'Additional Track (1)':count===2?'Additional Tracks (2)':'Additional Tracks ('+count+')')+' · Partial Collection';
- return albumDisplayName(item.title);
+ return formatDiscographyAlbumName(item.title);
 }
 function unresolvedName(id){const n=idName[id];return !n||n===id||/^[A-Za-z0-9]{22}$/.test(n)}
 function resolveMissingNames(s,p){
@@ -283,8 +283,8 @@ function formatDiscographyAlbumName(name){
  const raw=String(name||'').replace(/\s*Total\s*:?$/i,'').trim();
  if(/love\s*&\s*letter.*repackage/i.test(raw))return 'LOVE & LETTER (Repackage) — '+(/new tracks/i.test(raw)?'New Tracks':'All Tracks');
  if(/sector\s*17.*repackage/i.test(raw))return 'SECTOR 17 — '+(/new tracks/i.test(raw)?'New Tracks':'All Tracks');
- if(/\bost\b/i.test(raw))return raw.replace(/\bost\b/gi,'OST').replace(/\btotal\b/gi,'Total').replace(/\ba-teen\b/gi,'A-TEEN').replace(/\b9-teen\b/gi,'9-TEEN');
- const formatted=albumDisplayName(raw);
+
+ const formatted=albumDisplayName(raw.replace(/\s+(?:single|ost)(?:\s+album)?$/i,'').trim());
  const titled=formatted===formatted.toLowerCase()?formatted.replace(/\b[a-z]/g,c=>c.toUpperCase()):formatted;
  return titled.replace(/\bost\b/gi,'OST').replace(/\bep\b/gi,'EP')
   .replace(/\b17 is right here\b/gi,'17 IS RIGHT HERE')
@@ -324,7 +324,18 @@ function discographyRows(s,p,pp,baseline){
    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
    rows.push({id,name:displayTrackName(s.names?.[id]||idName[id]||id),streams:s.tracks[id],gain:g,change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),kind:'track',releaseOrder:rows.length});
   }
-  if(!['g6','g37'].includes(item.key))rows.push(albumTotalRow);
+  // Keep the new-track subtotal AND the combined repackage total.
+  if(item.key==='g7'||item.key==='g36'){
+   const newIds=[...new Set(item.tracks||[])];
+   const newStreams=newIds.every(id=>s.tracks?.[id]!=null)?newIds.reduce((a,id)=>a+s.tracks[id],0):null;
+   const newGain=periodic?sumPeriod(s,baseline,newIds):sumDaily(s,p,newIds);
+   const newPrevious=sumDaily(p,pp,newIds);
+   rows.push({name:item.key==='g7'?'LOVE & LETTER (Repackage) — New Tracks':'SECTOR 17 — New Tracks',
+    artworkRelease:item.key,streams:newStreams,gain:newGain,
+    change:periodic?sumPeriodChange(s,baseline,newIds):newGain!=null&&newPrevious!=null?newGain-newPrevious:null,
+    kind:'album',releaseOrder:rows.length});
+   rows.push({...albumTotalRow,releaseOrder:rows.length});
+  }else if(item.key!=='g6'&&item.key!=='g37')rows.push(albumTotalRow);
  }
  return rows;
 }
@@ -538,7 +549,7 @@ function artworkTrack(row){
    g5:'LOVE & LETTER',g6:'LOVE & LETTER (Repackage)',g7:'LOVE & LETTER (Repackage)',
    g35:'Face the Sun',g36:'SECTOR 17',g37:'SECTOR 17',
    g49:'17 IS RIGHT HERE',g50:'17 IS RIGHT HERE',g51:'17 IS RIGHT HERE',g52:'17 IS RIGHT HERE',
-   g43:'ALWAYS YOURS',g44:'ALWAYS YOURS'
+   g43:'ALWAYS YOURS',g44:'ALWAYS YOURS',g24:'24H',g25:'24H'
   };
   if(directRelease[row.artworkRelease])return 'release:'+encodeURIComponent(directRelease[row.artworkRelease]);
  }
