@@ -1345,7 +1345,8 @@ function syncCalendar(){
  const available=availableDates(),date=selection==='latest'?(current[tab]?.date||available.at(-1)):selection;
  const picker=$('#archiveDate');
  if(!picker)return;
- picker.innerHTML=available.map(d=>'<option value="'+d+'">'+new Date(d+'T00:00:00Z').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'})+'</option>').join('');
+ picker.min='2025-01-01';
+ picker.max=available.at(-1)||'2025-01-01';
  picker.value=available.includes(date)?date:(available.at(-1)||'');
  $('#prevDate').disabled=!date||available.indexOf(date)<=0;
  $('#nextDate').disabled=!date||available.indexOf(date)>=available.length-1;
