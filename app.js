@@ -308,9 +308,23 @@ function discographyRows(s,p,pp,baseline){
  }
  return rows;
 }
-const requestedGroupAlbums=[{"name":"1st Best Album 17 IS RIGHT HERE","keys":["g49","g50","g51","g52","g53","g54"]},{"name":"4th Full Album Repackage SECTOR 17 Album","keys":["g36","g37"]},{"name":"4th Full Album - Face the Sun Album","keys":["g35"]},{"name":"Love & Letter Repackage Album","keys":["g7"]},{"name":"10th Mini Album - FML Album","keys":["g41"]},{"name":"9th Mini Album - Attacca Album","keys":["g32"]},{"name":"2nd Full Album - TEEN, AGE Album","keys":["g10"]},{"name":"3rd Full Album - An Ode Album","keys":["g20"]},{"name":"7th Mini Album - Heng:garæ Album","keys":["g23"]},{"name":"1st Japanese Best Album ALWAYS YOURS","keys":["g43","g44"]},{"name":"4th Mini Album - Al1 Album","keys":["g9"]},{"name":"6th Mini Album - YOU MAKE MY DAWN Album","keys":["g16"]},{"name":"8th Mini Album - YOUR CHOICE Album","keys":["g29"]},{"name":"5th Full Album - HAPPY BURSTDAY Album","keys":["g59"]},{"name":"1st Full Album - Love & Letter Album","keys":["g5"]},{"name":"3rd Mini Album - Going Seventeen Album","keys":["g8"]},{"name":"11th Mini Album - SEVENTEENTH HEAVEN Album","keys":["g46"]},{"name":"2nd Special Album - ;[Semicolon] Album","keys":["g27"]},{"name":"5th Mini Album - YOU MAKE MY DAY Album","keys":["g13"]},{"name":"12th Mini Album - SPILL THE FEELS Album","keys":["g56"]},{"name":"1st Special Album - DIRECTOR'S CUT Album","keys":["g11"]},{"name":"1st Mini Album - 17 CARAT Album","keys":["g1"]},{"name":"2nd Mini Album - BOYS BE Album","keys":["g2"]},{"name":"2nd Japan Single Album - Fallin' Flower Album","keys":["g22"]},{"name":"1st Japan Mini Album - WE MAKE YOU Album","keys":["g12"]},{"name":"2nd Japan Mini Album - 24H Album","keys":["g25"]},{"name":"3rd Japan Single Album - Hitorijanai Album","keys":["g28"]},{"name":"1st Japan Single Album - Happy Ending Album","keys":["g18"]},{"name":"1st Japan EP Album - DREAM Album","keys":["g39"]},{"name":"3rd Japan Single Album - Power of Love Album","keys":["g33"]},{"name":"4th Japan Single Album - Shohikigen Album","keys":["g58"]}];
+const requestedGroupAlbums=[{"name":"1st Best Album - 17 IS RIGHT HERE","keys":["g49","g50","g51","g52","g53","g54"]},{"name":"4th Full Album Repackage - SECTOR 17","keys":["g36","g37"]},{"name":"4th Full Album - Face the Sun","keys":["g35"]},{"name":"1st Full Album Repackage - LOVE & LETTER","keys":["g7"]},{"name":"10th Mini Album - FML","keys":["g41"]},{"name":"9th Mini Album - Attacca","keys":["g32"]},{"name":"2nd Full Album - TEEN, AGE","keys":["g10"]},{"name":"3rd Full Album - An Ode","keys":["g20"]},{"name":"7th Mini Album - Heng:garæ","keys":["g23"]},{"name":"1st Japanese Best Album - ALWAYS YOURS","keys":["g43","g44"]},{"name":"4th Mini Album - Al1","keys":["g9"]},{"name":"6th Mini Album - YOU MADE MY DAWN","keys":["g16"]},{"name":"8th Mini Album - Your Choice","keys":["g29"]},{"name":"5th Full Album - HAPPY BURSTDAY","keys":["g59"]},{"name":"1st Full Album - LOVE & LETTER","keys":["g5"]},{"name":"3rd Mini Album - Going Seventeen","keys":["g8"]},{"name":"11th Mini Album - SEVENTEENTH HEAVEN","keys":["g46"]},{"name":"2nd Special Album - ; [Semicolon]","keys":["g27"]},{"name":"5th Mini Album - YOU MAKE MY DAY","keys":["g13"]},{"name":"12th Mini Album - SPILL THE FEELS","keys":["g56"]},{"name":"1st Special Album - DIRECTOR'S CUT","keys":["g11"]},{"name":"1st Mini Album - 17 CARAT","keys":["g1"]},{"name":"2nd Mini Album - BOYS BE","keys":["g2"]},{"name":"2nd Japanese Single Album - Fallin' Flower","keys":["g22"]},{"name":"1st Japanese Mini Album - WE MAKE YOU","keys":["g12"]},{"name":"2nd Japanese Mini Album - 24H","keys":["g25"]},{"name":"3rd Japanese Single Album - Hitorijanai","keys":["g28"]},{"name":"1st Japanese Single Album - Happy Ending","keys":["g18"]},{"name":"1st Japanese EP Album - DREAM","keys":["g39"]},{"name":"4th Japanese Single Album - Power of Love","keys":["g33"]},{"name":"5th Japanese Single Album - Shohikigen","keys":["g58"]}];
 function cleanAlbumLabel(name){
- return String(name||'').replace(/\b(?:album)\b/gi,'').replace(/\s+/g,' ').replace(/\s+([—–])/g,' $1').trim();
+ let n=String(name||'').replace(/\s*Total\s*:?$/i,'').trim();
+ if(/17 is right here/i.test(n))return '1st Best Album - 17 IS RIGHT HERE';
+ if(/always yours/i.test(n))return '1st Japanese Best Album - ALWAYS YOURS';
+ if(/sector 17/i.test(n)&&/repackage/i.test(n))return '4th Full Album Repackage - SECTOR 17';
+ if(/love\s*&\s*letter/i.test(n)&&/repackage/i.test(n))return '1st Full Album Repackage - LOVE & LETTER';
+ if(/love\s*&\s*letter/i.test(n)&&/1st full|full album/i.test(n))return '1st Full Album - LOVE & LETTER';
+ n=n.replace(/\s+Album\s+-\s+/gi,' Album - ').replace(/\s+Album\s*$/gi,'');
+ n=n.replace(/\s+-\s+/g,' - ').replace(/\s+/g,' ').trim();
+ const match=n.match(/^(.*?)\s+-\s+(.*?)$/);
+ if(match){
+  let type=match[1].trim(),title=match[2].replace(/\s+Album$/i,'').trim();
+  if(!/\bAlbum$/i.test(type))type+=' Album';
+  return type+' - '+title;
+ }
+ return n;
 }
 function buildRows(s,p,pp,baseline){
  if(!s)return[];
@@ -331,7 +345,7 @@ function buildRows(s,p,pp,baseline){
      const streams=ids.length&&ids.every(id=>s.tracks[id]!=null)?ids.reduce((sum,id)=>sum+s.tracks[id],0):null;
      const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
      const yesterday=sumDaily(p,pp,ids);
-     rows.push({name:spec.name,streams,gain,
+     rows.push({name:spec.name,artworkRelease:spec.keys[0],streams,gain,
        change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&yesterday!=null?gain-yesterday:null});
    }
  }else if(albums){
@@ -357,7 +371,7 @@ function buildRows(s,p,pp,baseline){
 const coverCache=new Map(),coverLookup=new Map(),releaseCoverLookup=new Map();
 const releaseArtNames={'fml album':'FML','al1 album':'Al1','you make my day album':'YOU MAKE MY DAY',';[semicolon] album':'Semicolon','we make you album':'WE MAKE YOU','24h single':'24H','24h mini album':'24H','fallin\' flower single':'Fallin\' Flower','hitorijanai single':'Not Alone','an ode new tracks album':'An Ode'};
 const releaseArtCache=new Map();
-const persistentCoverKey='svt-artwork-cache-v8-distinct-release-art';
+const persistentCoverKey='svt-artwork-cache-v9-full-vs-repackage';
 let persistentCovers={};
 try{persistentCovers=JSON.parse(localStorage.getItem(persistentCoverKey)||'{}')||{}}catch{}
 function rememberCover(key,url){
@@ -500,7 +514,7 @@ function artworkTrack(row){
  const isVersion=/\b(remix|instrumental|inst|sped up|slowed|workout|orchestra|feat|with|holiday|korean ver|chinese ver|japanese ver)\b/.test(name);
  const releases=catalog[tab]||[];
  if(isAlbum&&tab==='group'){
-  const spec=requestedGroupAlbums.find(item=>cleanAlbumLabel(item.name)===row.name || item.name===row.name);
+  const spec=requestedGroupAlbums.find(item=>item.name===row.name || item.keys[0]===row.artworkRelease);
   if(spec){
    const first=(catalog.group||[]).find(item=>item.key===spec.keys[0]);
    const title=first?.title||'';
@@ -528,6 +542,10 @@ function artworkTrack(row){
     'shohikigen album':'Shohikigen',
     'q&a single':'Q&A','chocolate single':'Chocolate'
    };
+   // Resolve by the actual release, not a track from a repackage.
+   if(spec.keys[0]==='g5')return 'release:'+encodeURIComponent('LOVE & LETTER');
+   if(spec.keys[0]==='g7')return 'release:'+encodeURIComponent('LOVE & LETTER (Repackage)');
+   if(spec.keys[0]==='g36')return 'release:'+encodeURIComponent('SECTOR 17');
    if(aliases[title])return 'release:'+encodeURIComponent(aliases[title]);
   }
  }
