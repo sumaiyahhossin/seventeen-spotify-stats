@@ -1687,9 +1687,19 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
    if(nov5Total!=null)currentTotal=nov5Total+1891578;
   }
   const historicTotal=archivedGroupTotal(baseline?.start);
-  const groupTotalGain=tab==='group'&&currentTotal!=null&&historicTotal!=null&&
-   Date.parse(s.date)>Date.parse(baseline.start.date)&&currentTotal>=historicTotal
-   ?currentTotal-historicTotal:null;
+  // For the sparse Nov/Dec 2025 archive, only count actual consecutive
+  // saved days. A gap must never be presented as verified daily growth.
+  const observedGrandGains=baseline?.observedPairs?.map(([now,previous])=>{
+   const a=archivedGroupTotal(now),b=archivedGroupTotal(previous);
+   return a!=null&&b!=null&&a>=b?a-b:null;
+  });
+  const observedGrandGain=observedGrandGains?.length&&observedGrandGains.every(v=>v!=null)
+   ?observedGrandGains.reduce((a,b)=>a+b,0):null;
+  const groupTotalGain=observedGrandGains
+   ?observedGrandGain
+   :tab==='group'&&currentTotal!=null&&historicTotal!=null&&
+    Date.parse(s.date)>Date.parse(baseline.start.date)&&currentTotal>=historicTotal
+    ?currentTotal-historicTotal:null;
   if(groupTotalGain!=null){
    $('#gain').textContent='+'+fmt(groupTotalGain);
    const periodFirst=baseline?.range?.first||s.date;
@@ -1698,7 +1708,13 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
    const periodLast=rank.endsWith('monthly')?lastDayOfMonth:s.date;
    const completePeriod=rank.endsWith('monthly')&&s.date===lastDayOfMonth;
    const fmtPeriodDate=d=>new Date(d+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'long',day:'numeric',year:'numeric'});
-   if(previousPeriodGain!=null){
+   if(baseline?.partialMonth){
+    const counted=baseline.observedPairs.length;
+    const missing=baseline.missingDays.length;
+    if(gainNote)gainNote.textContent='Partial archive: '+counted+' consecutive day-to-day changes counted; '+missing+' calendar dates without snapshots';
+    comparisonDetail.textContent='Previous-month comparison unavailable for incomplete historical coverage';
+   }
+   if(previousPeriodGain!=null&&!baseline?.partialMonth){
     const difference=groupTotalGain-previousPeriodGain;
     comparisonValue.textContent=(difference>=0?'+':'−')+fmt(Math.abs(difference));
     comparisonDetail.textContent=difference>=0?'More streams than previous equivalent period':'Fewer streams than previous equivalent period';
