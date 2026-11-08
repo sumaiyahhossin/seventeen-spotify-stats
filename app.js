@@ -1972,7 +1972,7 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
  headers[2].textContent=rank.endsWith('weekly')?'GAIN THIS WEEK':rank.endsWith('monthly')?'GAIN THIS MONTH':rank.endsWith('yearly')?'GAIN THIS YEAR':'GAIN VS YESTERDAY';
  headers[3].textContent='CHANGE';
  headers[3].title='Current gain minus the previous '+(rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'day')+' gain';
- document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=soloArtistRows(buildRows(s,p,pp,baseline),s,p,baseline).filter(x=>{
+ document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=soloArtistRows(buildRows(s,p,pp,baseline),s,p,baseline,pp).filter(x=>{
   if(!discography&&!x.name.toLowerCase().includes(q))return false;
   // The archive is a historical view: a future recording or album must
   // never appear before its first release, even as a blank placeholder.
@@ -2013,7 +2013,7 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
    const previousPrior=await prior(previousSnapshot);
    const previousPriorPrior=await prior(previousPrior);
    const previousBaseline=periodic?await periodBaseline(previousSnapshot):null;
-   const priorRows=soloArtistRows(buildRows(previousSnapshot,previousPrior,previousPriorPrior,previousBaseline),previousSnapshot,previousPrior,previousBaseline);
+   const priorRows=soloArtistRows(buildRows(previousSnapshot,previousPrior,previousPriorPrior,previousBaseline),previousSnapshot,previousPrior,previousBaseline,previousPriorPrior);
    // Rank changes belong to streaming positions, not the visible sort order.
    const positionKey=r=>r.id&&String(r.id).startsWith('legacy:')?'name:'+normTrackName(r.name):r.id||'name:'+normTrackName(r.name);
    const streamValue=r=>daily||periodic?r.gain:r.streams;
