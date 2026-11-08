@@ -79,6 +79,8 @@ function properReleaseName(item){
  const title=String(item.title||'').toLowerCase();
  if(title==='q&a single')return 'Q&A';
  if(title==='chocolate single')return 'Chocolate';
+ if(title==='oh my!')return 'Oh My! (Chinese Ver.)';
+ if(title==='24h single')return '24H';
  return null;
 }
 function catalogReleaseLabel(item){
@@ -549,7 +551,7 @@ function artworkTrack(row){
    g5:'LOVE & LETTER',g6:'LOVE & LETTER (Repackage)',g7:'LOVE & LETTER (Repackage)',
    g35:'Face the Sun',g36:'SECTOR 17',g37:'SECTOR 17',
    g49:'17 IS RIGHT HERE',g50:'17 IS RIGHT HERE',g51:'17 IS RIGHT HERE',g52:'17 IS RIGHT HERE',
-   g43:'ALWAYS YOURS',g44:'ALWAYS YOURS',g24:'24H',g25:'24H'
+   g43:'ALWAYS YOURS',g44:'ALWAYS YOURS',g24:'24H',g25:'24H',g15:'Oh My! (Chinese Ver.)'
   };
   if(directRelease[row.artworkRelease])return 'release:'+encodeURIComponent(directRelease[row.artworkRelease]);
  }
