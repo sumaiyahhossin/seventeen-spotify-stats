@@ -75,42 +75,64 @@ function build(){
  const verified=rows.filter(x=>x.date).length;
  $('status').textContent=ready?rows.length+' songs reached '+(threshold/1000000)+'M · '+verified+' dated milestones backed by archive or cited external records · '+(rows.length-verified)+' dates not exact':'Loading…';
 }
-async function start(){
+async function jsonWithTimeout(url,ms=12000){
+ const controller=new AbortController();
+ const timer=setTimeout(()=>controller.abort(),ms);
  try{
-  const [manifest,catalog]=await Promise.all([fetch('data/manifest.json').then(r=>r.json()),fetch('data/catalog.json').then(r=>r.json())]);
+  const response=await fetch(url,{signal:controller.signal,cache:'no-store'});
+  if(!response.ok)throw new Error(url+' HTTP '+response.status);
+  return await response.json();
+ }finally{clearTimeout(timer)}
+}
+async function start(){
+ // Always show usable milestone rows from the current snapshot first.
+ // Older history is an optional enhancement, never a loading prerequisite.
+ let latest;
+ try{
+  const [catalog,group]=await Promise.all([
+   jsonWithTimeout('data/catalog.json',12000).catch(()=>({group:[]})),
+   jsonWithTimeout('data/group.json',15000)
+  ]);
+  latest=group;
   buildReleases(catalog);
-  const dates=[...new Set(manifest.dates)].sort();
-  // Render immediately from the newest complete group snapshot; historical
-  // milestone research must never block the page from becoming usable.
-  const latestResponse=await fetch('data/group.json');
-  if(latestResponse.ok){
-   const latest=await latestResponse.json();
-   const latestRows=trackRows(latest);
-   for(const [key,item] of latestRows){
-    first.set(key,{...item,firstValue:item.value});
-    latestValues.set(key,item.value);
-   }
-   ready=true;build();
+  const latestRows=trackRows(latest);
+  for(const [key,item] of latestRows){
+   first.set(key,{...item,firstValue:item.value});
+   latestValues.set(key,item.value);
   }
-  const snapshots=new Array(dates.length);
-  let cursor=0,done=0;
+  ready=true;build();
+  $('status').textContent+=' · Checking historical dates in background…';
+ }catch(error){
+  $('status').textContent='Could not load the current song snapshot. Please refresh the page.';
+  $('rows').innerHTML='<tr><td colspan="4">Current stream data unavailable. Try refreshing.</td></tr>';
+  console.error('Milestone snapshot error',error);
+  return;
+ }
+ try{
+  const manifest=await jsonWithTimeout('data/manifest.json',12000);
+  const dates=[...new Set(manifest.dates||[])].filter(date=>date<=latest.date).sort();
+  // Cap historical requests per session; this page must not wait an hour
+  // for hundreds of simultaneous archive downloads.
+  const selected=dates.slice(-120);
+  const snapshots=new Array(selected.length);
+  let cursor=0;
   async function worker(){
-   while(cursor<dates.length){
-    const index=cursor++,date=dates[index];
-    try{const response=await fetch('data/history/group-'+date+'.json');if(response.ok)snapshots[index]=await response.json()}catch{}
-    done++;if(done%25===0&&$('status'))$('status').dataset.progress=done+'/'+dates.length;
+   while(cursor<selected.length){
+    const index=cursor++,date=selected[index];
+    try{snapshots[index]=await jsonWithTimeout('data/history/group-'+date+'.json',7000)}catch{}
    }
   }
-  await Promise.all(Array.from({length:12},worker));
+  await Promise.all(Array.from({length:6},worker));
   let previous=null;
   for(const snapshot of snapshots){
    if(!snapshot)continue;
    const current=trackRows(snapshot);
-   // Reject spreadsheet days with shifted/misaligned columns: a large
-   // fraction of existing songs cannot suddenly lose their lifetime streams.
    if(previous){
     let matched=0,drops=0;
-    for(const [key,item] of current){const old=previous.rows.get(key);if(old&&old.value>1000000){matched++;if(item.value<old.value*.8)drops++}}
+    for(const [key,item] of current){
+     const old=previous.rows.get(key);
+     if(old&&old.value>1000000){matched++;if(item.value<old.value*.8)drops++}
+    }
     if(matched>=30&&drops/matched>.12)continue;
    }
    for(const [key,item] of current){
@@ -125,11 +147,16 @@ async function start(){
      }
     }
    }
-   for(const [key,item] of current){if(!latestValues.has(key))latestValues.set(key,item.value)}
    previous={date:snapshot.date,rows:current};
   }
-  ready=true;build();
- }catch(error){$('status').textContent='Unable to load saved archive. Please refresh.';console.error(error)}
+  build();
+  $('status').textContent+=' · Historical scan complete ('+selected.length+' recent saved dates checked)';
+ }catch(error){
+  build();
+  $('status').textContent+=' · Historical dates temporarily unavailable';
+  console.warn('Milestone archive scan',error);
+ }
 }
+
 for(const id of ['threshold','sort','search'])$(id).addEventListener(id==='search'?'input':'change',build);
 start();
