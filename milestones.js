@@ -31,6 +31,17 @@ const externalEvidence={
  ['name:'+norm('To you')]:{100000000:{date:'2025-11-22',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
  ['name:'+norm('THUNDER')]:{100000000:{date:'2026-04-18',source:'Pledis confirmation reported Apr 20 (Saturday crossing)',url:'https://www.koreaherald.com/article/10720987'}}
 };
+// Dated 200M Spotify milestones supplied from milestone announcements.
+for(const [song,date,source,url] of [
+ ['Rock with you','2025-05-12','Spotify milestone announcement',''],
+ ['Darl+ing','2026-02-15','Spotify milestone announcement',''],
+ ['VERY NICE','2025-02-28','Spotify milestone announcement (approximate date)',''],
+ ["Don't Wanna Cry",'2024-04-16','Spotify milestone announcement',''],
+ ['HOT','2024-04-24','Spotify milestone announcement (approximate date)',''],
+ ['Super','2024-05-02','svt_spotify milestone announcement','https://x.com/svt_spotify/status/1786091976246644797']
+]){
+ (externalEvidence['name:'+norm(song)]??={})[200000000]={date,source,url};
+}
 // Cross-checked 100M Spotify milestones, distinct from YouTube views.
 for(const [song,date,url,source] of [
  ['Don\'t Wanna Cry','2021-03-13','https://koreansalestwt.blogspot.com/2022/01/k-pop-artist-song-milestones-on-spotify.html','Korean Sales Spotify milestone archive'],
@@ -238,7 +249,7 @@ function build(){
   const elapsed=r.duration!=null?r.duration.toLocaleString()+' days <span class="elapsed-calendar">('+esc(calendarElapsed(r.release,r.date))+')</span>':'—';
   return '<tr><td><div class="song-cell">'+image+'<div class="song-meta"><span class="song-title">'+esc(r.name)+'</span><span class="song-release">Released '+esc(released)+'</span></div></div></td>'+
    '<td data-label="MILESTONE REACHED"><span class="reached-value">'+esc(reached)+'</span></td>'+
-   '<td data-label="TIME FROM RELEASE"><span class="days-value">'+esc(elapsed)+'</span></td></tr>';
+   '<td data-label="TIME FROM RELEASE"><span class="days-value">'+elapsed+'</span></td></tr>';
  }).join(''):'<tr><td colspan="3">No songs with a recorded milestone at this level.</td></tr>';
  loadMilestoneCovers();
 
@@ -330,5 +341,18 @@ async function start(){
  }
 }
 
-for(const id of ['threshold','sort','search'])$(id).addEventListener(id==='search'?'input':'change',build);
+// Preserve page controls across reloads; refreshing should only update the data.
+const selectionKey='svt-milestones-controls-v1';
+try{
+ const saved=JSON.parse(sessionStorage.getItem(selectionKey)||'{}');
+ const urlThreshold=new URLSearchParams(location.search).get('milestone');
+ if(urlThreshold&&[...$('threshold').options].some(o=>o.value===urlThreshold))$('threshold').value=urlThreshold;
+ else if(saved.threshold&&[...$('threshold').options].some(o=>o.value===saved.threshold))$('threshold').value=saved.threshold;
+ if(saved.sort&&[...$('sort').options].some(o=>o.value===saved.sort))$('sort').value=saved.sort;
+ if(typeof saved.search==='string')$('search').value=saved.search;
+}catch{}
+function saveSelection(){
+ try{sessionStorage.setItem(selectionKey,JSON.stringify({threshold:$('threshold').value,sort:$('sort').value,search:$('search').value}))}catch{}
+}
+for(const id of ['threshold','sort','search'])$(id).addEventListener(id==='search'?'input':'change',()=>{saveSelection();build()});
 start();
