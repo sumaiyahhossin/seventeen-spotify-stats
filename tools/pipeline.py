@@ -104,7 +104,27 @@ if previous:
     if regressions>max(2,len(expected)//20):
         print(kind,'too many decreased counts; retry next hour')
         entry['last_attempt']=now.isoformat();state_path.write_text(json.dumps(state,indent=2));sys.exit(0)
+# Preserve stable song identities and historical baseline mappings across daily runs.
+# Never infer identities from equal stream totals or overwrite a known track name.
+if kind=='group' and previous:
+    previous_names=previous.get('names') or {}
+    previous_ids=previous.get('canonical_track_ids') or []
+    previous_baselines=previous.get('baseline_ids_2026_11_05') or {}
+    preserved_names={track_id:previous_names[track_id] for track_id in tracks if track_id in previous_names}
+    preserved_ids=[track_id for track_id in previous_ids if track_id in tracks]
+    preserved_baselines={track_id:baseline_id for track_id,baseline_id in previous_baselines.items() if track_id in tracks}
+else:
+    preserved_names={}
+    preserved_ids=[]
+    preserved_baselines={}
 snapshot={'date':report_date,'captured_at':now.isoformat(),'tracks':tracks,'listeners':listeners}
+if kind=='group':
+    if preserved_names: snapshot['names']=preserved_names
+    if preserved_ids:
+        # Keep established song identity/order; append genuinely new Spotify IDs.
+        snapshot['canonical_track_ids']=preserved_ids+[track_id for track_id in tracks if track_id not in previous['tracks']]
+    if preserved_baselines: snapshot['baseline_ids_2026_11_05']=preserved_baselines
+
 if kind=='group':
     artist='7nqOGRxlXj7N2JYbgNEjYH'
     if listeners.get(artist): snapshot['monthly_listeners']=listeners[artist]
