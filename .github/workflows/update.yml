@@ -34,6 +34,7 @@ jobs:
       - name: Collect Group streams
         if: steps.gate.outputs.run == 'true'
         env:
+          FORCE_COLLECT: ${{ github.event_name == 'workflow_dispatch' }}
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
         run: |
