@@ -44,6 +44,7 @@ function buildNames(){
  // Explicit names for catalog entries whose descriptions are missing or
  // malformed. These IDs are grounded in the corresponding release listings.
  const verifiedNames={
+  '1WEk8mX0loccWCAcTZqVH8':"Don't Wanna Cry",
   '2UE9XGbAzicJIyo4bB6sqM':'MAESTRO',
   '469YeZRBzZw8AnNQvG5GRS':'CALL CALL CALL! (Korean Ver.)',
   '5NfUbEKgLTdUWHTcU7F56Q':'LOVE, MONEY, FAME (Sped Up Ver.)',
@@ -163,11 +164,12 @@ function displayTrackName(name){
  const raw=String(name||'').trim(),key=coverKey(raw);
  if(/^[A-Za-z0-9]{22}$/.test(raw))return 'Unidentified Spotify track';
  const official={
+  'don t listen in secret':"Don't Listen in Secret",'i don t know':"I Don't Know",'i don t understand but i luv u':"I Don't Understand But I Luv U",'i can t run away':"I Can't Run Away",'when i grow up':'When I Grow Up','don quixote':'DON QUIXOTE','don t wanna cry':"Don't Wanna Cry",'thinkin about you':"Thinkin' About You",'heaven s cloud':"Heaven's Cloud",'what s good':"What's Good",'f ck my life':'F*ck My Life",'bout you':"'bout you",'can t see the end':"Can't See the End",'no f u n':'NO F.U.N',
   '20 0':'20','247 0':'247','gom':'God of Music','golm':'God of Light Music',
   'gom inst':'God of Music (Inst.)','gom trot remix':'God of Music (Trot Remix)',
   'golm inst':'God of Light Music (Inst.)',
   'f ck my life':'F*ck My Life','fuck my life':'F*ck My Life','super':'Super','hot':'HOT','thunder':'THUNDER','rock with you':'Rock with you',
-  'very nice':'VERY NICE','maestro':'MAESTRO',"don't wanna cry":"Don't Wanna Cry",
+  'very nice':'VERY NICE','maestro':'MAESTRO','don t wanna cry':"Don't Wanna Cry",
   'darling':'Darl+ing','darl ing':'Darl+ing','shining diamond':'Shining Diamond',
   'adore u':'Adore U','left right':'Left & Right','ready to love':'Ready to love',
   'home run':'HOME;RUN','home':'Home','world':'_WORLD','shadow':'Shadow',
@@ -313,7 +315,7 @@ function buildRows(s,p,pp,baseline){
 const coverCache=new Map(),coverLookup=new Map(),releaseCoverLookup=new Map();
 const releaseArtNames={'fml album':'FML','al1 album':'Al1','you make my day album':'YOU MAKE MY DAY',';[semicolon] album':'Semicolon','we make you album':'WE MAKE YOU','24h single':'24H','24h mini album':'24H','fallin\' flower single':'Fallin\' Flower','hitorijanai single':'Not Alone','an ode new tracks album':'An Ode'};
 const releaseArtCache=new Map();
-const persistentCoverKey='svt-artwork-cache-v5-original-album-images';
+const persistentCoverKey='svt-artwork-cache-v6-reviewed-track-titles';
 let persistentCovers={};
 try{persistentCovers=JSON.parse(localStorage.getItem(persistentCoverKey)||'{}')||{}}catch{}
 function rememberCover(key,url){
