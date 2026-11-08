@@ -1173,3 +1173,112 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  .archive-top-controls #dailyPickerWrap #latestDate{padding:0 6px!important;font-size:10px!important}
  .archive-top-controls #archiveDate{font-size:13px!important}
 }
+
+/* v115: one balanced toolbar for period, date, and milestones */
+.archive-top-controls{
+ display:grid!important;
+ grid-template-columns:minmax(175px,225px) minmax(360px,490px) auto!important;
+ align-items:center!important;justify-content:center!important;
+ gap:14px!important;
+ max-width:1100px!important;width:100%!important;
+ margin:15px auto 24px!important;padding:15px 12px!important;
+ border:1px solid rgba(184,157,231,.22)!important;
+ border-radius:18px!important;
+ background:rgba(35,34,71,.28)!important;
+ box-shadow:none!important;
+}
+.archive-top-controls .rank-select{
+ width:100%!important;max-width:none!important;min-width:0!important;
+ flex:none!important;align-self:center!important;
+}
+.archive-top-controls #dailyPickerWrap{
+ width:100%!important;max-width:none!important;min-width:0!important;
+ flex:none!important;align-self:center!important;
+}
+.archive-top-controls>.milestone-nav-link{
+ display:inline-flex!important;align-self:center!important;justify-self:start!important;
+ margin-top:16px!important;
+ background:rgba(172,150,221,.09)!important;
+ border:1px solid rgba(192,172,238,.32)!important;
+ color:#efdbff!important;text-decoration:none!important;
+ padding:11px 12px!important;border-radius:12px!important;
+ white-space:nowrap!important;font-size:12px!important;
+}
+.archive-top-controls>.milestone-nav-link span{display:none!important}
+.archive-top-controls #archiveDate{
+ background:#292c50!important;background-color:#292c50!important;
+ color:#f8f4ff!important;-webkit-text-fill-color:#f8f4ff!important;
+ box-shadow:none!important;border:1px solid #7b70ad!important;
+ color-scheme:dark!important;
+}
+.archive-top-controls #archiveDate:focus{
+ outline:1px solid #b6a1f4!important;box-shadow:0 0 0 2px rgba(172,150,221,.12)!important;
+}
+.archive-top-controls #archiveDate::-webkit-datetime-edit,
+.archive-top-controls #archiveDate::-webkit-datetime-edit-text,
+.archive-top-controls #archiveDate::-webkit-datetime-edit-month-field,
+.archive-top-controls #archiveDate::-webkit-datetime-edit-day-field,
+.archive-top-controls #archiveDate::-webkit-datetime-edit-year-field{
+ color:#f8f4ff!important;-webkit-text-fill-color:#f8f4ff!important;
+}
+.archive-top-controls #archiveDate::-webkit-calendar-picker-indicator{filter:invert(1)!important}
+@media(max-width:1000px){
+ .archive-top-controls{grid-template-columns:minmax(170px,220px) minmax(0,1fr) auto!important;gap:10px!important}
+ .archive-top-controls #dailyPickerWrap #latestDate{font-size:10px!important;padding:0 6px!important}
+}
+@media(max-width:760px){
+ .archive-top-controls{
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:11px!important;padding:13px!important;
+  max-width:540px!important;
+ }
+ .archive-top-controls .rank-select,.archive-top-controls #dailyPickerWrap{
+  width:100%!important;max-width:none!important;
+ }
+ .archive-top-controls>.milestone-nav-link{
+  margin:0!important;justify-self:start!important;
+  padding:9px 12px!important;
+ }
+}
+/* Rank and movement always occupy the same narrow grid column in Opera/Chrome/mobile. */
+.rank-row .track{
+ display:grid!important;
+ grid-template-columns:48px 48px minmax(0,1fr)!important;
+ grid-template-rows:auto auto!important;
+ align-items:center!important;column-gap:10px!important;
+}
+.rank-row .track>.place{
+ grid-column:1!important;grid-row:1!important;
+ align-self:end!important;justify-self:center!important;
+ width:100%!important;margin:0!important;text-align:center!important;
+}
+.rank-row .track>.rank-trend{
+ grid-column:1!important;grid-row:2!important;
+ align-self:start!important;justify-self:center!important;
+ width:34px!important;min-width:34px!important;max-width:34px!important;
+ height:22px!important;min-height:22px!important;
+ margin:3px 0 0!important;padding:1px 3px!important;
+ border-radius:7px!important;
+ font-size:12px!important;line-height:1!important;
+}
+.rank-row .track>.cover-slot{
+ grid-column:2!important;grid-row:1 / span 2!important;
+ align-self:center!important;
+}
+.rank-row .track>.track-copy{
+ grid-column:3!important;grid-row:1 / span 2!important;
+ align-self:center!important;
+}
+@media(max-width:680px){
+ .rank-row .track{
+  grid-template-columns:36px 42px minmax(0,1fr)!important;
+  column-gap:7px!important;
+ }
+ .rank-row .track>.rank-trend{
+  width:28px!important;min-width:28px!important;max-width:28px!important;
+  height:18px!important;min-height:18px!important;
+  font-size:10px!important;border-radius:5px!important;
+  margin-top:2px!important;
+ }
+ .rank-row .track>.cover-slot{width:42px!important;height:42px!important}
+}
