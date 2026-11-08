@@ -16,7 +16,8 @@ function calendarElapsed(a,b){
  };
  while(months>0&&anniversary(months)>end)months--;
  const remaining=Math.round((end-anniversary(months))/86400000);
- return months+' '+(months===1?'month':'months')+' '+remaining+' '+(remaining===1?'day':'days');
+ const years=Math.floor(months/12),rest=months%12;
+ return [years?years+' '+(years===1?'year':'years'):'',rest?rest+' '+(rest===1?'month':'months'):'',remaining+' '+(remaining===1?'day':'days')].filter(Boolean).join(' ');
 }
 
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
@@ -137,10 +138,15 @@ function loadMilestoneCovers(){
  for(const img of document.querySelectorAll('.song-cover[data-song-name]')){
   const name=img.dataset.songName,id=img.dataset.spotifyId;
   (async()=>{
-   // Oh My! must use the original 2018 recording's artwork, never its anthology ID.
+   // Pin to the verified original 2018 YOU MAKE MY DAY album, not a reissue track.
    if(coverKey(name)==='oh my'){
-    const originalId=milestoneArtwork.tracks['oh my']?.id;
-    const original=await spotifyArtwork(originalId);
+    try{
+     const res=await fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/album/5VmjGHq779chFVL7dgLbyo'));
+     const data=res.ok?await res.json():null;
+     if(data?.thumbnail_url&&img.isConnected){img.src=data.thumbnail_url;return}
+    }catch{}
+    // If Spotify is blocked, use the album-specific Apple Music lookup below.
+    const original=await originalArtwork(name);
     if(original&&img.isConnected){img.src=original;return}
    }
    const entry=milestoneArtwork.tracks[coverKey(name)];
@@ -229,7 +235,7 @@ function build(){
   const image='<img class="song-cover" data-song-name="'+esc(r.name)+'" data-spotify-id="'+esc(r.id||'')+'" alt="" loading="lazy">';
   const released=r.release?format(r.release):'Release date unavailable';
   const reached=r.date?format(r.date):r.range?format(r.range.from)+' – '+format(r.range.date):'Unknown';
-  const elapsed=r.duration!=null?r.duration.toLocaleString()+' days ('+calendarElapsed(r.release,r.date)+')':'—';
+  const elapsed=r.duration!=null?r.duration.toLocaleString()+' days <span class="elapsed-calendar">('+esc(calendarElapsed(r.release,r.date))+')</span>':'—';
   return '<tr><td><div class="song-cell">'+image+'<div class="song-meta"><span class="song-title">'+esc(r.name)+'</span><span class="song-release">Released '+esc(released)+'</span></div></div></td>'+
    '<td data-label="MILESTONE REACHED"><span class="reached-value">'+esc(reached)+'</span></td>'+
    '<td data-label="TIME FROM RELEASE"><span class="days-value">'+esc(elapsed)+'</span></td></tr>';
