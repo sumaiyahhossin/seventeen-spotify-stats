@@ -1411,7 +1411,15 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
    ?currentTotal-historicTotal:null;
   if(groupTotalGain!=null){
    $('#gain').textContent='+'+fmt(groupTotalGain);
-   if(gainNote)gainNote.textContent='Group-wide '+periodName.toLowerCase()+' growth from archived totals, '+periodStartDate+' through '+s.date+'. Individual track comparisons may have missing historical IDs.';
+   const periodFirst=baseline?.range?.first||s.date;
+   const lastDayOfMonth=rank.endsWith('monthly')
+    ?new Date(Date.UTC(Number(s.date.slice(0,4)),Number(s.date.slice(5,7)),0)).toISOString().slice(0,10):null;
+   const periodLast=rank.endsWith('monthly')?lastDayOfMonth:s.date;
+   const completePeriod=rank.endsWith('monthly')&&s.date===lastDayOfMonth;
+   const fmtPeriodDate=d=>new Date(d+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'long',day:'numeric',year:'numeric'});
+   if(gainNote)gainNote.textContent=rank.endsWith('monthly')
+    ?'Group-wide '+(completePeriod?'full-month':'month-to-date')+' growth for '+fmtPeriodDate(periodFirst)+' – '+fmtPeriodDate(completePeriod?periodLast:s.date)+'. '+(completePeriod?'Complete calendar month.':'Full month ends '+fmtPeriodDate(periodLast)+'; remaining dates are not yet available.')+' Calculated from the previous month-end baseline.'
+    :'Group-wide '+periodName.toLowerCase()+' growth for '+fmtPeriodDate(periodFirst)+' – '+fmtPeriodDate(s.date)+', calculated from the preceding period-end baseline.';
   }else{
    $('#gain').textContent=valid.length?'+'+fmt(valid.reduce((a,b)=>a+b,0))+(valid.length<memberIds.length?'*':''):'—';
    if(gainNote)gainNote.textContent=!baseline?.start?'No saved snapshot at the start of this '+periodName.toLowerCase()+' period.':!valid.length?'No comparable tracks available for this '+periodName.toLowerCase()+' period.':(valid.length<memberIds.length?'* Partial '+periodName.toLowerCase()+' gain ('+valid.length+' of '+memberIds.length+' tracks).':'Matched '+periodName.toLowerCase()+' gain')+' from '+periodStartDate+' through '+s.date;
