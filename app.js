@@ -579,7 +579,7 @@ function fillArtwork(){
        'DREAM':['DREAM','DREAM - EP']
       };
       const candidates=aliases[title]||[title];
-      const clean=n=>coverKey(n).replace(/\\b(ep|single|album|mini album|the)\\b/g,'').trim();
+      const clean=n=>coverKey(n).replace(/\b(ep|single|album|mini album|the)\b/g,'').trim();
       for(const term of candidates){
        try{
         const params=new URLSearchParams({term:'SEVENTEEN '+term,entity:'album',limit:'100',country:'US'});
@@ -593,7 +593,7 @@ function fillArtwork(){
         });
         const picked=matches[0];
         if(picked?.artworkUrl100){
-         const url=picked.artworkUrl100.replace(/\\d+x\\d+bb/,'600x600bb');
+         const url=picked.artworkUrl100.replace(/\d+x\d+bb/,'600x600bb');
          rememberCover(cacheKey,url);
          return url;
         }
