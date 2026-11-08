@@ -1625,3 +1625,97 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
 /* v123: balanced top breathing room for ranking controls on every screen */
 .controls{padding-top:36px!important}
 @media(max-width:680px){.controls{padding-top:32px!important}}
+
+/* v124 — readable rankings with all four metrics; compact mobile cards. */
+.controls .order-picker[hidden]{display:none!important}
+.controls:has(.order-picker[hidden]) .search{grid-column:1/-1!important;width:100%!important}
+.table-head,.rank-row{
+ display:grid!important;
+ grid-template-columns:minmax(220px,1fr) minmax(110px,145px) minmax(135px,160px) minmax(112px,145px)!important;
+ column-gap:16px!important;
+ box-sizing:border-box!important;
+ width:100%!important;
+ min-width:0!important;
+ align-items:center!important;
+}
+.table-head{padding:15px 18px!important}
+.table-head span{min-width:0!important;overflow-wrap:normal!important;word-break:normal!important;white-space:normal!important}
+.table-head span:not(:first-child){text-align:right!important}
+.rank-row{padding:16px 18px!important;min-height:90px!important}
+.rank-row>.track{min-width:0!important;width:100%!important}
+.rank-row .rank-metric{
+ min-width:0!important;display:flex!important;justify-content:center!important;
+ flex-direction:column!important;align-items:flex-end!important;
+ text-align:right!important;overflow:visible!important;overflow-wrap:normal!important;
+ white-space:nowrap!important;
+}
+.rank-row .metric-label{display:none!important}
+.rank-row .metric-value{display:block!important;white-space:nowrap!important;word-break:normal!important;font-variant-numeric:tabular-nums}
+@media(max-width:900px){
+ .controls{grid-template-columns:minmax(0,1fr)!important;gap:12px!important;padding:24px 16px 18px!important}
+ .controls .ranking-pickers,.controls .order-picker,.controls .search{
+  grid-column:1/-1!important;width:100%!important;min-width:0!important;margin:0!important
+ }
+ .controls .ranking-category{margin:0!important;gap:8px!important}
+ .controls .ranking-category button{min-height:47px!important}
+ .controls .order-picker{display:grid!important;grid-template-columns:minmax(0,1fr)!important;gap:6px!important}
+ .controls .order-picker[hidden]{display:none!important}
+ .controls .order-picker select{width:100%!important;max-width:none!important}
+ .controls .search input{width:100%!important;max-width:none!important}
+ .table-head{display:none!important}
+ .ranking{width:100%!important;overflow-x:hidden!important;background:transparent!important}
+ .rank-row{
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  grid-template-rows:auto auto!important;column-gap:12px!important;row-gap:0!important;
+  padding:16px!important;margin-bottom:12px!important;
+  min-width:0!important;min-height:0!important;width:100%!important;
+  border:1px solid rgba(200,186,255,.2)!important;border-radius:15px!important;
+  background:rgba(19,23,49,.7)!important;
+ }
+ .rank-row>.track{
+  grid-column:1/-1!important;grid-row:1!important;
+  display:grid!important;grid-template-columns:26px 50px minmax(0,1fr)!important;
+  grid-template-rows:auto!important;
+  column-gap:12px!important;align-items:center!important;
+  width:100%!important;min-width:0!important;
+  padding:0 0 14px!important;margin:0!important;
+ }
+ .rank-row .track>.rank-position{width:26px!important;min-width:0!important}
+ .rank-row .track>.cover-slot{width:50px!important;height:50px!important;min-width:50px!important}
+ .rank-row .track>.cover-slot .cover{width:50px!important;height:50px!important}
+ .rank-row .track>.track-copy{min-width:0!important;width:100%!important;grid-column:3!important}
+ .rank-row .track .track-copy .track-name{
+  font-size:15px!important;line-height:1.35!important;
+  letter-spacing:0!important;white-space:normal!important;
+  overflow-wrap:break-word!important;word-break:normal!important
+ }
+ .rank-row .track .track-copy .release-date{font-size:11px!important;line-height:1.35!important;margin-top:3px!important}
+ .rank-row>.rank-metric{
+  grid-row:2!important;display:flex!important;flex-direction:column!important;
+  justify-content:flex-start!important;align-items:flex-start!important;
+  min-width:0!important;width:100%!important;
+  padding-top:12px!important;border-top:1px solid rgba(203,190,255,.17)!important;
+  text-align:left!important;white-space:normal!important;overflow-wrap:normal!important
+ }
+ .rank-row>.rank-metric-streams{grid-column:1!important}
+ .rank-row>.rank-metric-gain{grid-column:2!important}
+ .rank-row>.rank-metric-change{grid-column:3!important}
+ .rank-row .rank-metric .metric-label{
+  display:block!important;margin-bottom:6px!important;min-height:23px!important;
+  font-size:10px!important;font-weight:750!important;line-height:1.15!important;
+  color:#bcb6d4!important;letter-spacing:0!important;text-transform:uppercase!important;
+  text-align:left!important;white-space:normal!important;word-break:normal!important
+ }
+ .rank-row .rank-metric .metric-value{
+  font-size:clamp(11px,2.9vw,15px)!important;line-height:1.3!important;
+  text-align:left!important;white-space:nowrap!important;letter-spacing:-.025em!important;
+ }
+}
+@media(max-width:380px){
+ .rank-row{padding:12px!important;column-gap:7px!important}
+ .rank-row>.track{grid-template-columns:23px 44px minmax(0,1fr)!important;column-gap:9px!important}
+ .rank-row .track>.cover-slot,.rank-row .track>.cover-slot .cover{width:44px!important;height:44px!important;min-width:44px!important}
+ .rank-row .track .track-copy .track-name{font-size:14px!important}
+ .rank-row .rank-metric .metric-label{font-size:9px!important}
+ .rank-row .rank-metric .metric-value{font-size:11px!important}
+}
