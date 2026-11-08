@@ -1,7 +1,7 @@
 const $=s=>document.querySelector(s),fmt=n=>n==null?'—':Number(n).toLocaleString('en-US');
 let selectedSoloArtist=null;
 let artworkMap={tracks:{},albums:{}};let sortOrder='most';let tab='group',rank='tracks-daily',rankType='tracks',catalog={},current={},history={},dates=[],selection='latest',period='week';
-// Keep the visitor's exact view when the dashboard refreshes.
+// To keep the selected view after refresh.
 const viewStateKey='svt-dashboard-view-v2';
 const savedArchiveKey='svt-selected-archive-date-v1';
 try{selectedSoloArtist=sessionStorage.getItem('svt-selected-solo-artist')||null}catch{}
@@ -159,7 +159,7 @@ function restoreGroupNames(s,p){
  }
 }
 function typeDates(type){return dates.filter(d=>history[type+'-'+d]!==null)}
-async function getDate(type,date){if(!date)return null;const key=type+'-'+date;if(!(key in history))history[key]=await load((type==='solo'?'':'data/history/')+key+'.json');return history[key]}
+async function getDate(type,date){if(!date)return null;const key=type+'-'+date;if(!(key in history))history[key]=await load('data/history/'+key+'.json');return history[key]}
 async function latest(type){if(current[type])return current[type];for(const d of dates.slice(0,14)){const snapshot=await getDate(type,d);if(snapshot)return snapshot}return null}
 function periodKey(date){
  const d=utcDate(date);
@@ -181,8 +181,8 @@ function syncPeriodPicker(){
  const dateLabel=document.querySelector('#dailyPickerWrap label');
  if(dateLabel)dateLabel.textContent=rank.endsWith('weekly')?'STREAMING WEEK':rank.endsWith('monthly')?'STREAMING MONTH':rank.endsWith('yearly')?'STREAMING YEAR':'STREAMING DATE';
  if(!periodic)return;
- const available=[...new Set(dates.filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d>='2025-01-01').map(periodKey).filter(Boolean))].sort().reverse();
- const latestDate=current[tab]?.date||dates.at(-1);
+ const available=[...new Set([...dates,...(current[tab]?.date?[current[tab].date]:[])].filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d>='2025-01-01').map(periodKey).filter(Boolean))].sort().reverse();
+ const latestDate=current[tab]?.date||dates[0];
  const defaultKey=latestDate?periodKey(latestDate):available[0];
  if(!selectedPeriodKey||!available.includes(selectedPeriodKey)||selectedPeriodKey[0]!==defaultKey?.[0])selectedPeriodKey=defaultKey;
  const label=k=>{
@@ -1225,9 +1225,7 @@ function soloArtistRows(rows,s,p,baseline){
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 let renderToken=0;
-// Compare equal-length windows: last 7 days vs preceding 7 days,
-// current calendar month-to-date vs same days last month, and year-to-date
-// vs the same elapsed days in the preceding year.
+// To compare matching calendar periods instead of unrelated dates.
 function utcDate(date){return new Date(date+'T00:00:00Z')}
 function isoDate(d){return d.toISOString().slice(0,10)}
 function shifted(date,days){const d=utcDate(date);d.setUTCDate(d.getUTCDate()+days);return isoDate(d)}
@@ -1256,8 +1254,7 @@ async function periodBaseline(s){
  const range=periodDates(s.date),available=new Set(dates);
  const get=async d=>available.has(d)?getDate(tab,d):null;
  const [start,prevStart,prevEnd]=await Promise.all([get(range.start),get(range.prevStart),get(range.prevEnd)]);
- // A calendar period requires its exact preceding-day baseline.
- // Never substitute a rolling period or another date.
+ // To use the exact previous-day baseline for each calendar period.
  return {start,prevStart,prevEnd,range};
 }
 function snapshotDelta(now,old,id){
@@ -1265,26 +1262,21 @@ function snapshotDelta(now,old,id){
  const prev=comparablePrevious(now,old,id);
  if(!prev||(now.anomalies||[]).includes(id)||(old.anomalies||[]).includes(prev.id))return null;
  const delta=now.tracks[id]-prev.value;
- // Never treat a spreadsheet row mapped by title to a different Spotify ID
- // as a verified weekly/monthly/yearly gain.
+ // To avoid mixing different Spotify IDs when checking period gains.
  if(isHistorical(now)!==isHistorical(old)&&prev.id!==id){
-  // A legacy spreadsheet ID may differ from the official Spotify ID.
-  // Accept only a unique exact-title match with a plausible elapsed gain.
+  // To match old spreadsheet IDs only when the title and gain look valid.
   const name=normTrackName(now.names?.[id]||idName[id]);
   const candidates=Object.keys(old.tracks||{}).filter(k=>historicalKind(old,k)==='track'&&normTrackName(old.names?.[k])===name);
   if(!name||candidates.length!==1||candidates[0]!==prev.id)return null;
   const days=(Date.parse(now.date)-Date.parse(old.date))/86400000;
   if(days<=0||now.tracks[id]-prev.value>days*1000000)return null;
  }
- // A cross-source jump is suspicious only for adjacent-day comparisons.
- // Year-to-date uses the real December 31 baseline: millions of legitimate
- // accumulated streams must not be rejected by a one-day safety threshold.
+ // To check sudden jumps between spreadsheet and Spotify snapshots.
  const elapsedDays=(Date.parse(now.date)-Date.parse(old.date))/86400000;
  if(!Number.isFinite(elapsedDays)||elapsedDays<=0)return null;
  if(isHistorical(now)!==isHistorical(old)){
   if(elapsedDays<=2&&delta>100000)return null;
-  // For long periods, require the same verified Spotify track ID or
-  // an explicitly name-matched historical entry before comparing sources.
+  // To match the same song across historical and current snapshots.
   if(prev.id!==id){
    const currentName=normTrackName(now.names?.[id]||idName[id]);
    const oldName=normTrackName(old.names?.[prev.id]);
@@ -1300,20 +1292,20 @@ function periodChange(s,context,id){
  if(!context?.start||!context.prevStart||!context.prevEnd)return null;
  const now=snapshotDelta(s,context.start,id);
  const previousId=comparablePrevious(s,context.prevEnd,id)?.id;
- // A previous period must cover the same elapsed number of days.
+ // To compare periods with the same number of days.
  const elapsed=(Date.parse(s.date)-Date.parse(context.start.date))/86400000;
  const previousElapsed=(Date.parse(context.prevEnd.date)-Date.parse(context.prevStart.date))/86400000;
  if(elapsed!==previousElapsed)return null;
  const before=previousId?snapshotDelta(context.prevEnd,context.prevStart,previousId):null;
  return now==null||before==null?null:now-before;
 }
-// Every album and track uses the same date-aligned period comparison.
+// To keep album and track comparisons aligned to the same dates.
 function sumPeriod(s,context,ids){if(!ids.length)return null;const values=ids.map(id=>periodGain(s,context,id));return values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null}
 function sumPeriodChange(s,context,ids){if(!ids.length)return null;const values=ids.map(id=>periodChange(s,context,id));return values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null}
 async function render(){const token=++renderToken;$('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';try{renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;syncCalendar();restoreGroupNames(s,p);
  $('#date').textContent=s?.date||'—';const ids=s?trackIds(s):[];// Historical spreadsheets repeat songs under repackages and compilations,
  // so their raw row count is not the canonical distinct-song count.
- // The verified group archive has 227 songs with Tiny Light, 226 before it.
+ // To keep the displayed group count at the verified 227 until duplicate IDs are checked.
  const groupTrackCount=s&&tab==='group'?(isHistorical(s)?(Object.values(s.names||{}).some(n=>/^tiny light$/i.test(String(n).trim()))?227:226):Math.min(ids.length,227)):ids.length;
  $('#count').textContent=s?fmt(groupTrackCount):'—';$('#listeners').textContent=fmt(audienceValue(s,'listeners'));const currentFollowers=audienceValue(s,'followers'),previousFollowers=audienceValue(p,'followers');
  $('#followers').textContent=fmt(currentFollowers);
@@ -1416,6 +1408,6 @@ $('#archiveDate').addEventListener('change',e=>{
  });
  buildCoverLookup();buildFirstReleaseCovers();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();await render();
  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,savedScroll)));
- // Reload live stream data every five minutes without losing the current view.
+ // To refresh streams every five minutes and keep the selected view.
  setInterval(()=>{saveView();window.location.reload()},300000);
 })();
