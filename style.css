@@ -1621,3 +1621,7 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
 @media(max-width:680px){
   .controls{padding-top:28px!important}
 }
+
+/* v123: balanced top breathing room for ranking controls on every screen */
+.controls{padding-top:36px!important}
+@media(max-width:680px){.controls{padding-top:32px!important}}
