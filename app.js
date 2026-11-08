@@ -322,8 +322,8 @@ function discographyRows(s,p,pp,baseline){
  const rows=[];
  const releasesByKey=new Map((catalog[tab]||[]).map(item=>[item.key,item]));
  const combined={
-  g7:{keys:['g5','g7'],name:'LOVE & LETTER (Repackage) — All Tracks'},
-  g36:{keys:['g35','g36'],name:'SECTOR 17 — All Tracks'}
+  g7:{keys:['g6','g7'],name:'LOVE & LETTER (Repackage) — All Tracks'},
+  g37:{keys:['g36','g37'],name:'SECTOR 17 — All Tracks'}
  };
  for(const item of catalog[tab]||[]){
   const combo=tab==='group'?combined[item.key]:null;
@@ -338,34 +338,17 @@ function discographyRows(s,p,pp,baseline){
    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
    rows.push({id,name:displayTrackName(s.names?.[id]||idName[id]||id),streams:s.tracks[id],gain:g,change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),kind:'track',releaseOrder:rows.length});
   }
-  // Keep the new-track subtotal AND the combined repackage total.
-  if(item.key==='g7'||item.key==='g36'){
-   const newIds=[...new Set(item.tracks||[])];
-   const newStreams=newIds.every(id=>s.tracks?.[id]!=null)?newIds.reduce((a,id)=>a+s.tracks[id],0):null;
-   const newGain=periodic?sumPeriod(s,baseline,newIds):sumDaily(s,p,newIds);
-   const newPrevious=sumDaily(p,pp,newIds);
-   rows.push({name:item.key==='g7'?'LOVE & LETTER (Repackage) — New Tracks':'SECTOR 17 — New Tracks',
-    artworkRelease:item.key,streams:newStreams,gain:newGain,
-    change:periodic?sumPeriodChange(s,baseline,newIds):newGain!=null&&newPrevious!=null?newGain-newPrevious:null,
-    kind:'album',releaseOrder:rows.length});
-   // Show the original album's songs *inside* the repackage section,
-   // after the new-song subtotal and before the complete 15/13-track total.
-   const baseKey=item.key==='g7'?'g5':'g35';
-   const baseIds=[...new Set(releasesByKey.get(baseKey)?.tracks||[])];
-   for(const id of baseIds){
-    if(s.tracks?.[id]==null)continue;
-    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
-    rows.push({id,name:displayTrackName(s.names?.[id]||idName[id]||id),
-     streams:s.tracks[id],gain:g,
-     change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),
-     kind:'track',releaseOrder:rows.length});
-   }
+  if(item.key==='g6'||item.key==='g36'){
+   rows.push({...albumTotalRow,
+    name:item.key==='g6'?'LOVE & LETTER (Repackage) — New Tracks':'SECTOR 17 — New Tracks',
+    releaseOrder:rows.length});
+  }else if(item.key==='g7'||item.key==='g37'){
    rows.push({...albumTotalRow,releaseOrder:rows.length});
-  }else if(item.key!=='g6'&&item.key!=='g37')rows.push(albumTotalRow);
+  }else rows.push(albumTotalRow);
  }
  return rows;
 }
-const requestedGroupAlbums=[{"name":"1st Best Album - 17 IS RIGHT HERE","keys":["g49","g50","g51","g52","g53","g54"]},{"name":"Repackage Album - SECTOR 17","keys":["g35","g36"]},{"name":"4th Full Album - Face the Sun","keys":["g35"]},{"name":"1st Full Repackage Album - LOVE & LETTER","keys":["g5","g7"]},{"name":"10th Mini Album - FML","keys":["g41"]},{"name":"9th Mini Album - Attacca","keys":["g32"]},{"name":"2nd Full Album - TEEN, AGE","keys":["g10"]},{"name":"3rd Full Album - An Ode","keys":["g20"]},{"name":"7th Mini Album - Heng:garæ","keys":["g23"]},{"name":"1st Japanese Best Album - ALWAYS YOURS","keys":["g43","g44"]},{"name":"4th Mini Album - Al1","keys":["g9"]},{"name":"6th Mini Album - YOU MADE MY DAWN","keys":["g16"]},{"name":"8th Mini Album - Your Choice","keys":["g29"]},{"name":"5th Full Album - HAPPY BURSTDAY","keys":["g59"]},{"name":"1st Full Album - LOVE & LETTER","keys":["g5"]},{"name":"3rd Mini Album - Going Seventeen","keys":["g8"]},{"name":"11th Mini Album - SEVENTEENTH HEAVEN","keys":["g46"]},{"name":"2nd Special Album - ; [Semicolon]","keys":["g27"]},{"name":"5th Mini Album - YOU MAKE MY DAY","keys":["g13"]},{"name":"12th Mini Album - SPILL THE FEELS","keys":["g56"]},{"name":"1st Special Album - DIRECTOR'S CUT","keys":["g11"]},{"name":"1st Mini Album - 17 CARAT","keys":["g1"]},{"name":"2nd Mini Album - BOYS BE","keys":["g2"]},{"name":"2nd Japanese Single Album - Fallin' Flower","keys":["g22"]},{"name":"1st Japanese Mini Album - WE MAKE YOU","keys":["g12"]},{"name":"2nd Japanese Mini Album - 24H","keys":["g25"]},{"name":"3rd Japanese Single Album - Hitorijanai","keys":["g28"]},{"name":"1st Japanese Single Album - Happy Ending","keys":["g18"]},{"name":"1st Japanese EP Album - DREAM","keys":["g39"]},{"name":"4th Japanese Single Album - Power of Love","keys":["g33"]},{"name":"5th Japanese Single Album - Shohikigen","keys":["g58"]}];
+const requestedGroupAlbums=[{"name":"1st Best Album - 17 IS RIGHT HERE","keys":["g49","g50","g51","g52","g53","g54"]},{"name":"Repackage Album - SECTOR 17","keys":["g36","g37"]},{"name":"4th Full Album - Face the Sun","keys":["g35"]},{"name":"1st Full Repackage Album - LOVE & LETTER","keys":["g6","g7"]},{"name":"10th Mini Album - FML","keys":["g41"]},{"name":"9th Mini Album - Attacca","keys":["g32"]},{"name":"2nd Full Album - TEEN, AGE","keys":["g10"]},{"name":"3rd Full Album - An Ode","keys":["g20"]},{"name":"7th Mini Album - Heng:garæ","keys":["g23"]},{"name":"1st Japanese Best Album - ALWAYS YOURS","keys":["g43","g44"]},{"name":"4th Mini Album - Al1","keys":["g9"]},{"name":"6th Mini Album - YOU MADE MY DAWN","keys":["g16"]},{"name":"8th Mini Album - Your Choice","keys":["g29"]},{"name":"5th Full Album - HAPPY BURSTDAY","keys":["g59"]},{"name":"1st Full Album - LOVE & LETTER","keys":["g5"]},{"name":"3rd Mini Album - Going Seventeen","keys":["g8"]},{"name":"11th Mini Album - SEVENTEENTH HEAVEN","keys":["g46"]},{"name":"2nd Special Album - ; [Semicolon]","keys":["g27"]},{"name":"5th Mini Album - YOU MAKE MY DAY","keys":["g13"]},{"name":"12th Mini Album - SPILL THE FEELS","keys":["g56"]},{"name":"1st Special Album - DIRECTOR'S CUT","keys":["g11"]},{"name":"1st Mini Album - 17 CARAT","keys":["g1"]},{"name":"2nd Mini Album - BOYS BE","keys":["g2"]},{"name":"2nd Japanese Single Album - Fallin' Flower","keys":["g22"]},{"name":"1st Japanese Mini Album - WE MAKE YOU","keys":["g12"]},{"name":"2nd Japanese Mini Album - 24H","keys":["g25"]},{"name":"3rd Japanese Single Album - Hitorijanai","keys":["g28"]},{"name":"1st Japanese Single Album - Happy Ending","keys":["g18"]},{"name":"1st Japanese EP Album - DREAM","keys":["g39"]},{"name":"4th Japanese Single Album - Power of Love","keys":["g33"]},{"name":"5th Japanese Single Album - Shohikigen","keys":["g58"]}];
 function cleanAlbumLabel(name){
  let n=String(name||'').replace(/\s*Total\s*:?$/i,'').trim();
  if(/17 is right here/i.test(n))return '1st Best Album - 17 IS RIGHT HERE';
