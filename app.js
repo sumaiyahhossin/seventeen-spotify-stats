@@ -454,6 +454,10 @@ function artworkTrack(row){
  // Solo spreadsheet IDs are legacy row keys, not Spotify IDs. Resolve them
  // through the matching member/unit catalog release before using generic art.
  if(tab==='solo'){
+  // Spotify track IDs are stronger evidence than shared solo song titles.
+  // A different member may have a song with the same title.
+  if(row.kind!=='album'&&!rank.startsWith('albums')&&row.id&&firstReleaseByTrackId.has(row.id))
+   return firstReleaseByTrackId.get(row.id);
   const name=coverKey(row.name).replace(/\btotal\b/g,'').trim();
   const albumRow=row.kind==='album'||rank.startsWith('albums');
   const entries=catalog.solo||[];
