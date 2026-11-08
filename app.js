@@ -147,15 +147,10 @@ function resolveMissingNames(s,p){
 // Prefer archived Group titles; avoid hundreds of browser requests on startup.
 function hydrateMissingNames(){return}
 function restoreGroupNames(s,p){
- if(tab!=='group'||!s||isHistorical(s)||!p||!isHistorical(p))return;
- const old=Object.keys(p.tracks).filter(k=>historicalKind(p,k)==='track'&&p.names?.[k]);
+ if(tab!=='group'||!s||isHistorical(s))return;
+ // To keep the exact catalog song names instead of guessing from similar stream totals.
  for(const id of Object.keys(s.tracks)){
-  let key=p.tracks[id]!=null?id:null;
-  if(!key){
-   const same=old.filter(k=>{const d=s.tracks[id]-p.tracks[k];return d>=0&&d<100000});
-   if(same.length===1)key=same[0];
-  }
-  if(key&&p.names[key])idName[id]=p.names[key];
+  if(!idName[id]&&s.names?.[id])idName[id]=s.names[id];
  }
 }
 function typeDates(type){return dates.filter(d=>history[type+'-'+d]!==null)}
@@ -211,7 +206,11 @@ async function selectedSnapshot(){
  }
  if(selection==='latest')return correctedSnapshot(await latest(tab));const exact=await getDate(tab,selection);if(exact||tab!=='solo')return correctedSnapshot(exact);for(const d of dates.filter(d=>d<=selection).slice(0,14)){const saved=await getDate(tab,d);if(saved)return saved}return null}
 async function prior(s){if(!s)return null;const yesterday=shifted(s.date,-1);return getDate(tab,yesterday)}
-function normTrackName(name){return String(name||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
+function normTrackName(name){
+ return String(name||'').toLowerCase().normalize('NFKC')
+  .replace(/\\b(\\d+)\\.0\\b/g,'$1')
+  .replace(/[^a-z0-9]/g,'');
+}
 function comparablePrevious(s,p,id){
  if(!s||!p||s.tracks?.[id]==null)return null;
  // To use the same Spotify ID when both snapshots contain it.
@@ -1265,13 +1264,7 @@ async function periodBaseline(s){
 // To reuse the verified November 5 track match for earlier spreadsheet dates.
 function bridgeHistoricalTrack(now,old,id){
  if(!now||!old||isHistorical(now)||!isHistorical(old))return null;
- if(old.tracks[id]!=null&&historicalKind(old,id)==='track')return id;
- const name=normTrackName(now.names?.[id]||idName[id]);
- if(!name||name===normTrackName(id))return null;
- const candidates=Object.keys(old.tracks).filter(k=>historicalKind(old,k)==='track'&&normTrackName(old.names?.[k])===name);
- if(candidates.length===1)return candidates[0];
- // To avoid assigning the same old song to multiple new Spotify IDs.
- return null;
+ return comparablePrevious(now,old,id)?.id||null;
 }
 function snapshotDelta(now,old,id){
  if(!now||!old||now.tracks?.[id]==null)return null;
