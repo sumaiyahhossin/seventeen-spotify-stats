@@ -48,7 +48,7 @@ function restoreGroupNames(s,p){
 function typeDates(type){return dates.filter(d=>history[type+'-'+d]!==null)}
 async function getDate(type,date){if(!date)return null;const key=type+'-'+date;if(!(key in history))history[key]=await load((type==='solo'?'':'data/history/')+key+'.json');return history[key]}
 async function latest(type){if(current[type])return current[type];for(const d of dates.slice(0,14)){const snapshot=await getDate(type,d);if(snapshot)return snapshot}return null}
-async function selectedSnapshot(){return selection==='latest'?latest(tab):getDate(tab,selection)}
+async function selectedSnapshot(){if(selection==='latest')return latest(tab);const exact=await getDate(tab,selection);if(exact||tab!=='solo')return exact;for(const d of dates.filter(d=>d<=selection).slice(0,14)){const saved=await getDate(tab,d);if(saved)return saved}return null}
 async function prior(s){if(!s)return null;const yesterday=shifted(s.date,-1);return getDate(tab,yesterday)}
 function normTrackName(name){return String(name||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
 function comparablePrevious(s,p,id){
@@ -318,6 +318,20 @@ function streamTrackUrl(row){
  return id?'https://open.spotify.com/track/'+id:null;
 }
 function artworkTrack(row){
+ // Solo spreadsheet IDs are legacy row keys, not Spotify IDs. Resolve them
+ // through the matching member/unit catalog release before using generic art.
+ if(tab==='solo'){
+  const name=coverKey(row.name).replace(/\btotal\b/g,'').trim();
+  const albumRow=row.kind==='album'||rank.startsWith('albums');
+  const entries=catalog.solo||[];
+  if(albumRow){const match=entries.find(x=>coverKey(x.title)===name||coverKey(x.title).replace(/\b(album|ep|single|mini)\b/g,'').trim()===name);const id=match?.tracks?.find(v=>/^[a-zA-Z0-9]{22}$/.test(v));if(id)return 'track:'+id;}
+  else {
+   const matches=entries.flatMap(x=>{const names=((x.description||'').match(/\(\d+\s+tracks?\)\s*:\s*(.*)$/i)||[])[1];const titles=names?names.split(/,\s*/).map(coverKey):[];return (x.tracks||[]).map((id,i)=>({id,title:titles[i],artist:x.artist,release:x.title}))}).filter(x=>x.title===name&&/^[a-zA-Z0-9]{22}$/.test(x.id));
+   if(matches.length)return 'track:'+matches[0].id;
+   if(row.id&&/^[a-zA-Z0-9]{22}$/.test(row.id))return 'track:'+row.id;
+  }
+ }
+
  const originalCoverKey=coverKey(row.name);
  if(!rank.startsWith('albums')&&row.kind!=='album'&&['fallin flower','good to me japanese ver','smile flower japanese ver'].includes(originalCoverKey))return 'image:https://contents.perfect.ne.jp/media/974caa/qesyun3wko.jpg';
  const originalKey=coverKey(row.name);
@@ -370,27 +384,28 @@ function spotifyCover(id){
  return coverCache.get('fallback:'+id);
 }
 function fillArtwork(){
- if(!('IntersectionObserver' in window)){document.querySelectorAll('img[data-cover-track]').forEach(img=>spotifyCover(img.dataset.coverFallback||img.dataset.coverTrack).then(url=>{if(url){img.src=url;img.classList.add('loaded')}}));return;}
- const observer=new IntersectionObserver(entries=>{
-  for(const entry of entries){
-   if(!entry.isIntersecting)continue;
-   observer.unobserve(entry.target);
-   const img=entry.target,id=img.dataset.coverTrack;
-   if(id.startsWith('image:')){img.src=id.slice(6);img.classList.add('loaded');continue}
-   if(id.startsWith('release:')){
+ const imgs=document.querySelectorAll('img[data-cover-track]');
+ const setImage=(img,url)=>{if(!url||!img.isConnected)return;img.onload=()=>img.classList.add('loaded');img.onerror=()=>{img.style.display='none';const placeholder=img.parentElement?.querySelector('.cover-placeholder');if(placeholder)placeholder.hidden=false};img.src=url};
+ const resolve=async(img)=>{
+  const id=img.dataset.coverTrack, fallback=img.dataset.coverFallback;
+  let url=null;
+  try{
+   if(id?.startsWith('image:'))url=id.slice(6);
+   else if(id?.startsWith('release:')){
     const title=decodeURIComponent(id.slice(8));
     if(!releaseArtCache.has(title))releaseArtCache.set(title,fetch('https://itunes.apple.com/search?'+new URLSearchParams({term:'SEVENTEEN '+title,entity:'album',limit:'50'})).then(r=>r.ok?r.json():null).then(data=>{
-     const matches=(data?.results||[]).filter(x=>/seventeen/i.test(x.artistName||'')&&coverKey(x.collectionName).replace(/\b(ep|single|album)\b/g,'').trim()===coverKey(title));
+     const matches=(data?.results||[]).filter(x=>/seventeen/i.test(x.artistName||'')&&coverKey(x.collectionName).replace(/\\b(ep|single|album)\\b/g,'').trim()===coverKey(title));
      return matches[0]?.artworkUrl100?.replace('100x100bb','600x600bb')||null;
     }).catch(()=>null));
-    releaseArtCache.get(title).then(url=>{if(url&&img.isConnected){img.src=url;img.classList.add('loaded')}else if(img.isConnected){const fallback=img.dataset.coverFallback;if(fallback)spotifyCover(fallback).then(u=>{if(u&&img.isConnected){img.src=u;img.classList.add('loaded')}})}});
-    continue;
-   }
-   if(!coverCache.has(id))coverCache.set(id,fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/'+(id.startsWith('album:')?'album/'+id.slice(6):'track/'+id.replace(/^track:/,'')))).then(r=>r.ok?r.json():null).then(d=>d?.thumbnail_url||null).catch(()=>null));
-   coverCache.get(id).then(url=>{if(url&&img.isConnected){img.src=url;img.classList.add('loaded')}});
-  }
- },{rootMargin:'180px'});
- document.querySelectorAll('img[data-cover-track]').forEach(img=>observer.observe(img));
+    url=await releaseArtCache.get(title);
+   }else url=await spotifyCover(id);
+   if(!url&&fallback)url=await spotifyCover(fallback);
+   setImage(img,url);
+  }catch(e){console.warn('Artwork unavailable',id,e)}
+ };
+ if(!('IntersectionObserver' in window)){imgs.forEach(resolve);return}
+ const observer=new IntersectionObserver(entries=>{for(const entry of entries){if(!entry.isIntersecting)continue;observer.unobserve(entry.target);resolve(entry.target)}},{rootMargin:'240px'});
+ imgs.forEach(img=>observer.observe(img));
 }
 const soloArtists=[["Jeonghan","6KDLlQYeeqUe5OQ2JrdNzF"],["Joshua","74AwWFYdjQ3ER5vHO4H7b0"],["Jun","38Gn0ZVC8TQwuaMxBK1yRV"],["Hoshi","6nWKAdMv1BDq1zHfZzkdbR"],["Wonwoo","3rHcBT06Vb1XGVUWhDALZt"],["Woozi","4TdiASPlU3QdZvGQBothcQ"],["DK","7G1kUsPtQCdolV6CPwHmh2"],["Mingyu","5gUpo0BRmo6EOTbyU3z5Ay"],["The8","4DqFd6XE3dX4LWXHJVVpLk"],["Seungkwan","0Vb2DjojEYsasFpc3aTZb6"],["Vernon","2Y34b9AOK30zXgL7cAH4NG"],["Dino","5YaeXxzvqGNBCguELlKo6G"],["BSS","1uAT5bTSp6dWbNmixIUP5t"],["JxW","7GvlsjcgBrsE578yghOq7D"],["HxW","1EReYiseDwE51FzGm7EK9n"],["CxM","7kjuLdYbtTkWBToMu2ebZN"],["DxS","4wBjmEkWhY4T22q00CiF5V"],["V8",null],["Picheolin","3V2EC4dPYLgtbi0TtrB1RA"],["Gilboard",null]];
 const artistPhotoCache=new Map();
