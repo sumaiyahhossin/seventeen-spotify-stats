@@ -18,8 +18,8 @@ function trackRows(snapshot){
  const out=new Map();
  for(const [id,value] of Object.entries(snapshot.tracks||{})){
   const name=snapshot.names?.[id]||'';
-  if(!Number.isFinite(value)||!name||/^(legacy:)?/.test('')||/total\s*:?$/i.test(name)||/total streams|monthly listener|followers/i.test(name))continue;
-  const key=/^legacy:/.test(id)?'name:'+norm(name):'id:'+id;
+  if(!Number.isFinite(value)||!name||/total\s*:?$/i.test(name)||/total streams|monthly listener|followers/i.test(name))continue;
+  const key='name:'+norm(name); // bridge spreadsheet legacy IDs and Spotify IDs by song name
   out.set(key,{id,name,value});
  }
  return out;
