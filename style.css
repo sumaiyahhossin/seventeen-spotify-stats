@@ -803,3 +803,25 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid #f3b
 @keyframes concertSpark{to{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(140deg) scale(.1)}}
 @media(max-width:680px){.concert-sound{padding:7px 10px;font-size:10px}.stat:hover,.rank-row:hover{transform:none}}
 @media(prefers-reduced-motion:reduce){.hero::before,.hero h1 em,.hero .eyebrow,.section-top .eyebrow,.hero h1,.hero p,.spotify-artist-link,.concert-reveal{animation:none!important}.stat,.rank-row,.seg button,.date-arrow{transition:none!important;transform:none!important}.concert-spark{display:none!important}}
+
+/* v82: equal-width streaming period and date controls */
+@media(min-width:621px){
+ .archive-top-controls{
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  align-items:start!important;
+ }
+ .archive-top-controls .rank-select,
+ .archive-top-controls #dailyPickerWrap{width:100%!important;max-width:none!important;min-width:0!important}
+ .archive-top-controls #dailyPickerWrap .date-navigation{
+  width:100%!important;max-width:100%!important;min-width:0!important;
+  padding:8px!important;gap:7px!important;
+ }
+ .archive-top-controls #dailyPickerWrap .date-arrow{
+  flex:0 0 38px!important;width:38px!important;min-width:38px!important;
+  height:46px!important;padding:0!important;
+ }
+ .archive-top-controls #archiveDate{
+  min-width:0!important;flex:1 1 auto!important;width:0!important;
+  height:46px!important;padding:8px 12px!important;
+ }
+}
