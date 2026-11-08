@@ -413,7 +413,7 @@ function renderArtistProfiles(){
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 let renderToken=0;
-async // Compare equal-length windows: last 7 days vs preceding 7 days,
+// Compare equal-length windows: last 7 days vs preceding 7 days,
 // current calendar month-to-date vs same days last month, and year-to-date
 // vs the same elapsed days in the preceding year.
 function utcDate(date){return new Date(date+'T00:00:00Z')}
