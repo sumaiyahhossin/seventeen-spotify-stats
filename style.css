@@ -560,3 +560,7 @@ footer{margin-top:64px!important;padding-block:34px!important}
 
 /* To leave space between the stream period dropdown and the date label. */
 #dailyPickerWrap{margin-top:22px!important}
+
+/* v63: cool periwinkle-blue increases and soft rose-pink decreases. */
+.rank-row .change{color:#a9caff!important}
+.rank-row .change.negative{color:#ffb0d5!important}
