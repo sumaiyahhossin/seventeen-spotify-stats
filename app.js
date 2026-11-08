@@ -172,11 +172,14 @@ function periodKey(date){
  return null;
 }
 function syncPeriodPicker(){
- const wrap=$('#periodPickerWrap'),picker=$('#periodPicker');
- if(!wrap||!picker)return;
+ const picker=$('#periodPicker');
+ if(!picker)return;
  const periodic=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
- $('#dailyPickerWrap').hidden=!rank.endsWith('daily');
- wrap.hidden=!periodic;
+ $('#dailyPickerWrap').hidden=rank.endsWith('overall');
+ $('#archiveDate').hidden=periodic;
+ picker.hidden=!periodic;
+ const dateLabel=document.querySelector('#dailyPickerWrap label');
+ if(dateLabel)dateLabel.textContent=rank.endsWith('weekly')?'STREAMING WEEK':rank.endsWith('monthly')?'STREAMING MONTH':rank.endsWith('yearly')?'STREAMING YEAR':'STREAMING DATE';
  if(!periodic)return;
  const available=[...new Set(dates.filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d>='2025-01-01').map(periodKey).filter(Boolean))].sort().reverse();
  const latestDate=current[tab]?.date||dates.at(-1);
@@ -1303,9 +1306,7 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
  $('#date').textContent=s?.date||'—';const ids=s?trackIds(s):[];// Historical spreadsheets repeat songs under repackages and compilations,
  // so their raw row count is not the canonical distinct-song count.
  // The verified group archive has 227 songs with Tiny Light, 226 before it.
- const groupTrackCount=s&&tab==='group'&&isHistorical(s)
-  ?(Object.values(s.names||{}).some(n=>/^tiny light$/i.test(String(n).trim()))?227:226)
-  :ids.length;
+ const groupTrackCount=s&&tab==='group'?(isHistorical(s)?(Object.values(s.names||{}).some(n=>/^tiny light$/i.test(String(n).trim()))?227:226):Math.min(ids.length,227)):ids.length;
  $('#count').textContent=s?fmt(groupTrackCount):'—';$('#listeners').textContent=fmt(audienceValue(s,'listeners'));const currentFollowers=audienceValue(s,'followers'),previousFollowers=audienceValue(p,'followers');
  $('#followers').textContent=fmt(currentFollowers);
  if(currentFollowers==null)$('#followersChange').textContent=previousFollowers!=null?'Current count unavailable · previous count '+fmt(previousFollowers)+' ('+(p?.date||'')+')':'Current follower count unavailable';const listenerNow=audienceValue(s,'listeners'),listenerPrev=audienceValue(p,'listeners'),followerNow=audienceValue(s,'followers'),followerPrev=audienceValue(p,'followers');const showDelta=(selector,now,prev)=>{const n=now!=null&&prev!=null&&p&&s&&((Date.parse(s.date)-Date.parse(p.date))/86400000===1)?now-prev:null;$(selector).textContent=n==null?'Change from previous day unavailable':(n>=0?'+':'−')+fmt(Math.abs(n))+' vs previous day';};showDelta('#listenersChange',listenerNow,listenerPrev);
@@ -1334,27 +1335,42 @@ $('#periodPicker').addEventListener('change',e=>{selectedPeriodKey=e.target.valu
 $('#order').addEventListener('change',e=>{sortOrder=e.target.value;render()});
 $('#search').addEventListener('input',render);function availableDates(){return [...new Set([...dates,...(current[tab]?.date?[current[tab].date]:[])])].filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d>='2025-01-01').sort()}
 function navigateDate(step){
+ const periodic=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
+ if(periodic){
+  const picker=$('#periodPicker'),keys=[...picker.options].map(o=>o.value);
+  const i=keys.indexOf(selectedPeriodKey),target=keys[i-step];
+  if(target){selectedPeriodKey=target;saveView();render()}
+  return;
+ }
  const available=availableDates(),today=selection==='latest'?(current[tab]?.date||available.at(-1)):selection;
  let i=available.indexOf(today);
  if(i<0)i=available.findIndex(d=>d>today);
  if(i<0)i=available.length;
  const target=available[Math.max(0,Math.min(available.length-1,i+step))];
- if(target){selection=target;saveView();syncCalendar();render()}
+ if(target){selection=target;saveView();render()}
 }
 function syncCalendar(){
+ const periodic=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
  const available=availableDates(),date=selection==='latest'?(current[tab]?.date||available.at(-1)):selection;
  const picker=$('#archiveDate');
  if(!picker)return;
  picker.min='2025-01-01';
  picker.max=available.at(-1)||'2025-01-01';
  picker.value=available.includes(date)?date:(available.at(-1)||'');
- $('#prevDate').disabled=!date||available.indexOf(date)<=0;
- $('#nextDate').disabled=!date||available.indexOf(date)>=available.length-1;
- $('#dateNotice').textContent=selection==='latest'?'Latest confirmed snapshot':'Saved snapshot · '+(date||'');
+ if(periodic){
+  const keys=[...$('#periodPicker').options].map(o=>o.value),i=keys.indexOf(selectedPeriodKey);
+  $('#prevDate').disabled=i<0||i===keys.length-1;
+  $('#nextDate').disabled=i<=0;
+  $('#dateNotice').textContent=selectedPeriodKey?'Selected '+rank.split('-').at(-1)+' period':'No saved period';
+ }else{
+  $('#prevDate').disabled=!date||available.indexOf(date)<=0;
+  $('#nextDate').disabled=!date||available.indexOf(date)>=available.length-1;
+  $('#dateNotice').textContent=selection==='latest'?'Latest confirmed snapshot':'Saved snapshot · '+(date||'');
+ }
 }
 $('#prevDate').addEventListener('click',()=>navigateDate(-1));
 $('#nextDate').addEventListener('click',()=>navigateDate(1));
-$('#latestDate').addEventListener('click',()=>{selection='latest';saveView();syncCalendar();render()});
+$('#latestDate').addEventListener('click',()=>{selection='latest';selectedPeriodKey=null;saveView();render()});
 $('#archiveDate').addEventListener('change',e=>{
  const requested=e.target.value,available=availableDates();
  if(!requested||!available.length)return;
