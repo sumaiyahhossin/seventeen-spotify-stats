@@ -53,9 +53,11 @@ for(const [song,date,url,source] of [
 (externalEvidence['name:'+norm('God of Music')]??={})[100000000]={date:'2025-01-22',source:'User-provided milestone date',url:''};
 // User-supplied announcement date for Home reaching 100M.
 (externalEvidence['name:'+norm('Home')]??={})[100000000]={date:'2024-12-05',source:'Dated SEVENTEEN Spotify milestone announcement (link pending)',url:''};
+// SEVENTEEN Spotify (@svt_spotify), September 26, 2025 announcement.
+(externalEvidence['name:'+norm('HIT')]??={})[100000000]={date:'2025-09-26',source:'SEVENTEEN Spotify announcement, Sep 26 2025',url:'https://x.com/svt_spotify'};
 // Additional published Spotify track milestones (not music-video views).
 for(const [song,threshold,date] of [
- ['HIT',100000000,'2025-09-25'],
+ ['HIT',100000000,'2025-09-26'],
  ['Rock with you',200000000,'2025-05-12'],
  ['CHEERS',100000000,'2025-04-12'],
  ['MAESTRO',100000000,'2025-04-11'],
