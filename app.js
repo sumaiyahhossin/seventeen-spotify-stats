@@ -198,10 +198,20 @@ function uniqueRows(rows){
   seen.add(key);return true;
  });
 }
+// Confirmed November 6 alias pairs: different catalog IDs carrying the
+// same recording's cumulative stream count. Only collapse a pair while its
+// saved values agree; never infer duplicates from matching numbers alone.
+const groupStreamAliases=[["6I2tqFhk8tq69iursYxuxd","3g9z9amouOxjEZve1SpSTE"],["1Rrj7KyS2R6SP9CQMDJW1w","3nAUdBQxle8l1EeOxW3m0R"],["6LnEoRQKMcaFTR5UvaKuBy","4CAK2Dmo5YVGDQxs789pbx"],["1117juaaAkSIUsQxTmmcKM","2mFCN72V3rTq1BT4WWddIF"],["2UE9XGbAzicJIyo4bB6sqM","743yOACnWcrrijTnWdT5YN"],["4MTNimMDRyFZv37Thcktwa","6KNp9wSUGYhtbE33su6xZv"],["2kDrUAONMhG6CbDGBkhdrY","2TLzrymJ9lpH2wXp1ub5Aj"],["3I5W8iA8iZAyO62UVceK3F","2r3aqjJhVFc5JjQAaFKNdR"],["63jDEQCIg1YJLYeiqKJxFg","0C49m3uL232ZGOwrEZucxS"],["74rpBQDDUA116sss0a0Tiy","3bxt2gMvBO1Q1g0WZVOSdq"],["2UHaIBd2uiIFLZ9pgHMpJl","1GzYKagCh7jmdETXLcxT3H"]];
 function trackIds(s){
  const ids=Object.keys(s?.tracks||{}).filter(id=>!isHistorical(s)||historicalKind(s,id)==='track');
  const seen=new Set();
+ const redundant=new Set();
+ if(!isHistorical(s))for(const [primary,alias] of groupStreamAliases){
+  if(s.tracks[primary]!=null&&s.tracks[alias]!=null&&s.tracks[primary]===s.tracks[alias])
+   redundant.add(alias);
+ }
  return ids.filter(id=>{
+   if(redundant.has(id))return false;
    const name=normTrackName(s.names?.[id]||idName[id]);
    // Never remove an unidentified Spotify track merely because its stream
    // count matches another song. Equal play counts do not prove duplication.
