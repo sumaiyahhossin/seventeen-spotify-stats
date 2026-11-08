@@ -527,10 +527,3 @@ footer{margin-top:64px!important;padding-block:34px!important}
  .table-head,.ranking{border-radius:11px!important}
  .rank-row{border-radius:9px!important}
 }
-
-/* Interactive artist statistics selector */
-.artist-profile{cursor:pointer;font:inherit;color:inherit;text-align:center;}
-.artist-profile.selected{outline:2px solid #f5a8d7;outline-offset:2px;}
-.artist-selection-heading{display:flex;align-items:center;gap:14px;flex-wrap:wrap;margin:12px 0 18px;}
-.artist-selection-heading button{border:1px solid rgba(255,255,255,.3);border-radius:999px;background:rgba(255,255,255,.09);color:inherit;padding:9px 15px;cursor:pointer;font:inherit;}
-.artist-selection-heading strong{font-size:14px;letter-spacing:.04em;}
