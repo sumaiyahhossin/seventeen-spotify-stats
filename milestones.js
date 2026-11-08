@@ -51,6 +51,8 @@ for(const [song,date,url,source] of [
 // User-supplied 100M dates; source confirmation pending.
 (externalEvidence['name:'+norm('MAESTRO')]??={})[100000000]={date:'2025-04-11',source:'User-provided milestone date',url:''};
 (externalEvidence['name:'+norm('God of Music')]??={})[100000000]={date:'2025-01-22',source:'User-provided milestone date',url:''};
+// User-supplied announcement date for Home reaching 100M.
+(externalEvidence['name:'+norm('Home')]??={})[100000000]={date:'2024-12-05',source:'Dated SEVENTEEN Spotify milestone announcement (link pending)',url:''};
 // Additional published Spotify track milestones (not music-video views).
 for(const [song,threshold,date] of [
  ['HIT',100000000,'2025-09-25'],
