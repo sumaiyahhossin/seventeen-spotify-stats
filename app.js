@@ -476,7 +476,26 @@ function artworkTrack(row){
  if(tab==='group'){
   // Explicit first-release artwork, independent of Spotify anthology track IDs.
   const originalCover=verifiedOriginalCovers[name];
-  if(originalCover)return 'release:'+encodeURIComponent(originalCover);
+  if(originalCover){
+   // Resolve to the first track of the *original catalog release*, never a
+   // 17 IS RIGHT HERE anthology ID or an imprecise album-title search.
+   const sourceTitles={
+    'YOU MAKE MY DAY':'you make my day album',
+    'Semicolon':';[semicolon] album',
+    'Fallin Flower':"fallin' flower single",
+    'WE MAKE YOU':'we make you album',
+    '24H':'24h mini album',
+    'Not Alone':'hitorijanai single',
+    'Happy Ending':'happy ending single',
+    'God of Light Music':'golm',
+    'Love & Letter (Repackage)':'love & letter repackage new tracks',
+    'DREAM':'dream ep album'
+   };
+   const originalItem=(catalog.group||[]).find(item=>item.title===sourceTitles[originalCover]);
+   const originalId=originalItem?.tracks?.find(validId);
+   if(originalId)return 'track:'+originalId;
+   return 'release:'+encodeURIComponent(originalCover);
+  }
   // The discography's first release wins over anthology Spotify track IDs.
   // Japanese versions, remixes and other distinct recordings stay separate.
   if(japaneseOriginalArtwork[name])return 'release:'+encodeURIComponent(japaneseOriginalArtwork[name]);
