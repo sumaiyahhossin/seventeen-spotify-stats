@@ -560,6 +560,28 @@ function originalReleaseDate(row){
  }
  return null;
 }
+// Track chronology comes from the original catalog release containing each song,
+// not from the track's alphabetical name or its cumulative streams.
+function trackOriginalReleaseDates(){
+ const byId=new Map(),byName=new Map();
+ for(const item of catalog[tab]||[]){
+  const date=tab==='group'?groupOriginalReleaseDates[item.key]:
+   item.release_date||item.releaseDate||item.first_release_date;
+  if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))continue;
+  const title=String(item.title||'').toLowerCase();
+  if(/best album|anthology|remix/.test(title))continue;
+  const ids=item.tracks||[];
+  const description=String(item.description||'');
+  const match=description.match(/\(\d+\s+tracks?\)\s*:\s*(.*)$/i);
+  const names=match?match[1].split(/,\s*/):[];
+  ids.forEach((id,i)=>{
+   if(!byId.has(id)||date<byId.get(id))byId.set(id,date);
+   const name=normTrackName(names[i]||'');
+   if(names.length===ids.length&&name&&(!byName.has(name)||date<byName.get(name)))byName.set(name,date);
+  });
+ }
+ return {byId,byName};
+}
 function formatOriginalRelease(date){return new Date(date+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric',year:'numeric'})}
 function buildRows(s,p,pp,baseline){
  if(!s)return[];
@@ -601,6 +623,13 @@ function buildRows(s,p,pp,baseline){
  if(albums)rows.forEach(row=>{row.name=cleanAlbumLabel(row.name)});
  rows=uniqueRows(rows).filter(r=>albums||r.streams!=null);
  if(albums)rows.forEach(row=>{row.releaseDate=originalReleaseDate(row)});
+ else if(sortOrder==='oldest'||sortOrder==='newest'){
+  const releaseDates=trackOriginalReleaseDates();
+  rows.forEach(row=>{
+   row.releaseDate=releaseDates.byId.get(row.id)||
+    releaseDates.byName.get(normTrackName(row.name))||null;
+  });
+ }
  rows.sort((a,b)=>{
   if(sortOrder==='az'||sortOrder==='za'){
    const cmp=String(a.name||'').localeCompare(String(b.name||''),'en',{sensitivity:'base',numeric:true});
