@@ -337,7 +337,7 @@ function buildCoverLookup(){
 }
 const originalReleaseSongs={
  'boys be album':['fronting','mansae','when i grow up','omg','rock'],
- 'love & letter album':['chuck','pretty u','still lonely','hit song','say yes','drift away','love letter'],
+ 'love & letter album':['chuck','pretty u','still lonely','hit song','say yes','drift away','adore u vocal team ver','monday to saturday hiphop team ver','shining diamond performance team ver','love letter'],
  'love & letter repackage new tracks':['no f u n','very nice','healing','simple','space'],
  'going seventeen album':['beautiful','boomboom','boom boom','highlight','lean on me','fast pace','don t listen in secret','i don t know','smile flower'],
  'al1 album':['don t wanna cry','habit','if i','swimming fool','my i','crazy in love'],
@@ -433,6 +433,10 @@ function artworkTrack(row){
  }
 
  const originalCoverKey=coverKey(row.name);
+ // Specific versions, remixes, instrumentals and collaborations must use
+ // their own Spotify release cover, not an earlier song with a similar title.
+ const specialVersion=/\b(remix|instrumental|inst|sped up|slowed|workout|orchestra|feat|with|holiday|korean ver|chinese ver)\b/.test(originalCoverKey);
+ if(row.kind!=='album'&&!rank.startsWith('albums')&&specialVersion&&row.id&&/^[A-Za-z0-9]{22}$/.test(row.id))return 'track:'+row.id;
  // Release artwork must come from the release itself, not whichever track
  // happens to be first in the collector's list.
  if(row.kind==='album'||rank.startsWith('albums')){
