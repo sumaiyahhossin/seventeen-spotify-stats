@@ -993,12 +993,13 @@ function soloArtistRows(rows,s){
  const artist=selectedSoloArtist.toLowerCase();
  const items=(catalog.solo||[]).filter(item=>String(item.artist||'').toLowerCase()===artist);
  const ids=new Set(items.flatMap(item=>item.tracks||[]));
- const titles=new Set(items.flatMap(item=>item.tracks||[]).map(id=>coverKey(idName[id]||'')).filter(Boolean));
- // For imported spreadsheet snapshots, match the known song names.
- // Never substitute a different artist's stream counts.
+ const titles=new Set([...ids].map(id=>coverKey(idName[id]||'')).filter(Boolean));
  return rows.filter(row=>ids.has(row.id)||(isHistorical(s)&&(
   titles.has(coverKey(row.name))||
-  new RegExp('(?:^|[^a-z])'+artist.replace(/[.*+?^$()|[\\]{}]/g,'\\function escapeHtml(s)')+'(?:$|[^a-z])','i').test(String(s.names?.[row.id]||row.name))
+  String(s.names?.[row.id]||row.name).toLowerCase().includes(artist)
+ )));
+}
+function escapeHtml(s)')+'(?:$|[^a-z])','i').test(String(s.names?.[row.id]||row.name))
  )));
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
