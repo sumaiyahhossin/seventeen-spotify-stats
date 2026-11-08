@@ -245,7 +245,13 @@ function comparablePrevious(s,p,id){
   const previousName=normTrackName(p.names?.[priorId]);
   // Historical sheets sometimes reassign the same ID to a different song.
   // Only trust the saved mapping when the recording name still matches.
-  if(p.tracks[priorId]!=null&&historicalKind(p,priorId)==='track'&&expectedName&&previousName===expectedName)
+  const canonicalHistoricalName=n=>normTrackName(String(n||'')
+   .replace(/\s*\((?:prod\.?\s*by|feat\.?|ft\.?)\s+[^)]*\)/gi,'')
+   .replace(/\s*\b(?:feat\.?|ft\.?)\s+.*$/i,''));
+  if(p.tracks[priorId]!=null&&historicalKind(p,priorId)==='track'&&expectedName&&
+    (previousName===expectedName||
+     (canonicalHistoricalName(s.names?.[id]||idName[id])===canonicalHistoricalName(p.names?.[priorId])&&
+      canonicalHistoricalName(p.names?.[priorId]).length>=5)))
    return {id:priorId,value:p.tracks[priorId]};
  }
  // To use the same Spotify ID when both snapshots contain it.
@@ -1454,7 +1460,13 @@ function periodDates(date){
 async function periodBaseline(s){
  if(!s||!['weekly','monthly','yearly'].some(p=>rank.endsWith(p)))return null;
  const range=periodDates(s.date),available=new Set(dates);
- const get=async d=>available.has(d)?getDate(tab,d):null;
+ // Use the closest available observation on or before a period boundary.
+ // Missing calendar days should not blank an entire week/month; the actual
+ // observed interval is retained and comparisons require equal durations.
+ const get=async(d,limit=7)=>{
+  const candidate=dates.find(x=>x<=d&&x>=shifted(d,-limit));
+  return candidate?getDate(tab,candidate):null;
+ };
  const [start,prevStart,prevEnd]=await Promise.all([get(range.start),get(range.prevStart),get(range.prevEnd)]);
  return {start,prevStart,prevEnd,range};
 }
