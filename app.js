@@ -606,9 +606,21 @@ function snapshotDelta(now,old,id){
  const prev=comparablePrevious(now,old,id);
  if(!prev||(now.anomalies||[]).includes(id)||(old.anomalies||[]).includes(prev.id))return null;
  const delta=now.tracks[id]-prev.value;
- // Do not mix Spotify API and spreadsheet figures unless the song matches
- // and the cross-source difference is within a conservative daily range.
- if(isHistorical(now)!==isHistorical(old)&&delta>100000)return null;
+ // A cross-source jump is suspicious only for adjacent-day comparisons.
+ // Year-to-date uses the real December 31 baseline: millions of legitimate
+ // accumulated streams must not be rejected by a one-day safety threshold.
+ const elapsedDays=(Date.parse(now.date)-Date.parse(old.date))/86400000;
+ if(!Number.isFinite(elapsedDays)||elapsedDays<=0)return null;
+ if(isHistorical(now)!==isHistorical(old)){
+  if(elapsedDays<=2&&delta>100000)return null;
+  // For long periods, require the same verified Spotify track ID or
+  // an explicitly name-matched historical entry before comparing sources.
+  if(prev.id!==id){
+   const currentName=normTrackName(now.names?.[id]||idName[id]);
+   const oldName=normTrackName(old.names?.[prev.id]);
+   if(!currentName||currentName!==oldName)return null;
+  }
+ }
  return delta>=0?delta:null;
 }
 function periodGain(s,context,id){
