@@ -752,3 +752,14 @@ body{
 #dailyPickerWrap input#archiveDate::-webkit-calendar-picker-indicator{
  filter:none!important;opacity:1!important;
 }
+
+/* v77: period selector and calendar share one clean aligned row */
+.archive-top-controls{display:grid!important;grid-template-columns:minmax(180px,305px) minmax(0,1fr)!important;align-items:end!important;gap:24px!important}
+.archive-top-controls .rank-select{width:100%!important;min-width:0!important;align-self:end!important}
+.archive-top-controls .rank-select select{width:100%!important}
+.archive-top-controls #dailyPickerWrap{width:100%!important;max-width:none!important;min-width:0!important;align-self:end!important}
+.archive-top-controls .date-navigation{width:100%!important;max-width:none!important;box-sizing:border-box!important}
+.archive-top-controls #archiveDate{min-width:0!important;width:100%!important}
+.archive-top-controls .latest-date{margin-top:0!important}
+.release-date{display:block;font-size:10px;letter-spacing:.02em;color:#b6accb;opacity:.78;margin-top:4px;font-weight:500}
+@media(max-width:620px){.archive-top-controls{grid-template-columns:1fr!important;gap:15px!important}}
