@@ -22,7 +22,21 @@ if not os.getenv('COLLECTOR_CLASSPATH'):
 subprocess.run([sys.executable,str(ROOT/'tools/instrument.py'),kind],check=True)
 classname='Stream_Stats' if kind=='group' else 'Stream_Stats_Units_Duos'
 subprocess.run(['javac','-cp',os.environ['COLLECTOR_CLASSPATH'],'-d',str(ROOT/'build'),str(ROOT/'build'/f'{classname}.java')],check=True)
-result=subprocess.run(['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],classname],capture_output=True,text=True,timeout=18000)
+# Only the first catalog track determines whether to start the full group scan.
+# A missing baseline falls back to the normal full collection.
+collector_env=os.environ.copy()
+if kind=='group' and previous:
+    first_id='4BHThgh4ODCszIJ6e4YGGw'  # Shining Diamond, first catalog track
+    first_old=previous.get('tracks',{}).get(first_id)
+    if isinstance(first_old,int) and first_old>0:
+        collector_env['SVT_FIRST_TRACK_PREVIOUS']=str(first_old)
+result=subprocess.run(['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],classname],capture_output=True,text=True,timeout=18000,env=collector_env)
+if kind=='group' and ('STAT_FIRST_UNCHANGED|' in result.stdout or 'STAT_FIRST_REGRESSED|' in result.stdout or 'STAT_FIRST_PROBE_FAILED|' in result.stdout):
+    print('group: first song has not refreshed (or probe failed); skip remaining songs and retry next hour')
+    entry['last_attempt']=now.isoformat()
+    state_path.write_text(json.dumps(state,indent=2))
+    sys.exit(0)
+
 (ROOT/'build'/f'{kind}.log').write_text(result.stdout+'\n'+result.stderr)
 tracks={};listeners={};followers=None
 for line in result.stdout.splitlines():
