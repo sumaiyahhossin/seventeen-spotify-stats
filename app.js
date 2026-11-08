@@ -565,7 +565,7 @@ function fillArtwork(){
    else if(id?.startsWith('release:')){
     const title=decodeURIComponent(id.slice(8));
     if(!releaseArtCache.has(title))releaseArtCache.set(title,persistentCovers['release:'+title]?Promise.resolve(persistentCovers['release:'+title]):fetch('https://itunes.apple.com/search?'+new URLSearchParams({term:'SEVENTEEN '+title,entity:'album',limit:'50'})).then(r=>r.ok?r.json():null).then(data=>{
-     const matches=(data?.results||[]).filter(x=>/seventeen/i.test(x.artistName||'')&&coverKey(x.collectionName).replace(/\\b(ep|single|album)\\b/g,'').trim()===coverKey(title));
+     const matches=(data?.results||[]).filter(x=>/seventeen/i.test(x.artistName||'')&&(coverKey(x.collectionName)===coverKey(title)||coverKey(x.collectionName)===coverKey(title)+' ep'||coverKey(x.collectionName)===coverKey(title)+' single'));
      const url=matches[0]?.artworkUrl100?.replace('100x100bb','600x600bb')||null;rememberCover('release:'+title,url);return url;
     }).catch(()=>null));
     url=await releaseArtCache.get(title);
