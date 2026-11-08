@@ -15,10 +15,8 @@
   'ohmy':{100000000:'2026-09-23'},
   'darling':{200000000:'2026-02-15'},
   'toyou':{100000000:'2025-11-22'},
-  'hit':{100000000:'2025-09-25'},
   'rockwithyou':{200000000:'2025-05-12'},
   'cheers':{100000000:'2025-04-12'},
-  'maestro':{100000000:'2025-04-10'},
   'verynice':{200000000:'2025-02-28'},
   'lovemoneyfame':{100000000:'2026-02-06'},
   'prettyu':{100000000:'2023-12-22'},
@@ -35,6 +33,7 @@
   'hot':{100000000:'https://twfan.net/user/1295744033680003072/favorite/2'}
  };
  const source='https://chartmasters.org/artist/seventeen/';
+ // Do not present dates on which a track was already above threshold as exact crossing dates.
  const sourceFor=(name,threshold)=>sources[normalize(name)]?.[threshold]||source;
  const normalize=s=>String(s).toLowerCase().normalize('NFKC').replace(/[^a-z0-9]/g,'');
  const niceDate=s=>new Date(s+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric',year:'numeric'});
