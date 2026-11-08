@@ -29,7 +29,11 @@ function buildNames(){
  // Use catalog track order when the description has a complete track list.
  for(const type of ['group','solo'])for(const item of catalog[type]||[]){
   const raw=((item.description||'').match(/\(\d+\s+tracks?\)\s*:\s*(.*)$/i)||[])[1]||'';
-  const names=raw.split(/,\s*/).map(x=>x.trim());
+  const names=[];
+  // Split track lists only at commas outside parentheses (e.g. "LOVE, MONEY, FAME").
+  let depth=0,part='';
+  for(const ch of raw){if(ch==='(')depth++;else if(ch===')')depth=Math.max(0,depth-1);if(ch===','&&depth===0){names.push(part.trim());part='';}else part+=ch;}
+  if(part.trim())names.push(part.trim());
   if(names.length!==item.tracks.length)continue;
   item.tracks.forEach((id,i)=>{if(names[i]&&!idName[id])idName[id]=names[i]});
  }
