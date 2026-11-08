@@ -44,6 +44,7 @@ function buildNames(){
  // Explicit names for catalog entries whose descriptions are missing or
  // malformed. These IDs are grounded in the corresponding release listings.
  const verifiedNames={
+  '1WEk8mX0loccWCAcTZqVH8':"Don't Wanna Cry",
   '0xZ4WU5UfctiSeETi6pMEo':'God of Light Music',
   '6h13gMfEDlVlXFb8iDVaXb':'God of Light Music (Trot Remix)',
   '7viNY0jOjNJuLwsgAOPsBK':'God of Light Music (Inst.)',
@@ -171,14 +172,14 @@ function displayTrackName(name){
   'gom inst':'God of Music (Inst.)','gom trot remix':'God of Music (Trot Remix)',
   'golm inst':'God of Light Music (Inst.)',
   'f ck my life':'F*ck My Life','fuck my life':'F*ck My Life','super':'Super','hot':'HOT','thunder':'THUNDER','rock with you':'Rock with you',
-  'very nice':'VERY NICE','maestro':'MAESTRO',"don't wanna cry":"Don't Wanna Cry",
+  'very nice':'VERY NICE','maestro':'MAESTRO','don t wanna cry':"Don't Wanna Cry",
   'darling':'Darl+ing','darl ing':'Darl+ing','shining diamond':'Shining Diamond',
   'adore u':'Adore U','left right':'Left & Right','ready to love':'Ready to love',
   'home run':'HOME;RUN','home':'Home','world':'_WORLD','shadow':'Shadow',
   'clap':'CLAP','fear':'Fear','hit':'HIT','mansae':'MANSAE','pretty u':'Pretty U',
   'oh my':'Oh My!','thanks':'THANKS','getting closer':'Getting Closer',
   'fighting':'Fighting (Feat. Lee Young Ji)','spell':'Spell',
-  'sos':'SOS','247':'247','1 to 13':'1 TO 13','no f u n':'No F.U.N',
+  'sos':'SOS','247':'247','1 to 13':'1 TO 13','no f u n':'NO F.U.N',
   'where love passed':'Where Love Passed','back 2 back':'Back 2 Back',
   'run to you japanese ver':'Run to You (Japanese Ver.)',
   'maestro japanese ver':'MAESTRO (Japanese Ver.)',
@@ -474,6 +475,29 @@ function artworkTrack(row){
   return null;
  }
  if(tab==='group'){
+  // Use the actual original release title, never a track ID that Spotify
+  // may serve with the later 17 IS RIGHT HERE compilation artwork.
+  const originalAlbumTitles={
+   'fml album':'FML','al1 album':'Al1',
+   '17 carat album':'17 CARAT','boys be album':'BOYS BE',
+   'love & letter album':'LOVE & LETTER',
+   'love & letter repackage new tracks':'LOVE & LETTER (Repackage)',
+   'going seventeen album':'Going Seventeen','teen, age album':'TEEN, AGE',
+   "director's cut album":"DIRECTOR'S CUT",
+   'you make my day album':'YOU MAKE MY DAY',
+   'you make my dawn album':'YOU MADE MY DAWN',
+   'an ode new tracks album':'An Ode','heng':'Heng:garæ',
+   ';[semicolon] album':'Semicolon','your choice album':'Your Choice',
+   'attacca album':'Attacca','face the sun album':'Face the Sun',
+   'sector 17 repackage album new tracks':'SECTOR 17',
+   'seventeenth heaven album':'SEVENTEENTH HEAVEN',
+   'spill the feels album':'SPILL THE FEELS',
+   '17 is right here best album':'17 IS RIGHT HERE'
+  };
+  for(const [release,songs] of Object.entries(originalReleaseSongs)){
+   if(songs.includes(name)&&originalAlbumTitles[release])
+    return 'release:'+encodeURIComponent(originalAlbumTitles[release]);
+  }
   // Explicit first-release artwork, independent of Spotify anthology track IDs.
   const originalCover=verifiedOriginalCovers[name];
   if(originalCover){
@@ -493,7 +517,7 @@ function artworkTrack(row){
    };
    const originalItem=(catalog.group||[]).find(item=>item.title===sourceTitles[originalCover]);
    const originalId=originalItem?.tracks?.find(validId);
-   if(originalId)return 'track:'+originalId;
+   if(originalId)return 'release:'+encodeURIComponent(originalCover);
    return 'release:'+encodeURIComponent(originalCover);
   }
   // The discography's first release wins over anthology Spotify track IDs.
@@ -546,15 +570,10 @@ function fillArtwork(){
     }).catch(()=>null));
     url=await releaseArtCache.get(title);
    }else url=await spotifyCover(id);
-   if(!url&&fallback)url=await spotifyCover(fallback);
-   if(!url&&id?.startsWith('release:')){
-    // Avoid a blank album cover if the exact release lookup is unavailable.
-    const title=decodeURIComponent(id.slice(8));
-    const fallbackId=releaseCoverLookup.get(coverKey(title));
-    if(fallbackId)url=await spotifyCover('track:'+fallbackId);
-   }
+   if(!url&&fallback&&!id?.startsWith('release:'))url=await spotifyCover(fallback);
+   
    setImage(img,url);
-  }catch(e){console.warn('Artwork unavailable',id,e);if(fallback){try{setImage(img,await spotifyCover(fallback))}catch{setImage(img,null)}}else setImage(img,null)}
+  }catch(e){console.warn('Artwork unavailable',id,e);if(fallback&&!id?.startsWith('release:')){try{setImage(img,await spotifyCover(fallback))}catch{setImage(img,null)}}else setImage(img,null)}
  };
  if(!('IntersectionObserver' in window)){imgs.forEach(resolve);return}
  const observer=new IntersectionObserver(entries=>{for(const entry of entries){if(!entry.isIntersecting)continue;observer.unobserve(entry.target);resolve(entry.target)}},{rootMargin:'240px'});
