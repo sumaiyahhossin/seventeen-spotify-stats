@@ -189,7 +189,7 @@ function syncPeriodPicker(){
  if(!periodic)return;
  const available=[...new Set([...dates,...(current[tab]?.date?[current[tab].date]:[])].filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d>='2025-01-01').map(periodKey).filter(Boolean))].sort().reverse();
  const latestDate=current[tab]?.date||dates[0];
- const defaultKey=latestDate?periodKey(latestDate):available[0];
+ const defaultKey=(selection!=='latest'&&availableDates().includes(selection)?periodKey(selection):latestDate?periodKey(latestDate):available[0]);
  if(!selectedPeriodKey||!available.includes(selectedPeriodKey)||selectedPeriodKey[0]!==defaultKey?.[0])selectedPeriodKey=defaultKey;
  const label=k=>{
   if(k.startsWith('W:')){
@@ -1661,7 +1661,27 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 function syncRank(){rank=rankType+'-'+$('#rankPeriod').value;syncPeriodPicker();saveView();render()}
 $('#rankCategory').addEventListener('click',e=>{const button=e.target.closest('button[data-type]');if(!button)return;rankType=button.dataset.type;$('#rankCategory').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));syncRank()});
-$('#rankPeriod').addEventListener('change',()=>{selectedPeriodKey=null;syncRank()});
+$('#rankPeriod').addEventListener('change',()=>{
+ // Keep the calendar anchored to the period the visitor was browsing.
+ // For example, November 2025 monthly -> daily stays in November 2025.
+ const oldPeriod=rank.split('-').at(-1);
+ const oldKey=selectedPeriodKey;
+ const allDates=availableDates();
+ if(['weekly','monthly','yearly'].includes(oldPeriod)&&oldKey){
+  const matches=allDates.filter(d=>{
+   if(oldKey.startsWith('M:'))return d.slice(0,7)===oldKey.slice(2);
+   if(oldKey.startsWith('Y:'))return d.slice(0,4)===oldKey.slice(2);
+   if(oldKey.startsWith('W:')){
+    const start=oldKey.slice(2);
+    return d>=start&&d<=shifted(start,6);
+   }
+   return false;
+  });
+  if(matches.length)selection=matches[matches.length-1];
+ }
+ selectedPeriodKey=null;
+ syncRank();
+});
 $('#periodPicker').addEventListener('change',e=>{selectedPeriodKey=e.target.value;saveView();render()});
 
 $('#order').addEventListener('change',e=>{sortOrder=e.target.value;render()});
