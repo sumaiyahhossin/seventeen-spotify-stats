@@ -167,7 +167,19 @@ function displayTrackName(name){
   'home run':'HOME;RUN','home':'Home','world':'_WORLD','shadow':'Shadow',
   'clap':'CLAP','fear':'Fear','hit':'HIT','mansae':'MANSAE','pretty u':'Pretty U',
   'oh my':'Oh My!','thanks':'THANKS','getting closer':'Getting Closer',
-  'fighting':'Fighting (Feat. Lee Young Ji)','spell':'Spell'
+  'fighting':'Fighting (Feat. Lee Young Ji)','spell':'Spell',
+  'sos':'SOS','247':'247','1 to 13':'1 TO 13','no f u n':'No F.U.N',
+  'where love passed':'Where Love Passed','back 2 back':'Back 2 Back',
+  'run to you japanese ver':'Run to You (Japanese Ver.)',
+  'maestro japanese ver':'MAESTRO (Japanese Ver.)',
+  'circles japanese ver':'Circles (Japanese Ver.)',
+  'love money fame english ver':'LOVE, MONEY, FAME (English Ver.)',
+  'oh my chinese ver':'Oh My! (Chinese Ver.)',
+  'world feat anne marie':'_WORLD (feat. Anne-Marie)',
+  'power of love holiday ver':'Power of Love (Holiday Ver.)',
+  'power of love inst':'Power of Love (Inst.)',
+  'hitorijanai korean ver':'Hitorijanai (Korean Ver.)',
+  '24h korean ver':'24H (Korean Ver.)'
  };
  if(official[key])return official[key];
  if(/^[a-z0-9\s&+'’!?.:;,_()\-]+$/.test(raw)&&/[a-z]/.test(raw)&&raw===raw.toLowerCase())
