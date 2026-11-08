@@ -13,7 +13,6 @@
  // Only include an exact date when the cited source explicitly records it.
  const published={
   'ohmy':{100000000:'2026-09-23'},
-  'hot':{300000000:'2026-08-18'},
   'darling':{200000000:'2026-02-15'},
   'super':{300000000:'2026-01-14'},
   'toyou':{100000000:'2025-11-22'},
@@ -22,9 +21,18 @@
   'cheers':{100000000:'2025-04-12'},
   'maestro':{100000000:'2025-04-10'},
   'verynice':{200000000:'2025-02-28'},
-  'lovemoneyfame':{100000000:'2026-02-06'}
+  'lovemoneyfame':{100000000:'2026-02-06'},
+  'prettyu':{100000000:'2023-12-22'},
+  'thunder':{100000000:'2026-04-18'},
+  'hot':{100000000:'2023-02-03',300000000:'2026-08-18'}
+ };
+ const sources={
+  'prettyu':{100000000:'https://www.allkpop.com/article/2023/12/seventeens-pretty-u-surpasses-100-million-streams-on-spotify'},
+  'thunder':{100000000:'https://www.koreaherald.com/article/10720987'},
+  'hot':{100000000:'https://twfan.net/user/1295744033680003072/favorite/2'}
  };
  const source='https://chartmasters.org/artist/seventeen/';
+ const sourceFor=(name,threshold)=>sources[normalize(name)]?.[threshold]||source;
  const normalize=s=>String(s).toLowerCase().normalize('NFKC').replace(/[^a-z0-9]/g,'');
  const niceDate=s=>new Date(s+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric',year:'numeric'});
  function render(){
@@ -38,7 +46,7 @@
   if(sort==='name')filtered.sort((a,b)=>a.name.localeCompare(b.name));
   else if(sort==='earliest'||sort==='newest')filtered.sort((a,b)=>(a.date?0:1)-(b.date?0:1)||(a.date&&b.date?(sort==='earliest'?a.date.localeCompare(b.date):b.date.localeCompare(a.date)):0)||a.name.localeCompare(b.name));
   else filtered.sort((a,b)=>(a.date?0:1)-(b.date?0:1)||b.value-a.value);
-  tbody.innerHTML=filtered.length?filtered.map(t=>'<tr><td>'+esc(t.name)+'</td><td>'+(t.date?niceDate(t.date):'Exact date not documented')+'</td><td>'+(t.date?'See source for milestone':'Not verifiable')+'</td><td>'+(t.date?'<a href="'+source+'" target="_blank" rel="noopener noreferrer">ChartMasters · dated record</a>':'<span class="pill">Reached · date unverified</span>')+'</td></tr>').join(''):'<tr><td colspan="4">No saved tracks meet this milestone.</td></tr>';
+  tbody.innerHTML=filtered.length?filtered.map(t=>'<tr><td>'+esc(t.name)+'</td><td>'+(t.date?niceDate(t.date):'Exact date not documented')+'</td><td>'+(t.date?'See source for milestone':'Not verifiable')+'</td><td>'+(t.date?'<a href="'+esc(sourceFor(t.name,threshold))+'" target="_blank" rel="noopener noreferrer">View dated source</a>':'<span class="pill">Reached · date unverified</span>')+'</td></tr>').join(''):'<tr><td colspan="4">No saved tracks meet this milestone.</td></tr>';
   const dated=filtered.filter(t=>t.date).length;
   status.textContent=filtered.length+' songs at '+(threshold/1000000)+'M · '+dated+' dated with published sources · '+(filtered.length-dated)+' without a verified exact date';
  }
