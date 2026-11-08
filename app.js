@@ -1643,7 +1643,7 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
  comparisonHeading.textContent=isPeriod?'VS PREVIOUS '+periodName.toUpperCase()+' PERIOD':'VS PREVIOUS DAY';
  comparisonValue.textContent='—';
  comparisonDetail.textContent='Comparison unavailable';
- if(gainNote)gainNote.textContent='';
+ if(gainNote)gainNote.textContent='Compared with previous '+(isPeriod?periodName.toLowerCase()+' period':'day')+': awaiting calculation';
  if(isPeriod){
   const summary=memberIds.map(id=>periodGain(s,baseline,id));
   const valid=summary.filter(n=>n!=null);
@@ -1694,8 +1694,10 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
     const difference=groupTotalGain-previousPeriodGain;
     comparisonValue.textContent=(difference>=0?'+':'−')+fmt(Math.abs(difference));
     comparisonDetail.textContent=difference>=0?'More streams than previous equivalent period':'Fewer streams than previous equivalent period';
+    if(gainNote)gainNote.textContent=comparisonValue.textContent+' vs previous equivalent '+periodName.toLowerCase()+' period';
    }
   }else{
+   if(gainNote)gainNote.textContent='Comparison unavailable for this saved period';
    $('#gain').textContent=valid.length?'+'+fmt(valid.reduce((a,b)=>a+b,0))+(valid.length<memberIds.length?'*':''):'—';
    if(gainNote)gainNote.textContent=!baseline?.start
     ?'Unavailable: the required '+(baseline?.range?.start||'previous period-end')+' baseline snapshot is missing from the archive. No streams have been estimated.'
@@ -1726,7 +1728,8 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
     const change=today-yesterday;
     comparisonValue.textContent=(change>=0?'+':'−')+fmt(Math.abs(change));
     comparisonDetail.textContent=change>=0?'More streams than previous day':'Fewer streams than previous day';
-   }else if(today!=null)gainNote.textContent='Previous-day comparison unavailable';
+    if(gainNote)gainNote.textContent=comparisonValue.textContent+' vs previous day';
+   }else if(today!=null){gainNote.textContent='Previous-day comparison unavailable';comparisonDetail.textContent='Previous-day comparison unavailable';}
    else gainNote.textContent=partialGain!=null?'Partial gain; previous-day comparison unavailable':'Daily gain unavailable';
   }
  }
