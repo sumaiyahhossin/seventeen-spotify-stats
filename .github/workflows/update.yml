@@ -1,8 +1,8 @@
 name: Spotify stream snapshots
-# Start daily at 2:00 PM Korea time; retry hourly until fresh stream data is saved
+# Start daily at 2:00 PM New York time; retry hourly until fresh stream data is saved
 on:
   schedule:
-    - cron: '0 * * * *' # Hourly on the hour; gate starts at 14:00 Asia/Seoul
+    - cron: '0 * * * *' # Hourly on the hour; gate starts at 14:00 America/New_York
   workflow_dispatch:
 permissions:
   contents: write
