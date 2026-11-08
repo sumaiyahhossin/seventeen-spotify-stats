@@ -283,6 +283,20 @@ function discographyRows(s,p,pp,baseline){
  if(!s)return [];
  const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly');
  const rows=[];
+ // Discography shows the complete 17 IS RIGHT HERE album total as well
+ // as its individual original/new track sections below.
+ if(tab==='group'){
+  const fullKeys=new Set(['g49','g50','g51','g52','g53','g54']);
+  const fullIds=[...new Set((catalog.group||[]).filter(item=>fullKeys.has(item.key)).flatMap(item=>item.tracks||[]))];
+  if(fullIds.length){
+   const streams=fullIds.every(id=>s.tracks?.[id]!=null)?fullIds.reduce((a,id)=>a+s.tracks[id],0):null;
+   const gain=periodic?sumPeriod(s,baseline,fullIds):sumDaily(s,p,fullIds);
+   const yesterday=sumDaily(p,pp,fullIds);
+   rows.push({name:'17 IS RIGHT HERE — All Tracks (Full Album)',streams,gain,
+    change:periodic?sumPeriodChange(s,baseline,fullIds):gain!=null&&yesterday!=null?gain-yesterday:null,
+    kind:'album',releaseOrder:rows.length});
+  }
+ }
  for(const item of catalog[tab]||[]){
   const ids=[...new Set(item.tracks||[])];
   if(!ids.length)continue;
@@ -299,7 +313,7 @@ function discographyRows(s,p,pp,baseline){
  }
  return rows;
 }
-const requestedGroupAlbums=[{"name":"1st Best Album 17 IS RIGHT HERE","keys":["g49","g50","g51","g52","g53","g54"]},{"name":"4th Full Album Repackage SECTOR 17 Album","keys":["g36","g37"]},{"name":"4th Full Album - Face the Sun Album","keys":["g35"]},{"name":"Love & Letter Repackage Album","keys":["g7"]},{"name":"10th Mini Album - FML Album","keys":["g41"]},{"name":"9th Mini Album - Attacca Album","keys":["g32"]},{"name":"2nd Full Album - TEEN, AGE Album","keys":["g10"]},{"name":"3rd Full Album - An Ode Album","keys":["g20"]},{"name":"7th Mini Album - Heng:garæ Album","keys":["g23"]},{"name":"1st Japanese Best Album ALWAYS YOURS","keys":["g43","g44"]},{"name":"4th Mini Album - Al1 Album","keys":["g9"]},{"name":"4th Full Album Repackage SECTOR 17 New Tracks","keys":["g36"]},{"name":"6th Mini Album - YOU MAKE MY DAWN Album","keys":["g16"]},{"name":"8th Mini Album - YOUR CHOICE Album","keys":["g29"]},{"name":"1st Best Album 17 IS RIGHT HERE New Tracks","keys":["g49"]},{"name":"5th Full Album - HAPPY BURSTDAY Album","keys":["g59"]},{"name":"Love & Letter Repackage New Tracks","keys":["g6"]},{"name":"1st Full Album - Love & Letter Album","keys":["g5"]},{"name":"3rd Mini Album - Going Seventeen Album","keys":["g8"]},{"name":"11th Mini Album - SEVENTEENTH HEAVEN Album","keys":["g46"]},{"name":"1st Best Album 17 IS RIGHT HERE Original Tracks","keys":["g49","g50","g52","g54"]},{"name":"2nd Special Album - ;[Semicolon] Album","keys":["g27"]},{"name":"5th Mini Album - YOU MAKE MY DAY Album","keys":["g13"]},{"name":"12th Mini Album - SPILL THE FEELS Album","keys":["g56"]},{"name":"1st Special Album - DIRECTOR'S CUT Album","keys":["g11"]},{"name":"1st Mini Album - 17 CARAT Album","keys":["g1"]},{"name":"2nd Mini Album - BOYS BE Album","keys":["g2"]},{"name":"2nd Japan Single Album - Fallin' Flower Album","keys":["g22"]},{"name":"1st Japan Mini Album - WE MAKE YOU Album","keys":["g12"]},{"name":"2nd Japan Mini Album - 24H Album","keys":["g25"]},{"name":"3rd Japan Single Album - Hitorijanai Album","keys":["g28"]},{"name":"1st Japanese Best Album ALWAYS YOURS New Tracks","keys":["g43"]},{"name":"1st Japan Single Album - Happy Ending Album","keys":["g18"]},{"name":"1st Japan EP Album - DREAM Album","keys":["g39"]},{"name":"3rd Japan Single Album - Power of Love Album","keys":["g33"]},{"name":"4th Japan Single Album - Shohikigen Album","keys":["g58"]}];
+const requestedGroupAlbums=[{"name":"1st Best Album 17 IS RIGHT HERE","keys":["g49","g50","g51","g52","g53","g54"]},{"name":"4th Full Album Repackage SECTOR 17 Album","keys":["g36","g37"]},{"name":"4th Full Album - Face the Sun Album","keys":["g35"]},{"name":"Love & Letter Repackage Album","keys":["g7"]},{"name":"10th Mini Album - FML Album","keys":["g41"]},{"name":"9th Mini Album - Attacca Album","keys":["g32"]},{"name":"2nd Full Album - TEEN, AGE Album","keys":["g10"]},{"name":"3rd Full Album - An Ode Album","keys":["g20"]},{"name":"7th Mini Album - Heng:garæ Album","keys":["g23"]},{"name":"1st Japanese Best Album ALWAYS YOURS","keys":["g43","g44"]},{"name":"4th Mini Album - Al1 Album","keys":["g9"]},{"name":"6th Mini Album - YOU MAKE MY DAWN Album","keys":["g16"]},{"name":"8th Mini Album - YOUR CHOICE Album","keys":["g29"]},{"name":"5th Full Album - HAPPY BURSTDAY Album","keys":["g59"]},{"name":"1st Full Album - Love & Letter Album","keys":["g5"]},{"name":"3rd Mini Album - Going Seventeen Album","keys":["g8"]},{"name":"11th Mini Album - SEVENTEENTH HEAVEN Album","keys":["g46"]},{"name":"2nd Special Album - ;[Semicolon] Album","keys":["g27"]},{"name":"5th Mini Album - YOU MAKE MY DAY Album","keys":["g13"]},{"name":"12th Mini Album - SPILL THE FEELS Album","keys":["g56"]},{"name":"1st Special Album - DIRECTOR'S CUT Album","keys":["g11"]},{"name":"1st Mini Album - 17 CARAT Album","keys":["g1"]},{"name":"2nd Mini Album - BOYS BE Album","keys":["g2"]},{"name":"2nd Japan Single Album - Fallin' Flower Album","keys":["g22"]},{"name":"1st Japan Mini Album - WE MAKE YOU Album","keys":["g12"]},{"name":"2nd Japan Mini Album - 24H Album","keys":["g25"]},{"name":"3rd Japan Single Album - Hitorijanai Album","keys":["g28"]},{"name":"1st Japan Single Album - Happy Ending Album","keys":["g18"]},{"name":"1st Japan EP Album - DREAM Album","keys":["g39"]},{"name":"3rd Japan Single Album - Power of Love Album","keys":["g33"]},{"name":"4th Japan Single Album - Shohikigen Album","keys":["g58"]}];
 function buildRows(s,p,pp,baseline){
  if(!s)return[];
  const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),albums=rank.startsWith('albums'),discography=rank.startsWith('discography');
