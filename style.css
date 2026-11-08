@@ -551,3 +551,9 @@ footer{margin-top:64px!important;padding-block:34px!important}
 #dailyPickerWrap .date-arrow{flex:0 0 44px}
 #dailyPickerWrap .latest-date{justify-self:start}
 @media(max-width:480px){#dailyPickerWrap{width:100%}#dailyPickerWrap .date-navigation{gap:6px}#dailyPickerWrap .date-arrow{flex-basis:38px;min-width:38px}}
+
+/* To keep the streaming period label close to its date selector. */
+#dailyPickerWrap{gap:5px!important}
+#dailyPickerWrap>label{display:block;margin:0 0 2px!important;line-height:1.3}
+#dailyPickerWrap .date-navigation{margin-top:0!important;margin-bottom:10px!important;margin-block:0 10px!important}
+#dailyPickerWrap .latest-date{margin-top:0!important}
