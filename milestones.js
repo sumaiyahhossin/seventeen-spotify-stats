@@ -41,8 +41,9 @@ function trackRows(snapshot){
  for(const [id,value] of Object.entries(snapshot.tracks||{})){
   const name=snapshot.names?.[id]||'';
   if(!Number.isFinite(value)||!name||/total\s*:?$/i.test(name)||/total streams|monthly listener|followers|\b(?:album total|original tracks|new tracks|stream change|daily streams|weekly streams|monthly streams)\b/i.test(name))continue;
-  const key='name:'+norm(name); // bridge spreadsheet legacy IDs and Spotify IDs by song name
-  out.set(key,{id,name,value});
+  const canonicalName=name.replace(/\bGOM\b/gi,'God of Music');
+  const key='name:'+norm(canonicalName); // bridge spreadsheet legacy IDs and Spotify IDs by song name
+  out.set(key,{id,name:canonicalName,value});
  }
  return out;
 }
@@ -92,6 +93,13 @@ async function start(){
   for(const snapshot of snapshots){
    if(!snapshot)continue;
    const current=trackRows(snapshot);
+   // Reject spreadsheet days with shifted/misaligned columns: a large
+   // fraction of existing songs cannot suddenly lose their lifetime streams.
+   if(previous){
+    let matched=0,drops=0;
+    for(const [key,item] of current){const old=previous.rows.get(key);if(old&&old.value>1000000){matched++;if(item.value<old.value*.8)drops++}}
+    if(matched>=30&&drops/matched>.12)continue;
+   }
    for(const [key,item] of current){
     if(!first.has(key))first.set(key,{...item,firstValue:item.value});
     const earlier=previous?.rows.get(key);
