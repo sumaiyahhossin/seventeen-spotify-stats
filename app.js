@@ -1880,8 +1880,8 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
   // never appear before its first release, even as a blank placeholder.
   if(!s?.date)return true;
   const release=originalReleaseDate(x);
-  if(release&&/^\\d{4}-\\d{2}-\\d{2}$/.test(release)&&release>s.date)return false;
-  if(tab==='group'&&/^(?:tiny\\s*light)$/i.test(String(x.name||'').trim())&&s.date<'2026-02-27')return false;
+  if(release&&/^\d{4}-\d{2}-\d{2}$/.test(release)&&release>s.date)return false;
+  if(tab==='group'&&/^(?:tiny\s*light)$/i.test(String(x.name||'').trim())&&s.date<'2026-02-27')return false;
   return true;
  });
  // Estimates are displayed only for missing growth, never recorded totals.
