@@ -730,3 +730,25 @@ body{
 .archive-top-controls input#archiveDate:focus{outline:2px solid #efb2e9!important;outline-offset:2px!important}
 .archive-top-controls .date-arrow{background:#30284f!important;border-color:#8170b2!important;color:#fff!important}
 .archive-top-controls .latest-date{color:#f7aedc!important}
+
+/* v72: Browser-rendered date fields can remain white despite dark-mode styles.
+   Use explicit dark-purple text on a light date field for guaranteed contrast. */
+#dailyPickerWrap input#archiveDate,
+.archive-top-controls #archiveDate,
+.archive-top-controls .date-navigation input[type="date"]{
+ background:#f4efff!important;background-color:#f4efff!important;
+ color:#24133e!important;-webkit-text-fill-color:#24133e!important;
+ color-scheme:light!important;opacity:1!important;
+ border:2px solid #a88cda!important;
+}
+#dailyPickerWrap input#archiveDate::-webkit-datetime-edit,
+#dailyPickerWrap input#archiveDate::-webkit-datetime-edit-fields-wrapper,
+#dailyPickerWrap input#archiveDate::-webkit-datetime-edit-text,
+#dailyPickerWrap input#archiveDate::-webkit-datetime-edit-month-field,
+#dailyPickerWrap input#archiveDate::-webkit-datetime-edit-day-field,
+#dailyPickerWrap input#archiveDate::-webkit-datetime-edit-year-field{
+ color:#24133e!important;-webkit-text-fill-color:#24133e!important;opacity:1!important;
+}
+#dailyPickerWrap input#archiveDate::-webkit-calendar-picker-indicator{
+ filter:none!important;opacity:1!important;
+}
