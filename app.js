@@ -1280,7 +1280,8 @@ function snapshotDelta(now,old,id){
  if(delta<0)return null;
  // To avoid inflated gains from unmatched spreadsheet recordings.
  if(historical&&prev.id!==id&&!matched)return null;
- if(historical&&days<=2&&delta>100000)return null;
+ // To avoid counting a spreadsheet-to-Spotify correction as monthly streams.
+ if(historical&&delta>Math.max(100000*days,now.tracks[id]*0.05))return null;
  return delta;
 }
 function periodGain(s,context,id){
