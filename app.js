@@ -335,6 +335,26 @@ function buildCoverLookup(){
   item.tracks.forEach((id,i)=>{const key=coverKey(names[i]);if(key&&/^[a-zA-Z0-9]{22}$/.test(id)&&!coverLookup.has(key))coverLookup.set(key,id)});
  }
 }
+// Earliest catalog release wins. Best-of albums and anthology entries
+// are intentionally excluded as original artwork sources.
+const firstReleaseById=new Map(),firstReleaseByTitle=new Map();
+function buildFirstReleaseCovers(){
+ for(const item of catalog.group||[]){
+  const title=coverKey(item.title);
+  if(/best album|17 is right here|always yours best|remix/.test(title))continue;
+  const ids=(item.tracks||[]).filter(id=>/^[A-Za-z0-9]{22}$/.test(id));
+  if(!ids.length)continue;
+  const art='track:'+ids[0];
+  for(const id of ids)if(!firstReleaseById.has(id))firstReleaseById.set(id,art);
+  const match=(item.description||'').match(/\(\d+\s+tracks?\)\s*:\s*(.*)$/i);
+  if(!match)continue;
+  const names=match[1].split(/,\s*/).map(coverKey);
+  if(names.length!==ids.length)continue; // Avoid comma-in-title misalignment.
+  names.forEach(name=>{
+   if(name&&!firstReleaseByTitle.has(name))firstReleaseByTitle.set(name,art);
+  });
+ }
+}
 const originalReleaseSongs={
  '17 carat album':['shining diamond','adore u','ah yeah','jam jam','20'],
  'fml album':['f ck my life','super','fire','i don t understand but i luv u','dust','april shower'],
@@ -442,6 +462,13 @@ function artworkTrack(row){
  // the recording originally appeared years earlier.
  const isAlbumRow=row.kind==='album'||rank.startsWith('albums');
  const isAlternate=/\b(remix|instrumental|inst|sped up|slowed|workout|orchestra|feat|with|holiday|korean ver|chinese ver|japanese ver)\b/.test(originalCoverKey);
+ // First release by song identity or catalog release, never anthology artwork.
+ if(!isAlbumRow&&tab==='group'){
+  const firstByTitle=firstReleaseByTitle.get(originalCoverKey);
+  const firstById=firstReleaseById.get(row.id);
+  if(firstByTitle&&!isAlternate)return firstByTitle;
+  if(firstById&&!isAlternate)return firstById;
+ }
  // Explicitly verified: all six FML songs debuted on April 24, 2023.
  // The anthology Spotify IDs must never determine their artwork.
  if(!isAlbumRow&&tab==='group'&&[
@@ -716,7 +743,7 @@ $('#archiveDate').addEventListener('change',e=>{
    $('#rankCategory').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.type===rankType));
   }
  }catch{}
- [catalog,artworkMap]=await Promise.all([load('data/catalog.json'),load('data/artwork-map.json')]);catalog=catalog||{};artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();buildCoverLookup();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();await render();
+ [catalog,artworkMap]=await Promise.all([load('data/catalog.json'),load('data/artwork-map.json')]);catalog=catalog||{};artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();buildCoverLookup();buildFirstReleaseCovers();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();await render();
  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,savedScroll)));
  // Reload live stream data every five minutes without losing the current view.
  setInterval(()=>{saveView();window.location.reload()},300000);
