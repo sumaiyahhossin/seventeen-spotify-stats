@@ -53,7 +53,7 @@ if kind=='group':
             for (int attempt = 0; attempt < 15; attempt++) {
                 for (org.openqa.selenium.WebElement dialog : driver.findElements(popup)) {
                     if (!dialog.isDisplayed()) continue;
-                    String dialogText = dialog.getText().replace('\\u00a0', ' ').trim();
+                    String dialogText = dialog.getText().replace((char) 160, ' ').trim();
                     java.util.regex.Matcher match = before.matcher(dialogText);
                     if (!match.find()) {
                         match = after.matcher(dialogText);
