@@ -1267,7 +1267,15 @@ function snapshotDelta(now,old,id){
  const delta=now.tracks[id]-prev.value;
  // Never treat a spreadsheet row mapped by title to a different Spotify ID
  // as a verified weekly/monthly/yearly gain.
- if(isHistorical(now)!==isHistorical(old)&&prev.id!==id)return null;
+ if(isHistorical(now)!==isHistorical(old)&&prev.id!==id){
+  // A legacy spreadsheet ID may differ from the official Spotify ID.
+  // Accept only a unique exact-title match with a plausible elapsed gain.
+  const name=normTrackName(now.names?.[id]||idName[id]);
+  const candidates=Object.keys(old.tracks||{}).filter(k=>historicalKind(old,k)==='track'&&normTrackName(old.names?.[k])===name);
+  if(!name||candidates.length!==1||candidates[0]!==prev.id)return null;
+  const days=(Date.parse(now.date)-Date.parse(old.date))/86400000;
+  if(days<=0||now.tracks[id]-prev.value>days*1000000)return null;
+ }
  // A cross-source jump is suspicious only for adjacent-day comparisons.
  // Year-to-date uses the real December 31 baseline: millions of legitimate
  // accumulated streams must not be rejected by a one-day safety threshold.
