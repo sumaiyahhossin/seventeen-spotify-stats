@@ -534,3 +534,7 @@ footer{margin-top:64px!important;padding-block:34px!important}
 .artist-selection-heading{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0 18px;}
 .artist-selection-heading button{border:1px solid rgba(255,255,255,.3);border-radius:999px;background:rgba(255,255,255,.09);color:inherit;padding:9px 15px;cursor:pointer;font:inherit;}
 .artist-selection-heading strong{font-size:14px;letter-spacing:.04em;}
+
+/* Slightly larger portraits without resizing profile cards. */
+.artist-profile-photo,.artist-profile-placeholder{width:72px;height:72px}
+@media(max-width:480px){.artist-profile-photo,.artist-profile-placeholder{width:54px;height:54px}}
