@@ -60,11 +60,19 @@ for(const [song,threshold,date] of [
  ['HIT',100000000,'2025-09-26'],
  ['Rock with you',200000000,'2025-05-12'],
  ['CHEERS',100000000,'2025-04-12'],
- ['MAESTRO',100000000,'2025-04-11'],
+ 
  ['VERY NICE',200000000,'2025-02-28']
 ]){
  const key='name:'+norm(song);
  (externalEvidence[key]??={})[threshold]={date,source:'ChartMasters Spotify streams milestone',url:'https://chartmasters.org/artist/seventeen/'};
+}
+const milestoneCoverCache=new Map();
+async function loadMilestoneCovers(){
+ for(const img of document.querySelectorAll('.song-cover[data-spotify-id]')){
+  const id=img.dataset.spotifyId;if(!id)continue;
+  if(!milestoneCoverCache.has(id))milestoneCoverCache.set(id,fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/track/'+id)).then(r=>r.ok?r.json():null).then(d=>d?.thumbnail_url||'').catch(()=>'') );
+  milestoneCoverCache.get(id).then(url=>{if(url&&img.isConnected)img.src=url});
+ }
 }
 let records=[], releases=new Map(), trackNames=new Map(), first=new Map(), latestValues=new Map(), observations=new Map(), ready=false;
 const milestones=[100000000,200000000,300000000,400000000,500000000,600000000,700000000,800000000,900000000,1000000000];
@@ -115,14 +123,23 @@ function build(){
   const release=releases.get(item.id)||releases.get(key)||null;
   const verifiedDate=evidence?.date||(crossed?.exact?crossed.date:null);
   const duration=verifiedDate&&release&&days(release,verifiedDate)>=0?days(release,verifiedDate):null;
-  rows.push({name:item.name,release,date:verifiedDate,range:!evidence&&crossed&&!crossed.exact?crossed:null,duration,source:evidence?.source,url:evidence?.url,status:evidence?'Published historical record':crossed?.exact?'Verified daily crossing':crossed?'Between saved dates':'Before archive'});
+  rows.push({id:item.id,name:item.name,release,date:verifiedDate,range:!evidence&&crossed&&!crossed.exact?crossed:null,duration,source:evidence?.source,url:evidence?.url,status:evidence?'Published historical record':crossed?.exact?'Verified daily crossing':crossed?'Between saved dates':'Before archive'});
  }
  rows.sort((a,b)=>{
   if(sort==='name')return a.name.localeCompare(b.name);
   if(sort==='fast'||sort==='slow')return (a.duration==null?1:0)-(b.duration==null?1:0)||(a.duration!=null&&b.duration!=null?(sort==='fast'?a.duration-b.duration:b.duration-a.duration):0)||a.name.localeCompare(b.name);
   return (a.date==null?1:0)-(b.date==null?1:0)||(a.date&&b.date?(sort==='earliest'?a.date.localeCompare(b.date):b.date.localeCompare(a.date)):0)||a.name.localeCompare(b.name);
  });
- $('rows').innerHTML=rows.length?rows.map((r,i)=>'<tr><td>'+esc(r.name)+'</td><td>'+(r.date?format(r.date):r.range?format(r.range.from)+' – '+format(r.range.date):'Unknown')+'</td><td>'+(r.duration!=null?r.duration.toLocaleString()+' days':r.release?'Not verifiable':'Release date unavailable')+'</td><td><span class="pill">'+esc(r.status)+'</span>'+(r.url?' <a href="'+esc(r.url)+'" target="_blank" rel="noopener noreferrer">Source</a>':'')+'</td></tr>').join(''):'<tr><td colspan="4">No songs with a recorded milestone at this level.</td></tr>';
+ $('rows').innerHTML=rows.length?rows.map(r=>{
+  const id=/^[a-zA-Z0-9]{22}$/.test(r.id||'')?r.id:'';
+  const image='<img class="song-cover" data-spotify-id="'+esc(id)+'" alt="" loading="lazy">';
+  return '<tr><td><div class="song-cell">'+image+'<span class="song-title">'+esc(r.name)+'</span></div></td>'+
+   '<td>'+(r.release?format(r.release):'Unknown')+'</td>'+
+   '<td>'+(r.date?format(r.date):r.range?format(r.range.from)+' – '+format(r.range.date):'Unknown')+'</td>'+
+   '<td>'+(r.duration!=null?'<span class="days-value">'+r.duration.toLocaleString()+' days</span>':'—')+'</td></tr>';
+ }).join(''):'<tr><td colspan="4">No songs with a recorded milestone at this level.</td></tr>';
+ loadMilestoneCovers();
+
  const verified=rows.filter(x=>x.date).length;
  $('status').textContent=ready?rows.length+' songs reached '+(threshold/1000000)+'M · '+verified+' dated milestones backed by archive or cited external records · '+(rows.length-verified)+' dates not exact':'Loading…';
 }
