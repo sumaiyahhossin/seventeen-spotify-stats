@@ -621,7 +621,7 @@ function historicalArtworkId(row){
    ['Going Seventeen',/going seventeen/i],['Al1',/\bal1\b/i],
    ['TEEN, AGE',/teen,?\s*age/i],["DIRECTOR'S CUT",/director.s cut/i],
    ['WE MAKE YOU',/we make you/i],['YOU MAKE MY DAY',/you make my day/i],
-   ['YOU MADE MY DAWN',/you made my dawn/i],['An Ode',/an ode/i],
+   ['YOU MADE MY DAWN',/you ma(?:de|ke) my dawn/i],['An Ode',/an ode/i],
    ['Heng:garæ',/heng.?gar/i],['Semicolon',/semicolon/i],
    ['Your Choice',/your choice/i],['Attacca',/attacca/i],
    ['Face the Sun',/face the sun/i],['FML',/\bfml\b/i],
@@ -743,6 +743,7 @@ function artworkTrack(row){
   // Album labels are cleaned for display, so resolve these releases explicitly.
   if(/fallin.? flower/i.test(row.name))return 'release:'+encodeURIComponent('Fallin Flower');
   if(/happy burstday/i.test(row.name))return 'release:'+encodeURIComponent('HAPPY BURSTDAY');
+  if(/you ma(?:de|ke) my dawn/i.test(row.name))return 'release:'+encodeURIComponent('YOU MADE MY DAWN');
   if(/love\s*&?\s*letter/i.test(row.name)){
    return 'release:'+encodeURIComponent(/repackage/i.test(row.name)?'LOVE & LETTER (Repackage)':'LOVE & LETTER');
   }
