@@ -1245,7 +1245,19 @@ $('#archiveDate').addEventListener('change',e=>{
  const jxjTracks=['5ZMx7DaPnVisUBLcrFcnCl','1dp1GI9YcKDoxrKBpp0u9F','4XBeSUSswrGhqYrwm3IS7A','1bGAA82A31CWflD6bqY5g6','2SWWDlOjKqgVvocnIfxId9','69umJ9yk5uay7PQmhBOKk8','2lDG4sMZwAC2TTlXNHMgA1'];
  if(Array.isArray(catalog.solo)&&!catalog.solo.some(item=>item.key==='jxj_dreamscape'))
   catalog.solo.push({key:'jxj_dreamscape',title:'DREAMSCAPE',description:"DREAMSCAPE (7 tracks): Like you, 12 o'clock, Outside, One plus one, Not personal, Coloring, No looking back",artist:'JxJ',tracks:jxjTracks});
- artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();buildCoverLookup();buildFirstReleaseCovers();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();await render();
+ artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();
+ // Keep the two distinct Coloring recordings and official sheet spellings
+ // attached to their Spotify track IDs, not to the shared song title.
+ Object.assign(idName,{
+  '69umJ9yk5uay7PQmhBOKk8':'Coloring',
+  '1R0kXShLtjjIkZoET8vdb1':'coloring',
+  '5fKEfBrvtCM4CNnlSAskuD':'Dexire',
+  '5ZMx7DaPnVisUBLcrFcnCl':'Like you',
+  '2SWWDlOjKqgVvocnIfxId9':'Not personal',
+  '42m5wYT5EOnP1UoDF2pCxh':'mia',
+  '7qNXDUu4dkeOm67eF35qiL':'8DM'
+ });
+ buildCoverLookup();buildFirstReleaseCovers();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();await render();
  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,savedScroll)));
  // Reload live stream data every five minutes without losing the current view.
  setInterval(()=>{saveView();window.location.reload()},300000);
