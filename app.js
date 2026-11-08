@@ -203,7 +203,7 @@ function audienceValue(s,kind){
  return found?s.tracks[found]:null;
 }
 function displayTrackName(name){
- const raw=String(name||'').trim(),key=coverKey(raw);
+ const raw=String(name||'').trim().replace(/&#x20;|&nbsp;/gi,' ').trim(),key=coverKey(raw);
  if(/^[A-Za-z0-9]{22}$/.test(raw))return 'Unidentified Spotify track';
  const official={
   '9 teen':'9-TEEN','a teen':'A-TEEN','24h':'24H','24 h':'24H','no f u n':'NO F.U.N','god of light music':'God of Light Music','god of light music inst':'God of Light Music (Inst.)','golm':'God of Light Music','golm inst':'God of Light Music (Inst.)','golm trot remix':'God of Light Music (Trot Remix)','20 0':'20','247 0':'247','gom':'God of Music','golm':'God of Light Music',
@@ -239,6 +239,8 @@ function displayTrackName(name){
   'hitorijanai korean ver':'Hitorijanai (Korean Ver.)',
   '24h korean ver':'24H (Korean Ver.)'
  };
+ if(/^9(?:\.0+)?$/.test(raw))return '9';
+ if(/^mi[ -]?cheo mi[ -]?cheo(?: tota;?)?$/i.test(raw))return 'Mi-cheo Mi-cheo';
  if(official[key])return official[key];
  if(/^[a-z0-9\s&+'’!?.:;,_()\-]+$/.test(raw)&&/[a-z]/.test(raw)&&raw===raw.toLowerCase())
   return raw.replace(/\b[a-z]/g,c=>c.toUpperCase()).replace(/\bAnd\b/g,'and').replace(/\bWith\b/g,'with');
