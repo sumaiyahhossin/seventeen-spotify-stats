@@ -58,6 +58,18 @@ function buildNames(){
  // Explicit names for catalog entries whose descriptions are missing or
  // malformed. These IDs are grounded in the corresponding release listings.
  const verifiedNames={
+  '1FlIEnP3DdFgeP3dhVfNZf':"247",
+  '2UHaIBd2uiIFLZ9pgHMpJl':"Power of Love (Holiday Ver.)",
+  '74rpBQDDUA116sss0a0Tiy':"Power of Love (Inst.)",
+  '2kDrUAONMhG6CbDGBkhdrY':"_WORLD (feat. Anne-Marie)",
+  '6KfYVOicblNB8CaDZwbxiT':"Dirty Dancing (feat. JOSHUA, DK & DINO)",
+  '3oTDi9MWC0JB39FcsLRon3':"SOS",
+  '0xZ4WU5UfctiSeETi6pMEo':"God of Light Music",
+  '6rp55IcEsq3nJgTc0kMa0h':"1 TO 13",
+  '1DQGGkXu9SIwWiK5uuBvcO':"Candy",
+  '2LBoWyCgW1BBwNbtN61Ik6':"LOVE, MONEY, FAME (feat. DJ Khaled) - Timbaland Remix",
+  '36LcCpAK7ColfpTTRNChhz':"LOVE, MONEY, FAME (feat. DJ Khaled) - Kenia OS Remix",
+
   '1WEk8mX0loccWCAcTZqVH8':"Don't Wanna Cry",
   '0xZ4WU5UfctiSeETi6pMEo':'God of Light Music',
   '6h13gMfEDlVlXFb8iDVaXb':'God of Light Music (Trot Remix)',
