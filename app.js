@@ -440,7 +440,7 @@ function buildRows(s,p,pp,baseline){
  const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),albums=rank.startsWith('albums'),discography=rank.startsWith('discography');
  if(discography)return discographyRows(s,p,pp,baseline);
  let rows=[];
- if(albums&&isHistorical(s)){
+ if(albums&&isHistorical(s)&&tab==='group'){
    rows=Object.entries(s.tracks).filter(([id])=>historicalKind(s,id)==='album'&&isAlbumTitle(s.names?.[id])&&!/\b(?:new|original)\s+tracks?\b/i.test(s.names?.[id]||'')).map(([id,streams])=>({
      id,name:albumDisplayName((s.names[id]||id).replace(/\s*Total\s*:?$/i,'').trim()),streams,
      gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id)
@@ -459,7 +459,8 @@ function buildRows(s,p,pp,baseline){
    }
  }else if(albums){
    for(const item of catalog[tab]||[]){
-     if(!isAlbumTitle(item.title)&&!['dino_g4','jxj_dreamscape','jeonghan_g2','joshua_g8'].includes(item.key))continue;
+     if(!isAlbumTitle(item.title)&&!['dino_g4','jxj_dreamscape','jeonghan_g2','joshua_g8','picheolin_g3'].includes(item.key))continue;
+     if(['gilboard','sharedTracks'].includes(item.key))continue;
      const ids=[...new Set(item.tracks)];
      const streams=ids.every(id=>s.tracks[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
      const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids),yesterday=sumDaily(p,pp,ids);
