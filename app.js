@@ -302,7 +302,7 @@ function buildRows(s,p,pp,baseline){
  }else{
    rows=trackIds(s).map(id=>({
      id,name:displayTrackName((s.names?.[id]||idName[id]||id)==='247.0'?'247':s.names?.[id]||idName[id]||id),
-     streams:s.tracks[id],gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:dailyChange(s,p,pp,id)
+     streams:s.tracks[id],gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id)
    }));
  }
  rows=uniqueRows(rows).filter(r=>albums||r.streams!=null);
@@ -618,6 +618,10 @@ function periodChange(s,context,id){
  if(!context?.start||!context.prevStart||!context.prevEnd)return null;
  const now=snapshotDelta(s,context.start,id);
  const previousId=comparablePrevious(s,context.prevEnd,id)?.id;
+ // A previous period must cover the same elapsed number of days.
+ const elapsed=(Date.parse(s.date)-Date.parse(context.start.date))/86400000;
+ const previousElapsed=(Date.parse(context.prevEnd.date)-Date.parse(context.prevStart.date))/86400000;
+ if(elapsed!==previousElapsed)return null;
  const before=previousId?snapshotDelta(context.prevEnd,context.prevStart,previousId):null;
  return now==null||before==null?null:now-before;
 }
