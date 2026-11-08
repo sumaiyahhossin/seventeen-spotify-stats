@@ -694,3 +694,32 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
  .rank-row{border-radius:10px!important}
 }
 @media(prefers-reduced-motion:reduce){.stat,.rank-row{transition:none!important}.stat:hover{transform:none}}
+
+/* v69 — readable lavender calendar controls on the light glass dashboard. */
+.archive-top-controls{
+ background:linear-gradient(125deg,rgba(224,217,248,.9),rgba(213,226,251,.87))!important;
+ border:1px solid rgba(120,107,163,.3)!important;
+ box-shadow:0 12px 35px rgba(67,62,119,.12)!important;
+}
+.archive-top-controls .rank-select,.archive-top-controls .archive-picker label{
+ color:#38375e!important;font-weight:850!important;
+}
+.archive-top-controls #archiveDate,.archive-top-controls .rank-select select{
+ background:#f9f7ff!important;color:#252747!important;
+ border:2px solid #8982b7!important;font-weight:800!important;
+ color-scheme:light!important;opacity:1!important;
+}
+.archive-top-controls #archiveDate::-webkit-datetime-edit,
+.archive-top-controls #archiveDate::-webkit-datetime-edit-text,
+.archive-top-controls #archiveDate::-webkit-datetime-edit-month-field,
+.archive-top-controls #archiveDate::-webkit-datetime-edit-day-field,
+.archive-top-controls #archiveDate::-webkit-datetime-edit-year-field{color:#252747!important;opacity:1!important}
+.archive-top-controls #archiveDate::-webkit-calendar-picker-indicator{filter:none!important;opacity:1!important}
+.archive-top-controls .date-navigation{background:transparent!important}
+.archive-top-controls .date-arrow{
+ background:#ede5ff!important;color:#3b336c!important;
+ border:2px solid #8982b7!important;font-weight:900!important;
+}
+.archive-top-controls .date-arrow:disabled{opacity:.4!important}
+.archive-top-controls .latest-date{color:#60408e!important;font-weight:850!important}
+.archive-top-controls .date-notice{color:#45466a!important;font-weight:700!important}
