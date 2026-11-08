@@ -139,7 +139,17 @@ function build(){
   if(query&&!norm(item.name).includes(query))continue;
   const o=observations.get(key)||[];
   const crossed=o.find(x=>x.milestone===threshold);
-  const evidence=externalEvidence[key]?.[threshold];
+  const aliases={
+  'leftandright':'leftandright','leftright':'leftandright',
+  'world':'world','theworld':'world',
+  'lovemoneyfame':'lovemoneyfamefeatdjkhaled',
+  'lovemoneyfamefeatdjkhaled':'lovemoneyfamefeatdjkhaled',
+  'godofmusic':'godofmusic','gom':'godofmusic',
+  'ohmy':'ohmy'
+ };
+ const normalized=norm(item.name);
+ const lookup='name:'+(aliases[normalized]||normalized);
+ const evidence=externalEvidence[key]?.[threshold]||externalEvidence[lookup]?.[threshold];
   // A crossing is not sufficient: the latest available track-level total
   // must independently confirm the threshold. Never count album aggregates.
   const currentValue=latestValues.get(key);
