@@ -564,10 +564,45 @@ function fillArtwork(){
    if(id?.startsWith('image:'))url=id.slice(6);
    else if(id?.startsWith('release:')){
     const title=decodeURIComponent(id.slice(8));
-    if(!releaseArtCache.has(title))releaseArtCache.set(title,persistentCovers['release:'+title]?Promise.resolve(persistentCovers['release:'+title]):fetch('https://itunes.apple.com/search?'+new URLSearchParams({term:'SEVENTEEN '+title,entity:'album',limit:'50'})).then(r=>r.ok?r.json():null).then(data=>{
-     const matches=(data?.results||[]).filter(x=>/seventeen/i.test(x.artistName||'')&&(coverKey(x.collectionName)===coverKey(title)||coverKey(x.collectionName)===coverKey(title)+' ep'||coverKey(x.collectionName)===coverKey(title)+' single'));
-     const url=matches[0]?.artworkUrl100?.replace('100x100bb','600x600bb')||null;rememberCover('release:'+title,url);return url;
-    }).catch(()=>null));
+    if(!releaseArtCache.has(title)){
+     const cacheKey='release:'+title;
+     const fetchOriginal=async()=>{
+      const aliases={
+       'Semicolon':['; [Semicolon]','Semicolon','; [Semicolon] - EP'],
+       'Al1':['Al1','Al1 - EP'],
+       'FML':['FML','FML - EP'],
+       'LOVE & LETTER (Repackage)':['Love & Letter Repackage Album','Love & Letter'],
+       'Not Alone':['ひとりじゃない','Hitorijanai','Not Alone'],
+       'Fallin Flower':["Fallin' Flower","Fallin' Flower - Single"],
+       'WE MAKE YOU':['WE MAKE YOU','We Make You - EP'],
+       'God of Light Music':['God of Light Music','GOLM'],
+       'DREAM':['DREAM','DREAM - EP']
+      };
+      const candidates=aliases[title]||[title];
+      const clean=n=>coverKey(n).replace(/\\b(ep|single|album|mini album|the)\\b/g,'').trim();
+      for(const term of candidates){
+       try{
+        const params=new URLSearchParams({term:'SEVENTEEN '+term,entity:'album',limit:'100',country:'US'});
+        const response=await fetch('https://itunes.apple.com/search?'+params);
+        if(!response.ok)continue;
+        const data=await response.json();
+        const matches=(data.results||[]).filter(x=>{
+         if(!/seventeen/i.test(x.artistName||''))return false;
+         const found=clean(x.collectionName);
+         return candidates.some(t=>found===clean(t));
+        });
+        const picked=matches[0];
+        if(picked?.artworkUrl100){
+         const url=picked.artworkUrl100.replace(/\\d+x\\d+bb/,'600x600bb');
+         rememberCover(cacheKey,url);
+         return url;
+        }
+       }catch(e){console.warn('Original release cover lookup failed',title,e)}
+      }
+      return null;
+     };
+     releaseArtCache.set(title,persistentCovers[cacheKey]?Promise.resolve(persistentCovers[cacheKey]):fetchOriginal());
+    }
     url=await releaseArtCache.get(title);
    }else url=await spotifyCover(id);
    if(!url&&fallback&&!id?.startsWith('release:'))url=await spotifyCover(fallback);
