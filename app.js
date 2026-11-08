@@ -390,6 +390,11 @@ function dailyChange(s,p,pp,id){
  const yesterday=matched?safeGain(p,pp,matched.id):null;
  return today==null||yesterday==null?null:today-yesterday;
 }
+function sumDailyChange(s,p,pp,ids){
+ if(!s||!p||!pp||!ids.length)return null;
+ const changes=ids.map(id=>dailyChange(s,p,pp,id));
+ return changes.every(value=>value!=null)?changes.reduce((total,value)=>total+value,0):null;
+}
 function sumDaily(s,p,ids){
  if(!ids.length)return null;
  const gains=ids.map(id=>safeGain(s,p,id));
@@ -532,9 +537,9 @@ function buildRows(s,p,pp,baseline){
      const ids=[...new Set(spec.keys.flatMap(key=>releasesByKey.get(key)?.tracks||[]))];
      const streams=ids.length&&ids.every(id=>s.tracks[id]!=null)?ids.reduce((sum,id)=>sum+s.tracks[id],0):null;
      const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
-     const yesterday=sumDaily(p,pp,ids);
+     const dayChange=sumDailyChange(s,p,pp,ids);
      rows.push({name:spec.name,artworkRelease:spec.name.includes('Repackage')?(spec.name.includes('SECTOR 17')?'g36':'g7'):spec.keys[0],streams,gain,
-       change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&yesterday!=null?gain-yesterday:null});
+       change:periodic?sumPeriodChange(s,baseline,ids):dayChange});
    }
  }else if(albums){
    for(const item of catalog[tab]||[]){
@@ -542,7 +547,7 @@ function buildRows(s,p,pp,baseline){
      if(['gilboard','sharedTracks'].includes(item.key))continue;
      const ids=[...new Set(item.tracks)];
      const streams=ids.every(id=>s.tracks[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
-     const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids),yesterday=sumDaily(p,pp,ids);
+     const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids),dayChange=sumDailyChange(s,p,pp,ids);
      rows.push({name:catalogReleaseLabel(item),artworkRelease:item.key,kind:'album',streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&yesterday!=null?gain-yesterday:null});
    }
  }else{
