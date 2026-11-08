@@ -462,6 +462,14 @@ function artworkTrack(row){
   const firstRelease=originalReleaseLookup.get(originalKey);
   if(firstRelease)return 'track:'+firstRelease;
  }
+ // The anthology maps include re-recorded Spotify IDs for old songs.
+ // Always use the verified first-release album for the original recording.
+ // Keep Korean/Japanese versions and remixes distinct from the original.
+ if(!isAlbum&&tab==='group'){
+  const originalAlbum=originalReleaseLookup.get(originalKey);
+  const alternateVersion=/\b(remix|inst|instrumental|korean ver|japanese ver|chinese ver|sped up|orchestra|workout|holiday|feat)\b/.test(originalKey);
+  if(originalAlbum&&!alternateVersion)return 'track:'+originalAlbum;
+ }
  const exactKey=originalKey==='247'?'247 0':originalKey;
  const mapped=isAlbum?artworkMap.albums[exactKey]||artworkMap.albums[exactKey.replace(/\btotal\b/g,'').trim()]:artworkMap.tracks[exactKey];
  if(mapped?.id){
