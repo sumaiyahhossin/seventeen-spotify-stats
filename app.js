@@ -1350,28 +1350,51 @@ function periodComparison(s,context,ids){
 }
 function sumPeriodChange(s,context,ids){return periodComparison(s,context,ids).value}
 async function render(){const token=++renderToken;$('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';try{renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;syncCalendar();restoreGroupNames(s,p);
- $('#date').textContent=s?.date||'—';const ids=s?trackIds(s):[];// Historical spreadsheets repeat songs under repackages and compilations,
- // so their raw row count is not the canonical distinct-song count.
- // To keep the displayed group count at the verified 227 until duplicate IDs are checked.
+ const isPeriod=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
+ const periodName=rank.endsWith('weekly')?'Weekly':rank.endsWith('monthly')?'Monthly':rank.endsWith('yearly')?'Yearly':'Daily';
+ const periodDateLabel=()=>{
+  if(!s)return '—';
+  const format=d=>new Date(d+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'long',day:'numeric',year:'numeric'});
+  if(rank.endsWith('monthly'))return new Date(s.date+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'long',year:'numeric'});
+  if(rank.endsWith('yearly'))return s.date.slice(0,4);
+  if(rank.endsWith('weekly')){const monday=shifted(s.date,-((utcDate(s.date).getUTCDay()+6)%7));return format(monday)+' – '+format(shifted(monday,6))}
+  return format(s.date);
+ };
+ $('#date').textContent=periodDateLabel();
+ $('#dateDescription').textContent=isPeriod?'Latest available snapshot in selected '+periodName.toLowerCase()+' period.':'Spotify updates once a day.';
+ $('#gainHeading').textContent=(isPeriod?periodName.toUpperCase():rank.endsWith('overall')?'TOTAL':'DAILY')+' STREAM GROWTH';
+ const ids=s?trackIds(s):[];
+ const memberIds=tab==='solo'&&selectedSoloArtist&&s?soloArtistTrackIds(s):ids;
  const groupTrackCount=s&&tab==='group'&&isHistorical(s)?(Object.values(s.names||{}).some(n=>/^tiny light$/i.test(String(n).trim()))?227:226):ids.length;
- $('#count').textContent=s?fmt(groupTrackCount):'—';$('#listeners').textContent=fmt(audienceValue(s,'listeners'));const currentFollowers=audienceValue(s,'followers'),previousFollowers=audienceValue(p,'followers');
- $('#followers').textContent=fmt(currentFollowers);
- if(currentFollowers==null)$('#followersChange').textContent=previousFollowers!=null?'Current count unavailable · previous count '+fmt(previousFollowers)+' ('+(p?.date||'')+')':'Current follower count unavailable';const listenerNow=audienceValue(s,'listeners'),listenerPrev=audienceValue(p,'listeners'),followerNow=audienceValue(s,'followers'),followerPrev=audienceValue(p,'followers');const showDelta=(selector,now,prev)=>{const n=now!=null&&prev!=null&&p&&s&&((Date.parse(s.date)-Date.parse(p.date))/86400000===1)?now-prev:null;$(selector).textContent=n==null?'Change from previous day unavailable':(n>=0?'+':'−')+fmt(Math.abs(n))+' vs previous day';};showDelta('#listenersChange',listenerNow,listenerPrev);
- if(currentFollowers!=null)showDelta('#followersChange',followerNow,followerPrev);const grandId=s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;$('#total').textContent=s?fmt(grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';const gains=s?ids.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];const grandGain=grandId?safeGain(s,p,grandId):null;const completeGain=s&&p&&gains.length===ids.length;
- const verifiedDailyGain=tab==='group'&&s?.date==='2026-11-06'&&ids.length===227&&s.verified_daily_gain_2026_11_05===1891578?1891578:null;
- const hasVerifiedTotal=verifiedDailyGain!=null||grandGain!=null||completeGain;
- const partialGain=!hasVerifiedTotal&&gains.length?gains.reduce((a,b)=>a+b,0):null;
- $('#gain').textContent=hasVerifiedTotal?'+'+fmt(verifiedDailyGain!=null?verifiedDailyGain:grandGain!=null?grandGain:gains.reduce((a,b)=>a+b,0)):partialGain!=null?'+'+fmt(partialGain)+'*':'—';
+ $('#count').textContent=s?fmt(tab==='solo'&&selectedSoloArtist?memberIds.length:groupTrackCount):'—';
+ const periodStart=isPeriod?baseline?.start:p;
+ const periodStartDate=periodStart?.date||'';
+ const audiencePeriod=isPeriod?periodName.toLowerCase()+' period':rank.endsWith('overall')?'selected date':'day';
+ const setAudience=(kind,valueId,changeId)=>{
+  const now=audienceValue(s,kind),before=audienceValue(periodStart,kind);
+  $(valueId).textContent=fmt(now);
+  const valid=now!=null&&before!=null&&s&&periodStart&&Date.parse(s.date)>Date.parse(periodStart.date);
+  const diff=valid?now-before:null;
+  $(changeId).textContent=diff==null?'Change for '+audiencePeriod+' unavailable':(diff>=0?'+':'−')+fmt(Math.abs(diff))+' vs '+(isPeriod?'start of '+audiencePeriod:'previous day');
+ };
+ setAudience('listeners','#listeners','#listenersChange');
+ setAudience('followers','#followers','#followersChange');
+ const grandId=s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;
+ $('#total').textContent=s?fmt(tab==='solo'&&selectedSoloArtist?memberIds.reduce((a,id)=>a+Number(s.tracks[id]||0),0):grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';
  const gainNote=$('#gain').nextElementSibling;
- if(gainNote)gainNote.textContent=hasVerifiedTotal?'Verified gain for '+s.date+' versus '+p.date:partialGain!=null?'* Partial gain for '+s.date+': '+gains.length+' of '+ids.length+' tracks could be compared with the imported '+(p?.date||'previous')+' snapshot. This does NOT mean Selenium missed the other tracks.':'Daily gain unavailable for '+(s?.date||'this date')+' — waiting for two comparable consecutive snapshots.';
-
- if(tab==='solo'&&selectedSoloArtist&&s){
-  const memberIds=soloArtistTrackIds(s);
-  const memberGains=memberIds.map(id=>safeGain(s,p,id)).filter(v=>v!=null);
-  $('#count').textContent=fmt(memberIds.length);
-  $('#total').textContent=memberIds.length?fmt(memberIds.reduce((sum,id)=>sum+Number(s.tracks[id]||0),0)):'—';
-  $('#gain').textContent=memberIds.length&&memberGains.length===memberIds.length?'+'+fmt(memberGains.reduce((sum,v)=>sum+v,0)):'—';
-  if(gainNote)gainNote.textContent=memberIds.length&&memberGains.length===memberIds.length?'Verified artist-specific daily gain':'Artist-specific daily gain unavailable until comparable snapshots exist';
+ if(isPeriod){
+  const summary=memberIds.map(id=>periodGain(s,baseline,id));
+  const valid=summary.filter(n=>n!=null);
+  $('#gain').textContent=valid.length?'+'+fmt(valid.reduce((a,b)=>a+b,0))+(valid.length<memberIds.length?'*':''):'—';
+  if(gainNote)gainNote.textContent=!baseline?.start?'No saved snapshot at the start of this '+periodName.toLowerCase()+' period.':!valid.length?'No comparable tracks available for this '+periodName.toLowerCase()+' period.':(valid.length<memberIds.length?'* Partial '+periodName.toLowerCase()+' gain ('+valid.length+' of '+memberIds.length+' tracks).':'Verified '+periodName.toLowerCase()+' gain')+' from '+periodStartDate+' through '+s.date;
+ }else{
+  const gains=s?memberIds.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];
+  const grandGain=grandId&&!(tab==='solo'&&selectedSoloArtist)?safeGain(s,p,grandId):null;
+  const verifiedDailyGain=tab==='group'&&s?.date==='2026-11-06'&&ids.length===227&&s.verified_daily_gain_2026_11_05===1891578?1891578:null;
+  const hasVerifiedTotal=verifiedDailyGain!=null||grandGain!=null||memberIds.length>0&&gains.length===memberIds.length;
+  const partialGain=!hasVerifiedTotal&&gains.length?gains.reduce((a,b)=>a+b,0):null;
+  $('#gain').textContent=hasVerifiedTotal?'+'+fmt(verifiedDailyGain!=null?verifiedDailyGain:grandGain!=null?grandGain:gains.reduce((a,b)=>a+b,0)):partialGain!=null?'+'+fmt(partialGain)+'*':'—';
+  if(gainNote)gainNote.textContent=hasVerifiedTotal?'Verified gain for '+s.date+' versus '+p.date:partialGain!=null?'* Partial gain for '+s.date+': '+gains.length+' of '+memberIds.length+' tracks could be compared.':'Daily gain unavailable without two comparable consecutive snapshots.';
  }
  $('#order').hidden=rank.startsWith('discography');const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),discography=rank.startsWith('discography'),periodLabel=rank.endsWith('weekly')?'WEEKLY':rank.endsWith('monthly')?'MONTHLY':'YEARLY';const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS ADDED':periodic?periodLabel+' STREAMS ADDED':'TOTAL STREAMS';headers[2].textContent=daily?'GAIN VS DAY BEFORE':periodic?rank.endsWith('weekly')?'GAIN VS LAST WEEK':rank.endsWith('monthly')?'GAIN VS LAST MONTH':'GAIN VS LAST YEAR':'GAIN VS YESTERDAY';document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=soloArtistRows(buildRows(s,p,pp,baseline),s,p,baseline).filter(x=>discography||x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${`<span class="cover-slot">${true?`<img class="cover" data-cover-track="${artworkTrack(r)||'missing'}" data-cover-name="${escapeHtml(r.name)}" data-cover-kind="${r.kind==='album'?'album':'track'}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden>💎</span>`:`<span class="cover-placeholder">💎</span>`}</span>`}${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}</div><div class="num ${(daily||periodic?r.gain:r.streams)==null?'missing-value':''}">${periodic&&r.gain!=null?"+":""}${fmt(daily||periodic?r.gain:r.streams)}</div><div class="num change ${(daily||periodic?r.change:r.gain)==null?'missing-value':(daily||periodic?r.change:r.gain)<0?'negative':''}">${(daily||periodic?r.change:r.gain)==null?'—':((daily||periodic?r.change:r.gain)>=0?'+':'−')+fmt(Math.abs(daily||periodic?r.change:r.gain))+(r.changePartial?'*':'')}</div></div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
