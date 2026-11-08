@@ -47,12 +47,12 @@ function restoreGroupNames(s,p){
 }
 function typeDates(type){return dates.filter(d=>history[type+'-'+d]!==null)}
 async function getDate(type,date){if(!date)return null;const key=type+'-'+date;if(!(key in history))history[key]=await load('data/history/'+key+'.json');return history[key]}
-async function latest(type){if(current[type])return current[type];if(type==='solo')return null;return dates.length?getDate(type,dates[0]):null}
+async function latest(type){if(current[type])return current[type];return dates.length?getDate(type,dates[0]):null}
 async function selectedSnapshot(){return selection==='latest'?latest(tab):getDate(tab,selection)}
 async function prior(s){if(!s)return null;const yesterday=shifted(s.date,-1);return getDate(tab,yesterday)}
 function normTrackName(name){return String(name||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
 function comparablePrevious(s,p,id){
- if(p?.tracks?.[id]!=null)return {id,value:p.tracks[id]};
+ if(p?.tracks?.[id]!=null){const a=normTrackName(s?.names?.[id]||idName[id]),b=normTrackName(p.names?.[id]);if(!a||!b||a===b)return {id,value:p.tracks[id]};}
  // Historical Excel rows may have legacy row IDs rather than Spotify track IDs.
  if(!isHistorical(s)&&isHistorical(p)){
   const name=normTrackName(s.names?.[id]||idName[id]);
@@ -452,15 +452,19 @@ function snapshotDelta(now,old,id){
  const prev=comparablePrevious(now,old,id);
  if(!prev||(now.anomalies||[]).includes(id)||(old.anomalies||[]).includes(prev.id))return null;
  const delta=now.tracks[id]-prev.value;
+ // Do not mix Spotify API and spreadsheet figures unless the song matches
+ // and the cross-source difference is within a conservative daily range.
+ if(isHistorical(now)!==isHistorical(old)&&delta>100000)return null;
  return delta>=0?delta:null;
 }
 function periodGain(s,context,id){
- return context?snapshotDelta(s,context.start,id):null;
+ return context?.start?snapshotDelta(s,context.start,id):null;
 }
 function periodChange(s,context,id){
  if(!context?.start||!context.prevStart||!context.prevEnd)return null;
  const now=snapshotDelta(s,context.start,id);
- const before=snapshotDelta(context.prevEnd,context.prevStart,id);
+ const previousId=comparablePrevious(s,context.prevEnd,id)?.id;
+ const before=previousId?snapshotDelta(context.prevEnd,context.prevStart,previousId):null;
  return now==null||before==null?null:now-before;
 }
 function sumPeriod(s,context,ids){const values=ids.map(id=>periodGain(s,context,id));return values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null}
