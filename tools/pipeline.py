@@ -33,6 +33,31 @@ if kind=='group' and followers is None:
     reasons=[line for line in result.stdout.splitlines() if line.startswith('STAT_FOLLOWERS_UNAVAILABLE|')]
     reason=reasons[-1].split('|',1)[1] if reasons else 'no exact follower metric emitted'
     print(f'group: exact Spotify followers unavailable ({reason}); streams and monthly listeners can still be saved')
+# Prefer Spotify's exact artist follower count when API credentials are configured.
+# The public artist page often displays only a rounded number.
+if kind=='group' and followers is None and os.getenv('SPOTIFY_CLIENT_ID') and os.getenv('SPOTIFY_CLIENT_SECRET'):
+    try:
+        import urllib.request, urllib.parse, base64
+        auth=base64.b64encode((os.environ['SPOTIFY_CLIENT_ID']+':'+os.environ['SPOTIFY_CLIENT_SECRET']).encode()).decode()
+        token_request=urllib.request.Request(
+            'https://accounts.spotify.com/api/token',
+            data=urllib.parse.urlencode({'grant_type':'client_credentials'}).encode(),
+            headers={'Authorization':'Basic '+auth,'Content-Type':'application/x-www-form-urlencoded'})
+        with urllib.request.urlopen(token_request,timeout=20) as response:
+            access_token=json.load(response)['access_token']
+        artist_request=urllib.request.Request(
+            'https://api.spotify.com/v1/artists/7nqOGRxlXj7N2JYbgNEjYH',
+            headers={'Authorization':'Bearer '+access_token})
+        with urllib.request.urlopen(artist_request,timeout=20) as response:
+            artist_data=json.load(response)
+        api_followers=artist_data.get('followers',{}).get('total')
+        if isinstance(api_followers,int) and api_followers>0:
+            followers=api_followers
+            print('group: exact Spotify followers retrieved from artist API')
+        else:
+            print('group: Spotify artist API did not provide exact followers')
+    except Exception as error:
+        print(f'group: Spotify artist API follower request failed ({type(error).__name__}); keeping unavailable')
 cat=json.loads((DATA/'catalog.json').read_text())[kind]
 expected={id for item in cat for id in item['tracks']}
 missing=expected-set(tracks)
