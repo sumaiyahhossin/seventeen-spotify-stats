@@ -210,6 +210,61 @@ function trackRows(snapshot){
  }
  return out;
 }
+
+const upcomingTargets=[1000000,10000000,20000000,30000000,40000000,50000000,60000000,70000000,80000000,90000000,100000000,200000000,300000000,400000000,500000000,600000000,700000000,800000000,900000000,1000000000];
+let currentSnapshot=null,previousSnapshot=null;
+const shortStreams=n=>n>=1000000000?(n/1000000000)+'B':(n/1000000)+'M';
+function nextTarget(value){return upcomingTargets.find(target=>value<target)||null}
+function renderUpcoming(){
+ const filter=Number($('upcomingThreshold').value),sort=$('upcomingSort').value,query=norm($('upcomingSearch').value);
+ if(!currentSnapshot){$('upcomingStatus').textContent='Loading latest Spotify snapshot…';return}
+ const now=trackRows(currentSnapshot);
+ const prev=previousSnapshot?trackRows(previousSnapshot):new Map();
+ const deltaDays=previousSnapshot?days(previousSnapshot.date,currentSnapshot.date):0;
+ const rows=[];
+ for(const [key,item] of now){
+  if(query&&!norm(item.name).includes(query))continue;
+  const target=nextTarget(item.value);
+  if(!target||(filter&&target!==filter))continue;
+  const old=prev.get(key);
+  const gain=old&&deltaDays===1&&item.value>=old.value?item.value-old.value:null;
+  const remaining=target-item.value;
+  const estimate=gain>0?Math.ceil(remaining/gain):null;
+  const expected=estimate!=null&&estimate<=365000?new Date(Date.parse(currentSnapshot.date+'T12:00:00Z')+estimate*86400000).toISOString().slice(0,10):null;
+  rows.push({...item,target,gain,remaining,estimate,expected});
+ }
+ rows.sort((a,b)=>{
+  if(sort==='closest')return a.remaining-b.remaining||a.name.localeCompare(b.name);
+  if(sort==='soonest')return (a.estimate==null?1:0)-(b.estimate==null?1:0)||(a.estimate??0)-(b.estimate??0)||a.name.localeCompare(b.name);
+  if(sort==='streams')return b.value-a.value||a.name.localeCompare(b.name);
+  if(sort==='name')return a.name.localeCompare(b.name);
+  return a.target-b.target||b.value-a.value;
+ });
+ $('upcomingRows').innerHTML=rows.length?rows.map((r,i)=>{
+  const img='<img class="song-cover" data-song-name="'+esc(r.name)+'" data-spotify-id="'+esc(r.id||'')+'" alt="" loading="lazy">';
+  return '<tr><td><div class="song-cell"><span class="song-rank">'+String(i+1).padStart(2,'0')+'</span>'+img+'<div class="song-meta"><span class="song-title">'+esc(r.name)+'</span><span class="song-release">'+r.value.toLocaleString()+' streams</span></div></div></td>'+
+  '<td data-label="NEXT MILESTONE"><span class="reached-value">'+shortStreams(r.target)+'</span></td>'+
+  '<td data-label="STREAMS LEFT">'+r.remaining.toLocaleString()+'</td>'+
+  '<td data-label="DAILY GAIN">'+(r.gain==null?'—':'+'+r.gain.toLocaleString())+'</td>'+
+  '<td data-label="ESTIMATED ARRIVAL"><span class="days-value">'+(r.estimate==null?'—':r.estimate.toLocaleString()+' days')+'</span>'+(r.expected?'<div class="song-release">'+format(r.expected)+'</div>':'')+'</td></tr>';
+ }).join(''):'<tr><td colspan="5">No tracks waiting for this milestone.</td></tr>';
+ $('upcomingStatus').textContent=rows.length+' songs · Latest snapshot: '+format(currentSnapshot.date)+(deltaDays!==1?' · Daily growth unavailable until two consecutive snapshots exist':' · Estimates use the latest one-day gain');
+ loadMilestoneCovers();
+}
+function setMilestoneView(view){
+ const upcoming=view==='upcoming';
+ $('reachedView').hidden=upcoming;
+ $('upcomingView').hidden=!upcoming;
+ $('tabReached').setAttribute('aria-selected',String(!upcoming));
+ $('tabUpcoming').setAttribute('aria-selected',String(upcoming));
+ try{sessionStorage.setItem('svt-milestone-view',view)}catch{}
+ if(upcoming)renderUpcoming();
+}
+$('tabReached').addEventListener('click',()=>setMilestoneView('reached'));
+$('tabUpcoming').addEventListener('click',()=>setMilestoneView('upcoming'));
+for(const id of ['upcomingThreshold','upcomingSort','upcomingSearch'])$(id).addEventListener(id==='upcomingSearch'?'input':'change',renderUpcoming);
+setMilestoneView('reached');
+
 function build(){
  const threshold=Number($('threshold').value),sort=$('sort').value,query=norm($('search').value);
  let rows=[];
@@ -281,13 +336,17 @@ async function start(){
   ]);
   milestoneArtwork=artwork;
   latest=group;
+  currentSnapshot=group;
   buildReleases(catalog);
   const latestRows=trackRows(latest);
   for(const [key,item] of latestRows){
    first.set(key,{...item,firstValue:item.value});
    latestValues.set(key,item.value);
   }
-  ready=true;build();
+  ready=true;build();renderUpcoming();
+  // Only one previous daily snapshot is used to calculate the current growth rate.
+  // Upcoming milestones never wait for the historical milestone scan.
+  (async()=>{try{const previousDate=new Date(Date.parse(group.date+'T12:00:00Z')-86400000).toISOString().slice(0,10);previousSnapshot=await jsonWithTimeout('data/history/group-'+previousDate+'.json',10000);renderUpcoming()}catch{renderUpcoming()}})();
   $('status').textContent+=' · Checking historical dates in background…';
  }catch(error){
   $('status').textContent='Could not load the current song snapshot. Please refresh the page.';
