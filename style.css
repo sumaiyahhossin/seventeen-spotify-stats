@@ -773,3 +773,33 @@ body{
 .archive-top-controls #dailyPickerWrap .latest-date,
 .archive-top-controls #latestDate{justify-self:end!important;text-align:right!important;margin-left:auto!important;display:block!important}
 .archive-top-controls #dailyPickerWrap #dateNotice{text-align:right!important;justify-self:end!important}
+
+/* v80 — midnight concert: cinematic shimmer, interactive glass, and motion-safe effects */
+:root{--concert-pink:#ffaddf;--concert-ice:#a9c8ff;--concert-lilac:#d3b4ff}
+body{overflow-x:hidden}
+body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.24;background:radial-gradient(360px circle at var(--cursor-x,50%) var(--cursor-y,20%),rgba(169,130,255,.16),transparent 78%);transition:opacity .35s}
+header,main,footer,#lastUpdated{position:relative;z-index:1}
+.hero{position:relative;isolation:isolate}
+.hero::before{content:"";position:absolute;inset:-35px -3% auto;min-height:360px;pointer-events:none;z-index:-1;background:radial-gradient(ellipse at 45% 42%,rgba(157,97,255,.13),transparent 63%);animation:concertAura 9s ease-in-out infinite alternate}
+.hero h1 em{background:linear-gradient(105deg,#f8b3e4 4%,#f6e1ff 32%,#a8caff 57%,#f8b3e4 85%);background-size:230% auto;-webkit-background-clip:text;background-clip:text;-webkit-text-fill-color:transparent;animation:concertShine 8s ease-in-out infinite}
+.hero .eyebrow,.section-top .eyebrow{animation:concertFadeUp .85s both}
+.hero h1{animation:concertFadeUp .95s .1s both}
+.hero p,.spotify-artist-link{animation:concertFadeUp 1s .22s both}
+.panel{position:relative;isolation:isolate}
+.panel::before{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;padding:1px;background:linear-gradient(115deg,rgba(255,179,227,.44),rgba(157,177,255,.06) 36%,rgba(173,143,255,.4) 72%,rgba(255,179,227,.15));-webkit-mask:linear-gradient(#fff 0 0) content-box,linear-gradient(#fff 0 0);-webkit-mask-composite:xor;mask-composite:exclude;opacity:.7}
+.stat,.rank-row,.archive-top-controls,.seg button,.date-arrow,.order-picker select,.rank-select select{transition:transform .24s ease,box-shadow .28s ease,border-color .28s ease,background-color .28s ease!important}
+.stat:hover{transform:translateY(-5px);box-shadow:0 16px 45px rgba(7,6,24,.35),0 0 22px rgba(189,135,255,.13)!important;border-color:rgba(230,170,255,.38)!important}
+.rank-row:hover{transform:translateX(3px);box-shadow:inset 3px 0 0 rgba(245,173,232,.7),0 8px 28px rgba(8,7,26,.22)!important}
+.seg button:hover,.date-arrow:hover{transform:translateY(-2px)}
+button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid #f3b3e8!important;outline-offset:3px}
+.concert-sound{display:inline-flex;align-items:center;gap:8px;padding:9px 13px;border:1px solid rgba(211,180,255,.4);border-radius:999px;background:rgba(33,28,65,.72);color:#f5e8ff;font:700 11px 'Manrope',sans-serif;letter-spacing:.05em;cursor:pointer;backdrop-filter:blur(12px);white-space:nowrap}
+.concert-sound:hover{border-color:#f7b4e5;box-shadow:0 0 22px rgba(219,142,255,.17)}
+.concert-sound[aria-pressed="true"]{border-color:rgba(255,174,221,.8);background:rgba(88,48,112,.6)}
+.concert-spark{position:fixed;z-index:1000;pointer-events:none;width:6px;height:6px;border-radius:2px;background:var(--spark-color,#ffc0e6);box-shadow:0 0 12px var(--spark-color,#ffc0e6);animation:concertSpark .75s ease-out forwards}
+.concert-reveal{animation:concertFadeUp .7s both}
+@keyframes concertFadeUp{from{opacity:0;transform:translateY(17px)}to{opacity:1;transform:translateY(0)}}
+@keyframes concertShine{0%,100%{background-position:0% center}50%{background-position:100% center}}
+@keyframes concertAura{from{transform:translateX(-4%) scale(.94);opacity:.5}to{transform:translateX(4%) scale(1.08);opacity:1}}
+@keyframes concertSpark{to{opacity:0;transform:translate(var(--dx),var(--dy)) rotate(140deg) scale(.1)}}
+@media(max-width:680px){.concert-sound{padding:7px 10px;font-size:10px}.stat:hover,.rank-row:hover{transform:none}}
+@media(prefers-reduced-motion:reduce){.hero::before,.hero h1 em,.hero .eyebrow,.section-top .eyebrow,.hero h1,.hero p,.spotify-artist-link,.concert-reveal{animation:none!important}.stat,.rank-row,.seg button,.date-arrow{transition:none!important;transform:none!important}.concert-spark{display:none!important}}
