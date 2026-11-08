@@ -11,7 +11,19 @@ function buildReleases(catalog){
  for(const item of catalog.group||[]){
   const date=releaseByKey[item.key]||item.release_date||item.releaseDate;
   if(!/^\d{4}-\d\d-\d\d$/.test(date||''))continue;
-  for(const id of item.tracks||[]){if(!releases.has(id)||date<releases.get(id))releases.set(id,date)}
+  const ids=item.tracks||[];
+  for(const id of ids){if(!releases.has(id)||date<releases.get(id))releases.set(id,date)}
+  const description=String(item.description||'');
+  const match=description.match(/\\(\\d+\\s+tracks?\\)\\s*:\\s*(.*)$/i);
+  if(match){
+   const titles=[];let depth=0,part='';
+   for(const ch of match[1]){if(ch==='(')depth++;else if(ch===')')depth--;if(ch===','&&depth===0){titles.push(part.trim());part=''}else part+=ch}
+   if(part.trim())titles.push(part.trim());
+   if(titles.length===ids.length)titles.forEach((title,i)=>{
+    const key='name:'+norm(title);
+    if(!releases.has(key)||date<releases.get(key))releases.set(key,date);
+   });
+  }
  }
 }
 function trackRows(snapshot){
@@ -33,7 +45,7 @@ function build(){
   const crossed=o.find(x=>x.milestone===threshold);
   const reached=item.firstValue>=threshold||o.some(x=>x.milestone===threshold);
   if(!reached)continue;
-  const release=releases.get(item.id)||null;
+  const release=releases.get(item.id)||releases.get(key)||null;
   const duration=crossed?.exact&&release&&days(release,crossed.date)>=0?days(release,crossed.date):null;
   rows.push({name:item.name,release,date:crossed?.exact?crossed.date:null,range:crossed&&!crossed.exact?crossed:null,duration,status:crossed?.exact?'Verified daily crossing':crossed?'Between saved dates':'Before archive'});
  }
