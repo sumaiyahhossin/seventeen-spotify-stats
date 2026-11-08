@@ -1533,7 +1533,7 @@ function soloArtistTrackIds(s){
  const ids=ownedSoloIds(selectedSoloArtist);
  return trackIds(s).filter(id=>ids.has(id));
 }
-function soloArtistRows(rows,s,p,baseline){
+function soloArtistRows(rows,s,p,baseline,pp){
  if(tab!=='solo'||!selectedSoloArtist)return rows;
  const ids=ownedSoloIds(selectedSoloArtist);
  const artist=selectedSoloArtist.toLowerCase();
@@ -1556,8 +1556,11 @@ function soloArtistRows(rows,s,p,baseline){
    // their own contribution and the corresponding 6/7-track subtotal.
    const allAvailable=matching.every(id=>s?.tracks?.[id]!=null);
    const streams=allAvailable?matching.reduce((sum,id)=>sum+Number(s.tracks[id]),0):null;
-   const gain=matching.every(id=>safeGain(s,p,id)!=null)?matching.reduce((sum,id)=>sum+safeGain(s,p,id),0):null;
-   return [{...row,streams,gain,change:null}];
+   const periodic=['weekly','monthly','yearly'].some(period=>rank.endsWith(period));
+   const gains=matching.map(id=>periodic?periodGain(s,baseline,id):safeGain(s,p,id));
+   const gain=gains.every(value=>value!=null)?gains.reduce((sum,value)=>sum+value,0):null;
+   const comparison=periodic?periodComparison(s,baseline,matching):dailyComparison(s,p,pp,matching);
+   return [{...row,streams,gain,change:comparison.value,changePartial:comparison.partial}];
   }
   if(row.id){
    if(!ids.has(row.id))return [];
@@ -1761,6 +1764,25 @@ async function updateYear2026Streams(){
   console.warn('Yearly stream calculation unavailable',e);
  }
 }
+
+/* Every ranking uses the same cumulative totals, period gain and period-to-period comparison.
+   A missing previous snapshot is shown as unavailable; it is never treated as zero. */
+function rankMetricHtml(value,key,label,{signed=false,estimated=false,partial=false}={}){
+ const missing=value==null||!Number.isFinite(Number(value));
+ const number=Number(value);
+ const display=missing?'—':(estimated?'≈':signed?(number>=0?'+':'−'):'')+fmt(Math.abs(number))+(partial?'*':'');
+ return '<div class="num rank-metric rank-metric-'+key+(missing?' missing-value':number<0?' negative':'')+'">'+
+  '<span class="metric-label">'+label+'</span><span class="metric-value">'+display+'</span></div>';
+}
+function renderRankMetrics(row){
+ const gainLabel=rank.endsWith('weekly')?'Gain this week':rank.endsWith('monthly')?'Gain this month':
+  rank.endsWith('yearly')?'Gain this year':'Gain vs yesterday';
+ const compareWith=rank.endsWith('weekly')?'last week':rank.endsWith('monthly')?'last month':
+  rank.endsWith('yearly')?'last year':'yesterday';
+ return rankMetricHtml(row.streams,'streams','Total streams')+
+  rankMetricHtml(row.gain,'gain',gainLabel,{signed:true,estimated:row.estimatedGain})+
+  rankMetricHtml(row.change,'change','Change vs '+compareWith,{signed:true,partial:row.changePartial});
+}
 async function render(){const token=++renderToken;$('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';try{renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;updateYear2026Streams();syncCalendar();restoreGroupNames(s,p);
  document.body.classList.toggle('svt-overall-four-cols',rank.endsWith('overall'));
  const isPeriod=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
@@ -1938,7 +1960,19 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
  const displayedTrackCount=tab==='group'?groupTrackCount:memberIds.length;
  comparisonValue.textContent=s?fmt(displayedTrackCount):'—';
  comparisonDetail.textContent=s?(tab==='group'?'Unique group tracks in the selected archive':'Tracks included in the selected profile'):'No saved snapshot available';
- $('#order').hidden=rank.startsWith('discography');const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),discography=rank.startsWith('discography'),periodLabel=rank.endsWith('weekly')?'WEEKLY':rank.endsWith('monthly')?'MONTHLY':'YEARLY';const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS ADDED':periodic?periodLabel+' STREAMS ADDED':'TOTAL STREAMS';headers[2].textContent=daily?'GAIN VS DAY BEFORE':periodic?rank.endsWith('weekly')?'GAIN VS LAST WEEK':rank.endsWith('monthly')?'GAIN VS LAST MONTH':'GAIN VS LAST YEAR':'GAIN VS YESTERDAY';document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=soloArtistRows(buildRows(s,p,pp,baseline),s,p,baseline).filter(x=>{
+ const discography=rank.startsWith('discography');
+ const orderPicker=$('#order').closest('.order-picker');
+ orderPicker.hidden=discography;
+ const q=$('#search').value.toLowerCase();
+ const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly');
+ const periodLabel=rank.endsWith('weekly')?'WEEKLY':rank.endsWith('monthly')?'MONTHLY':'YEARLY';
+ const headers=document.querySelectorAll('.table-head span');
+ headers[0].textContent='NAME';
+ headers[1].textContent='TOTAL STREAMS';
+ headers[2].textContent=rank.endsWith('weekly')?'GAIN THIS WEEK':rank.endsWith('monthly')?'GAIN THIS MONTH':rank.endsWith('yearly')?'GAIN THIS YEAR':'GAIN VS YESTERDAY';
+ headers[3].textContent='CHANGE';
+ headers[3].title='Current gain minus the previous '+(rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'day')+' gain';
+ document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=soloArtistRows(buildRows(s,p,pp,baseline),s,p,baseline).filter(x=>{
   if(!discography&&!x.name.toLowerCase().includes(q))return false;
   // The archive is a historical view: a future recording or album must
   // never appear before its first release, even as a blank placeholder.
@@ -2002,7 +2036,7 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
    });
   }
  }
- $('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="rank-position"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${!discography?`<span class="rank-trend ${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'rank-up':rankMovements.get(positionKeyForDisplay(r))<0?'rank-down':'rank-same':'rank-unknown'}" title="${rankMovements.has(positionKeyForDisplay(r))?'Streaming rank change versus previous '+(daily?'day':rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'period'):'Previous streaming rank unavailable'}">${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'↑ '+rankMovements.get(positionKeyForDisplay(r)):rankMovements.get(positionKeyForDisplay(r))<0?'↓ '+Math.abs(rankMovements.get(positionKeyForDisplay(r))):'=':'—'}</span>`:''}</span>${`<span class="cover-slot">${true?`<img class="cover" data-cover-track="${artworkTrack(r)||'missing'}" data-cover-name="${escapeHtml(r.name)}" data-cover-kind="${r.kind==='album'?'album':'track'}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden>💎</span>`:`<span class="cover-placeholder">💎</span>`}</span>`}<span class="track-copy">${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}${(rankType==="albums"||rankType==="tracks"||discography||r.kind==="album")&&originalReleaseDate(r)?`<span class="release-date">Released ${formatOriginalRelease(originalReleaseDate(r))}</span>`:""}</span></div><div class="num ${(daily||periodic?r.gain:r.streams)==null?'missing-value':''}">${r.estimatedGain?"≈":periodic&&r.gain!=null?"+":""}${fmt(daily||periodic?r.gain:r.streams)}</div>${rank.endsWith('overall')?`<div class="num">${fmt(safeGain(s,p,r.id))}</div>`:''}<div class="num change ${(daily||periodic?r.change:rank.endsWith('overall')?dailyChange(s,p,pp,r.id):r.gain)==null?'missing-value':(daily||periodic?r.change:rank.endsWith('overall')?dailyChange(s,p,pp,r.id):r.gain)<0?'negative':''}">${(daily||periodic?r.change:rank.endsWith('overall')?dailyChange(s,p,pp,r.id):r.gain)==null?'—':((daily||periodic?r.change:rank.endsWith('overall')?dailyChange(s,p,pp,r.id):r.gain)>=0?'+':'−')+fmt(Math.abs(daily||periodic?r.change:rank.endsWith('overall')?dailyChange(s,p,pp,r.id):r.gain))+(r.changePartial?'*':'')}</div></div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
+ $('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="rank-position"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${!discography?`<span class="rank-trend ${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'rank-up':rankMovements.get(positionKeyForDisplay(r))<0?'rank-down':'rank-same':'rank-unknown'}" title="${rankMovements.has(positionKeyForDisplay(r))?'Streaming rank change versus previous '+(daily?'day':rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'period'):'Previous streaming rank unavailable'}">${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'↑ '+rankMovements.get(positionKeyForDisplay(r)):rankMovements.get(positionKeyForDisplay(r))<0?'↓ '+Math.abs(rankMovements.get(positionKeyForDisplay(r))):'=':'—'}</span>`:''}</span>${`<span class="cover-slot">${true?`<img class="cover" data-cover-track="${artworkTrack(r)||'missing'}" data-cover-name="${escapeHtml(r.name)}" data-cover-kind="${r.kind==='album'?'album':'track'}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden>💎</span>`:`<span class="cover-placeholder">💎</span>`}</span>`}<span class="track-copy">${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}${(rankType==="albums"||rankType==="tracks"||discography||r.kind==="album")&&originalReleaseDate(r)?`<span class="release-date">Released ${formatOriginalRelease(originalReleaseDate(r))}</span>`:""}</span></div>${renderRankMetrics(r)}</div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 function syncRank(){rank=rankType+'-'+$('#rankPeriod').value;syncPeriodPicker();saveView();render()}
 $('#rankCategory').addEventListener('click',e=>{const button=e.target.closest('button[data-type]');if(!button)return;rankType=button.dataset.type;$('#rankCategory').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));syncRank()});
