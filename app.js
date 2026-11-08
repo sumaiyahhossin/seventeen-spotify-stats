@@ -292,33 +292,6 @@ function discographyRows(s,p,pp,baseline){
 
  const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly');
  const rows=[];
- // Discography shows the complete 17 IS RIGHT HERE album total as well
- // as its individual original/new track sections below.
- if(tab==='group'){
-  const fullKeys=new Set(['g49','g50','g51','g52','g53','g54']);
-  const fullIds=[...new Set((catalog.group||[]).filter(item=>fullKeys.has(item.key)).flatMap(item=>item.tracks||[]))];
-  if(fullIds.length){
-   const streams=fullIds.every(id=>s.tracks?.[id]!=null)?fullIds.reduce((a,id)=>a+s.tracks[id],0):null;
-   const gain=periodic?sumPeriod(s,baseline,fullIds):sumDaily(s,p,fullIds);
-   const yesterday=sumDaily(p,pp,fullIds);
-   rows.push({name:'17 IS RIGHT HERE — All Tracks (Full Album)',streams,gain,
-    change:periodic?sumPeriodChange(s,baseline,fullIds):gain!=null&&yesterday!=null?gain-yesterday:null,
-    kind:'album',releaseOrder:rows.length});
-   for(const [label,keys] of [
-    ['New Tracks',['g49']],
-    ['Original Tracks',['g50','g51','g52','g53','g54']]
-   ]){
-    const subset=[...new Set((catalog.group||[]).filter(item=>keys.includes(item.key)).flatMap(item=>item.tracks||[]))];
-    if(!subset.length)continue;
-    const subStreams=subset.every(id=>s.tracks?.[id]!=null)?subset.reduce((a,id)=>a+s.tracks[id],0):null;
-    const subGain=periodic?sumPeriod(s,baseline,subset):sumDaily(s,p,subset);
-    const subYesterday=sumDaily(p,pp,subset);
-    rows.push({name:'17 IS RIGHT HERE — '+label,streams:subStreams,gain:subGain,
-     change:periodic?sumPeriodChange(s,baseline,subset):subGain!=null&&subYesterday!=null?subGain-subYesterday:null,
-     kind:'album',releaseOrder:rows.length});
-   }
-  }
- }
  for(const item of catalog[tab]||[]){
   const ids=[...new Set(item.tracks||[])];
   if(!ids.length)continue;
