@@ -337,7 +337,7 @@ async function start(){
    previous={date:snapshot.date,rows:current};
   }
   build();
-  $('status').textContent+=' · Historical scan complete ('+selected.length+' recent saved dates checked)';
+
  }catch(error){
   build();
   $('status').textContent+=' · Historical dates temporarily unavailable';
