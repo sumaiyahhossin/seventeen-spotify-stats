@@ -228,9 +228,14 @@ function comparablePrevious(s,p,id){
  }
  // To use the same Spotify ID when both snapshots contain it.
  if(p.tracks?.[id]!=null){
-  // To trust the exact Spotify ID even when the spreadsheet title is styled differently.
-  if(historicalKind(p,id)==='track')return {id,value:p.tracks[id]};
-  return null;
+  const kindNow=historicalKind(s,id),kindBefore=historicalKind(p,id);
+  // A spreadsheet may reuse a Spotify ID for a different song on another day.
+  // Never treat that as a real stream gain.
+  const nowName=normTrackName(s.names?.[id]||idName[id]);
+  const oldName=normTrackName(p.names?.[id]||idName[id]);
+  if(kindNow===kindBefore&&(kindNow==='grand'||kindNow==='album'||!isHistorical(s)||!isHistorical(p)||!nowName||!oldName||nowName===oldName))
+   return {id,value:p.tracks[id]};
+  // Fall through to the title-based match for reassigned historical IDs.
  }
  // To match legacy spreadsheet IDs only when the song title is unique.
  const name=normTrackName(s.names?.[id]||idName[id]);
