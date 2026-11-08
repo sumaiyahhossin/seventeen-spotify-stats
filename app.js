@@ -494,12 +494,36 @@ function discographyRows(s,p,pp,baseline){
  if(!s)return [];
  const periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly');
  if(isHistorical(s)&&tab==='group'){
-  // Imported spreadsheet rows already contain full-album and split totals.
-  // Preserve every original/new/full row in Discography.
-  return Object.entries(s.tracks||{}).filter(([id])=>['album','track'].includes(historicalKind(s,id)))
-   .map(([id,streams],i)=>({id,name:historicalKind(s,id)==='album'?formatDiscographyAlbumName(s.names?.[id]||id):displayTrackName(s.names?.[id]||id),streams,
-    gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),
-    change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),kind:historicalKind(s,id),releaseOrder:i}));
+  // Render historical streams against the SAME catalog, release sequence,
+  // album groupings and 17 IS RIGHT HERE layout as November 6, 2026.
+  // Only stream values vary by snapshot. Missing recordings stay unknown.
+  const remap=snapshot=>{
+   if(!snapshot||!isHistorical(snapshot))return snapshot;
+   const lookup=new Map();
+   for(const [id,value] of Object.entries(snapshot.tracks||{})){
+    if(historicalKind(snapshot,id)!=='track')continue;
+    const name=normTrackName(snapshot.names?.[id]||'');
+    if(!name)continue;
+    if(!lookup.has(name))lookup.set(name,[]);
+    lookup.get(name).push({id,value});
+   }
+   const tracks={};
+   for(const [id,name] of Object.entries(current.group?.names||{})){
+    if(!/^[a-zA-Z0-9]{22}$/.test(id))continue;
+    const nameKey=normTrackName(name);
+    const matches=lookup.get(nameKey)||[];
+    if(snapshot.tracks[id]!=null)tracks[id]=snapshot.tracks[id];
+    else if(matches.length===1)tracks[id]=matches[0].value;
+   }
+   return {...snapshot,tracks,names:{...current.group?.names}};
+  };
+  s=remap(s);p=remap(p);pp=remap(pp);
+  // Period baselines retain their original archive values; translate their
+  // snapshots as well rather than treating missing records as zero.
+  if(baseline){
+   baseline={...baseline,start:remap(baseline.start),
+    observedPairs:(baseline.observedPairs||[]).map(([now,before])=>[remap(now),remap(before)])};
+  }
  }
 
  const daily=rank.endsWith('daily');
