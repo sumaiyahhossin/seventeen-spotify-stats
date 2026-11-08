@@ -281,6 +281,15 @@ function sumDaily(s,p,ids){
 }
 function discographyRows(s,p,pp,baseline){
  if(!s)return [];
+ if(isHistorical(s)){
+  // Imported spreadsheet rows already contain full-album and split totals.
+  // Preserve every original/new/full row in Discography.
+  return Object.entries(s.tracks||{}).filter(([id])=>historicalKind(s,id)==='album')
+   .map(([id,streams],i)=>({id,name:albumDisplayName((s.names?.[id]||id).replace(/\\s*Total\\s*:?$/i,'').trim()),streams,
+    gain:periodGain(s,baseline,id)??safeGain(s,p,id),
+    change:dailyChange(s,p,pp,id),kind:'album',releaseOrder:i}));
+ }
+
  const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly');
  const rows=[];
  // Discography shows the complete 17 IS RIGHT HERE album total as well
@@ -333,7 +342,7 @@ function buildRows(s,p,pp,baseline){
  if(discography)return discographyRows(s,p,pp,baseline);
  let rows=[];
  if(albums&&isHistorical(s)){
-   rows=Object.entries(s.tracks).filter(([id])=>historicalKind(s,id)==='album'&&isAlbumTitle(s.names?.[id])).map(([id,streams])=>({
+   rows=Object.entries(s.tracks).filter(([id])=>historicalKind(s,id)==='album'&&isAlbumTitle(s.names?.[id])&&!/\b(?:new|original)\s+tracks?\b/i.test(s.names?.[id]||'')).map(([id,streams])=>({
      id,name:albumDisplayName((s.names[id]||id).replace(/\s*Total\s*:?$/i,'').trim()),streams,
      gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id)
    }));
