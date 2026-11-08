@@ -501,22 +501,49 @@ function discographyRows(s,p,pp,baseline){
   const remap=snapshot=>{
    if(!snapshot||!isHistorical(snapshot))return snapshot;
    const lookup=new Map();
+   const creditKey=name=>normTrackName(String(name||'')
+    .replace(/\\s*\\((?:prod\\.?\\s*by|feat\\.?|ft\\.?)\\s+[^)]*\\)/gi,'')
+    .replace(/\\s*\\b(?:feat\\.?|ft\\.?)\\s+.*$/i,''));
+   const creditLookup=new Map();
    for(const [id,value] of Object.entries(snapshot.tracks||{})){
-    if(historicalKind(snapshot,id)!=='track')continue;
+    if(historicalKind(snapshot,id)!=='track'||!Number.isFinite(Number(value)))continue;
     const name=normTrackName(snapshot.names?.[id]||'');
-    if(!name)continue;
-    if(!lookup.has(name))lookup.set(name,[]);
-    lookup.get(name).push({id,value});
+    if(name){
+     if(!lookup.has(name))lookup.set(name,[]);
+     lookup.get(name).push({id,value});
+    }
+    const credit=creditKey(snapshot.names?.[id]);
+    if(credit.length>=5){
+     if(!creditLookup.has(credit))creditLookup.set(credit,[]);
+     creditLookup.get(credit).push({id,value});
+    }
    }
-   const tracks={};
-   for(const [id,name] of Object.entries(current.group?.names||{})){
+   const tracks={...snapshot.tracks};
+   const names={...snapshot.names};
+   const canonical=current.group||{};
+   const baselineIds=canonical.baseline_ids_2026_11_05||{};
+   for(const [id,name] of Object.entries(canonical.names||{})){
     if(!/^[a-zA-Z0-9]{22}$/.test(id))continue;
-    const nameKey=normTrackName(name);
-    const matches=lookup.get(nameKey)||[];
-    if(snapshot.tracks[id]!=null)tracks[id]=snapshot.tracks[id];
-    else if(matches.length===1)tracks[id]=matches[0].value;
+    if(snapshot.tracks[id]!=null&&normTrackName(snapshot.names?.[id])===normTrackName(name)){
+     tracks[id]=snapshot.tracks[id];names[id]=name;continue;
+    }
+    const exact=lookup.get(normTrackName(name))||[];
+    const credited=creditLookup.get(creditKey(name))||[];
+    // Never merge different recordings or duplicate titles just to fill a gap.
+    let match=exact.length===1?exact[0]:null;
+    if(!match&&exact.length===0&&credited.length===1)match=credited[0];
+    if(!match){
+     const legacyId=baselineIds[id];
+     if(legacyId&&snapshot.tracks[legacyId]!=null&&historicalKind(snapshot,legacyId)==='track'){
+      const oldName=snapshot.names?.[legacyId];
+      if(normTrackName(oldName)===normTrackName(name)||
+         (creditKey(oldName).length>=5&&creditKey(oldName)===creditKey(name)))
+       match={id:legacyId,value:snapshot.tracks[legacyId]};
+     }
+    }
+    if(match){tracks[id]=match.value;names[id]=name;}
    }
-   return {...snapshot,tracks,names:{...current.group?.names}};
+   return {...snapshot,tracks,names};
   };
   s=remap(s);p=remap(p);pp=remap(pp);
   // Period baselines retain their original archive values; translate their
