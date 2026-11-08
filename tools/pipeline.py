@@ -87,7 +87,9 @@ if previous:
         # Followers may update before Spotify publishes fresh track streams.
         # Save a newly obtained exact follower count without overwriting the
         # existing track counts or falsely completing the daily collection.
-        if kind=='group' and followers and followers != previous.get('followers'):
+        if kind=='group' and followers and report_date >= '2026-11-06' and followers != previous.get('followers'):
+            # Preserve the snapshot's original collection date, but never
+            # attach follower data to dates before tracking began.
             previous['followers']=followers
             current_path.write_text(json.dumps(previous,ensure_ascii=False,indent=2))
             archive=DATA/'history'/f'{kind}-{previous["date"]}.json'
@@ -107,7 +109,8 @@ if kind=='group':
     artist='7nqOGRxlXj7N2JYbgNEjYH'
     if listeners.get(artist): snapshot['monthly_listeners']=listeners[artist]
     if followers: snapshot['followers']=followers
-    elif previous and previous.get('followers'): snapshot['followers']=previous['followers']
+    # Only publish follower counts returned by this collection run.
+    # Do not carry a previous or manually supplied value forward.
 if previous:
     p=DATA/'history'/f'{kind}-{previous["date"]}.json'
     if not p.exists():p.write_text(json.dumps(previous,ensure_ascii=False,indent=2))
