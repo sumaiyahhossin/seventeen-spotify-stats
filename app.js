@@ -1677,7 +1677,15 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
   const previousStartTotal=archivedGroupTotal(comparisonStart);
   const previousEndTotal=archivedGroupTotal(priorPeriodEnd);
   const previousPeriodGain=previousStartTotal!=null&&previousEndTotal!=null&&previousEndTotal>=previousStartTotal?previousEndTotal-previousStartTotal:null;
-  const currentTotal=archivedGroupTotal(s);
+  // The Nov 6 Spotify export uses a different track population than the
+  // historical workbook. Bridge its independently verified daily gain to
+  // the Nov 5 workbook grand total instead of subtracting incompatible totals.
+  let currentTotal=archivedGroupTotal(s);
+  if(tab==='group'&&s?.date==='2026-11-06'&&s.verified_daily_gain_2026_11_05===1891578){
+   const nov5=await getDate('group','2026-11-05');
+   const nov5Total=archivedGroupTotal(nov5);
+   if(nov5Total!=null)currentTotal=nov5Total+1891578;
+  }
   const historicTotal=archivedGroupTotal(baseline?.start);
   const groupTotalGain=tab==='group'&&currentTotal!=null&&historicTotal!=null&&
    Date.parse(s.date)>Date.parse(baseline.start.date)&&currentTotal>=historicTotal
