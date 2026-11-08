@@ -156,7 +156,16 @@ function restoreGroupNames(s,p){
 }
 function typeDates(type){return dates.filter(d=>history[type+'-'+d]!==null)}
 async function getDate(type,date){if(!date)return null;const key=type+'-'+date;if(!(key in history))history[key]=await load('data/history/'+key+'.json');return history[key]}
-async function latest(type){if(current[type])return current[type];for(const d of dates.slice(0,14)){const snapshot=await getDate(type,d);if(snapshot)return snapshot}return null}
+async function latest(type){
+ if(current[type]){
+  const archived=await getDate(type,current[type].date);
+  if(archived&&archived.date===current[type].date&&Object.keys(archived.tracks||{}).length===Object.keys(current[type].tracks||{}).length)
+   return {...current[type],...archived};
+  return current[type];
+ }
+ for(const d of dates.slice(0,14)){const snapshot=await getDate(type,d);if(snapshot)return snapshot}
+ return null;
+}
 function periodKey(date){
  const d=utcDate(date);
  if(rank.endsWith('weekly')){
