@@ -703,6 +703,23 @@ function fillArtwork(){
         }
        }catch(e){console.warn('Original release cover lookup failed',title,e)}
       }
+      // Some Japanese singles and newer releases are not returned by
+      // iTunes' album-only endpoint. Try songs from that exact release.
+      for(const term of candidates){
+       try{
+        const params=new URLSearchParams({term:'SEVENTEEN '+term,entity:'song',limit:'200',country:/[\u3040-\u30ff\u4e00-\u9fff]/.test(term)?'JP':'US'});
+        const response=await fetch('https://itunes.apple.com/search?'+params);
+        if(!response.ok)continue;
+        const data=await response.json();
+        const exact=(data.results||[]).find(x=>/seventeen/i.test(x.artistName||'')&&
+         candidates.some(t=>clean(x.collectionName)===clean(t))&&x.artworkUrl100);
+        if(exact){
+         const url=exact.artworkUrl100.replace(/\d+x\d+bb/,'600x600bb');
+         rememberCover(cacheKey,url);
+         return url;
+        }
+       }catch(e){console.warn('Song artwork fallback failed',title,e)}
+      }
       return null;
      };
      releaseArtCache.set(title,persistentCovers[cacheKey]?Promise.resolve(persistentCovers[cacheKey]):fetchOriginal());
