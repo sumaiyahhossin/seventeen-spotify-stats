@@ -44,6 +44,12 @@ function buildNames(){
  // Explicit names for catalog entries whose descriptions are missing or
  // malformed. These IDs are grounded in the corresponding release listings.
  const verifiedNames={
+  '2UE9XGbAzicJIyo4bB6sqM':'MAESTRO',
+  '469YeZRBzZw8AnNQvG5GRS':'CALL CALL CALL! (Korean Ver.)',
+  '5NfUbEKgLTdUWHTcU7F56Q':'LOVE, MONEY, FAME (Sped Up Ver.)',
+  '2kMUi2FZkuj8d4lNo3UtzY':'LOVE, MONEY, FAME - TAK Remix',
+  '2LBoWyCgW1BBwNbtN61Ik6':'LOVE, MONEY, FAME (feat. DJ Khaled) - Timbaland Remix',
+  '36LcCpAK7ColfpTTRNChhz':'LOVE, MONEY, FAME (feat. DJ Khaled) - Kenia OS Remix',
   '5Pqo2Fel77vnFY03uGFtiD':'Ready to Love',
   '6KfYVOicblNB8CaDZwbxiT':'Dirty Dancing (feat. JOSHUA, DK & DINO)',
   '0xZ4WU5UfctiSeETi6pMEo':'God of Light Music',
