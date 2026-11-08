@@ -1616,3 +1616,8 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
   height:38px!important;min-height:38px!important;
  }
 }
+
+/* v122: give mobile ranking tabs breathing room at the top of their panel */
+@media(max-width:680px){
+  .controls{padding-top:28px!important}
+}
