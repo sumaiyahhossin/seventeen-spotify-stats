@@ -242,12 +242,12 @@ function build(){
   if(sort==='fast'||sort==='slow')return (a.duration==null?1:0)-(b.duration==null?1:0)||(a.duration!=null&&b.duration!=null?(sort==='fast'?a.duration-b.duration:b.duration-a.duration):0)||a.name.localeCompare(b.name);
   return (a.date==null?1:0)-(b.date==null?1:0)||(a.date&&b.date?(sort==='earliest'?a.date.localeCompare(b.date):b.date.localeCompare(a.date)):0)||a.name.localeCompare(b.name);
  });
- $('rows').innerHTML=rows.length?rows.map(r=>{
+ $('rows').innerHTML=rows.length?rows.map((r,index)=>{
   const image='<img class="song-cover" data-song-name="'+esc(r.name)+'" data-spotify-id="'+esc(r.id||'')+'" alt="" loading="lazy">';
   const released=r.release?format(r.release):'Release date unavailable';
   const reached=r.date?format(r.date):r.range?format(r.range.from)+' – '+format(r.range.date):'Unknown';
   const elapsed=r.duration!=null?r.duration.toLocaleString()+' days <span class="elapsed-calendar">('+esc(calendarElapsed(r.release,r.date))+')</span>':'—';
-  return '<tr><td><div class="song-cell">'+image+'<div class="song-meta"><span class="song-title">'+esc(r.name)+'</span><span class="song-release">Released '+esc(released)+'</span></div></div></td>'+
+  return '<tr><td><div class="song-cell"><span class="song-rank">'+String(index+1).padStart(2,'0')+'</span>'+image+'<div class="song-meta"><span class="song-title">'+esc(r.name)+'</span><span class="song-release">Released '+esc(released)+'</span></div></div></td>'+
    '<td data-label="MILESTONE REACHED"><span class="reached-value">'+esc(reached)+'</span></td>'+
    '<td data-label="TIME FROM RELEASE"><span class="days-value">'+elapsed+'</span></td></tr>';
  }).join(''):'<tr><td colspan="3">No songs with a recorded milestone at this level.</td></tr>';
