@@ -97,7 +97,7 @@ function properReleaseName(item){
   'jxj_dreamscape':'DREAMSCAPE','jun_g10':'9','bss_g2':'SECOND WIND','bss_g4':'TELEPARTY',
   'jxw_g1':'THIS MAN','hxw_g1':'BEAM','cxm_g1':'HYPE VIBES',
   'dxs_g1':'Serenade','v8':'V8','picheolin_g3':'吉BOARD (Gilboard)',
-  'gilboard':'吉BOARD (Gilboard)','the8_g12':'V8','vernon_g9':'V8'
+  'gilboard':'吉BOARD (Gilboard)','dino_g4':'吉BOARD (Gilboard)','the8_g12':'V8','vernon_g9':'V8'
  };
  if(namedSoloReleases[item.key])return namedSoloReleases[item.key];
  if(title==='q&a single')return 'Q&A';
@@ -457,7 +457,7 @@ function buildRows(s,p,pp,baseline){
    }
  }else if(albums){
    for(const item of catalog[tab]||[]){
-     if(!isAlbumTitle(item.title))continue;
+     if(!isAlbumTitle(item.title)&&!['dino_g4','jxj_dreamscape'].includes(item.key))continue;
      const ids=[...new Set(item.tracks)];
      const streams=ids.every(id=>s.tracks[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
      const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids),yesterday=sumDaily(p,pp,ids);
@@ -1056,6 +1056,12 @@ function soloArtistRows(rows,s,p,baseline){
   if(row.kind==='album'){
    const release=releases.find(item=>item.key===row.artworkRelease);
    if(!release)return [];
+   const preferredV8={V8:'v8',The8:'the8_g12',Vernon:'vernon_g9'};
+   if(['v8','the8_g12','vernon_g9'].includes(release.key)&&release.key!==preferredV8[selectedSoloArtist])return [];
+   const dreamscapeKeys=['jeonghan_g2','joshua_g8','jxj_dreamscape'];
+   const preferredDreamscape={Jeonghan:'jeonghan_g2',Joshua:'joshua_g8',JxJ:'jxj_dreamscape'};
+   if(dreamscapeKeys.includes(release.key)&&release.key!==preferredDreamscape[selectedSoloArtist])return [];
+   if(['picheolin_g3','dino_g4'].includes(release.key)&&release.key!==(selectedSoloArtist==='Dino'?'dino_g4':'picheolin_g3'))return [];
    const allIds=[...new Set(release.tracks||[])];
    const matching=allIds.filter(id=>ids.has(id));
    if(!matching.length)return [];
