@@ -1257,33 +1257,31 @@ async function periodBaseline(s){
  // To use the exact previous-day baseline for each calendar period.
  return {start,prevStart,prevEnd,range};
 }
+// To reuse the verified November 5 track match for earlier spreadsheet dates.
+function bridgeHistoricalTrack(now,old,id){
+ if(!now||!old||isHistorical(now)||!isHistorical(old))return null;
+ if(old.tracks[id]!=null&&historicalKind(old,id)==='track')return id;
+ const name=normTrackName(now.names?.[id]||idName[id]);
+ if(!name||name===normTrackName(id))return null;
+ const candidates=Object.keys(old.tracks).filter(k=>historicalKind(old,k)==='track'&&normTrackName(old.names?.[k])===name);
+ if(candidates.length===1)return candidates[0];
+ // To avoid assigning the same old song to multiple new Spotify IDs.
+ return null;
+}
 function snapshotDelta(now,old,id){
  if(!now||!old||now.tracks?.[id]==null)return null;
- const prev=comparablePrevious(now,old,id);
+ const historical=!isHistorical(now)&&isHistorical(old);
+ const matched=historical?bridgeHistoricalTrack(now,old,id):null;
+ const prev=matched?{id:matched,value:old.tracks[matched]}:comparablePrevious(now,old,id);
  if(!prev||(now.anomalies||[]).includes(id)||(old.anomalies||[]).includes(prev.id))return null;
+ const days=(Date.parse(now.date)-Date.parse(old.date))/86400000;
+ if(!Number.isFinite(days)||days<=0)return null;
  const delta=now.tracks[id]-prev.value;
- // To avoid mixing different Spotify IDs when checking period gains.
- if(isHistorical(now)!==isHistorical(old)&&prev.id!==id){
-  // To match old spreadsheet IDs only when the title and gain look valid.
-  const name=normTrackName(now.names?.[id]||idName[id]);
-  const candidates=Object.keys(old.tracks||{}).filter(k=>historicalKind(old,k)==='track'&&normTrackName(old.names?.[k])===name);
-  if(!name||candidates.length!==1||candidates[0]!==prev.id)return null;
-  const days=(Date.parse(now.date)-Date.parse(old.date))/86400000;
-  if(days<=0||now.tracks[id]-prev.value>days*1000000)return null;
- }
- // To check sudden jumps between spreadsheet and Spotify snapshots.
- const elapsedDays=(Date.parse(now.date)-Date.parse(old.date))/86400000;
- if(!Number.isFinite(elapsedDays)||elapsedDays<=0)return null;
- if(isHistorical(now)!==isHistorical(old)){
-  if(elapsedDays<=2&&delta>100000)return null;
-  // To match the same song across historical and current snapshots.
-  if(prev.id!==id){
-   const currentName=normTrackName(now.names?.[id]||idName[id]);
-   const oldName=normTrackName(old.names?.[prev.id]);
-   if(!currentName||currentName!==oldName)return null;
-  }
- }
- return delta>=0?delta:null;
+ if(delta<0)return null;
+ // To avoid inflated gains from unmatched spreadsheet recordings.
+ if(historical&&prev.id!==id&&!matched)return null;
+ if(historical&&days<=2&&delta>100000)return null;
+ return delta;
 }
 function periodGain(s,context,id){
  return context?.start?snapshotDelta(s,context.start,id):null;
