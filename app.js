@@ -609,7 +609,13 @@ function historicalArtworkId(row){
  if(/^[A-Za-z0-9]{22}$/.test(row.id||''))return null;
  const ids=[...new Set(items.flatMap(item=>item.tracks||[]))];
  const matches=ids.filter(id=>coverKey(idName[id]||'')===key);
- if(matches.length===1)return {id:matches[0]};
+ if(matches.length)return {id:matches[0]};
+ // Spreadsheet rows often use legacy:* IDs and spelling variants. Use
+ // the same first-release artwork indexes as the latest snapshot.
+ const first=originalReleaseLookup.get(key)||firstReleaseByTitle.get(key);
+ if(first)return {art:first};
+ const mapped=coverLookup.get(key)||artworkMap.tracks[key]?.id;
+ if(mapped)return {id:mapped};
  return null;
 }
 function artworkTrack(row){
@@ -617,6 +623,7 @@ function artworkTrack(row){
  if(historical?.release)return 'release:'+encodeURIComponent(historical.release);
  if(historical?.artworkRelease)row={...row,artworkRelease:historical.artworkRelease};
  if(historical?.id)row={...row,id:historical.id};
+ if(historical?.art)return historical.art;
  const name=coverKey(row.name).replace(/\btotal\b/g,'').trim();
  const isAlbum=row.kind==='album'||rank.startsWith('albums');
  const validId=id=>/^[A-Za-z0-9]{22}$/.test(id||'');
@@ -1023,7 +1030,7 @@ $('#rankCategory').addEventListener('click',e=>{const button=e.target.closest('b
 $('#rankPeriod').addEventListener('change',syncRank);
 
 $('#order').addEventListener('change',e=>{sortOrder=e.target.value;render()});
-$('#search').addEventListener('input',render);function availableDates(){return [...new Set([...dates,...(current[tab]?.date?[current[tab].date]:[])])].filter(Boolean).sort()}
+$('#search').addEventListener('input',render);function availableDates(){return [...new Set([...dates,...(current[tab]?.date?[current[tab].date]:[])])].filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d>='2025-01-01').sort()}
 function navigateDate(step){
  const available=availableDates(),today=selection==='latest'?(current[tab]?.date||available.at(-1)):selection;
  let i=available.indexOf(today);
@@ -1037,7 +1044,7 @@ function syncCalendar(){
  const picker=$('#archiveDate');
  if(!picker)return;
  picker.value=date||'';
- picker.min=available[0]||'';picker.max=available.at(-1)||'';
+ picker.min=available[0]||'2025-01-01';picker.max=available.at(-1)||'';
  $('#prevDate').disabled=!date||available.indexOf(date)<=0;
  $('#nextDate').disabled=!date||available.indexOf(date)>=available.length-1;
  $('#dateNotice').textContent=selection==='latest'?'Latest confirmed snapshot':'Saved snapshot · '+(date||'');
