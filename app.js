@@ -283,17 +283,29 @@ function sumDaily(s,p,ids){
 }
 function formatDiscographyAlbumName(name){
  const raw=String(name||'').replace(/\s*Total\s*:?$/i,'').trim();
- if(/love\s*&\s*letter.*repackage/i.test(raw))return 'LOVE & LETTER (Repackage) — '+(/new tracks/i.test(raw)?'New Tracks':'All Tracks');
- if(/sector\s*17.*repackage/i.test(raw))return 'SECTOR 17 — '+(/new tracks/i.test(raw)?'New Tracks':'All Tracks');
-
- const formatted=albumDisplayName(raw.replace(/\s+(?:single|ost)(?:\s+album)?$/i,'').trim());
- const titled=formatted===formatted.toLowerCase()?formatted.replace(/\b[a-z]/g,c=>c.toUpperCase()):formatted;
- return titled.replace(/\bost\b/gi,'OST').replace(/\bep\b/gi,'EP')
-  .replace(/\b17 is right here\b/gi,'17 IS RIGHT HERE')
-  .replace(/\blove & letter\b/gi,'LOVE & LETTER')
-  .replace(/\bsector 17\b/gi,'SECTOR 17')
-  .replace(/\bteen, age\b/gi,'TEEN, AGE')
-  .replace(/\bfml\b/gi,'FML');
+ if(/love\s*&\s*letter.*repackage/i.test(raw))
+  return 'LOVE & LETTER (Repackage) — '+(/new tracks/i.test(raw)?'New Tracks':'All Tracks');
+ if(/sector\s*17.*repackage/i.test(raw))
+  return 'SECTOR 17 — '+(/new tracks/i.test(raw)?'New Tracks':'All Tracks');
+ if(/oh my/i.test(raw)&&/chinese/i.test(raw))return 'Oh My! (Chinese Ver.)';
+ const withoutType=raw.replace(/\s+(?:ost|single)(?:\s+album)?$/i,'').trim();
+ const formatted=albumDisplayName(withoutType);
+ const special={
+  '24h':'24H','darl+ing':'Darl+ing','power of love':'Power of Love',
+  '9-teen':'9-TEEN','a-teen':'A-TEEN','oh my!':'Oh My! (Chinese Ver.)',
+  'q&a':'Q&A','fml':'FML','hit':'HIT','sweetest thing':'Sweetest Thing',
+  'fallin\' flower':"Fallin' Flower",'hitorijanai':'Hitorijanai',
+  'love & letter':'LOVE & LETTER','sector 17':'SECTOR 17'
+ };
+ const key=formatted.toLowerCase().trim();
+ if(special[key])return special[key];
+ return formatted.replace(/\b[a-z]/g,c=>c.toUpperCase())
+  .replace(/\bOst\b/g,'OST').replace(/\bEp\b/g,'EP')
+  .replace(/\b17 Is Right Here\b/g,'17 IS RIGHT HERE')
+  .replace(/\bLove & Letter\b/g,'LOVE & LETTER')
+  .replace(/\bSector 17\b/g,'SECTOR 17')
+  .replace(/\bTeen, Age\b/g,'TEEN, AGE')
+  .replace(/\bFml\b/g,'FML');
 }
 function discographyRows(s,p,pp,baseline){
  if(!s)return [];
@@ -546,12 +558,17 @@ function artworkTrack(row){
  const validId=id=>/^[A-Za-z0-9]{22}$/.test(id||'');
  const isVersion=/\b(remix|instrumental|inst|sped up|slowed|workout|orchestra|feat|with|holiday|korean ver|chinese ver|japanese ver)\b/.test(name);
  const releases=catalog[tab]||[];
+ if(isAlbum&&tab==='group'&&row.artworkRelease==='g24'){
+  const single=(catalog.group||[]).find(item=>item.key==='g24');
+  const id=single?.tracks?.[0];
+  if(/^[A-Za-z0-9]{22}$/.test(id||''))return 'track:'+id;
+ }
  if(isAlbum&&tab==='group'&&row.artworkRelease){
   const directRelease={
    g5:'LOVE & LETTER',g6:'LOVE & LETTER (Repackage)',g7:'LOVE & LETTER (Repackage)',
    g35:'Face the Sun',g36:'SECTOR 17',g37:'SECTOR 17',
    g49:'17 IS RIGHT HERE',g50:'17 IS RIGHT HERE',g51:'17 IS RIGHT HERE',g52:'17 IS RIGHT HERE',
-   g43:'ALWAYS YOURS',g44:'ALWAYS YOURS',g24:'24H',g25:'24H',g15:'Oh My! (Chinese Ver.)'
+   g43:'ALWAYS YOURS',g44:'ALWAYS YOURS',g25:'24H',g15:'Oh My! (Chinese Ver.)'
   };
   if(directRelease[row.artworkRelease])return 'release:'+encodeURIComponent(directRelease[row.artworkRelease]);
  }
