@@ -15,6 +15,17 @@ const externalEvidence={
  'name:'+norm('To you'):{100000000:{date:'2025-11-22',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
  'name:'+norm('THUNDER'):{100000000:{date:'2026-04-18',source:'Pledis confirmation reported Apr 20 (Saturday crossing)',url:'https://www.koreaherald.com/article/10720987'}}
 };
+// Additional published Spotify track milestones (not music-video views).
+for(const [song,threshold,date] of [
+ ['HIT',100000000,'2025-09-25'],
+ ['Rock with you',200000000,'2025-05-12'],
+ ['CHEERS',100000000,'2025-04-12'],
+ ['MAESTRO',100000000,'2025-04-10'],
+ ['VERY NICE',200000000,'2025-02-28']
+]){
+ const key='name:'+norm(song);
+ (externalEvidence[key]??={})[threshold]={date,source:'ChartMasters Spotify streams milestone',url:'https://chartmasters.org/artist/seventeen/'};
+}
 let records=[], releases=new Map(), trackNames=new Map(), first=new Map(), latestValues=new Map(), observations=new Map(), ready=false;
 const milestones=[100000000,200000000,300000000,400000000,500000000,600000000,700000000,800000000,900000000,1000000000];
 function buildReleases(catalog){
@@ -71,7 +82,7 @@ function build(){
   if(sort==='fast'||sort==='slow')return (a.duration==null?1:0)-(b.duration==null?1:0)||(a.duration!=null&&b.duration!=null?(sort==='fast'?a.duration-b.duration:b.duration-a.duration):0)||a.name.localeCompare(b.name);
   return (a.date==null?1:0)-(b.date==null?1:0)||(a.date&&b.date?(sort==='earliest'?a.date.localeCompare(b.date):b.date.localeCompare(a.date)):0)||a.name.localeCompare(b.name);
  });
- $('rows').innerHTML=rows.length?rows.map((r,i)=>'<tr><td>'+esc(r.name)+'</td><td>'+(r.date?format(r.date):r.range?format(r.range.from)+' – '+format(r.range.date):'Unknown')+'</td><td>'+(r.duration!=null?r.duration.toLocaleString()+' days':r.release?'Not verifiable':'Release date unavailable')+'</td><td><span class="pill">'+esc(r.status)+'</span></td></tr>').join(''):'<tr><td colspan="4">No songs with a recorded milestone at this level.</td></tr>';
+ $('rows').innerHTML=rows.length?rows.map((r,i)=>'<tr><td>'+esc(r.name)+'</td><td>'+(r.date?format(r.date):r.range?format(r.range.from)+' – '+format(r.range.date):'Unknown')+'</td><td>'+(r.duration!=null?r.duration.toLocaleString()+' days':r.release?'Not verifiable':'Release date unavailable')+'</td><td><span class="pill">'+esc(r.status)+'</span>'+(r.url?' <a href="'+esc(r.url)+'" target="_blank" rel="noopener noreferrer">Source</a>':'')+'</td></tr>').join(''):'<tr><td colspan="4">No songs with a recorded milestone at this level.</td></tr>';
  const verified=rows.filter(x=>x.date).length;
  $('status').textContent=ready?rows.length+' songs reached '+(threshold/1000000)+'M · '+verified+' dated milestones backed by archive or cited external records · '+(rows.length-verified)+' dates not exact':'Loading…';
 }
