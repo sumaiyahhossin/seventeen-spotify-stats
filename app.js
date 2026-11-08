@@ -1394,8 +1394,28 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
  if(isPeriod){
   const summary=memberIds.map(id=>periodGain(s,baseline,id));
   const valid=summary.filter(n=>n!=null);
-  $('#gain').textContent=valid.length?'+'+fmt(valid.reduce((a,b)=>a+b,0))+(valid.length<memberIds.length?'*':''):'—';
-  if(gainNote)gainNote.textContent=!baseline?.start?'No saved snapshot at the start of this '+periodName.toLowerCase()+' period.':!valid.length?'No comparable tracks available for this '+periodName.toLowerCase()+' period.':(valid.length<memberIds.length?'* Partial '+periodName.toLowerCase()+' gain ('+valid.length+' of '+memberIds.length+' tracks).':'Verified '+periodName.toLowerCase()+' gain')+' from '+periodStartDate+' through '+s.date;
+  // Group-wide historical workbook totals include all songs, including
+  // recordings whose individual IDs were changed or omitted in old sheets.
+  // Compare those totals directly rather than calling an incomplete song sum
+  // the monthly growth of the whole group.
+  const oldGrand=tab==='group'&&baseline?.start&&isHistorical(baseline.start)
+   ?Object.keys(baseline.start.tracks||{}).find(id=>historicalKind(baseline.start,id)==='grand'):null;
+  const currentGrand=tab==='group'&&s&&isHistorical(s)
+   ?Object.keys(s.tracks||{}).find(id=>historicalKind(s,id)==='grand'):null;
+  const currentTotal=tab==='group'&&s
+   ?currentGrand?s.tracks[currentGrand]:ids.length===227&&ids.every(id=>Number.isFinite(s.tracks[id]))
+    ?ids.reduce((sum,id)=>sum+s.tracks[id],0):null:null;
+  const historicTotal=oldGrand?baseline.start.tracks[oldGrand]:null;
+  const groupTotalGain=tab==='group'&&currentTotal!=null&&historicTotal!=null&&
+   Date.parse(s.date)>Date.parse(baseline.start.date)&&currentTotal>=historicTotal
+   ?currentTotal-historicTotal:null;
+  if(groupTotalGain!=null){
+   $('#gain').textContent='+'+fmt(groupTotalGain);
+   if(gainNote)gainNote.textContent='Group-wide '+periodName.toLowerCase()+' growth from archived totals, '+periodStartDate+' through '+s.date+'. Individual track comparisons may have missing historical IDs.';
+  }else{
+   $('#gain').textContent=valid.length?'+'+fmt(valid.reduce((a,b)=>a+b,0))+(valid.length<memberIds.length?'*':''):'—';
+   if(gainNote)gainNote.textContent=!baseline?.start?'No saved snapshot at the start of this '+periodName.toLowerCase()+' period.':!valid.length?'No comparable tracks available for this '+periodName.toLowerCase()+' period.':(valid.length<memberIds.length?'* Partial '+periodName.toLowerCase()+' gain ('+valid.length+' of '+memberIds.length+' tracks).':'Matched '+periodName.toLowerCase()+' gain')+' from '+periodStartDate+' through '+s.date;
+  }
  }else{
   const gains=s?memberIds.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];
   const grandGain=grandId&&!(tab==='solo'&&selectedSoloArtist)?safeGain(s,p,grandId):null;
