@@ -357,3 +357,43 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #ffb8
  .rank-row .track{gap:4px!important}
  .rank-row .num{font-size:9px!important}
 }
+
+
+/* Premium glass dashboard: frosted crystal surfaces and editorial hierarchy. */
+:root{--navy:#202641;--muted:#737c98;--rose:#d887b7;--serenity:#86a8e6;--line:rgba(255,255,255,.65)}
+html{background:#e8e9f6}
+body{
+ background:
+ radial-gradient(ellipse 60% 44% at 6% 4%,rgba(255,177,220,.42),transparent 75%),
+ radial-gradient(ellipse 57% 55% at 95% 10%,rgba(141,174,250,.44),transparent 78%),
+ radial-gradient(ellipse 46% 35% at 50% 70%,rgba(191,170,245,.22),transparent 82%),
+ linear-gradient(140deg,#f9f8ff 0%,#eef2ff 48%,#f9edf7 100%)!important;
+ background-attachment:fixed!important;
+ color:#202641;
+ -webkit-font-smoothing:antialiased;
+}
+.glow{opacity:.55;filter:blur(42px);pointer-events:none}
+header{position:relative;z-index:2}
+.panel,.stat,.date-navigation,.controls,.ranking,.hero,.hero-card,.info-card{
+ border:1px solid rgba(255,255,255,.72)!important;
+ background:linear-gradient(142deg,rgba(255,255,255,.79),rgba(255,255,255,.46))!important;
+ backdrop-filter:blur(28px) saturate(160%)!important;
+ -webkit-backdrop-filter:blur(28px) saturate(160%)!important;
+ box-shadow:0 22px 64px rgba(49,57,108,.095),inset 0 1px 0 rgba(255,255,255,.94)!important;
+}
+.panel{border-radius:28px!important}
+.stat,.hero-card,.info-card{border-radius:22px!important}
+button,select,input{transition:box-shadow .22s ease,transform .22s ease,background .22s ease,border-color .22s ease}
+button:hover:not(:disabled){transform:translateY(-1px)}
+button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid #9386d9!important;outline-offset:3px}
+.rank-row{border-bottom:1px solid rgba(102,110,165,.105)!important;transition:background .22s ease,transform .22s ease}
+.rank-row:hover{background:linear-gradient(90deg,rgba(255,255,255,.75),rgba(229,228,255,.38))!important}
+.rank-row .cover,.cover{border-radius:11px!important;box-shadow:0 6px 18px rgba(30,38,76,.14)}
+.table-head{background:rgba(222,225,247,.45)!important;backdrop-filter:blur(12px)}
+.rank-row .num{font-variant-numeric:tabular-nums}
+.rank-row .change{font-weight:700}
+@media(min-width:800px){
+ .panel{box-shadow:0 30px 90px rgba(45,49,104,.12),inset 0 1px 0 #fff!important}
+ .rank-row{padding-top:16px!important;padding-bottom:16px!important}
+}
+@media(prefers-reduced-motion:reduce){button,.rank-row{transition:none!important}button:hover{transform:none!important}}
