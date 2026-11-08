@@ -1352,3 +1352,35 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  }
  .rank-row .track>.cover-slot{width:42px!important;height:42px!important}
 }
+
+/* v117: gentle SEVENTEEN namefall behind content, alongside existing diamonds */
+.name-fall{
+ position:fixed;inset:0;overflow:hidden;
+ z-index:0;pointer-events:none;user-select:none;
+ contain:layout paint;
+}
+.name-fall .falling-name{
+ position:absolute;top:-90px;left:var(--nx);
+ display:block;max-width:240px;
+ color:#e6c2fa;font-family:'Plus Jakarta Sans','DM Sans',sans-serif;
+ font-size:clamp(10px,1vw,14px);font-weight:650;letter-spacing:.07em;
+ line-height:1.35;white-space:nowrap;
+ opacity:0;text-shadow:0 0 15px rgba(201,166,255,.16);
+ transform:translate3d(0,-90px,0) scale(var(--ns));
+ animation:seventeen-namefall var(--nt) linear var(--nd) infinite;
+ will-change:transform,opacity;
+}
+.name-fall .falling-name:nth-child(3n){color:#b9d7ff}
+.name-fall .falling-name:nth-child(5n){color:#ffc0e6}
+.name-fall .falling-name:last-child{font-size:11px;letter-spacing:.13em}
+@keyframes seventeen-namefall{
+ 0%{opacity:0;transform:translate3d(0,-90px,0) scale(var(--ns))}
+ 12%{opacity:.26}
+ 80%{opacity:.24}
+ 100%{opacity:0;transform:translate3d(50px,calc(100vh + 190px),0) scale(var(--ns))}
+}
+@media(max-width:680px){
+ .name-fall .falling-name{font-size:10px;animation-duration:calc(var(--nt) * 1.35);opacity:0}
+ .name-fall .falling-name:nth-child(2n){display:none}
+}
+@media(prefers-reduced-motion:reduce){.name-fall{display:none!important}}
