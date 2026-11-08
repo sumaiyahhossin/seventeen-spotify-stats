@@ -397,3 +397,34 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
  .rank-row{padding-top:16px!important;padding-bottom:16px!important}
 }
 @media(prefers-reduced-motion:reduce){button,.rank-row{transition:none!important}button:hover{transform:none!important}}
+
+/* Dark luxury glass: preserve the frosted premium finish without light mode. */
+:root{color-scheme:dark;--navy:#f2f3ff;--muted:#a7adc9;--rose:#f3a5cd;--serenity:#a7c6ff;--line:rgba(210,220,255,.13)}
+html{background:#080b18!important}
+body{
+ color:#f2f3ff!important;
+ background:
+ radial-gradient(ellipse 62% 55% at 5% 2%,rgba(127,51,111,.28),transparent 73%),
+ radial-gradient(ellipse 57% 52% at 100% 10%,rgba(54,83,156,.28),transparent 77%),
+ radial-gradient(ellipse 42% 40% at 55% 85%,rgba(88,56,132,.16),transparent 80%),
+ linear-gradient(145deg,#090c19 0%,#11162b 52%,#0b0d1b 100%)!important;
+ background-attachment:fixed!important;
+}
+.panel,.stat,.date-navigation,.controls,.ranking,.hero,.hero-card,.info-card{
+ color:#f2f3ff!important;
+ border:1px solid rgba(205,215,255,.15)!important;
+ background:linear-gradient(145deg,rgba(38,44,72,.76),rgba(17,23,45,.62))!important;
+ box-shadow:0 24px 75px rgba(0,0,0,.32),inset 0 1px 0 rgba(255,255,255,.10)!important;
+ backdrop-filter:blur(30px) saturate(150%)!important;
+ -webkit-backdrop-filter:blur(30px) saturate(150%)!important;
+}
+.table-head{background:rgba(92,104,153,.20)!important;color:#cdd4ef!important}
+.rank-row{border-bottom:1px solid rgba(190,201,246,.10)!important;color:#f1f2ff!important}
+.rank-row:hover{background:linear-gradient(90deg,rgba(125,118,190,.19),rgba(77,92,147,.12))!important}
+.rank-row .num,.rank-row .track-name,.rank-row .track-name a{color:#f3f4ff!important}
+.rank-row .change{color:#b8e9d4!important}
+.rank-row .change.negative{color:#ffb6c8!important}
+.panel h1,.panel h2,.panel h3,.stat strong,.stat b,header h1{color:#fff!important}
+button,select,input{color:#f0f2ff}
+input::placeholder{color:#9ba3c4}
+@media(min-width:800px){.panel{box-shadow:0 30px 90px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1)!important}}
