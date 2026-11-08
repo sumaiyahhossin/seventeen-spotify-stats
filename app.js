@@ -1719,14 +1719,14 @@ async function updateYear2026Streams(){
   const latestTotal=total(now),previousTotal=total(before);
   if(latestTotal==null||previousTotal==null||latestTotal<previousTotal){
    value.textContent='Unavailable';
-   note.textContent='Streams* · Year still counting · Awaiting comparable archive totals';
+   note.textContent='* · Year still counting · Awaiting comparable archive totals';
    return;
   }
   value.textContent=(latestTotal-previousTotal).toLocaleString('en-US');
-  note.textContent='S* · Year still counting · Updated through '+now.date+' · Refreshes with daily snapshots';
+  note.textContent='* · Year still counting · Updated through '+now.date+' · Refreshes with daily snapshots';
  }catch(e){
   value.textContent='Unavailable';
-  note.textContent='Streams* · Year still counting · Data temporarily unavailable';
+  note.textContent='* · Year still counting · Data temporarily unavailable';
   console.warn('Yearly stream calculation unavailable',e);
  }
 }
@@ -2027,7 +2027,7 @@ function syncCalendar(){
   const selectedDates=available.filter(d=>periodKey(d)===selectedPeriodKey);
   picker.value=selectedDates.at(-1)||available.at(-1)||'';
  const pretty=$('#prettyDate');
- if(pretty&&picker.value){const [year,month,day]=picker.value.split('-').map(Number);pretty.textContent=periodic?(rank.endsWith('yearly')?'STREAMING YEAR':rank.endsWith('monthly')?'STREAMING MONTH':'STREAMING WEEK'):new Date(Date.UTC(year,month-1,day)).toLocaleDateString('en-US',{timeZone:'UTC',month:'long',day:'numeric',year:'numeric'});}
+ if(pretty&&picker.value){const [year,month,day]=picker.value.split('-').map(Number);pretty.textContent=periodic?(rank.endsWith('yearly')?String(year):rank.endsWith('monthly')?new Date(Date.UTC(year,month-1,1)).toLocaleDateString('en-US',{timeZone:'UTC',month:'long',year:'numeric'}):(()=>{const monday=selectedPeriodKey?.startsWith('W:')?selectedPeriodKey.slice(2):shifted(picker.value,-((new Date(picker.value+'T00:00:00Z').getUTCDay()+6)%7));const sunday=shifted(monday,6);const format=d=>new Date(d+'T00:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric'});return format(monday)+' – '+format(sunday)+', '+sunday.slice(0,4)})()):new Date(Date.UTC(year,month-1,day)).toLocaleDateString('en-US',{timeZone:'UTC',month:'long',day:'numeric',year:'numeric'});}
 
   const keys=[...$('#periodPicker').options].map(o=>o.value),i=keys.indexOf(selectedPeriodKey);
   $('#prevDate').disabled=i<0||i===keys.length-1;
@@ -2038,7 +2038,7 @@ function syncCalendar(){
   $('#nextDate').disabled=!date||available.indexOf(date)>=available.length-1;
   $('#dateNotice').textContent=selection==='latest'?'Latest confirmed snapshot':'Saved snapshot · '+(date||'');
  const pretty=$('#prettyDate');
- if(pretty&&picker.value){const [year,month,day]=picker.value.split('-').map(Number);pretty.textContent=periodic?(rank.endsWith('yearly')?'STREAMING YEAR':rank.endsWith('monthly')?'STREAMING MONTH':'STREAMING WEEK'):new Date(Date.UTC(year,month-1,day)).toLocaleDateString('en-US',{timeZone:'UTC',month:'long',day:'numeric',year:'numeric'});}
+ if(pretty&&picker.value){const [year,month,day]=picker.value.split('-').map(Number);pretty.textContent=periodic?(rank.endsWith('yearly')?String(year):rank.endsWith('monthly')?new Date(Date.UTC(year,month-1,1)).toLocaleDateString('en-US',{timeZone:'UTC',month:'long',year:'numeric'}):(()=>{const monday=selectedPeriodKey?.startsWith('W:')?selectedPeriodKey.slice(2):shifted(picker.value,-((new Date(picker.value+'T00:00:00Z').getUTCDay()+6)%7));const sunday=shifted(monday,6);const format=d=>new Date(d+'T00:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric'});return format(monday)+' – '+format(sunday)+', '+sunday.slice(0,4)})()):new Date(Date.UTC(year,month-1,day)).toLocaleDateString('en-US',{timeZone:'UTC',month:'long',day:'numeric',year:'numeric'});}
 
  }
 }
