@@ -15,7 +15,7 @@ const externalEvidence={
  'name:'+norm('To you'):{100000000:{date:'2025-11-22',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
  'name:'+norm('THUNDER'):{100000000:{date:'2026-04-18',source:'Pledis confirmation reported Apr 20 (Saturday crossing)',url:'https://www.koreaherald.com/article/10720987'}}
 };
-let records=[], releases=new Map(), first=new Map(), observations=new Map(), ready=false;
+let records=[], releases=new Map(), first=new Map(), latestValues=new Map(), observations=new Map(), ready=false;
 const milestones=[100000000,200000000,300000000,400000000,500000000,600000000,700000000,800000000,900000000,1000000000];
 function buildReleases(catalog){
  for(const item of catalog.group||[]){
@@ -40,7 +40,7 @@ function trackRows(snapshot){
  const out=new Map();
  for(const [id,value] of Object.entries(snapshot.tracks||{})){
   const name=snapshot.names?.[id]||'';
-  if(!Number.isFinite(value)||!name||/total\s*:?$/i.test(name)||/total streams|monthly listener|followers/i.test(name))continue;
+  if(!Number.isFinite(value)||!name||/total\s*:?$/i.test(name)||/total streams|monthly listener|followers|\b(?:album total|original tracks|new tracks|stream change|daily streams|weekly streams|monthly streams)\b/i.test(name))continue;
   const key='name:'+norm(name); // bridge spreadsheet legacy IDs and Spotify IDs by song name
   out.set(key,{id,name,value});
  }
@@ -54,7 +54,10 @@ function build(){
   const o=observations.get(key)||[];
   const crossed=o.find(x=>x.milestone===threshold);
   const evidence=externalEvidence[key]?.[threshold];
-  const reached=!!evidence||item.firstValue>=threshold||o.some(x=>x.milestone===threshold);
+  // A crossing is not sufficient: the latest available track-level total
+  // must independently confirm the threshold. Never count album aggregates.
+  const currentValue=latestValues.get(key);
+  const reached=Number.isFinite(currentValue)&&currentValue>=threshold;
   if(!reached)continue;
   const release=releases.get(item.id)||releases.get(key)||null;
   const verifiedDate=evidence?.date||(crossed?.exact?crossed.date:null);
@@ -101,6 +104,7 @@ async function start(){
      }
     }
    }
+   for(const [key,item] of current)latestValues.set(key,item.value);
    previous={date:snapshot.date,rows:current};
   }
   ready=true;build();
