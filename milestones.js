@@ -5,6 +5,16 @@ const norm=s=>String(s||'').toLowerCase().normalize('NFKC').replace(/[^a-z0-9]/g
 const format=d=>new Date(d+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric',year:'numeric'});
 const days=(a,b)=>Math.round((Date.parse(b)-Date.parse(a))/86400000);
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const externalEvidence={
+ 'name:'+norm('Oh My!'):{100000000:{date:'2026-09-23',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
+ 'name:'+norm('HOT'):{300000000:{date:'2026-08-18',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
+ 'name:'+norm('17 (feat. Joshua and DK of SEVENTEEN)'):{100000000:{date:'2026-08-17',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
+ 'name:'+norm('Darl+ing'):{200000000:{date:'2026-02-15',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
+ 'name:'+norm('LOVE, MONEY, FAME (feat. DJ Khaled)'):{100000000:{date:'2026-02-06',source:'Spotify total reported as of Feb 6 by Maeil Business',url:'https://www.mk.co.kr/en/musics/11956771'}},
+ 'name:'+norm('Super'):{300000000:{date:'2026-01-14',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
+ 'name:'+norm('To you'):{100000000:{date:'2025-11-22',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
+ 'name:'+norm('THUNDER'):{100000000:{date:'2026-04-18',source:'Pledis confirmation reported Apr 20 (Saturday crossing)',url:'https://www.koreaherald.com/article/10720987'}}
+};
 let records=[], releases=new Map(), first=new Map(), observations=new Map(), ready=false;
 const milestones=[100000000,200000000,300000000,400000000,500000000,600000000,700000000,800000000,900000000,1000000000];
 function buildReleases(catalog){
@@ -14,7 +24,7 @@ function buildReleases(catalog){
   const ids=item.tracks||[];
   for(const id of ids){if(!releases.has(id)||date<releases.get(id))releases.set(id,date)}
   const description=String(item.description||'');
-  const match=description.match(/\\(\\d+\\s+tracks?\\)\\s*:\\s*(.*)$/i);
+  const match=description.match(/\(\d+\s+tracks?\)\s*:\s*(.*)$/i);
   if(match){
    const titles=[];let depth=0,part='';
    for(const ch of match[1]){if(ch==='(')depth++;else if(ch===')')depth--;if(ch===','&&depth===0){titles.push(part.trim());part=''}else part+=ch}
@@ -43,11 +53,13 @@ function build(){
   if(query&&!norm(item.name).includes(query))continue;
   const o=observations.get(key)||[];
   const crossed=o.find(x=>x.milestone===threshold);
-  const reached=item.firstValue>=threshold||o.some(x=>x.milestone===threshold);
+  const evidence=externalEvidence[key]?.[threshold];
+  const reached=!!evidence||item.firstValue>=threshold||o.some(x=>x.milestone===threshold);
   if(!reached)continue;
   const release=releases.get(item.id)||releases.get(key)||null;
-  const duration=crossed?.exact&&release&&days(release,crossed.date)>=0?days(release,crossed.date):null;
-  rows.push({name:item.name,release,date:crossed?.exact?crossed.date:null,range:crossed&&!crossed.exact?crossed:null,duration,status:crossed?.exact?'Verified daily crossing':crossed?'Between saved dates':'Before archive'});
+  const verifiedDate=evidence?.date||(crossed?.exact?crossed.date:null);
+  const duration=verifiedDate&&release&&days(release,verifiedDate)>=0?days(release,verifiedDate):null;
+  rows.push({name:item.name,release,date:verifiedDate,range:!evidence&&crossed&&!crossed.exact?crossed:null,duration,source:evidence?.source,url:evidence?.url,status:evidence?'Published historical record':crossed?.exact?'Verified daily crossing':crossed?'Between saved dates':'Before archive'});
  }
  rows.sort((a,b)=>{
   if(sort==='name')return a.name.localeCompare(b.name);
@@ -56,7 +68,7 @@ function build(){
  });
  $('rows').innerHTML=rows.length?rows.map((r,i)=>'<tr><td>'+esc(r.name)+'</td><td>'+(r.date?format(r.date):r.range?format(r.range.from)+' – '+format(r.range.date):'Unknown')+'</td><td>'+(r.duration!=null?r.duration.toLocaleString()+' days':r.release?'Not verifiable':'Release date unavailable')+'</td><td><span class="pill">'+esc(r.status)+'</span></td></tr>').join(''):'<tr><td colspan="4">No songs with a recorded milestone at this level.</td></tr>';
  const verified=rows.filter(x=>x.date).length;
- $('status').textContent=ready?rows.length+' songs reached '+(threshold/1000000)+'M · '+verified+' exact crossing dates confirmed from consecutive saved days · '+(rows.length-verified)+' dates not exact':'Loading…';
+ $('status').textContent=ready?rows.length+' songs reached '+(threshold/1000000)+'M · '+verified+' dated milestones backed by archive or cited external records · '+(rows.length-verified)+' dates not exact':'Loading…';
 }
 async function start(){
  try{
