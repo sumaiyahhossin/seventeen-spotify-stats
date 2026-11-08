@@ -181,8 +181,9 @@ function syncPeriodPicker(){
  if(!picker)return;
  const periodic=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
  $('#dailyPickerWrap').hidden=rank.endsWith('overall');
- $('#archiveDate').hidden=periodic;
- picker.hidden=!periodic;
+ // One calendar works for daily, weekly, monthly and yearly navigation.
+ $('#archiveDate').hidden=false;
+ picker.hidden=true;
  const dateLabel=document.querySelector('#dailyPickerWrap label');
  if(dateLabel)dateLabel.textContent=rank.endsWith('weekly')?'STREAMING WEEK':rank.endsWith('monthly')?'STREAMING MONTH':rank.endsWith('yearly')?'STREAMING YEAR':'STREAMING DATE';
  if(!periodic)return;
@@ -1405,6 +1406,8 @@ function syncCalendar(){
  picker.max=available.at(-1)||'2025-01-01';
  picker.value=available.includes(date)?date:(available.at(-1)||'');
  if(periodic){
+  const selectedDates=available.filter(d=>periodKey(d)===selectedPeriodKey);
+  picker.value=selectedDates.at(-1)||available.at(-1)||'';
   const keys=[...$('#periodPicker').options].map(o=>o.value),i=keys.indexOf(selectedPeriodKey);
   $('#prevDate').disabled=i<0||i===keys.length-1;
   $('#nextDate').disabled=i<=0;
@@ -1421,8 +1424,20 @@ $('#latestDate').addEventListener('click',()=>{selection='latest';selectedPeriod
 $('#archiveDate').addEventListener('change',e=>{
  const requested=e.target.value,available=availableDates();
  if(!requested||!available.length)return;
- const target=available.includes(requested)?requested:available.reduce((best,d)=>Math.abs(Date.parse(d)-Date.parse(requested))<Math.abs(Date.parse(best)-Date.parse(requested))?d:best);
- selection=target;saveView();syncCalendar();render();
+ const periodic=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
+ if(periodic){
+  const keys=[...$('#periodPicker').options].map(o=>o.value);
+  const requestedKey=periodKey(requested);
+  if(keys.includes(requestedKey))selectedPeriodKey=requestedKey;
+  else{
+   const closest=available.reduce((best,d)=>Math.abs(Date.parse(d)-Date.parse(requested))<Math.abs(Date.parse(best)-Date.parse(requested))?d:best);
+   selectedPeriodKey=periodKey(closest);
+  }
+ }else{
+  const target=available.includes(requested)?requested:available.reduce((best,d)=>Math.abs(Date.parse(d)-Date.parse(requested))<Math.abs(Date.parse(best)-Date.parse(requested))?d:best);
+  selection=target;
+ }
+ saveView();syncCalendar();render();
 });
 (async()=>{
  try{
