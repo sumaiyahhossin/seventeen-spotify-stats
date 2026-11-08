@@ -1398,14 +1398,21 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
   // recordings whose individual IDs were changed or omitted in old sheets.
   // Compare those totals directly rather than calling an incomplete song sum
   // the monthly growth of the whole group.
-  const oldGrand=tab==='group'&&baseline?.start&&isHistorical(baseline.start)
-   ?Object.keys(baseline.start.tracks||{}).find(id=>historicalKind(baseline.start,id)==='grand'):null;
-  const currentGrand=tab==='group'&&s&&isHistorical(s)
-   ?Object.keys(s.tracks||{}).find(id=>historicalKind(s,id)==='grand'):null;
-  const currentTotal=tab==='group'&&s
-   ?currentGrand?s.tracks[currentGrand]:ids.length===227&&ids.every(id=>Number.isFinite(s.tracks[id]))
-    ?ids.reduce((sum,id)=>sum+s.tracks[id],0):null:null;
-  const historicTotal=oldGrand?baseline.start.tracks[oldGrand]:null;
+  const archivedGroupTotal=snapshot=>{
+   if(!snapshot||tab!=='group')return null;
+   const grand=isHistorical(snapshot)
+    ?Object.keys(snapshot.tracks||{}).find(id=>historicalKind(snapshot,id)==='grand'):null;
+   if(grand&&Number.isFinite(snapshot.tracks[grand]))return snapshot.tracks[grand];
+   // For newer Spotify snapshots, use the canonical 227 unique songs.
+   // Never sum album totals or duplicate entries into a group total.
+   const canonical=snapshot.canonical_track_ids;
+   if(Array.isArray(canonical)&&canonical.length===227&&
+      canonical.every(id=>Number.isFinite(snapshot.tracks?.[id])))
+    return canonical.reduce((sum,id)=>sum+snapshot.tracks[id],0);
+   return null;
+  };
+  const currentTotal=archivedGroupTotal(s);
+  const historicTotal=archivedGroupTotal(baseline?.start);
   const groupTotalGain=tab==='group'&&currentTotal!=null&&historicTotal!=null&&
    Date.parse(s.date)>Date.parse(baseline.start.date)&&currentTotal>=historicTotal
    ?currentTotal-historicTotal:null;
@@ -1422,7 +1429,10 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
     :'Group-wide '+periodName.toLowerCase()+' growth for '+fmtPeriodDate(periodFirst)+' – '+fmtPeriodDate(s.date)+', calculated from the preceding period-end baseline.';
   }else{
    $('#gain').textContent=valid.length?'+'+fmt(valid.reduce((a,b)=>a+b,0))+(valid.length<memberIds.length?'*':''):'—';
-   if(gainNote)gainNote.textContent=!baseline?.start?'No saved snapshot at the start of this '+periodName.toLowerCase()+' period.':!valid.length?'No comparable tracks available for this '+periodName.toLowerCase()+' period.':(valid.length<memberIds.length?'* Partial '+periodName.toLowerCase()+' gain ('+valid.length+' of '+memberIds.length+' tracks).':'Matched '+periodName.toLowerCase()+' gain')+' from '+periodStartDate+' through '+s.date;
+   if(gainNote)gainNote.textContent=!baseline?.start
+    ?'Unavailable: the required '+(baseline?.range?.start||'previous period-end')+' baseline snapshot is missing from the archive. No streams have been estimated.'
+    :!valid.length?'No comparable saved track counts for this '+periodName.toLowerCase()+' period.'
+    :(valid.length<memberIds.length?'* Partial '+periodName.toLowerCase()+' gain ('+valid.length+' of '+memberIds.length+' tracks).':'Matched '+periodName.toLowerCase()+' gain')+' from '+periodStartDate+' through '+s.date;
   }
  }else{
   const gains=s?memberIds.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];
