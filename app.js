@@ -24,14 +24,20 @@ window.addEventListener('scroll',()=>{if(!scrollSavePending){scrollSavePending=t
 const load=async p=>{try{const r=await fetch(p+'?v='+Date.now());return r.ok?await r.json():null}catch{return null}};
 const idName={};
 function buildNames(){
+ // The artwork index provides verified track-ID/title pairs even when a
+ // release description is incomplete or has commas inside a song title.
+ for(const [title,entry] of Object.entries(artworkMap.tracks||{})){
+  if(entry?.id&&/^[a-zA-Z0-9]{22}$/.test(entry.id)&&title&&!idName[entry.id])
+   idName[entry.id]=title;
+ }
  for(const type of ['group','solo'])for(const item of catalog[type]||[]){
   const raw=((item.description||'').match(/\(\d+\s+tracks?\)\s*:\s*(.*)$/i)||[])[1]||'';
-  // A comma inside a song title is not a separator. Do not shift every
-  // subsequent track name when the list is incomplete or ambiguous.
   const names=raw.split(/,\s*/).map(x=>x.trim());
   if(names.length!==item.tracks.length)continue;
   item.tracks.forEach((id,i)=>{if(names[i]&&!idName[id])idName[id]=names[i]});
  }
+ // Preserve the proper display name for the Dirty Dancing remix.
+ idName['6KfYVOicblNB8CaDZwbxiT']='Dirty Dancing (feat. JOSHUA, DK & DINO)';
 }
 const albumTitles={
  '17 carat album':'17 CARAT','boys be album':'BOYS BE','love & letter album':'LOVE & LETTER','love & letter repackage new tracks':'LOVE & LETTER (Repackage)','going seventeen album':'Going Seventeen','al1 album':'Al1','teen, age album':'TEEN, AGE',"director's cut album":"DIRECTOR'S CUT",'we make you album':'WE MAKE YOU','you make my day album':'YOU MAKE MY DAY','you make my dawn album':'YOU MADE MY DAWN','an ode new tracks album':'An Ode','heng':'Heng:garæ','24h mini album':'24H',';[semicolon] album':'; [Semicolon]','your choice album':'Your Choice','attacca album':'Attacca','face the sun album':'Face the Sun','sector 17 repackage album new tracks':'SECTOR 17','dream ep album':'DREAM','fml album':'FML','always yours new tracks album':'ALWAYS YOURS','always yours best album':'ALWAYS YOURS','seventeenth heaven album':'SEVENTEENTH HEAVEN','17 is right here best album':'17 IS RIGHT HERE','spill the feels album':'SPILL THE FEELS','love, money, fame remixes album':'LOVE, MONEY, FAME (Remixes)','shohikigen album':'消費期限 (Shohikigen)','happy burstday album':'HAPPY BURSTDAY','maestro remix single':'MAESTRO (Remixes)'
