@@ -175,10 +175,11 @@ function syncPeriodPicker(){
  const wrap=$('#periodPickerWrap'),picker=$('#periodPicker');
  if(!wrap||!picker)return;
  const periodic=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
+ $('#dailyPickerWrap').hidden=!rank.endsWith('daily');
  wrap.hidden=!periodic;
  if(!periodic)return;
- const available=[...new Set(dates.filter(d=>/^20\\d{2}-\\d{2}-\\d{2}$/.test(d)).map(periodKey).filter(Boolean))].sort().reverse();
- const latestDate=current[tab]?.date||dates[0];
+ const available=[...new Set(dates.filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d>='2025-01-01').map(periodKey).filter(Boolean))].sort().reverse();
+ const latestDate=current[tab]?.date||dates.at(-1);
  const defaultKey=latestDate?periodKey(latestDate):available[0];
  if(!selectedPeriodKey||!available.includes(selectedPeriodKey)||selectedPeriodKey[0]!==defaultKey?.[0])selectedPeriodKey=defaultKey;
  const label=k=>{
@@ -194,7 +195,7 @@ function syncPeriodPicker(){
 }
 async function selectedSnapshot(){
  if(['weekly','monthly','yearly'].some(p=>rank.endsWith(p))&&selectedPeriodKey){
-  const matching=dates.filter(d=>periodKey(d)===selectedPeriodKey).sort().reverse();
+  const matching=[...new Set([...dates,...(current[tab]?.date?[current[tab].date]:[])])].filter(d=>periodKey(d)===selectedPeriodKey).sort().reverse();
   for(const d of matching){const saved=await getDate(tab,d);if(saved)return saved}
   return null;
  }
@@ -1230,40 +1231,40 @@ function shifted(date,days){const d=utcDate(date);d.setUTCDate(d.getUTCDate()+da
 function shiftedMonth(date,n){const d=utcDate(date),day=d.getUTCDate();d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+n);const month=d.getUTCMonth();d.setUTCDate(day);if(d.getUTCMonth()!==month)d.setUTCDate(0);return isoDate(d)}
 function shiftedYear(date,n){const d=utcDate(date),month=d.getUTCMonth();d.setUTCFullYear(d.getUTCFullYear()+n);if(d.getUTCMonth()!==month)d.setUTCDate(0);return isoDate(d)}
 function periodDates(date){
- const d=utcDate(date),day=d.getUTCDay(),elapsed=(day+6)%7;
+ const d=utcDate(date),elapsed=(d.getUTCDay()+6)%7;
+ let first,prevFirst,prevLast;
  if(rank.endsWith('weekly')){
-  const start=shifted(date,-elapsed-1);
-  return {start,prevStart:shifted(start,-7),prevEnd:shifted(date,-7),label:'week to date'};
- }
- if(rank.endsWith('monthly')){
-  const first=isoDate(new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth(),1)));
-  const start=shifted(first,-1);
-  return {start,prevStart:shiftedMonth(start,-1),prevEnd:shiftedMonth(date,-1),label:'month to date'};
- }
- if(rank.endsWith('yearly')){
-  const first=isoDate(new Date(Date.UTC(d.getUTCFullYear(),0,1)));
-  const start=shifted(first,-1);
-  return {start,prevStart:shiftedYear(start,-1),prevEnd:shiftedYear(date,-1),label:'year to date'};
- }
- return null;
+  first=shifted(date,-elapsed);
+  prevFirst=shifted(first,-7);
+  prevLast=shifted(first,-1);
+ }else if(rank.endsWith('monthly')){
+  first=date.slice(0,7)+'-01';
+  prevFirst=shiftedMonth(first,-1);
+  prevLast=shifted(first,-1);
+ }else if(rank.endsWith('yearly')){
+  first=date.slice(0,4)+'-01-01';
+  prevFirst=shiftedYear(first,-1);
+  prevLast=shifted(first,-1);
+ }else return null;
+ return {start:shifted(first,-1),first,prevStart:shifted(prevFirst,-1),prevEnd:prevLast};
 }
 async function periodBaseline(s){
- if(!s||!(rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly')))return null;
- const range=periodDates(s.date);if(!range)return null;
- const available=new Set(dates);
+ if(!s||!['weekly','monthly','yearly'].some(p=>rank.endsWith(p)))return null;
+ const range=periodDates(s.date),available=new Set(dates);
  const get=async d=>available.has(d)?getDate(tab,d):null;
  const [start,prevStart,prevEnd]=await Promise.all([get(range.start),get(range.prevStart),get(range.prevEnd)]);
- // Show the current period's gain even when the previous comparable period
- // has not been archived (particularly year-over-year comparisons).
- if(start)return {start,prevStart,prevEnd,range};
- // No rolling fallback: a named month/week/year must never show another period's streams.
- return {start:null,prevStart,prevEnd,range};
+ // A calendar period requires its exact preceding-day baseline.
+ // Never substitute a rolling period or another date.
+ return {start,prevStart,prevEnd,range};
 }
 function snapshotDelta(now,old,id){
  if(!now||!old||now.tracks?.[id]==null)return null;
  const prev=comparablePrevious(now,old,id);
  if(!prev||(now.anomalies||[]).includes(id)||(old.anomalies||[]).includes(prev.id))return null;
  const delta=now.tracks[id]-prev.value;
+ // Never treat a spreadsheet row mapped by title to a different Spotify ID
+ // as a verified weekly/monthly/yearly gain.
+ if(isHistorical(now)!==isHistorical(old)&&prev.id!==id)return null;
  // A cross-source jump is suspicious only for adjacent-day comparisons.
  // Year-to-date uses the real December 31 baseline: millions of legitimate
  // accumulated streams must not be rejected by a one-day safety threshold.
