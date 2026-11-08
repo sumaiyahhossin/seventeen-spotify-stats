@@ -1,5 +1,26 @@
 const $=s=>document.querySelector(s),fmt=n=>n==null?'—':Number(n).toLocaleString('en-US');
 let artworkMap={tracks:{},albums:{}};let sortOrder='most';let tab='group',rank='tracks-daily',rankType='tracks',catalog={},current={},history={},dates=[],selection='latest',period='week';
+// Keep the visitor's exact view when the dashboard refreshes.
+const viewStateKey='svt-dashboard-view-v2';
+try{
+ const saved=JSON.parse(sessionStorage.getItem(viewStateKey)||'null');
+ if(saved){
+  if(['group','solo'].includes(saved.tab))tab=saved.tab;
+  if(['tracks','albums','discography'].includes(saved.rankType))rankType=saved.rankType;
+  if(['daily','weekly','monthly','yearly','overall'].includes(saved.period))rank=rankType+'-'+saved.period;
+  if(['most','least'].includes(saved.sortOrder))sortOrder=saved.sortOrder;
+  if(saved.selection==='latest'||/^\\d{4}-\\d{2}-\\d{2}$/.test(saved.selection||''))selection=saved.selection;
+ }
+ if('scrollRestoration' in history)history.scrollRestoration='manual';
+}catch(e){console.warn('Could not restore saved view',e)}
+let savedScroll=0;
+try{savedScroll=Number(JSON.parse(sessionStorage.getItem(viewStateKey)||'{}').scrollY)||0}catch{}
+function saveView(){
+ try{sessionStorage.setItem(viewStateKey,JSON.stringify({tab,rankType,period:$('#rankPeriod')?.value||'daily',sortOrder,selection,search:$('#search')?.value||'',scrollY:window.scrollY}))}catch{}
+}
+window.addEventListener('pagehide',saveView);
+let scrollSavePending=false;
+window.addEventListener('scroll',()=>{if(!scrollSavePending){scrollSavePending=true;requestAnimationFrame(()=>{scrollSavePending=false;saveView()})}},{passive:true});
 const load=async p=>{try{const r=await fetch(p+'?v='+Date.now());return r.ok?await r.json():null}catch{return null}};
 const idName={};
 function buildNames(){
@@ -521,4 +542,19 @@ $('#archiveDate').addEventListener('change',e=>{
  const target=available.includes(requested)?requested:available.reduce((best,d)=>Math.abs(Date.parse(d)-Date.parse(requested))<Math.abs(Date.parse(best)-Date.parse(requested))?d:best);
  selection=target;syncCalendar();render();
 });
-(async()=>{[catalog,artworkMap]=await Promise.all([load('data/catalog.json'),load('data/artwork-map.json')]);catalog=catalog||{};artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();buildCoverLookup();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();await render()})();
+(async()=>{
+ try{
+  const saved=JSON.parse(sessionStorage.getItem(viewStateKey)||'null');
+  if(saved){
+   $('#rankPeriod').value=['daily','weekly','monthly','yearly','overall'].includes(saved.period)?saved.period:'daily';
+   $('#order').value=sortOrder;
+   $('#search').value=saved.search||'';
+   $('#tabs').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+   $('#rankCategory').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.type===rankType));
+  }
+ }catch{}
+ [catalog,artworkMap]=await Promise.all([load('data/catalog.json'),load('data/artwork-map.json')]);catalog=catalog||{};artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();buildCoverLookup();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();await render();
+ requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,savedScroll)));
+ // Reload live stream data every five minutes without losing the current view.
+ setInterval(()=>{saveView();window.location.reload()},300000);
+})();
