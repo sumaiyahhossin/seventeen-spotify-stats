@@ -94,11 +94,44 @@ async function originalArtwork(name){
  })());
  return milestoneCoverCache.get(cacheKey);
 }
+// Match the Tracks artwork first, with fallbacks for missing catalog mappings.
+async function spotifyArtwork(id){
+ if(!/^[a-zA-Z0-9]{22}$/.test(id||''))return '';
+ const key='spotify:'+id;
+ if(!milestoneCoverCache.has(key))milestoneCoverCache.set(key,fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/track/'+id)).then(r=>r.ok?r.json():null).then(d=>d?.thumbnail_url||'').catch(()=>''));
+ return milestoneCoverCache.get(key);
+}
+async function trackArtwork(name){
+ const key='track:'+coverKey(name);
+ if(!milestoneCoverCache.has(key))milestoneCoverCache.set(key,(async()=>{
+  try{
+   const params=new URLSearchParams({term:'SEVENTEEN '+name,entity:'song',limit:'50',country:'US'});
+   const response=await fetch('https://itunes.apple.com/search?'+params);
+   if(!response.ok)return '';
+   const data=await response.json();
+   const clean=s=>coverKey(s).replace(/\\b(feat|featuring|ft)\\b.*$/,'').trim();
+   const matches=(data.results||[]).filter(x=>/seventeen/i.test(x.artistName||'')&&clean(x.trackName)===clean(name));
+   const selected=matches.find(x=>String(x.artistName).toLowerCase()==='seventeen')||matches[0];
+   return selected?.artworkUrl100?.replace(/\\d+x\\d+bb/,'600x600bb')||'';
+  }catch{return ''}
+ })());
+ return milestoneCoverCache.get(key);
+}
 function loadMilestoneCovers(){
  for(const img of document.querySelectorAll('.song-cover[data-song-name]')){
-  originalArtwork(img.dataset.songName).then(url=>{if(url&&img.isConnected)img.src=url});
+  const name=img.dataset.songName,id=img.dataset.spotifyId;
+  (async()=>{
+   const entry=milestoneArtwork.tracks[coverKey(name)];
+   const fallback=async()=>await spotifyArtwork(entry?.id||id)||await trackArtwork(name);
+   let url=await originalArtwork(name);
+   if(!url)url=await fallback();
+   if(!img.isConnected||!url)return;
+   img.onerror=async()=>{img.onerror=null;const alternative=await fallback();if(alternative&&alternative!==img.src&&img.isConnected)img.src=alternative};
+   img.src=url;
+  })();
  }
 }
+
 let records=[], releases=new Map(), trackNames=new Map(), first=new Map(), latestValues=new Map(), observations=new Map(), ready=false;
 const milestones=[100000000,200000000,300000000,400000000,500000000,600000000,700000000,800000000,900000000,1000000000];
 function buildReleases(catalog){
@@ -126,7 +159,7 @@ function trackRows(snapshot){
  for(const [id,value] of Object.entries(snapshot.tracks||{})){
   const name=snapshot.names?.[id]||trackNames.get(id)||'';
   if(!Number.isFinite(value)||!name||/total\s*:?$/i.test(name)||/total streams|monthly listener|followers|\b(?:album total|original tracks|new tracks|stream change|daily streams|weekly streams|monthly streams)\b/i.test(name))continue;
-  const canonicalName=name.replace(/\bGOM\b/gi,'God of Music');
+  const canonicalName=name.replace(/\bGOM\b/gi,'God of Music').replace(/^maestro$/i,'MAESTRO');
   const key='name:'+norm(canonicalName); // bridge spreadsheet legacy IDs and Spotify IDs by song name
   out.set(key,{id,name:canonicalName,value});
  }
@@ -166,7 +199,7 @@ function build(){
   return (a.date==null?1:0)-(b.date==null?1:0)||(a.date&&b.date?(sort==='earliest'?a.date.localeCompare(b.date):b.date.localeCompare(a.date)):0)||a.name.localeCompare(b.name);
  });
  $('rows').innerHTML=rows.length?rows.map(r=>{
-  const image='<img class="song-cover" data-song-name="'+esc(r.name)+'" alt="" loading="lazy">';
+  const image='<img class="song-cover" data-song-name="'+esc(r.name)+'" data-spotify-id="'+esc(r.id||'')+'" alt="" loading="lazy">';
   const released=r.release?format(r.release):'Release date unavailable';
   const reached=r.date?format(r.date):r.range?format(r.range.from)+' – '+format(r.range.date):'Unknown';
   const elapsed=r.duration!=null?r.duration.toLocaleString()+' days':'—';
