@@ -777,7 +777,7 @@ body{
 /* v80 — midnight concert: cinematic shimmer, interactive glass, and motion-safe effects */
 :root{--concert-pink:#ffaddf;--concert-ice:#a9c8ff;--concert-lilac:#d3b4ff}
 body{overflow-x:hidden}
-body::after{content:"";position:fixed;inset:0;pointer-events:none;z-index:0;opacity:.24;background:radial-gradient(closest-side at center,rgba(215,172,255,.34) 0%,rgba(168,189,255,.17) 36%,transparent 77%);width:390px;height:390px;inset:auto;left:var(--cursor-x,50%);top:var(--cursor-y,20%);transform:translate(-50%,-50%) rotate(45deg) scale(.72);border-radius:18%;transition:opacity .35s}
+body::after{content:"";position:fixed;pointer-events:none;z-index:0;opacity:.4;width:260px;height:260px;left:var(--cursor-x,50%);top:var(--cursor-y,20%);transform:translate(-50%,-50%);clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);border-radius:0;background:linear-gradient(135deg,rgba(255,178,226,.24),rgba(178,192,255,.28));filter:blur(10px);transition:opacity .35s}
 header,main,footer,#lastUpdated{position:relative;z-index:1}
 .hero{position:relative;isolation:isolate}
 .hero::before{content:"";position:absolute;inset:-35px -3% auto;min-height:360px;pointer-events:none;z-index:-1;background:radial-gradient(ellipse at 45% 42%,rgba(157,97,255,.13),transparent 63%);animation:concertAura 9s ease-in-out infinite alternate}
