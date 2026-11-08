@@ -1622,7 +1622,7 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
  };
  $('#date').textContent=periodDateLabel();
  $('#dateDescription').textContent=baseline?.partialMonth
-  ?'PARTIAL '+new Date(baseline.partialMonth+'-01T12:00:00Z').toLocaleDateString('en-US',{month:'long',year:'numeric',timeZone:'UTC'}).toUpperCase()+
+  ?'Partial '+new Date(baseline.partialMonth+'-01T12:00:00Z').toLocaleDateString('en-US',{month:'long',year:'numeric',timeZone:'UTC'})+
    ' · Counted gains: '+(()=>{
      const dates=[...new Set(baseline.observedPairs.map(([now])=>now.date))].sort();
      const groups=[];
