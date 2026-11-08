@@ -268,7 +268,15 @@ function comparablePrevious(s,p,id){
  // To match legacy spreadsheet IDs only when the song title is unique.
  const name=normTrackName(s.names?.[id]||idName[id]);
  if(!name||name===normTrackName(id))return null;
- const matches=Object.keys(p.tracks||{}).filter(k=>historicalKind(p,k)==='track'&&normTrackName(p.names?.[k])===name);
+ // Match harmless credit differences, but never merge remixes, live versions,
+ // instrumentals or different recordings merely because their base title agrees.
+ const comparableTitle=n=>normTrackName(String(n||'')
+  .replace(/\\s*\\((?:prod\\.?\\s*by|feat\\.?|ft\\.?)\\s+[^)]*\\)/gi,'')
+  .replace(/\\s*\\b(?:feat\\.?|ft\\.?)\\s+.*$/i,''));
+ const normalized=comparableTitle(s.names?.[id]||idName[id]);
+ const matches=Object.keys(p.tracks||{}).filter(k=>historicalKind(p,k)==='track'&&
+  (normTrackName(p.names?.[k])===name||
+   (normalized.length>=5&&comparableTitle(p.names?.[k])===normalized)));
  if(!matches.length)return null;
  // To treat repeated spreadsheet rows for the same recording as one baseline.
  const values=[...new Set(matches.map(k=>p.tracks[k]))];
@@ -1510,8 +1518,8 @@ function periodChange(s,context,id){
  // To compare the same elapsed number of days.
  const elapsed=(Date.parse(s.date)-Date.parse(context.start.date))/86400000;
  const previousElapsed=(Date.parse(context.prevEnd.date)-Date.parse(context.prevStart.date))/86400000;
- // A shorter calendar month can be compared by its available days, but
- // never present a longer unmatched period as an equal-duration comparison.
+ // Do not compare unequal observed windows as if they were the same period.
+ // Compare the exact days actually represented by the saved snapshots.
  return elapsed===previousElapsed?now-before:null;
 }
 // To keep album and track comparisons aligned to the same dates.
