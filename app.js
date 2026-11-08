@@ -393,16 +393,20 @@ function dailyChange(s,p,pp,id){
  const yesterday=matched?safeGain(p,pp,matched.id):null;
  return today==null||yesterday==null?null:today-yesterday;
 }
-function sumDailyChange(s,p,pp,ids){
- if(!s||!p||!pp||!ids.length)return null;
- const changes=ids.map(id=>dailyChange(s,p,pp,id));
- return changes.every(value=>value!=null)?changes.reduce((total,value)=>total+value,0):null;
+function dailyComparison(s,p,pp,ids){
+ const values=ids.map(id=>dailyChange(s,p,pp,id));
+ const valid=values.filter(value=>value!=null);
+ return {value:valid.length?valid.reduce((total,value)=>total+value,0):null,
+  partial:valid.length<ids.length,matched:valid.length,total:ids.length};
 }
-function sumDaily(s,p,ids){
- if(!ids.length)return null;
- const gains=ids.map(id=>safeGain(s,p,id));
- return gains.every(n=>n!=null)?gains.reduce((a,b)=>a+b,0):null;
+function sumDailyChange(s,p,pp,ids){return dailyComparison(s,p,pp,ids).value}
+function dailyGainSummary(s,p,ids){
+ const values=ids.map(id=>safeGain(s,p,id));
+ const valid=values.filter(value=>value!=null);
+ return {value:valid.length?valid.reduce((total,value)=>total+value,0):null,
+  partial:valid.length<ids.length,matched:valid.length,total:ids.length};
 }
+function sumDaily(s,p,ids){return dailyGainSummary(s,p,ids).value}
 function formatDiscographyAlbumName(name){
  const raw=String(name||'').replace(/\s*Total\s*:?$/i,'').trim();
  if(/love\s*&\s*letter.*repackage/i.test(raw))
@@ -473,7 +477,7 @@ function discographyRows(s,p,pp,baseline){
   const streams=ids.every(id=>s.tracks?.[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
   const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
   const dayChange=sumDailyChange(s,p,pp,ids);
-  const albumTotalRow={name:combo?.name||catalogReleaseLabel(item),artworkRelease:item.key,streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):dayChange,changePartial:periodic?periodComparison(s,baseline,ids).partial:false,kind:'album',releaseOrder:rows.length};
+  const albumTotalRow={name:combo?.name||catalogReleaseLabel(item),artworkRelease:item.key,streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):dayChange,changePartial:periodic?periodComparison(s,baseline,ids).partial:dailyComparison(s,p,pp,ids).partial,kind:'album',releaseOrder:rows.length};
   for(const id of [...new Set(item.tracks||[])]){
    // Show the complete catalog even when a historical snapshot has no matching Spotify ID.
    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
@@ -498,7 +502,7 @@ function discographyRows(s,p,pp,baseline){
     rows.push({name:'17 IS RIGHT HERE — All Tracks',artworkRelease:'g49',
      streams:allStreams,gain:allGain,
      change:periodic?sumPeriodChange(s,baseline,allIds):
-      dayChange,changePartial:periodic?periodComparison(s,baseline,allIds).partial:false,
+      dayChange,changePartial:periodic?periodComparison(s,baseline,allIds).partial:dailyComparison(s,p,pp,allIds).partial,
      kind:'album',releaseOrder:rows.length});
    }
   }else rows.push(albumTotalRow);
@@ -543,7 +547,7 @@ function buildRows(s,p,pp,baseline){
      const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
      const dayChange=sumDailyChange(s,p,pp,ids);
      rows.push({name:spec.name,artworkRelease:spec.name.includes('Repackage')?(spec.name.includes('SECTOR 17')?'g36':'g7'):spec.keys[0],streams,gain,
-       change:periodic?sumPeriodChange(s,baseline,ids):dayChange,changePartial:periodic?periodComparison(s,baseline,ids).partial:false});
+       change:periodic?sumPeriodChange(s,baseline,ids):dayChange,changePartial:periodic?periodComparison(s,baseline,ids).partial:dailyComparison(s,p,pp,ids).partial});
    }
  }else if(albums){
    for(const item of catalog[tab]||[]){
@@ -552,7 +556,7 @@ function buildRows(s,p,pp,baseline){
      const ids=[...new Set(item.tracks)];
      const streams=ids.every(id=>s.tracks[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
      const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids),dayChange=sumDailyChange(s,p,pp,ids);
-     rows.push({name:catalogReleaseLabel(item),artworkRelease:item.key,kind:'album',streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):dayChange,changePartial:periodic?periodComparison(s,baseline,ids).partial:false});
+     rows.push({name:catalogReleaseLabel(item),artworkRelease:item.key,kind:'album',streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):dayChange,changePartial:periodic?periodComparison(s,baseline,ids).partial:dailyComparison(s,p,pp,ids).partial});
    }
  }else{
    rows=trackIds(s).map(id=>({
