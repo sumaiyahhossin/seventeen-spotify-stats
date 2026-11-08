@@ -354,6 +354,41 @@ const originalReleaseSongs={
  'seventeenth heaven album':['sos','god of music','diamond days','back 2 back','monster','yawn','headliner'],
  'spill the feels album':['eyes on you','love money fame','1 to 13','candy','rain','water']
 };
+// The first non-compilation catalog appearance determines the original cover.
+// Keep a separate ID lookup: titles may recur in reissues and translations.
+const firstReleaseByTrackId=new Map();
+const firstReleaseByName=new Map();
+function catalogTrackTitles(item){
+ const raw=((item.description||'').match(/\(\d+\s+tracks?\)\s*:\s*(.*)$/i)||[])[1]||'';
+ if(!raw)return [];
+ // Protect song titles containing commas before separating track entries.
+ const protectedRaw=raw.replace(/love,\s*money,\s*fame/gi,'LOVE§MONEY§FAME')
+   .replace(/same dream,\s*same mind,\s*same night/gi,'same dream§same mind§same night')
+   .replace(/5,4,3/gi,'5§4§3')
+   .replace(/baby,\s*honey/gi,'baby§honey');
+ const names=protectedRaw.split(/,\s*(?![^()]*\))/).map(x=>x.replace(/§/g,', ').trim());
+ return names.length===item.tracks.length?names:[];
+}
+function buildFirstReleaseArtwork(){
+ firstReleaseByTrackId.clear();firstReleaseByName.clear();
+ for(const type of ['group','solo'])for(const item of catalog[type]||[]){
+  const title=coverKey(item.title);
+  const isCompilation=/\b(best album|best of|compilation|original tracks|repackage original)\b/.test(title)
+   ||['g53','g54'].includes(title);
+  if(isCompilation)continue;
+  const first=(item.tracks||[]).find(id=>/^[a-zA-Z0-9]{22}$/.test(id));
+  if(!first)continue;
+  const names=catalogTrackTitles(item);
+  for(let i=0;i<(item.tracks||[]).length;i++){
+   const id=item.tracks[i];
+   if(!/^[a-zA-Z0-9]{22}$/.test(id))continue;
+   const artwork='track:'+first;
+   if(!firstReleaseByTrackId.has(id))firstReleaseByTrackId.set(id,artwork);
+   const key=coverKey(names[i]||'');
+   if(key&&!firstReleaseByName.has(type+':'+key))firstReleaseByName.set(type+':'+key,artwork);
+  }
+ }
+}
 const originalReleaseLookup=new Map();
 function buildOriginalReleaseLookup(){
  for(const [title,names] of Object.entries(originalReleaseSongs)){
@@ -433,6 +468,12 @@ function artworkTrack(row){
  }
 
  const originalCoverKey=coverKey(row.name);
+ // Resolve known solo and group tracks by their earliest catalog release,
+ // not the cover from a later compilation or an arbitrary similarly named track.
+ if(row.kind!=='album'&&!rank.startsWith('albums')){
+  const originalArt=firstReleaseByName.get(tab+':'+originalCoverKey);
+  if(originalArt)return originalArt;
+ }
  // Specific versions, remixes, instrumentals and collaborations must use
  // their own Spotify release cover, not an earlier song with a similar title.
  const specialVersion=/\b(remix|instrumental|inst|sped up|slowed|workout|orchestra|feat|with|holiday|korean ver|chinese ver)\b/.test(originalCoverKey);
@@ -669,7 +710,7 @@ $('#archiveDate').addEventListener('change',e=>{
    $('#rankCategory').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.type===rankType));
   }
  }catch{}
- [catalog,artworkMap]=await Promise.all([load('data/catalog.json'),load('data/artwork-map.json')]);catalog=catalog||{};artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();buildCoverLookup();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();await render();
+ [catalog,artworkMap]=await Promise.all([load('data/catalog.json'),load('data/artwork-map.json')]);catalog=catalog||{};artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();buildCoverLookup();buildFirstReleaseArtwork();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();await render();
  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,savedScroll)));
  // Reload live stream data every five minutes without losing the current view.
  setInterval(()=>{saveView();window.location.reload()},300000);
