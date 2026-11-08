@@ -215,8 +215,8 @@ function comparablePrevious(s,p,id){
  if(!s||!p||s.tracks?.[id]==null)return null;
  // To use the same Spotify ID when both snapshots contain it.
  if(p.tracks?.[id]!=null){
-  const a=normTrackName(s.names?.[id]||idName[id]),b=normTrackName(p.names?.[id]);
-  if(!a||!b||a===b)return {id,value:p.tracks[id]};
+  // To trust the exact Spotify ID even when the spreadsheet title is styled differently.
+  if(historicalKind(p,id)==='track')return {id,value:p.tracks[id]};
   return null;
  }
  // To match legacy spreadsheet IDs only when the song title is unique.
