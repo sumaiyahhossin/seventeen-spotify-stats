@@ -4,6 +4,21 @@ const releaseByKey={"g3":"2015-12-04","g4":"2016-02-12","g14":"2018-08-13","g17"
 const norm=s=>String(s||'').toLowerCase().normalize('NFKC').replace(/[^a-z0-9]/g,'');
 const format=d=>new Date(d+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric',year:'numeric'});
 const days=(a,b)=>Math.round((Date.parse(b)-Date.parse(a))/86400000);
+function calendarElapsed(a,b){
+ if(!a||!b||b<a)return '';
+ const [ay,am,ad]=a.split('-').map(Number),[by,bm,bd]=b.split('-').map(Number);
+ const end=Date.UTC(by,bm-1,bd);
+ let months=(by-ay)*12+(bm-am);
+ const anniversary=n=>{
+  const y=ay+Math.floor((am-1+n)/12),m=(am-1+n)%12;
+  const day=Math.min(ad,new Date(Date.UTC(y,m+1,0)).getUTCDate());
+  return Date.UTC(y,m,day);
+ };
+ while(months>0&&anniversary(months)>end)months--;
+ const remaining=Math.round((end-anniversary(months))/86400000);
+ return months+' '+(months===1?'month':'months')+' '+remaining+' '+(remaining===1?'day':'days');
+}
+
 const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const externalEvidence={
  ['name:'+norm('Oh My!')]:{100000000:{date:'2026-09-23',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
@@ -214,7 +229,7 @@ function build(){
   const image='<img class="song-cover" data-song-name="'+esc(r.name)+'" data-spotify-id="'+esc(r.id||'')+'" alt="" loading="lazy">';
   const released=r.release?format(r.release):'Release date unavailable';
   const reached=r.date?format(r.date):r.range?format(r.range.from)+' – '+format(r.range.date):'Unknown';
-  const elapsed=r.duration!=null?r.duration.toLocaleString()+' days':'—';
+  const elapsed=r.duration!=null?r.duration.toLocaleString()+' days ('+calendarElapsed(r.release,r.date)+')':'—';
   return '<tr><td><div class="song-cell">'+image+'<div class="song-meta"><span class="song-title">'+esc(r.name)+'</span><span class="song-release">Released '+esc(released)+'</span></div></div></td>'+
    '<td data-label="MILESTONE REACHED"><span class="reached-value">'+esc(reached)+'</span></td>'+
    '<td data-label="TIME FROM RELEASE"><span class="days-value">'+esc(elapsed)+'</span></td></tr>';
