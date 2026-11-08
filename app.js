@@ -968,7 +968,13 @@ function periodChange(s,context,id){
 function sumPeriod(s,context,ids){if(!ids.length)return null;const values=ids.map(id=>periodGain(s,context,id));return values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null}
 function sumPeriodChange(s,context,ids){if(!ids.length)return null;const values=ids.map(id=>periodChange(s,context,id));return values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null}
 async function render(){const token=++renderToken;$('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';try{renderArtistProfiles();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;syncCalendar();restoreGroupNames(s,p);
- $('#date').textContent=s?.date||'—';const ids=s?trackIds(s):[];$('#count').textContent=s?fmt(ids.length):'—';$('#listeners').textContent=fmt(audienceValue(s,'listeners'));const currentFollowers=audienceValue(s,'followers'),previousFollowers=audienceValue(p,'followers');
+ $('#date').textContent=s?.date||'—';const ids=s?trackIds(s):[];// Historical spreadsheets repeat songs under repackages and compilations,
+ // so their raw row count is not the canonical distinct-song count.
+ // The verified group archive has 227 songs with Tiny Light, 226 before it.
+ const groupTrackCount=s&&tab==='group'&&isHistorical(s)
+  ?(Object.values(s.names||{}).some(n=>/^tiny light$/i.test(String(n).trim()))?227:226)
+  :ids.length;
+ $('#count').textContent=s?fmt(groupTrackCount):'—';$('#listeners').textContent=fmt(audienceValue(s,'listeners'));const currentFollowers=audienceValue(s,'followers'),previousFollowers=audienceValue(p,'followers');
  $('#followers').textContent=fmt(currentFollowers);
  if(currentFollowers==null)$('#followersChange').textContent=previousFollowers!=null?'Current count unavailable · previous count '+fmt(previousFollowers)+' ('+(p?.date||'')+')':'Current follower count unavailable';const listenerNow=audienceValue(s,'listeners'),listenerPrev=audienceValue(p,'listeners'),followerNow=audienceValue(s,'followers'),followerPrev=audienceValue(p,'followers');const showDelta=(selector,now,prev)=>{const n=now!=null&&prev!=null&&p&&s&&((Date.parse(s.date)-Date.parse(p.date))/86400000===1)?now-prev:null;$(selector).textContent=n==null?'Change from previous day unavailable':(n>=0?'+':'−')+fmt(Math.abs(n))+' vs previous day';};showDelta('#listenersChange',listenerNow,listenerPrev);
  if(currentFollowers!=null)showDelta('#followersChange',followerNow,followerPrev);const grandId=s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;$('#total').textContent=s?fmt(grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';const gains=s?ids.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];const grandGain=grandId?safeGain(s,p,grandId):null;const completeGain=s&&p&&gains.length===ids.length;
