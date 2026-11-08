@@ -8,7 +8,7 @@ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;'
 const externalEvidence={
  ['name:'+norm('Oh My!')]:{100000000:{date:'2026-09-23',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
  ['name:'+norm('HOT')]:{300000000:{date:'2026-08-18',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
- 'name:'+norm('17 (feat. Joshua and DK of SEVENTEEN)'):{100000000:{date:'2026-08-17',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
+ ['name:'+norm('17 (feat. Joshua and DK of SEVENTEEN)')]:{100000000:{date:'2026-08-17',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
  ['name:'+norm('Darl+ing')]:{200000000:{date:'2026-02-15',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
  ['name:'+norm('LOVE, MONEY, FAME (feat. DJ Khaled)')]:{100000000:{date:'2026-02-06',source:'Spotify total reported as of Feb 6 by Maeil Business',url:'https://www.mk.co.kr/en/musics/11956771'}},
  ['name:'+norm('Super')]:{300000000:{date:'2026-01-14',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
