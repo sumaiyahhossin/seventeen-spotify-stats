@@ -430,16 +430,17 @@ function formatDiscographyAlbumName(name){
 }
 function discographyRows(s,p,pp,baseline){
  if(!s)return [];
+ const periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly');
  if(isHistorical(s)&&tab==='group'){
   // Imported spreadsheet rows already contain full-album and split totals.
   // Preserve every original/new/full row in Discography.
   return Object.entries(s.tracks||{}).filter(([id])=>['album','track'].includes(historicalKind(s,id)))
    .map(([id,streams],i)=>({id,name:historicalKind(s,id)==='album'?formatDiscographyAlbumName(s.names?.[id]||id):displayTrackName(s.names?.[id]||id),streams,
-    gain:periodGain(s,baseline,id)??safeGain(s,p,id),
-    change:dailyChange(s,p,pp,id),kind:historicalKind(s,id),releaseOrder:i}));
+    gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),
+    change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),kind:historicalKind(s,id),releaseOrder:i}));
  }
 
- const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly');
+ const daily=rank.endsWith('daily');
  const rows=[];
  const releasesByKey=new Map((catalog[tab]||[]).map(item=>[item.key,item]));
  const combined={
@@ -468,8 +469,8 @@ function discographyRows(s,p,pp,baseline){
   if(!ids.length)continue;
   const streams=ids.every(id=>s.tracks?.[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
   const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
-  const previousGain=sumDaily(p,pp,ids);
-  const albumTotalRow={name:combo?.name||catalogReleaseLabel(item),artworkRelease:item.key,streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&previousGain!=null?gain-previousGain:null,kind:'album',releaseOrder:rows.length};
+  const dayChange=sumDailyChange(s,p,pp,ids);
+  const albumTotalRow={name:combo?.name||catalogReleaseLabel(item),artworkRelease:item.key,streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):dayChange,kind:'album',releaseOrder:rows.length};
   for(const id of [...new Set(item.tracks||[])]){
    // Show the complete catalog even when a historical snapshot has no matching Spotify ID.
    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
@@ -490,11 +491,11 @@ function discographyRows(s,p,pp,baseline){
     const allStreams=allIds.every(id=>s.tracks?.[id]!=null)
      ?allIds.reduce((total,id)=>total+s.tracks[id],0):null;
     const allGain=periodic?sumPeriod(s,baseline,allIds):sumDaily(s,p,allIds);
-    const prevGain=sumDaily(p,pp,allIds);
+    const dayChange=sumDailyChange(s,p,pp,allIds);
     rows.push({name:'17 IS RIGHT HERE — All Tracks',artworkRelease:'g49',
      streams:allStreams,gain:allGain,
      change:periodic?sumPeriodChange(s,baseline,allIds):
-      allGain!=null&&prevGain!=null?allGain-prevGain:null,
+      dayChange,
      kind:'album',releaseOrder:rows.length});
    }
   }else rows.push(albumTotalRow);
