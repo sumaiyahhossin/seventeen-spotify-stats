@@ -426,6 +426,8 @@ function artworkTrack(row){
   else {
    const matches=entries.flatMap(x=>{const names=((x.description||'').match(/\(\d+\s+tracks?\)\s*:\s*(.*)$/i)||[])[1];const titles=names?names.split(/,\s*/).map(coverKey):[];return (x.tracks||[]).map((id,i)=>({id,title:titles[i],artist:x.artist,release:x.title}))}).filter(x=>x.title===name&&/^[a-zA-Z0-9]{22}$/.test(x.id));
    if(matches.length)return 'track:'+matches[0].id;
+   // A Spotify ID identifies its own single/album artwork reliably when
+   // a solo song's release description has no complete track listing.
    if(row.id&&/^[a-zA-Z0-9]{22}$/.test(row.id))return 'track:'+row.id;
   }
  }
@@ -447,6 +449,12 @@ function artworkTrack(row){
  const originalKey=coverKey(row.name);
  const isAlbum=row.kind==='album'||rank.startsWith('albums');
  if(!isAlbum&&japaneseOriginalArtwork[originalKey])return 'release:'+encodeURIComponent(japaneseOriginalArtwork[originalKey]);
+ // Prefer the artwork from the song's first original release over the
+ // compilation/repackage entry in artwork-map.json.
+ if(!isAlbum){
+  const firstRelease=originalReleaseLookup.get(originalKey);
+  if(firstRelease)return 'track:'+firstRelease;
+ }
  const exactKey=originalKey==='247'?'247 0':originalKey;
  const mapped=isAlbum?artworkMap.albums[exactKey]||artworkMap.albums[exactKey.replace(/\btotal\b/g,'').trim()]:artworkMap.tracks[exactKey];
  if(mapped?.id){
@@ -517,7 +525,7 @@ function fillArtwork(){
     if(fallbackId)url=await spotifyCover('track:'+fallbackId);
    }
    setImage(img,url);
-  }catch(e){console.warn('Artwork unavailable',id,e)}
+  }catch(e){console.warn('Artwork unavailable',id,e);if(fallback){try{setImage(img,await spotifyCover(fallback))}catch{setImage(img,null)}}else setImage(img,null)}
  };
  if(!('IntersectionObserver' in window)){imgs.forEach(resolve);return}
  const observer=new IntersectionObserver(entries=>{for(const entry of entries){if(!entry.isIntersecting)continue;observer.unobserve(entry.target);resolve(entry.target)}},{rootMargin:'240px'});
