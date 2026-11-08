@@ -371,7 +371,7 @@ function buildRows(s,p,pp,baseline){
 const coverCache=new Map(),coverLookup=new Map(),releaseCoverLookup=new Map();
 const releaseArtNames={'fml album':'FML','al1 album':'Al1','you make my day album':'YOU MAKE MY DAY',';[semicolon] album':'Semicolon','we make you album':'WE MAKE YOU','24h single':'24H','24h mini album':'24H','fallin\' flower single':'Fallin\' Flower','hitorijanai single':'Not Alone','an ode new tracks album':'An Ode'};
 const releaseArtCache=new Map();
-const persistentCoverKey='svt-artwork-cache-v9-full-vs-repackage';
+const persistentCoverKey='svt-artwork-cache-v10-love-letter-verified-ids';
 let persistentCovers={};
 try{persistentCovers=JSON.parse(localStorage.getItem(persistentCoverKey)||'{}')||{}}catch{}
 function rememberCover(key,url){
@@ -669,6 +669,27 @@ function fillArtwork(){
     if(!releaseArtCache.has(title)){
      const cacheKey='release:'+title;
      const fetchOriginal=async()=>{
+      // Verified Apple Music release IDs: original is 10 tracks, repackage 15.
+      // Never use fuzzy title search for these two distinct album covers.
+      const verifiedLoveLetterIds={
+       'LOVE & LETTER':'1107471199',
+       'LOVE & LETTER (Repackage)':'1130828885'
+      };
+      if(verifiedLoveLetterIds[title]){
+       try{
+        const response=await fetch('https://itunes.apple.com/lookup?id='+verifiedLoveLetterIds[title]+'&country=US');
+        if(response.ok){
+         const data=await response.json();
+         const album=(data.results||[]).find(x=>x.wrapperType==='collection'&&/seventeen/i.test(x.artistName||''));
+         if(album?.artworkUrl100){
+          const url=album.artworkUrl100.replace(/\d+x\d+bb/,'600x600bb');
+          rememberCover(cacheKey,url);
+          return url;
+         }
+        }
+       }catch(e){console.warn('Verified LOVE & LETTER artwork lookup failed',title,e)}
+       return null; // Do not substitute the other edition's artwork.
+      }
       const aliases={
        'Semicolon':['; [Semicolon]','Semicolon','; [Semicolon] - EP','SEVENTEEN Special Album ; [Semicolon]'],
        'Al1':['Al1','Al1 - EP'],
