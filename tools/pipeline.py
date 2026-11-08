@@ -12,8 +12,11 @@ current_path=DATA/f'{kind}.json'
 previous=json.loads(current_path.read_text()) if current_path.exists() else None
 if entry.get('checked_date')!=today:
     entry['pending']=today
-if not entry.get('pending'):
+force_collect = os.getenv('FORCE_COLLECT') == 'true'
+if not entry.get('pending') and not force_collect:
     print(kind,'already updated today');sys.exit(0)
+if force_collect:
+    print(kind,'manual collection requested; bypassing daily completion check')
 if not os.getenv('COLLECTOR_CLASSPATH'):
     raise SystemExit('Set COLLECTOR_CLASSPATH to Selenium dependency classpath')
 subprocess.run([sys.executable,str(ROOT/'tools/instrument.py'),kind],check=True)
