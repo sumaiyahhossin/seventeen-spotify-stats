@@ -16,35 +16,51 @@ if kind=='group':
 else:
     source=source.replace('System.out.println(nf.format(listenersCount));','System.out.println("STAT_LISTENERS|" + listenerUrl.split(java.util.regex.Pattern.quote("?"))[0].replace("https://open.spotify.com/artist/", "") + "|" + listenersCount);\n            System.out.println(nf.format(listenersCount));')
 if kind=='group':
-    follower_java = '''
+    follower_java = r'''
     private static void fetchFollowersMetric() {
+        final String artist = "https://open.spotify.com/artist/7nqOGRxlXj7N2JYbgNEjYH";
         try {
-            driver.get("https://open.spotify.com/artist/7nqOGRxlXj7N2JYbgNEjYH");
-            Thread.sleep(2800);
-            for (int attempt=0; attempt<5; attempt++) {
-                java.util.List<org.openqa.selenium.WebElement> labels = driver.findElements(
-                    org.openqa.selenium.By.xpath("//*[normalize-space(text())='Followers']"));
-                for (org.openqa.selenium.WebElement label : labels) {
-                    org.openqa.selenium.WebElement container = label.findElement(
-                        org.openqa.selenium.By.xpath(".."));
-                    String raw = container.getText();
-                    java.util.regex.Matcher m = java.util.regex.Pattern.compile(
-                        "(\\\\d[\\\\d,]*)\\\\s*Followers", java.util.regex.Pattern.CASE_INSENSITIVE).matcher(raw);
-                    if (m.find()) {
-                        long count = Long.parseLong(m.group(1).replace(",", ""));
-                        if (count > 0) {
-                            System.out.println("STAT_FOLLOWERS|" + count);
+            driver.get(artist);
+            java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
+                "(?i)(?:([0-9][0-9,\\.]*\\s*[KMB]?)\\s*(?:followers|follower)|(?:followers|follower)\\s*[:\\u00b7]?\\s*([0-9][0-9,\\.]*\\s*[KMB]?))");
+            for (int attempt=0; attempt<8; attempt++) {
+                String[] sources = {
+                    driver.findElement(org.openqa.selenium.By.tagName("body")).getText(),
+                    driver.getPageSource()
+                };
+                for (String raw : sources) {
+                    java.util.regex.Matcher matcher = pattern.matcher(raw);
+                    while (matcher.find()) {
+                        String value = matcher.group(1) != null ? matcher.group(1) : matcher.group(2);
+                        value = value.replace(",", "").trim().toUpperCase(java.util.Locale.ROOT);
+                        java.util.regex.Matcher digits = java.util.regex.Pattern.compile("([0-9]+(?:\\.[0-9]+)?)\\s*([KMB]?)").matcher(value);
+                        if (!digits.matches()) continue;
+                        double count = Double.parseDouble(digits.group(1));
+                        String unit = digits.group(2);
+                        if ("K".equals(unit)) count *= 1000;
+                        if ("M".equals(unit)) count *= 1000000;
+                        if ("B".equals(unit)) count *= 1000000000;
+                        long followers = Math.round(count);
+                        // A rounded K/M display is not an exact daily metric.
+                        if (!unit.isEmpty()) {
+                            System.out.println("STAT_FOLLOWERS_APPROX|" + followers);
+                            continue;
+                        }
+                        if (followers > 0) {
+                            System.out.println("STAT_FOLLOWERS|" + followers);
                             return;
                         }
                     }
                 }
-                Thread.sleep(1200);
+                Thread.sleep(1500);
             }
+            System.out.println("STAT_FOLLOWERS_UNAVAILABLE|not-visible-on-artist-page");
         } catch (Exception e) {
-            System.out.println("Followers metric unavailable: " + e.getClass().getSimpleName());
+            System.out.println("STAT_FOLLOWERS_UNAVAILABLE|" + e.getClass().getSimpleName());
         }
     }
     '''
+
     source=source.replace('private static void fetchMonthlyListeners()', follower_java+'\n    private static void fetchMonthlyListeners()')
     source=source.replace('fetchMonthlyListeners();','fetchMonthlyListeners();\n        fetchFollowersMetric();',1)
 out=root/'build';out.mkdir(exist_ok=True)
