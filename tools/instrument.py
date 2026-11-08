@@ -24,9 +24,9 @@ if kind=='group':
             java.util.regex.Pattern pattern = java.util.regex.Pattern.compile(
                 "(?i)(?:([0-9][0-9,\\.]*\\s*[KMB]?)\\s*(?:followers|follower)|(?:followers|follower)\\s*[:\\u00b7]?\\s*([0-9][0-9,\\.]*\\s*[KMB]?))");
             for (int attempt=0; attempt<8; attempt++) {
+                // Embedded HTML can contain unrelated counts; only read visible text.
                 String[] sources = {
-                    driver.findElement(org.openqa.selenium.By.tagName("body")).getText(),
-                    driver.getPageSource()
+                    driver.findElement(org.openqa.selenium.By.tagName("body")).getText()
                 };
                 for (String raw : sources) {
                     java.util.regex.Matcher matcher = pattern.matcher(raw);
@@ -43,10 +43,10 @@ if kind=='group':
                         long followers = Math.round(count);
                         // A rounded K/M display is not an exact daily metric.
                         if (!unit.isEmpty()) {
-                            System.out.println("STAT_FOLLOWERS_APPROX|" + followers);
+                            // Rounded values must never become exact daily snapshots.
                             continue;
                         }
-                        if (followers > 0) {
+                        if (followers >= 1000000 && followers <= 1000000000L) {
                             System.out.println("STAT_FOLLOWERS|" + followers);
                             return;
                         }
