@@ -33,6 +33,9 @@ jobs:
         run: python tools/gate.py >> "$GITHUB_OUTPUT"
       - name: Collect Group streams
         if: steps.gate.outputs.run == 'true'
+        env:
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
         run: |
           export COLLECTOR_CLASSPATH="$(cat classpath.txt)"
           python tools/catalog.py
