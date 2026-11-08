@@ -294,3 +294,31 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #ffb8
 .date-navigation input[type="date"]{color-scheme:dark!important;color:#f8f8ff!important}
 .date-navigation input[type="date"]::-webkit-calendar-picker-indicator{filter:brightness(0) invert(1)!important;opacity:1!important;cursor:pointer}
 .date-navigation input[type="date"]::-webkit-datetime-edit{color:#f8f8ff!important}
+
+/* Mobile refinement: preserve the desktop ranking grid rather than compressing text. */
+@media(max-width:680px){
+ body{overflow-x:hidden}
+ .hero{padding:44px 0 46px!important}
+ .hero h1{font-size:clamp(40px,10vw,64px)!important;line-height:1.08!important;letter-spacing:-1.7px!important}
+ .hero p{font-size:13px!important}
+ .archive{margin:22px 0!important}
+ .archive-top{gap:18px!important}
+ .panel{padding:18px 12px!important}
+ .section-top h2{font-size:25px!important}
+ .ranking-category{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:7px!important}
+ .ranking-category button{border-radius:12px!important;font-size:clamp(10px,2.9vw,13px)!important;padding:13px 2px!important}
+ .ranking{overflow-x:auto!important;overscroll-behavior-x:contain;-webkit-overflow-scrolling:touch}
+ .table-head{grid-template-columns:minmax(230px,1fr) 130px 115px!important;min-width:515px!important;padding:14px 12px!important;gap:12px!important}
+ .rank-row{grid-template-columns:minmax(230px,1fr) 130px 115px!important;min-width:515px!important;padding:13px 12px!important;gap:12px!important}
+ .rank-row .track{gap:11px!important}
+ .rank-row .track-name{font-size:13px!important;line-height:1.35!important}
+ .rank-row .num{font-size:12px!important}
+ .rank-row .cover-slot{flex:0 0 40px!important;width:40px!important}
+ .rank-row .cover{width:40px!important;height:40px!important}
+ .stats{gap:10px!important}
+ .stat{padding:17px 12px!important;border-radius:15px!important}
+ .stat strong{font-size:clamp(18px,5vw,25px)!important;overflow-wrap:anywhere}
+ .stat small{font-size:9px!important}
+ .date-navigation{max-width:100%!important}
+ .date-navigation input{min-width:0!important}
+}
