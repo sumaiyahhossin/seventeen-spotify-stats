@@ -1703,19 +1703,32 @@ async function updateYear2026Streams(){
  const value=document.getElementById('svtYear2026Streams');
  const note=document.getElementById('svtYear2026Note');
  if(!value)return;
+ const total=snapshot=>{
+  if(!snapshot)return null;
+  const grand=Object.keys(snapshot.tracks||{}).find(id=>historicalKind(snapshot,id)==='grand');
+  if(grand&&Number.isFinite(snapshot.tracks[grand]))return snapshot.tracks[grand];
+  const ids=snapshot.canonical_track_ids;
+  if(Array.isArray(ids)&&ids.length===227&&ids.every(id=>Number.isFinite(snapshot.tracks?.[id])))
+   return ids.reduce((sum,id)=>sum+snapshot.tracks[id],0);
+  return null;
+ };
  try{
   const newest=[...(current.group?.date?[current.group.date]:[]),...dates.filter(d=>d.startsWith('2026-'))].sort().at(-1);
-  const first=dates.filter(d=>d<='2025-12-31').sort().at(-1);
   const now=newest===current.group?.date?await latest('group'):await getDate('group',newest);
-  const before=await getDate('group',first);
-  if(!now||!before){value.textContent='Unavailable';return}
-  const ids=trackIds(now);
-  const values=ids.map(id=>snapshotDelta(now,before,id)).filter(v=>v!=null);
-  if(!values.length){value.textContent='Unavailable';return}
-  const total=values.reduce((a,b)=>a+b,0);
-  value.textContent=total.toLocaleString('en-US');
-  note.textContent='Streams* · Year still counting · Updated through '+now.date+(values.length<ids.length?' · Partial matched-track total':'');
- }catch(e){value.textContent='Unavailable';console.warn('Yearly stream calculation unavailable',e)}
+  const before=await getDate('group','2025-12-31');
+  const latestTotal=total(now),previousTotal=total(before);
+  if(latestTotal==null||previousTotal==null||latestTotal<previousTotal){
+   value.textContent='Unavailable';
+   note.textContent='Streams* · Year still counting · Awaiting comparable archive totals';
+   return;
+  }
+  value.textContent=(latestTotal-previousTotal).toLocaleString('en-US');
+  note.textContent='Streams* · Year still counting · Updated through '+now.date+' · Refreshes with daily snapshots';
+ }catch(e){
+  value.textContent='Unavailable';
+  note.textContent='Streams* · Year still counting · Data temporarily unavailable';
+  console.warn('Yearly stream calculation unavailable',e);
+ }
 }
 async function render(){const token=++renderToken;$('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';try{renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;updateYear2026Streams();syncCalendar();restoreGroupNames(s,p);
  const isPeriod=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
