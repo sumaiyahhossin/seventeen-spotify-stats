@@ -48,17 +48,6 @@ jobs:
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/
-          if ! git diff --cached --quiet; then
-            git commit -m "Update SEVENTEEN Group streams"
-            # A run can outlast edits to main. Rebase before pushing the snapshot.
-            for attempt in 1 2 3; do
-              git fetch origin main
-              git rebase origin/main
-              if git push origin HEAD:main; then
-                exit 0
-              fi
-              echo "Push was updated by another run; retrying ($attempt/3)"
-            done
-            echo "Could not publish stats after three attempts" >&2
-            exit 1
-          fi
+          # The job can run for hours while main gets edited. Rebase produces
+          # JSON merge conflicts, so apply only newly collected data to fresh main.
+          python tools/publish_snapshots.py
