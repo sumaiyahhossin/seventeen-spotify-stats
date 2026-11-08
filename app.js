@@ -226,6 +226,17 @@ function comparablePrevious(s,p,id){
   const legacyId='legacy:worldfeatannemarrie:213';
   if(p.tracks?.[legacyId]!=null)return {id:legacyId,value:p.tracks[legacyId]};
  }
+ // Verified November 5 spreadsheet titles omit the producer/featured-artist
+ // credits for these two HAPPY BURSTDAY tracks. Their Spotify IDs and
+ // historical row IDs are confirmed; do not treat the title suffix as a new song.
+ if(isHistorical(p)){
+  const verifiedAliases={
+   '2B0l8kFr4PzxH6gqX3NIoi':'legacy:badinfluence:337',
+   '3ESkEsiPkaXl0CCRUMGkIk':'legacy:damagehoshisolo:342'
+  };
+  const legacyId=verifiedAliases[id];
+  if(legacyId&&p.tracks?.[legacyId]!=null)return {id:legacyId,value:p.tracks[legacyId]};
+ }
  // Imported spreadsheet IDs stay stable across the historical workbook.
  // The verified Nov 5 ID mapping is therefore valid for earlier months too.
  if(isHistorical(p)&&s.baseline_ids_2026_11_05?.[id]){
