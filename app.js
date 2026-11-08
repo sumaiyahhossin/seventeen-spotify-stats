@@ -223,7 +223,11 @@ function comparablePrevious(s,p,id){
  // The verified Nov 5 ID mapping is therefore valid for earlier months too.
  if(isHistorical(p)&&s.baseline_ids_2026_11_05?.[id]){
   const priorId=s.baseline_ids_2026_11_05[id];
-  if(p.tracks[priorId]!=null&&historicalKind(p,priorId)==='track')
+  const expectedName=normTrackName(s.names?.[id]||idName[id]);
+  const previousName=normTrackName(p.names?.[priorId]);
+  // Historical sheets sometimes reassign the same ID to a different song.
+  // Only trust the saved mapping when the recording name still matches.
+  if(p.tracks[priorId]!=null&&historicalKind(p,priorId)==='track'&&expectedName&&previousName===expectedName)
    return {id:priorId,value:p.tracks[priorId]};
  }
  // To use the same Spotify ID when both snapshots contain it.
@@ -233,7 +237,7 @@ function comparablePrevious(s,p,id){
   // Never treat that as a real stream gain.
   const nowName=normTrackName(s.names?.[id]||idName[id]);
   const oldName=normTrackName(p.names?.[id]||idName[id]);
-  if(kindNow===kindBefore&&(kindNow==='grand'||kindNow==='album'||!isHistorical(s)||!isHistorical(p)||!nowName||!oldName||nowName===oldName))
+  if(kindNow===kindBefore&&(kindNow==='grand'||kindNow==='album'||!isHistorical(p)||!nowName||!oldName||nowName===oldName))
    return {id,value:p.tracks[id]};
   // Fall through to the title-based match for reassigned historical IDs.
  }
