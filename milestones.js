@@ -122,6 +122,12 @@ function loadMilestoneCovers(){
  for(const img of document.querySelectorAll('.song-cover[data-song-name]')){
   const name=img.dataset.songName,id=img.dataset.spotifyId;
   (async()=>{
+   // Oh My! must use the original 2018 recording's artwork, never its anthology ID.
+   if(coverKey(name)==='oh my'){
+    const originalId=milestoneArtwork.tracks['oh my']?.id;
+    const original=await spotifyArtwork(originalId);
+    if(original&&img.isConnected){img.src=original;return}
+   }
    const entry=milestoneArtwork.tracks[coverKey(name)];
    const fallback=async()=>await spotifyArtwork(entry?.id||id)||await trackArtwork(name);
    let url=await originalArtwork(name);
