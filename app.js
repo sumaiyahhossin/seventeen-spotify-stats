@@ -911,6 +911,8 @@ function historicalAlbumCoverFallback(row){
  return /^[A-Za-z0-9]{22}$/.test(id||'')?'track:'+id:null;
 }
 function artworkTrack(row){
+ // Happy Ending (Korean Ver.) debuted on An Ode, not 17 IS RIGHT HERE.
+ if(tab==='group'&&/happy\s*ending/i.test(row.name||'')&&/korean\s*(?:ver(?:sion)?\.?|version)/i.test(row.name||''))return 'release:'+encodeURIComponent('An Ode');
  const historical=historicalArtworkId(row);
  if(historical?.release)return 'release:'+encodeURIComponent(historical.release);
  if(historical?.artworkRelease)row={...row,artworkRelease:historical.artworkRelease};
