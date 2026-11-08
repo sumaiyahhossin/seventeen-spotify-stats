@@ -1602,7 +1602,7 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
  const ids=s?trackIds(s):[];
  const memberIds=tab==='solo'&&selectedSoloArtist&&s?soloArtistTrackIds(s):ids;
  const groupTrackCount=s&&tab==='group'&&isHistorical(s)?(Object.values(s.names||{}).some(n=>/^tiny light$/i.test(String(n).trim()))?227:226):ids.length;
- $('#count').textContent=s?fmt(tab==='solo'&&selectedSoloArtist?memberIds.length:groupTrackCount):'—';
+ 
  const periodStart=isPeriod?baseline?.start:p;
  const periodStartDate=periodStart?.date||'';
  const audiencePeriod=isPeriod?periodName.toLowerCase()+' period':rank.endsWith('overall')?'selected date':'day';
@@ -1651,9 +1651,7 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
    const periodLast=rank.endsWith('monthly')?lastDayOfMonth:s.date;
    const completePeriod=rank.endsWith('monthly')&&s.date===lastDayOfMonth;
    const fmtPeriodDate=d=>new Date(d+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'long',day:'numeric',year:'numeric'});
-   if(gainNote)gainNote.textContent=rank.endsWith('monthly')
-    ?'Group-wide '+(completePeriod?'full-month':'month-to-date')+' growth for '+fmtPeriodDate(periodFirst)+' – '+fmtPeriodDate(completePeriod?periodLast:s.date)+'. '+(completePeriod?'Complete calendar month.':'Full month ends '+fmtPeriodDate(periodLast)+'; remaining dates are not yet available.')+' Calculated from the previous month-end baseline.'
-    :'Group-wide '+periodName.toLowerCase()+' growth for '+fmtPeriodDate(periodFirst)+' – '+fmtPeriodDate(s.date)+', calculated from the preceding period-end baseline.';
+   if(gainNote)gainNote.textContent=fmtPeriodDate(periodFirst)+' – '+fmtPeriodDate(s.date);
   }else{
    $('#gain').textContent=valid.length?'+'+fmt(valid.reduce((a,b)=>a+b,0))+(valid.length<memberIds.length?'*':''):'—';
    if(gainNote)gainNote.textContent=!baseline?.start
