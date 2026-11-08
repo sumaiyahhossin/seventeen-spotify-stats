@@ -29,6 +29,10 @@ for line in result.stdout.splitlines():
     if m: listeners[m.group(1)]=int(m.group(2))
     m=re.match(r'STAT_FOLLOWERS\|(\d+)',line)
     if m: followers=int(m.group(1))
+if kind=='group' and followers is None:
+    reasons=[line for line in result.stdout.splitlines() if line.startswith('STAT_FOLLOWERS_UNAVAILABLE|')]
+    reason=reasons[-1].split('|',1)[1] if reasons else 'no exact follower metric emitted'
+    print(f'group: exact Spotify followers unavailable ({reason}); streams and monthly listeners can still be saved')
 cat=json.loads((DATA/'catalog.json').read_text())[kind]
 expected={id for item in cat for id in item['tracks']}
 missing=expected-set(tracks)
