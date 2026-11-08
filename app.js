@@ -1237,15 +1237,16 @@ function periodDates(date){
  if(rank.endsWith('weekly')){
   first=shifted(date,-elapsed);
   prevFirst=shifted(first,-7);
-  prevLast=shifted(first,-1);
+  prevLast=shifted(date,-7);
  }else if(rank.endsWith('monthly')){
   first=date.slice(0,7)+'-01';
   prevFirst=shiftedMonth(first,-1);
-  prevLast=shifted(first,-1);
+  // To compare November 1–6 with October 1–6, not all of October.
+  prevLast=shifted(prevFirst,Math.min(d.getUTCDate(),new Date(Date.UTC(Number(prevFirst.slice(0,4)),Number(prevFirst.slice(5,7)),0)).getUTCDate())-1);
  }else if(rank.endsWith('yearly')){
   first=date.slice(0,4)+'-01-01';
   prevFirst=shiftedYear(first,-1);
-  prevLast=shifted(first,-1);
+  prevLast=shifted(prevFirst,Math.min(Math.round((Date.parse(date)-Date.parse(first))/86400000),365));
  }else return null;
  return {start:shifted(first,-1),first,prevStart:shifted(prevFirst,-1),prevEnd:prevLast};
 }
@@ -1254,7 +1255,6 @@ async function periodBaseline(s){
  const range=periodDates(s.date),available=new Set(dates);
  const get=async d=>available.has(d)?getDate(tab,d):null;
  const [start,prevStart,prevEnd]=await Promise.all([get(range.start),get(range.prevStart),get(range.prevEnd)]);
- // To use the exact previous-day baseline for each calendar period.
  return {start,prevStart,prevEnd,range};
 }
 // To reuse the verified November 5 track match for earlier spreadsheet dates.
@@ -1290,13 +1290,15 @@ function periodGain(s,context,id){
 function periodChange(s,context,id){
  if(!context?.start||!context.prevStart||!context.prevEnd)return null;
  const now=snapshotDelta(s,context.start,id);
- const previousId=comparablePrevious(s,context.prevEnd,id)?.id;
- // To compare periods with the same number of days.
+ const prevId=comparablePrevious(s,context.prevEnd,id)?.id;
+ if(!prevId)return null;
+ const before=snapshotDelta(context.prevEnd,context.prevStart,prevId);
+ if(now==null||before==null)return null;
+ // To avoid comparing unequal partial periods.
  const elapsed=(Date.parse(s.date)-Date.parse(context.start.date))/86400000;
  const previousElapsed=(Date.parse(context.prevEnd.date)-Date.parse(context.prevStart.date))/86400000;
  if(elapsed!==previousElapsed)return null;
- const before=previousId?snapshotDelta(context.prevEnd,context.prevStart,previousId):null;
- return now==null||before==null?null:now-before;
+ return now-before;
 }
 // To keep album and track comparisons aligned to the same dates.
 function sumPeriod(s,context,ids){if(!ids.length)return null;const values=ids.map(id=>periodGain(s,context,id));return values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null}
