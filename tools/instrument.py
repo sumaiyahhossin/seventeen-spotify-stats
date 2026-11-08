@@ -44,20 +44,29 @@ if kind=='group':
             // guessing that the first large number belongs to followers.
             org.openqa.selenium.By popup = org.openqa.selenium.By.cssSelector(
                 "dialog[open][aria-label='SEVENTEEN'], dialog[open], [role='dialog']");
-            org.openqa.selenium.By followerValue = org.openqa.selenium.By.xpath(
-                ".//*[normalize-space(text())='Followers']/preceding-sibling::*[1]");
+            // Spotify changes the dialog markup. Match a full, exact integer
+            // adjacent to the Followers label instead of a brittle sibling XPath.
+            java.util.regex.Pattern before = java.util.regex.Pattern.compile(
+                "([0-9]{1,3}(?:[,\\\\s][0-9]{3})+|[0-9]{7,10})\\\\s*Followers", java.util.regex.Pattern.CASE_INSENSITIVE);
+            java.util.regex.Pattern after = java.util.regex.Pattern.compile(
+                "Followers\\\\s*([0-9]{1,3}(?:[,\\\\s][0-9]{3})+|[0-9]{7,10})", java.util.regex.Pattern.CASE_INSENSITIVE);
             for (int attempt = 0; attempt < 15; attempt++) {
                 for (org.openqa.selenium.WebElement dialog : driver.findElements(popup)) {
                     if (!dialog.isDisplayed()) continue;
-                    for (org.openqa.selenium.WebElement element : dialog.findElements(followerValue)) {
-                        String value = element.getText().trim();
-                        if (!value.matches("[0-9]{1,3}(?:,[0-9]{3})+|[0-9]{7,10}")) continue;
-                        long followers = Long.parseLong(value.replace(",", ""));
+                    String dialogText = dialog.getText().replace('\\u00a0', ' ').trim();
+                    java.util.regex.Matcher match = before.matcher(dialogText);
+                    if (!match.find()) {
+                        match = after.matcher(dialogText);
+                        if (!match.find()) continue;
+                    }
+                    String digits = match.group(1).replaceAll("[^0-9]", "");
+                    try {
+                        long followers = Long.parseLong(digits);
                         if (followers >= 1000000L && followers <= 1000000000L) {
                             System.out.println("STAT_FOLLOWERS|" + followers);
                             return;
                         }
-                    }
+                    } catch (NumberFormatException ignored) {}
                 }
                 Thread.sleep(1000);
             }
