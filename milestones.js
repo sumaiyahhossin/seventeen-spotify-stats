@@ -26,7 +26,7 @@ for(const [song,date,url,source] of [
 (externalEvidence['name:'+norm('Darl+ing')]??={})[100000000]={date:'2023-07-19',url:'https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html',source:'Korean Sales milestone archive'};
 // Additional cross-checked milestones from independent reports.
 for(const [song,threshold,date,url,source] of [
- ['Pretty U',100000000,'2023-12-22','https://www.allkpop.com/article/2023/12/seventeens-pretty-u-surpasses-100-million-streams-on-spotify','Allkpop, December 22, 2023'],
+ ['Pretty U',100000000,'2023-12-21','https://www.allkpop.com/article/2023/12/seventeens-pretty-u-surpasses-100-million-streams-on-spotify','Allkpop, December 22, 2023'],
  ['THUNDER',100000000,'2026-04-18','https://www.koreaherald.com/article/10720987','The Korea Herald, citing Pledis'],
  ['HOT',100000000,'2023-02-03','https://twfan.net/user/1295744033680003072/favorite/2','SEVENTEEN Spotify fan update']
 ]){
@@ -45,6 +45,9 @@ for(const [song,date,url,source] of [
 }
 // Korean Sales milestone listing, entry #474.
 (externalEvidence['name:'+norm('Ready to love')]??={})[100000000]={date:'2024-08-04',url:'https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html',source:'Korean Sales #474'};
+// Earliest dates recorded in Korean Sales milestones #386 and #399.
+(externalEvidence['name:'+norm('Pretty U')]??={})[100000000]={date:'2023-12-21',url:'https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html',source:'Korean Sales #386'};
+(externalEvidence['name:'+norm('_WORLD')]??={})[100000000]={date:'2024-01-23',url:'https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html',source:'Korean Sales #399'};
 // Additional published Spotify track milestones (not music-video views).
 for(const [song,threshold,date] of [
  ['HIT',100000000,'2025-09-25'],
