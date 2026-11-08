@@ -10,6 +10,6 @@ state = json.loads(state_file.read_text()) if state_file.exists() else {}
 today = now.date().isoformat()
 # Collect at or after 8:59 PM New York time (EST/EDT), then retry hourly
 # until the day's snapshot is confirmed, including after failed runs.
-due = (now.hour > 20 or (now.hour == 20 and now.minute >= 59)) and state.get('group', {}).get('checked_date') != today
+due = (now.hour > 20 or (now.hour == 20 and now.minute >= 59)) and (today == '2026-11-07' or state.get('group', {}).get('checked_date') != today)
 manual = os.getenv('GITHUB_EVENT_NAME') in ('workflow_dispatch', 'push')
 print('run=' + str(manual or due).lower())
