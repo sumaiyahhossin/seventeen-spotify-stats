@@ -44,6 +44,10 @@ function buildNames(){
  // Explicit names for catalog entries whose descriptions are missing or
  // malformed. These IDs are grounded in the corresponding release listings.
  const verifiedNames={
+  '0xZ4WU5UfctiSeETi6pMEo':'God of Light Music',
+  '6h13gMfEDlVlXFb8iDVaXb':'God of Light Music (Trot Remix)',
+  '7viNY0jOjNJuLwsgAOPsBK':'God of Light Music (Inst.)',
+  '5jXlUt3NS0iu7pHYPqpK2O':'24H',
   '2UE9XGbAzicJIyo4bB6sqM':'MAESTRO',
   '469YeZRBzZw8AnNQvG5GRS':'CALL CALL CALL! (Korean Ver.)',
   '5NfUbEKgLTdUWHTcU7F56Q':'LOVE, MONEY, FAME (Sped Up Ver.)',
@@ -163,7 +167,7 @@ function displayTrackName(name){
  const raw=String(name||'').trim(),key=coverKey(raw);
  if(/^[A-Za-z0-9]{22}$/.test(raw))return 'Unidentified Spotify track';
  const official={
-  '20 0':'20','247 0':'247','gom':'God of Music','golm':'God of Light Music',
+  '24h':'24H','24 h':'24H','no f u n':'NO F.U.N','god of light music':'God of Light Music','god of light music inst':'God of Light Music (Inst.)','golm':'God of Light Music','golm inst':'God of Light Music (Inst.)','golm trot remix':'God of Light Music (Trot Remix)','20 0':'20','247 0':'247','gom':'God of Music','golm':'God of Light Music',
   'gom inst':'God of Music (Inst.)','gom trot remix':'God of Music (Trot Remix)',
   'golm inst':'God of Light Music (Inst.)',
   'f ck my life':'F*ck My Life','fuck my life':'F*ck My Life','super':'Super','hot':'HOT','thunder':'THUNDER','rock with you':'Rock with you',
@@ -439,6 +443,19 @@ function streamTrackUrl(row){
    ||(mapped?.id&&/^[a-zA-Z0-9]{22}$/.test(mapped.id)?mapped.id:null);
  return id?'https://open.spotify.com/track/'+id:null;
 }
+const verifiedOriginalCovers={
+ 'oh my':'YOU MAKE MY DAY','home run':'Semicolon','light a flame':'Semicolon',
+ 'our dawn is hotter than day':'YOU MAKE MY DAY','fallin flower':'Fallin Flower',
+ 'call call call':'WE MAKE YOU','24h':'24H','hitorijanai':'Not Alone',
+ 'not alone':'Not Alone','all my love':'Semicolon','happy ending':'Happy Ending',
+ 'do re mi':'Semicolon','god of light music':'God of Light Music',
+ 'god of light music inst':'God of Light Music',
+ 'god of light music trot remix':'God of Light Music',
+ 'moonwalker':'YOU MAKE MY DAY','ah love':'Semicolon',
+ 'come to me':'YOU MAKE MY DAY','hey buddy':'Semicolon',
+ 'what s good':'YOU MAKE MY DAY','no f u n':'Love & Letter (Repackage)',
+ 'dream':'DREAM'
+};
 function artworkTrack(row){
  const name=coverKey(row.name).replace(/\btotal\b/g,'').trim();
  const isAlbum=row.kind==='album'||rank.startsWith('albums');
@@ -457,6 +474,9 @@ function artworkTrack(row){
   return null;
  }
  if(tab==='group'){
+  // Explicit first-release artwork, independent of Spotify anthology track IDs.
+  const originalCover=verifiedOriginalCovers[name];
+  if(originalCover)return 'release:'+encodeURIComponent(originalCover);
   // The discography's first release wins over anthology Spotify track IDs.
   // Japanese versions, remixes and other distinct recordings stay separate.
   if(japaneseOriginalArtwork[name])return 'release:'+encodeURIComponent(japaneseOriginalArtwork[name]);
