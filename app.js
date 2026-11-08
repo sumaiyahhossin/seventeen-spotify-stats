@@ -539,7 +539,27 @@ function cleanAlbumLabel(name){
 }
 
 const groupOriginalReleaseDates={"g1":"2015-05-29","g2":"2015-09-10","g5":"2016-04-25","g6":"2016-07-04","g8":"2016-12-05","g9":"2017-05-22","g10":"2017-11-06","g11":"2018-02-05","g12":"2018-05-30","g13":"2018-07-16","g16":"2019-01-21","g18":"2019-05-29","g20":"2019-09-16","g22":"2020-04-01","g23":"2020-06-22","g25":"2020-09-09","g27":"2020-10-19","g28":"2021-04-21","g29":"2021-06-18","g32":"2021-10-22","g33":"2021-12-08","g35":"2022-05-27","g36":"2022-07-18","g39":"2022-11-09","g41":"2023-04-24","g43":"2023-08-23","g46":"2023-10-23","g49":"2024-04-29","g56":"2024-10-14","g58":"2024-11-27","g59":"2025-05-26"};
-function originalReleaseDate(row){if(row.releaseDate)return row.releaseDate;const key=row.artworkRelease;if(tab==='group'&&key&&groupOriginalReleaseDates[key])return groupOriginalReleaseDates[key];const item=(catalog[tab]||[]).find(x=>x.key===key);const date=item?.release_date||item?.releaseDate||item?.first_release_date;return /^\d{4}-\d{2}-\d{2}$/.test(date||'')?date:null}
+function originalReleaseDate(row){
+ if(row.releaseDate)return row.releaseDate;
+ const key=row.artworkRelease;
+ if(tab==='group'&&key&&groupOriginalReleaseDates[key])return groupOriginalReleaseDates[key];
+ const item=(catalog[tab]||[]).find(x=>x.key===key);
+ const date=item?.release_date||item?.releaseDate||item?.first_release_date;
+ if(/^\d{4}-\d{2}-\d{2}$/.test(date||''))return date;
+ // Older spreadsheet album rows have no catalog key: identify their
+ // original release from the album title, never their spreadsheet row order.
+ if(tab==='group'){
+  const name=normTrackName(row.name||'');
+  const aliases={g1:['17carat'],g2:['boysbe'],g5:['loveletter'],g6:['loveletterrepackage'],g8:['goingseventeen'],g9:['al1'],g10:['teenage'],g11:['directorscut'],g12:['wemakeyou'],g13:['youmakemyday'],g16:['youmademydawn'],g18:['happyending'],g20:['anode'],g22:['fallinflower'],g23:['henggarae'],g25:['24h'],g27:['semicolon'],g28:['hitorijanai','notalone'],g29:['yourchoice'],g32:['attacca'],g33:['poweroflove'],g35:['facethesun'],g36:['sector17'],g39:['dream'],g41:['fml'],g43:['alwaysyours'],g46:['seventeenthheaven'],g49:['17isrighthere'],g56:['spillthefeels'],g58:['shohikigen'],g59:['happyburstday']};
+  for(const [release,terms] of Object.entries(aliases)){
+   if(terms.some(term=>name.includes(term))){
+    if(release==='g5'&&name.includes('repackage'))return groupOriginalReleaseDates.g6;
+    return groupOriginalReleaseDates[release];
+   }
+  }
+ }
+ return null;
+}
 function formatOriginalRelease(date){return new Date(date+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric',year:'numeric'})}
 function buildRows(s,p,pp,baseline){
  if(!s)return[];
