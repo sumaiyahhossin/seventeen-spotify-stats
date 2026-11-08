@@ -468,3 +468,38 @@ main{max-width:1260px!important;padding-inline:clamp(16px,3vw,40px)!important}
  .rank-row .cover-slot{aspect-ratio:1 / 1!important;border-radius:6px!important}
  .rank-row .cover{aspect-ratio:1 / 1!important;object-fit:cover!important;border-radius:6px!important}
 }
+
+/* Layout rhythm v23: generous separation between every major surface. */
+main{padding-bottom:64px!important}
+main > * + *{margin-top:clamp(28px,4vw,56px)!important}
+.stats{gap:clamp(20px,2.5vw,32px)!important;margin-top:44px!important;margin-bottom:54px!important}
+.stat{padding:clamp(24px,2.6vw,34px)!important}
+.panel{margin-top:42px!important;margin-bottom:42px!important}
+.panel > * + *{margin-top:26px}
+.section-top{margin-bottom:32px!important}
+.controls{margin-top:34px!important;margin-bottom:34px!important;row-gap:22px!important;column-gap:24px!important}
+.ranking-pickers{row-gap:16px!important;column-gap:18px!important}
+.ranking-category{gap:12px!important}
+.date-navigation{margin-block:26px!important;padding:16px 20px!important}
+.archive{margin-top:38px!important;margin-bottom:24px!important}
+.rank-row{padding-top:20px!important;padding-bottom:20px!important;min-height:86px!important}
+.table-head{margin-bottom:8px!important}
+footer{margin-top:64px!important;padding-block:34px!important}
+@media(max-width:800px){
+ main > * + *{margin-top:30px!important}
+ .stats{gap:16px!important;margin-bottom:36px!important}
+ .panel{margin-block:30px!important}
+ .panel > * + *{margin-top:20px}
+ .rank-row{min-height:78px!important;padding-block:17px!important}
+}
+@media(max-width:680px){
+ main > * + *{margin-top:24px!important}
+ .stats{gap:14px!important;margin-top:24px!important;margin-bottom:30px!important}
+ .stat{padding:19px 14px!important}
+ .panel{margin-block:24px!important}
+ .panel > * + *{margin-top:18px}
+ .controls{row-gap:18px!important;column-gap:14px!important;margin-block:26px!important}
+ .ranking-pickers{row-gap:14px!important}
+ .date-navigation{padding:14px!important;margin-block:20px!important}
+ .rank-row{min-height:74px!important;padding-block:16px!important}
+}
