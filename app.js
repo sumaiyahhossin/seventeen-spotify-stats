@@ -2,6 +2,8 @@ const $=s=>document.querySelector(s),fmt=n=>n==null?'—':Number(n).toLocaleStri
 let artworkMap={tracks:{},albums:{}};let sortOrder='most';let tab='group',rank='tracks-daily',rankType='tracks',catalog={},current={},history={},dates=[],selection='latest',period='week';
 // Keep the visitor's exact view when the dashboard refreshes.
 const viewStateKey='svt-dashboard-view-v2';
+const savedArchiveKey='svt-selected-archive-date-v1';
+try{const remembered=localStorage.getItem(savedArchiveKey);if(remembered&&/^\\d{4}-\\d{2}-\\d{2}$/.test(remembered))selection=remembered}catch{}
 try{
  const saved=JSON.parse(sessionStorage.getItem(viewStateKey)||'null');
  if(saved){
@@ -10,12 +12,14 @@ try{
   if(['daily','weekly','monthly','yearly','overall'].includes(saved.period))rank=rankType+'-'+saved.period;
   if(['most','least'].includes(saved.sortOrder))sortOrder=saved.sortOrder;
   if(saved.selection==='latest'||/^\\d{4}-\\d{2}-\\d{2}$/.test(saved.selection||''))selection=saved.selection;
+  try{const remembered=localStorage.getItem(savedArchiveKey);if(remembered&&/^\\d{4}-\\d{2}-\\d{2}$/.test(remembered))selection=remembered}catch{}
  }
  if('scrollRestoration' in window.history)window.history.scrollRestoration='manual';
 }catch(e){console.warn('Could not restore saved view',e)}
 let savedScroll=0;
 try{savedScroll=Number(JSON.parse(sessionStorage.getItem(viewStateKey)||'{}').scrollY)||0}catch{}
 function saveView(){
+ try{if(selection==='latest')localStorage.removeItem(savedArchiveKey);else localStorage.setItem(savedArchiveKey,selection)}catch{}
  try{sessionStorage.setItem(viewStateKey,JSON.stringify({tab,rankType,period:$('#rankPeriod')?.value||'daily',sortOrder,selection,search:$('#search')?.value||'',scrollY:window.scrollY}))}catch{}
 }
 window.addEventListener('pagehide',saveView);
@@ -604,6 +608,17 @@ function historicalArtworkId(row){
    'always yours new tracks':'ALWAYS YOURS'
   };
   if(releaseAliases[key])return {release:releaseAliases[key]};
+  // Historical album labels include ordinal/type prefixes and "Total" suffixes.
+  // Normalize them to the same release keys used for current-date artwork.
+  const strip=n=>coverKey(n).replace(/\\b(?:1st|2nd|3rd|4th|full|mini|special|japanese|korean|best|repackage|album|ep|single|digital|original|new|all|tracks|track|total|ost)\\b/g,' ').replace(/\\s+/g,' ').trim();
+  const normalized=strip(row.name);
+  const candidates=items.filter(item=>{
+   const names=[item.title,catalogReleaseLabel(item)];
+   return names.some(n=>strip(n)===normalized&&normalized.length>2);
+  });
+  if(candidates.length)return {artworkRelease:candidates[0].key};
+  const known=(artworkMap.albums||{})[key]||(artworkMap.albums||{})[normalized];
+  if(known?.id)return {id:known.id};
   return null;
  }
  if(/^[A-Za-z0-9]{22}$/.test(row.id||''))return null;
@@ -1037,7 +1052,7 @@ function navigateDate(step){
  if(i<0)i=available.findIndex(d=>d>today);
  if(i<0)i=available.length;
  const target=available[Math.max(0,Math.min(available.length-1,i+step))];
- if(target){selection=target;syncCalendar();render()}
+ if(target){selection=target;saveView();syncCalendar();render()}
 }
 function syncCalendar(){
  const available=availableDates(),date=selection==='latest'?(current[tab]?.date||available.at(-1)):selection;
@@ -1051,12 +1066,12 @@ function syncCalendar(){
 }
 $('#prevDate').addEventListener('click',()=>navigateDate(-1));
 $('#nextDate').addEventListener('click',()=>navigateDate(1));
-$('#latestDate').addEventListener('click',()=>{selection='latest';syncCalendar();render()});
+$('#latestDate').addEventListener('click',()=>{selection='latest';saveView();syncCalendar();render()});
 $('#archiveDate').addEventListener('change',e=>{
  const requested=e.target.value,available=availableDates();
  if(!requested||!available.length)return;
  const target=available.includes(requested)?requested:available.reduce((best,d)=>Math.abs(Date.parse(d)-Date.parse(requested))<Math.abs(Date.parse(best)-Date.parse(requested))?d:best);
- selection=target;syncCalendar();render();
+ selection=target;saveView();syncCalendar();render();
 });
 (async()=>{
  try{
