@@ -174,7 +174,12 @@ function isAlbumTitle(name){
 function uniqueRows(rows){
  const seen=new Set();
  return rows.filter(row=>{
-  const key=row.name.toLowerCase().replace(/[^a-z0-9]/g,'')+'|'+row.streams;
+  // Spotify may expose separate track IDs for the same recording. A title
+  // alone is not enough to merge versions, and matching counts alone are
+  // not enough either. Keep unidentified IDs distinct.
+  const title=normTrackName(row.name);
+  const hasVerifiedTitle=title&&title!==normTrackName(row.id||'');
+  const key=(hasVerifiedTitle?title:(row.id||title))+'|'+row.streams;
   if(seen.has(key))return false;
   seen.add(key);return true;
  });
@@ -515,7 +520,7 @@ function periodDates(date){
  return null;
 }
 async function periodBaseline(s){
- if(!s)return null;
+ if(!s||!(rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly')))return null;
  const range=periodDates(s.date);if(!range)return null;
  const available=new Set(dates);
  const get=async d=>available.has(d)?getDate(tab,d):null;
