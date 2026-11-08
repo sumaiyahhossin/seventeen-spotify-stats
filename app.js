@@ -222,8 +222,13 @@ function comparablePrevious(s,p,id){
  if(!matches.length)return null;
  // To treat repeated spreadsheet rows for the same recording as one baseline.
  const values=[...new Set(matches.map(k=>p.tracks[k]))];
- if(values.length!==1)return null;
- return {id:matches[0],value:values[0]};
+ if(values.length===1)return {id:matches[0],value:values[0]};
+ // The spreadsheet sometimes has distinct recordings sharing a title.
+ // Resolve by the unique plausible one-day baseline, not by the title alone.
+ const plausible=values.filter(v=>s.tracks[id]>=v&&s.tracks[id]-v<=Math.max(150000,s.tracks[id]*0.002));
+ if(plausible.length!==1)return null;
+ const key=matches.find(k=>p.tracks[k]===plausible[0]);
+ return {id:key,value:plausible[0]};
 }
 function safeGain(s,p,id){
  if(!p||!s||!s.tracks||!p.tracks||s.tracks[id]==null)return null;
