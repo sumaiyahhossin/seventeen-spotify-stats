@@ -180,11 +180,11 @@ function displayTrackName(name){
  const raw=String(name||'').trim(),key=coverKey(raw);
  if(/^[A-Za-z0-9]{22}$/.test(raw))return 'Unidentified Spotify track';
  const official={
-  '24h':'24H','24 h':'24H','no f u n':'NO F.U.N','god of light music':'God of Light Music','god of light music inst':'God of Light Music (Inst.)','golm':'God of Light Music','golm inst':'God of Light Music (Inst.)','golm trot remix':'God of Light Music (Trot Remix)','20 0':'20','247 0':'247','gom':'God of Music','golm':'God of Light Music',
+  '9 teen':'9-TEEN','a teen':'A-TEEN','24h':'24H','24 h':'24H','no f u n':'NO F.U.N','god of light music':'God of Light Music','god of light music inst':'God of Light Music (Inst.)','golm':'God of Light Music','golm inst':'God of Light Music (Inst.)','golm trot remix':'God of Light Music (Trot Remix)','20 0':'20','247 0':'247','gom':'God of Music','golm':'God of Light Music',
   'gom inst':'God of Music (Inst.)','gom trot remix':'God of Music (Trot Remix)',
   'golm inst':'God of Light Music (Inst.)',
   'f ck my life':'F*ck My Life','fuck my life':'F*ck My Life','super':'Super','hot':'HOT','thunder':'THUNDER','rock with you':'Rock with you',
-  'very nice':'VERY NICE','maestro':'MAESTRO','don t wanna cry':"Don't Wanna Cry",
+  'very nice':'VERY NICE','boom boom':'BOOMBOOM','boomboom':'BOOMBOOM','hit song':'Hit Song','lilili yabbay':'Lilili Yabbay','gam3 bo1':'GAM3 BO1','2 minus 1':'2 MINUS 1','2 minus 1 bonus track':'2 MINUS 1 (Bonus Track)','i don t understand but i luv u':'I Don’t Understand But I Luv U','don quixote':'DON QUIXOTE','fire':'Fire','snap shoot':'Snap Shoot','back it up':'Back it up','my my':'My My','kidult':'Kidult','heaven s cloud':'Heaven’s Cloud','change up':'CHANGE UP','bring it':'BRING IT','trauma':'TRAUMA','pinwheel':'Pinwheel','flower':'Flower','rocket':'ROCKET','campfire':'Campfire','network love':'Network Love','second life':'Second Life','let me hear you say':'Let me hear you say','lie again':'Lie Again','lucky':'Lucky','fearless':'Fearless','together':'Together','i wish':'I Wish','wave':'Wave','anyone':'Anyone','dust':'Dust','april shower':'April shower','monster':'Monster','yawn':'Yawn','headliner':'Headliner','diamond days':'Diamond Days','eyes on you':'Eyes on you','candy':'Candy','rain':'Rain','water':'Water','maestro':'MAESTRO','don t wanna cry':"Don't Wanna Cry",
   'darling':'Darl+ing','darl ing':'Darl+ing','shining diamond':'Shining Diamond',
   'adore u':'Adore U','left right':'Left & Right','ready to love':'Ready to love',
   'home run':'HOME;RUN','home':'Home','world':'_WORLD','shadow':'Shadow',
@@ -298,7 +298,7 @@ function discographyRows(s,p,pp,baseline){
   const streams=ids.every(id=>s.tracks?.[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
   const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
   const previousGain=sumDaily(p,pp,ids);
-  const albumTotalRow={name:catalogReleaseLabel(item),streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&previousGain!=null?gain-previousGain:null,kind:'album',releaseOrder:rows.length};
+  const albumTotalRow={name:catalogReleaseLabel(item),artworkRelease:item.key,streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&previousGain!=null?gain-previousGain:null,kind:'album',releaseOrder:rows.length};
   for(const id of ids){
    if(s.tracks?.[id]==null)continue;
    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
@@ -513,8 +513,17 @@ function artworkTrack(row){
  const validId=id=>/^[A-Za-z0-9]{22}$/.test(id||'');
  const isVersion=/\b(remix|instrumental|inst|sped up|slowed|workout|orchestra|feat|with|holiday|korean ver|chinese ver|japanese ver)\b/.test(name);
  const releases=catalog[tab]||[];
+ if(isAlbum&&tab==='group'&&row.artworkRelease){
+  const directRelease={
+   g5:'LOVE & LETTER',g6:'LOVE & LETTER (Repackage)',g7:'LOVE & LETTER (Repackage)',
+   g35:'Face the Sun',g36:'SECTOR 17',g37:'SECTOR 17',
+   g49:'17 IS RIGHT HERE',g50:'17 IS RIGHT HERE',g51:'17 IS RIGHT HERE',g52:'17 IS RIGHT HERE',
+   g43:'ALWAYS YOURS',g44:'ALWAYS YOURS'
+  };
+  if(directRelease[row.artworkRelease])return 'release:'+encodeURIComponent(directRelease[row.artworkRelease]);
+ }
  if(isAlbum&&tab==='group'){
-  const spec=requestedGroupAlbums.find(item=>item.name===row.name || item.keys[0]===row.artworkRelease);
+  const spec=requestedGroupAlbums.find(item=>item.name===row.name || item.keys.includes(row.artworkRelease));
   if(spec){
    const first=(catalog.group||[]).find(item=>item.key===spec.keys[0]);
    const title=first?.title||'';
