@@ -584,7 +584,39 @@ const verifiedOriginalCovers={
  'what s good':'YOU MAKE MY DAY','no f u n':'Love & Letter (Repackage)',
  'dream':'DREAM'
 };
+// Historical spreadsheet rows have legacy IDs rather than Spotify IDs.
+// Resolve artwork through the same current catalog used by the latest date.
+function historicalArtworkId(row){
+ const key=coverKey(row.name||'');
+ const items=catalog[tab]||[];
+ if(row.kind==='album'||rank.startsWith('albums')){
+  const match=items.find(item=>coverKey(catalogReleaseLabel(item))===key)
+   ||items.find(item=>coverKey(albumDisplayName(item.title))===key);
+  if(match)return {artworkRelease:match.key};
+  const releaseAliases={
+   '17 is right here all tracks':'17 IS RIGHT HERE',
+   '17 is right here new tracks':'17 IS RIGHT HERE',
+   'sector 17 all tracks':'SECTOR 17',
+   'sector 17 new tracks':'SECTOR 17',
+   'love letter repackage all tracks':'LOVE & LETTER (Repackage)',
+   'love letter repackage new tracks':'LOVE & LETTER (Repackage)',
+   'always yours all tracks':'ALWAYS YOURS',
+   'always yours new tracks':'ALWAYS YOURS'
+  };
+  if(releaseAliases[key])return {release:releaseAliases[key]};
+  return null;
+ }
+ if(/^[A-Za-z0-9]{22}$/.test(row.id||''))return null;
+ const ids=[...new Set(items.flatMap(item=>item.tracks||[]))];
+ const matches=ids.filter(id=>coverKey(idName[id]||'')===key);
+ if(matches.length===1)return {id:matches[0]};
+ return null;
+}
 function artworkTrack(row){
+ const historical=historicalArtworkId(row);
+ if(historical?.release)return 'release:'+encodeURIComponent(historical.release);
+ if(historical?.artworkRelease)row={...row,artworkRelease:historical.artworkRelease};
+ if(historical?.id)row={...row,id:historical.id};
  const name=coverKey(row.name).replace(/\btotal\b/g,'').trim();
  const isAlbum=row.kind==='album'||rank.startsWith('albums');
  const validId=id=>/^[A-Za-z0-9]{22}$/.test(id||'');
