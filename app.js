@@ -974,6 +974,9 @@ function historicalAlbumCoverFallback(row){
  return /^[A-Za-z0-9]{22}$/.test(id||'')?'track:'+id:null;
 }
 function artworkTrack(row){
+ // Keep the Korean recording on its original An Ode artwork in Tracks and History.
+ // Discography appearances on 17 IS RIGHT HERE retain that edition's sleeve.
+ if(tab==='group'&&(row.id==='2lYLfG1WddMzvyJvc7imyB'||/happy\s*ending/i.test(row.name||'')&&/korean\s*ver/i.test(row.name||''))&&!(rank.startsWith('discography')&&/^g(49|50|51|52|53|54)$/.test(row.artworkRelease||'')))return 'release:'+encodeURIComponent('An Ode');
  // Each remix edition has its own sleeve and release date.
  if(rank.startsWith('discography')&&tab==='group'){
   if(row.artworkRelease==='g55')return 'release:'+encodeURIComponent('MAESTRO (Orchestra Remix)');
