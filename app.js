@@ -699,8 +699,9 @@ function buildRows(s,p,pp,baseline){
  }
  if(albums)rows.forEach(row=>{row.name=cleanAlbumLabel(row.name)});
  rows=uniqueRows(rows); // Preserve catalog tracks with unavailable snapshot counts.
- if(albums)rows.forEach(row=>{row.releaseDate=originalReleaseDate(row)});
- else if(sortOrder==='oldest'||sortOrder==='newest'){
+ // Resolve release dates for every archive row regardless of sorting mode.
+ rows.forEach(row=>{row.releaseDate=originalReleaseDate(row)});
+ if(!albums&&(sortOrder==='oldest'||sortOrder==='newest')){
   const releaseDates=trackOriginalReleaseDates();
   rows.forEach(row=>{
    const normalized=normTrackName(row.name);
@@ -1666,7 +1667,18 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
   const hasVerifiedTotal=verifiedDailyGain!=null||grandGain!=null||memberIds.length>0&&gains.length===memberIds.length;
   const partialGain=!hasVerifiedTotal&&gains.length?gains.reduce((a,b)=>a+b,0):null;
   $('#gain').textContent=hasVerifiedTotal?'+'+fmt(verifiedDailyGain!=null?verifiedDailyGain:grandGain!=null?grandGain:gains.reduce((a,b)=>a+b,0)):partialGain!=null?'+'+fmt(partialGain)+'*':'—';
-  if(gainNote)gainNote.textContent=hasVerifiedTotal?'':partialGain!=null?'* Partial gain for '+s.date+': '+gains.length+' of '+memberIds.length+' tracks could be compared.':'Daily gain unavailable without two comparable consecutive snapshots.';
+  if(gainNote){
+   const today=verifiedDailyGain!=null?verifiedDailyGain:grandGain!=null?grandGain:(hasVerifiedTotal?gains.reduce((a,b)=>a+b,0):null);
+   const previousGrand=grandId&&p&&pp?safeGain(p,pp,grandId):null;
+   const previousGains=p&&pp?memberIds.map(id=>safeGain(p,pp,id)):[];
+   const yesterday=previousGrand!=null?previousGrand:previousGains.length&&previousGains.every(v=>v!=null)?previousGains.reduce((a,b)=>a+b,0):null;
+   const consecutive=s&&p&&pp&&shifted(s.date,-1)===p.date&&shifted(p.date,-1)===pp.date;
+   if(today!=null&&yesterday!=null&&consecutive){
+    const change=today-yesterday;
+    gainNote.textContent=(change>=0?'+':'−')+fmt(Math.abs(change))+' vs previous day ('+p.date+')';
+   }else if(today!=null)gainNote.textContent='Previous-day comparison unavailable';
+   else gainNote.textContent=partialGain!=null?'Partial gain; previous-day comparison unavailable':'Daily gain unavailable';
+  }
  }
  $('#order').hidden=rank.startsWith('discography');const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),discography=rank.startsWith('discography'),periodLabel=rank.endsWith('weekly')?'WEEKLY':rank.endsWith('monthly')?'MONTHLY':'YEARLY';const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS ADDED':periodic?periodLabel+' STREAMS ADDED':'TOTAL STREAMS';headers[2].textContent=daily?'GAIN VS DAY BEFORE':periodic?rank.endsWith('weekly')?'GAIN VS LAST WEEK':rank.endsWith('monthly')?'GAIN VS LAST MONTH':'GAIN VS LAST YEAR':'GAIN VS YESTERDAY';document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=soloArtistRows(buildRows(s,p,pp,baseline),s,p,baseline).filter(x=>discography||x.name.toLowerCase().includes(q));
  // Estimates are displayed only for missing growth, never recorded totals.
