@@ -1,8 +1,8 @@
 name: Spotify stream snapshots
-# Automatic daily collection at 8:59 PM America/New_York, with hourly catch-up
+# Start daily at 2:00 PM Korea time; retry hourly until fresh stream data is saved
 on:
   schedule:
-    - cron: '59 * * * *' # Hourly at :59 UTC; local-time gate starts at 8:59 PM Eastern and retries hourly
+    - cron: '0 * * * *' # Hourly on the hour; gate starts at 14:00 Asia/Seoul
   workflow_dispatch:
 permissions:
   contents: write
