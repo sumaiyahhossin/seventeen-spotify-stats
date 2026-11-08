@@ -223,7 +223,11 @@ function comparablePrevious(s,p,id){
  const name=normTrackName(s.names?.[id]||idName[id]);
  if(!name||name===normTrackName(id))return null;
  const matches=Object.keys(p.tracks||{}).filter(k=>historicalKind(p,k)==='track'&&normTrackName(p.names?.[k])===name);
- return matches.length===1?{id:matches[0],value:p.tracks[matches[0]]}:null;
+ if(!matches.length)return null;
+ // To treat repeated spreadsheet rows for the same recording as one baseline.
+ const values=[...new Set(matches.map(k=>p.tracks[k]))];
+ if(values.length!==1)return null;
+ return {id:matches[0],value:values[0]};
 }
 function safeGain(s,p,id){
  if(!p||!s||!s.tracks||!p.tracks||s.tracks[id]==null)return null;
