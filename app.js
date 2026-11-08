@@ -38,8 +38,8 @@ const albumTitles={
 };
 function albumDisplayName(name){
  const raw=String(name||''),n=raw.toLowerCase();
- if(n.includes('17 is right here'))return '17 IS RIGHT HERE — '+(n.includes('new tracks')?'New Tracks':n.includes('original tracks')?'Original Tracks':'All Tracks');
- if(n.includes('always yours'))return 'ALWAYS YOURS — '+(n.includes('new tracks')?'New Tracks':'All Tracks');
+ if(n.includes('17 is right here'))return '17 IS RIGHT HERE — '+(n.includes('new tracks')?'New Tracks':n.includes('original tracks')?'Original Tracks':n.includes('best album')?'All Tracks':'All Tracks');
+ if(n.includes('always yours'))return 'ALWAYS YOURS — '+(n.includes('new tracks')?'New Tracks':n.includes('original tracks')?'Original Tracks':'All Tracks');
  return albumTitles[n]||raw.replace(/\b(?:album|new tracks)\b/gi,'').replace(/\s+/g,' ').trim();
 }
 function unresolvedName(id){const n=idName[id];return !n||n===id||/^[A-Za-z0-9]{22}$/.test(n)}
@@ -153,15 +153,16 @@ function sheetRows(s,p,pp){
   if(kind==='grand'||kind==='audience')continue;
   let name=s.names?.[id]||id;
   if(name==='247.0')name='247';
-  if(/love\s*&\s*letter\s*repackage\s*new\s*tracks\s*total/i.test(name))name='Love & Letter Repackage Original Tracks Total:';
-  if(/sector\s*17\s*new\s*tracks\s*total/i.test(name))name=name.replace(/New Tracks/i,'Original Tracks');
+  if(/love\s*&\s*letter\s*repackage\s*new\s*tracks\s*total/i.test(name))name='Love & Letter Repackage New Tracks Total:';
+  // Keep the source sheet's New Tracks/Original Tracks distinction intact.
   rows.push({id,name:displayTrackName(name),streams:value,gain:safeGain(s,p,id),change:dailyChange(s,p,pp,id),kind});
  }
  return rows;
 }
 function isAlbumTitle(name){
  const n=String(name||'').toLowerCase();
- return /\balbum\b|\brepackage\b|\bmini\b|\bep\b|\bheng\b|\bsemicolon\b|\bserenade\b/.test(n)&&!/\b(remix|ost|digital single|single)\b/.test(n);
+ if(/remix|ost|digital single|\bsingle\b/.test(n))return false;
+ return /always yours|17 is right here|sector 17|love & letter repackage|director.s cut|\balbum\b|\brepackage\b|\bmini\b|\bep\b|\bheng\b|\bsemicolon\b|\bserenade\b/.test(n);
 }
 function uniqueRows(rows){
  const seen=new Set();
@@ -208,12 +209,13 @@ function discographyRows(s,p,pp,baseline){
   const streams=ids.every(id=>s.tracks?.[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
   const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
   const previousGain=sumDaily(p,pp,ids);
-  rows.push({name:albumDisplayName(item.title),streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&previousGain!=null?gain-previousGain:null,kind:'album',releaseOrder:rows.length});
+  const albumTotalRow={name:albumDisplayName(item.title),streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&previousGain!=null?gain-previousGain:null,kind:'album',releaseOrder:rows.length};
   for(const id of ids){
    if(s.tracks?.[id]==null)continue;
    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
    rows.push({id,name:displayTrackName(s.names?.[id]||idName[id]||id),streams:s.tracks[id],gain:g,change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),kind:'track',releaseOrder:rows.length});
   }
+  rows.push(albumTotalRow);
  }
  return rows;
 }
