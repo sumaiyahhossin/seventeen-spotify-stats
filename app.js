@@ -93,6 +93,13 @@ function albumDisplayName(name){
 }
 function properReleaseName(item){
  const title=String(item.title||'').toLowerCase();
+ const namedSoloReleases={
+  'jun_g10':'9','bss_g2':'SECOND WIND','bss_g4':'TELEPARTY',
+  'jxw_g1':'THIS MAN','hxw_g1':'BEAM','cxm_g1':'HYPE VIBES',
+  'dxs_g1':'Serenade','v8':'V8','picheolin_g3':'吉BOARD (Gilboard)',
+  'gilboard':'吉BOARD (Gilboard)','the8_g12':'V8','vernon_g9':'V8'
+ };
+ if(namedSoloReleases[item.key])return namedSoloReleases[item.key];
  if(title==='q&a single')return 'Q&A';
  if(title==='chocolate single')return 'Chocolate';
  if(title==='oh my!')return 'Oh My! (Chinese Ver.)';
@@ -354,6 +361,8 @@ function discographyRows(s,p,pp,baseline){
   g37:{keys:['g36','g37'],name:'SECTOR 17 — All Tracks'}
  };
  for(const item of catalog[tab]||[]){
+  // Gilboard's duplicate catalog entries belong to Picheolin's discography.
+  if(tab==='solo'&&(item.key==='gilboard'||item.key==='sharedTracks'))continue;
   const combo=tab==='group'?combined[item.key]:null;
   const ids=[...new Set((combo?combo.keys.flatMap(k=>releasesByKey.get(k)?.tracks||[]):item.tracks)||[])];
   if(!ids.length)continue;
@@ -756,6 +765,14 @@ function artworkTrack(row){
   if(match?.title==='q&a single')return 'release:'+encodeURIComponent('Q&A');
   if(match?.title==='chocolate single')return 'release:'+encodeURIComponent('Chocolate');
  }
+ if(isAlbum&&tab==='solo'){
+  const soloRelease=(catalog.solo||[]).find(item=>item.key===row.artworkRelease)
+   ||(catalog.solo||[]).find(item=>coverKey(catalogReleaseLabel(item))===name);
+  const spotifyAlbums={v8:'5HQrHtpGthJMePFhXT3jKS',the8_g12:'5HQrHtpGthJMePFhXT3jKS',vernon_g9:'5HQrHtpGthJMePFhXT3jKS'};
+  if(soloRelease&&spotifyAlbums[soloRelease.key])return 'album:'+spotifyAlbums[soloRelease.key];
+  const first=soloRelease?.tracks?.find(validId);
+  if(first)return 'track:'+first;
+ }
  if(isAlbum){
   // Album rows must display their own release, including compilations.
   const release=releases.find(item=>coverKey(item.title)===name)
@@ -858,6 +875,7 @@ function fillArtwork(){
   let url=null;
   try{
    if(id?.startsWith('image:'))url=id.slice(6);
+   else if(id?.startsWith('album:'))url=await spotifyCover(id);
    else if(id?.startsWith('release:')){
     const title=decodeURIComponent(id.slice(8));
     if(!releaseArtCache.has(title)){
@@ -968,7 +986,7 @@ function fillArtwork(){
  const observer=new IntersectionObserver(entries=>{for(const entry of entries){if(!entry.isIntersecting)continue;observer.unobserve(entry.target);resolve(entry.target)}},{rootMargin:'240px'});
  imgs.forEach(img=>observer.observe(img));
 }
-const soloArtists=[["Jeonghan","6KDLlQYeeqUe5OQ2JrdNzF"],["Joshua","74AwWFYdjQ3ER5vHO4H7b0"],["Jun","38Gn0ZVC8TQwuaMxBK1yRV"],["Hoshi","6nWKAdMv1BDq1zHfZzkdbR"],["Wonwoo","3rHcBT06Vb1XGVUWhDALZt"],["Woozi","4TdiASPlU3QdZvGQBothcQ"],["DK","7G1kUsPtQCdolV6CPwHmh2"],["Mingyu","5gUpo0BRmo6EOTbyU3z5Ay"],["The8","4DqFd6XE3dX4LWXHJVVpLk"],["Seungkwan","0Vb2DjojEYsasFpc3aTZb6"],["Vernon","2Y34b9AOK30zXgL7cAH4NG"],["Dino","5YaeXxzvqGNBCguELlKo6G"],["BSS","1uAT5bTSp6dWbNmixIUP5t"],["JxW","7GvlsjcgBrsE578yghOq7D"],["HxW","1EReYiseDwE51FzGm7EK9n"],["CxM","7kjuLdYbtTkWBToMu2ebZN"],["DxS","4wBjmEkWhY4T22q00CiF5V"],["V8",null],["Picheolin","3V2EC4dPYLgtbi0TtrB1RA"],["Gilboard",null]];
+const soloArtists=[["Jeonghan","6KDLlQYeeqUe5OQ2JrdNzF"],["Joshua","74AwWFYdjQ3ER5vHO4H7b0"],["Jun","38Gn0ZVC8TQwuaMxBK1yRV"],["Hoshi","6nWKAdMv1BDq1zHfZzkdbR"],["Wonwoo","3rHcBT06Vb1XGVUWhDALZt"],["Woozi","4TdiASPlU3QdZvGQBothcQ"],["DK","7G1kUsPtQCdolV6CPwHmh2"],["Mingyu","5gUpo0BRmo6EOTbyU3z5Ay"],["The8","4DqFd6XE3dX4LWXHJVVpLk"],["Seungkwan","0Vb2DjojEYsasFpc3aTZb6"],["Vernon","2Y34b9AOK30zXgL7cAH4NG"],["Dino","5YaeXxzvqGNBCguELlKo6G"],["BSS","1uAT5bTSp6dWbNmixIUP5t"],["JxW","7GvlsjcgBrsE578yghOq7D"],["HxW","1EReYiseDwE51FzGm7EK9n"],["CxM","7kjuLdYbtTkWBToMu2ebZN"],["DxS","4wBjmEkWhY4T22q00CiF5V"],["V8",null],["Picheolin","3V2EC4dPYLgtbi0TtrB1RA"]];
 const artistPhotoCache=new Map();
 function renderArtistProfiles(){
  const area=$('#artistProfiles');
@@ -976,7 +994,7 @@ function renderArtistProfiles(){
  area.hidden=tab!=='solo';
  if(tab!=='solo')return;
  area.innerHTML='<div class="artist-profiles-heading">MEMBERS & UNITS <span>✦</span></div>'+(selectedSoloArtist?'<div class="artist-selection-heading"><button type="button" id="allSoloArtists">← All units & solos</button><strong>'+escapeHtml(selectedSoloArtist)+' · STREAMING STATS</strong></div>':'')+'<div class="artist-profile-grid">'+soloArtists.map(([name,id])=>{
-  const photo=id?'<img class="artist-profile-photo" data-artist-photo="'+id+'" alt="" loading="lazy">':'<span class="artist-profile-placeholder">💎</span>';
+  const photo=name==='V8'?'<img class="artist-profile-photo" data-artist-photo="v8-debut" alt="V8 debut album artwork featuring Vernon and The8" loading="lazy">':id?'<img class="artist-profile-photo" data-artist-photo="'+id+'" alt="" loading="lazy">':'<span class="artist-profile-placeholder">💎</span>';
   const label='<span class="artist-profile-name">'+escapeHtml(name)+'</span>';
   return '<button type="button" class="artist-profile'+(selectedSoloArtist===name?' selected':'')+'" data-solo-artist="'+escapeHtml(name)+'" aria-pressed="'+(selectedSoloArtist===name)+'" title="View '+escapeHtml(name)+' statistics">'+photo+label+'</button>';
  }).join('')+'</div>';
@@ -984,7 +1002,7 @@ function renderArtistProfiles(){
  area.querySelectorAll('[data-solo-artist]').forEach(button=>button.addEventListener('click',()=>{selectedSoloArtist=button.dataset.soloArtist;saveView();render()}));
  area.querySelectorAll('img[data-artist-photo]').forEach(img=>{
   const id=img.dataset.artistPhoto;
-  if(!artistPhotoCache.has(id))artistPhotoCache.set(id,fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/artist/'+id))
+  if(!artistPhotoCache.has(id))artistPhotoCache.set(id,fetch('https://open.spotify.com/oembed?url='+encodeURIComponent(id==='v8-debut'?'https://open.spotify.com/album/5HQrHtpGthJMePFhXT3jKS':'https://open.spotify.com/artist/'+id))
     .then(r=>r.ok?r.json():null).then(d=>d?.thumbnail_url||null).catch(()=>null));
   artistPhotoCache.get(id).then(url=>{if(url&&img.isConnected){img.src=url;img.classList.add('loaded')}else if(img.isConnected){img.style.display='none';img.insertAdjacentHTML('afterend','<span class="artist-profile-placeholder">💎</span>')}})
  });
