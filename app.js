@@ -360,7 +360,21 @@ function discographyRows(s,p,pp,baseline){
   g7:{keys:['g6','g7'],name:'LOVE & LETTER (Repackage) — All Tracks'},
   g37:{keys:['g36','g37'],name:'SECTOR 17 — All Tracks'}
  };
- for(const item of catalog[tab]||[]){
+ // Keep Units & Solo discography in the same member/release sequence as
+ // the latest 11/26 tab of the uploaded Unit & Solo Spotify Streams workbook.
+ // Newer catalog releases stay after their member's spreadsheet entries.
+ const soloSheetArtistOrder=['Jeonghan','Joshua','Jun','Hoshi','Wonwoo','Woozi','Dokyeom','Mingyu','The8','Seungkwan','Vernon','Dino','Bss','Jxw','Hxw','Cxm','Dxs','V8','Picheolin','JxJ'];
+ const soloSheetReleaseOverrides={
+  the8_g4:3,the8_g3:4
+ };
+ const releasesForDiscography=tab==='solo'?[...(catalog.solo||[])].sort((a,b)=>{
+  const ai=soloSheetArtistOrder.findIndex(n=>n.toLowerCase()===String(a.artist).toLowerCase());
+  const bi=soloSheetArtistOrder.findIndex(n=>n.toLowerCase()===String(b.artist).toLowerCase());
+  if(ai!==bi)return (ai<0?999:ai)-(bi<0?999:bi);
+  const order=(item)=>soloSheetReleaseOverrides[item.key]??(catalog.solo||[]).filter(x=>x.artist===item.artist).findIndex(x=>x.key===item.key)+1;
+  return order(a)-order(b);
+ }):catalog[tab]||[];
+ for(const item of releasesForDiscography){
   // Gilboard's duplicate catalog entries belong to Picheolin's discography.
   if(tab==='solo'&&(item.key==='gilboard'||item.key==='sharedTracks'))continue;
   const combo=tab==='group'?combined[item.key]:null;
