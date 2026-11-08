@@ -557,3 +557,6 @@ footer{margin-top:64px!important;padding-block:34px!important}
 #dailyPickerWrap>label{display:block;margin:0 0 2px!important;line-height:1.3}
 #dailyPickerWrap .date-navigation{margin-top:0!important;margin-bottom:10px!important;margin-block:0 10px!important}
 #dailyPickerWrap .latest-date{margin-top:0!important}
+
+/* To leave space between the stream period dropdown and the date label. */
+#dailyPickerWrap{margin-top:22px!important}
