@@ -1687,7 +1687,14 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
    const today=verifiedDailyGain!=null?verifiedDailyGain:grandGain!=null?grandGain:(hasVerifiedTotal?gains.reduce((a,b)=>a+b,0):null);
    const previousGrand=grandId&&p&&pp?safeGain(p,pp,grandId):null;
    const previousGains=p&&pp?memberIds.map(id=>safeGain(p,pp,id)):[];
-   const yesterday=previousGrand!=null?previousGrand:previousGains.length&&previousGains.every(v=>v!=null)?previousGains.reduce((a,b)=>a+b,0):null;
+   const archivedGrand=snapshot=>{
+    if(!snapshot)return null;
+    const id=Object.keys(snapshot.tracks||{}).find(id=>historicalKind(snapshot,id)==='grand');
+    return id&&Number.isFinite(snapshot.tracks[id])?snapshot.tracks[id]:null;
+   };
+   const prevTotal=archivedGrand(p),beforePrevTotal=archivedGrand(pp);
+   const historicalPreviousGain=prevTotal!=null&&beforePrevTotal!=null&&prevTotal>=beforePrevTotal?prevTotal-beforePrevTotal:null;
+   const yesterday=historicalPreviousGain!=null?historicalPreviousGain:previousGrand!=null?previousGrand:previousGains.length&&previousGains.every(v=>v!=null)?previousGains.reduce((a,b)=>a+b,0):null;
    const consecutive=s&&p&&pp&&shifted(s.date,-1)===p.date&&shifted(p.date,-1)===pp.date;
    if(today!=null&&yesterday!=null&&consecutive){
     const change=today-yesterday;
