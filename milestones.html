@@ -4,4 +4,46 @@
 <body><main><a class="back" href="./">← Back to Spotify Stats</a><div class="eyebrow">SEVENTEEN · SPOTIFY HISTORY</div><h1>Streaming Milestones ✦</h1><p>Explore 100M, 200M, 300M and higher milestones. Exact dates are shown only when two consecutive archived snapshots prove the crossing. Older milestones that predate the archive cannot be dated precisely.</p>
 <div class="controls"><label>Milestone <select id="threshold"><option value="100000000">100M</option><option value="200000000">200M</option><option value="300000000">300M</option><option value="400000000">400M</option><option value="500000000">500M</option><option value="600000000">600M</option><option value="700000000">700M</option><option value="800000000">800M</option><option value="900000000">900M</option><option value="1000000000">1B</option></select></label><label>Sort <select id="sort"><option value="fast">Fastest to reach</option><option value="slow">Slowest to reach</option><option value="earliest">Earliest milestone</option><option value="newest">Most recently reached</option><option value="name">Song A–Z</option></select></label><label>Find song <input id="search" placeholder="Search tracks"></label></div>
 <div class="summary" id="status">Loading archive…</div><div class="table"><table><thead><tr><th>SONG</th><th>REACHED</th><th>TIME FROM RELEASE</th><th>VERIFICATION</th></tr></thead><tbody id="rows"><tr><td colspan="4">Loading saved snapshots…</td></tr></tbody></table></div>
-<p class="muted">A song already over the milestone on its first archived appearance is marked “Before archive”; its crossing date and fastest/slowest ranking are unknown. Gaps between dates are never presented as exact crossing dates. Release dates come from the original-release catalog when available.</p></main><script src="milestones.js?v=5"></script></body></html>
+<p class="muted">A song already over the milestone on its first archived appearance is marked “Before archive”; its crossing date and fastest/slowest ranking are unknown. Gaps between dates are never presented as exact crossing dates. Release dates come from the original-release catalog when available.</p></main><script id="milestones-safe-fallback-v6">
+(()=>{
+ const status=document.getElementById('status'),tbody=document.getElementById('rows');
+ const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+ let tracks=[];
+ function render(){
+  // Do not overwrite the full milestone script once it has successfully rendered.
+  if(status.dataset.primaryReady==='true')return;
+  const threshold=Number(document.getElementById('threshold').value);
+  const query=document.getElementById('search').value.toLowerCase().trim();
+  const sort=document.getElementById('sort').value;
+  let filtered=tracks.filter(t=>t.value>=threshold&&t.name.toLowerCase().includes(query));
+  if(sort==='name')filtered.sort((a,b)=>a.name.localeCompare(b.name));
+  else filtered.sort((a,b)=>b.value-a.value);
+  tbody.innerHTML=filtered.length?filtered.map(t=>'<tr><td>'+esc(t.name)+'</td><td>Before archive / date unknown</td><td>Not verifiable</td><td><span class="pill">Reached · '+(t.value/1000000).toFixed(1)+'M streams</span></td></tr>').join(''):'<tr><td colspan="4">No saved tracks meet this milestone.</td></tr>';
+  status.textContent=filtered.length+' songs at '+(threshold/1000000)+'M · Latest saved snapshot · Exact milestone dates unavailable in quick view';
+ }
+ const timeout=setTimeout(()=>{
+  if(status.textContent.includes('Loading')){
+   status.textContent='Loading is taking longer than expected. Checking the latest saved snapshot…';
+  }
+ },4500);
+ fetch('data/group.json',{cache:'no-store'}).then(r=>{if(!r.ok)throw Error('HTTP '+r.status);return r.json()}).then(data=>{
+  clearTimeout(timeout);
+  const canonical=Array.isArray(data.canonical_track_ids)?new Set(data.canonical_track_ids):null;
+  tracks=Object.entries(data.tracks||{}).filter(([id,value])=>Number.isFinite(value)&&(!canonical||canonical.has(id))).map(([id,value])=>({id,value,name:data.names?.[id]||id}));
+  // The full script can later replace this quick view with dated milestones.
+  if(status.textContent.includes('Loading')||status.textContent.includes('taking longer'))render();
+ }).catch(e=>{
+  clearTimeout(timeout);
+  if(status.textContent.includes('Loading')||status.textContent.includes('taking longer')){
+   status.textContent='Unable to load the saved song snapshot. Refresh to try again.';
+   tbody.innerHTML='<tr><td colspan="4">Snapshot temporarily unavailable.</td></tr>';
+  }
+  console.error('Milestone fallback',e);
+ });
+ for(const id of ['threshold','sort','search']){
+  document.getElementById(id).addEventListener(id==='search'?'input':'change',()=>{
+   if(tracks.length&&(!tbody.textContent||tbody.textContent.includes('Loading')||status.textContent.includes('quick view')))render();
+  });
+ }
+})();
+</script><script src="milestones.js?v=6" onerror="document.getElementById('status').textContent='Milestone details unavailable; showing saved song totals when loaded.'"></script></body></html>
