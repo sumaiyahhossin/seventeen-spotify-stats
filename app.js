@@ -538,7 +538,7 @@ function cleanAlbumLabel(name){
  return n;
 }
 
-const groupOriginalReleaseDates={"g1":"2015-05-29","g2":"2015-09-10","g5":"2016-04-25","g6":"2016-07-04","g8":"2016-12-05","g9":"2017-05-22","g10":"2017-11-06","g11":"2018-02-05","g12":"2018-05-30","g13":"2018-07-16","g16":"2019-01-21","g18":"2019-05-29","g20":"2019-09-16","g22":"2020-04-01","g23":"2020-06-22","g25":"2020-09-09","g27":"2020-10-19","g28":"2021-04-21","g29":"2021-06-18","g32":"2021-10-22","g33":"2021-12-08","g35":"2022-05-27","g36":"2022-07-18","g39":"2022-11-09","g41":"2023-04-24","g43":"2023-08-23","g46":"2023-10-23","g49":"2024-04-29","g56":"2024-10-14","g58":"2024-11-27","g59":"2025-05-26"};
+const groupOriginalReleaseDates={"g7":"2016-07-04","g23":"2020-06-22","g24":"2020-09-09","g37":"2022-07-18","g44":"2023-08-23","g50":"2024-04-29","g51":"2024-04-29","g52":"2024-04-29","g1":"2015-05-29","g2":"2015-09-10","g5":"2016-04-25","g6":"2016-07-04","g8":"2016-12-05","g9":"2017-05-22","g10":"2017-11-06","g11":"2018-02-05","g12":"2018-05-30","g13":"2018-07-16","g16":"2019-01-21","g18":"2019-05-29","g20":"2019-09-16","g22":"2020-04-01","g23":"2020-06-22","g25":"2020-09-09","g27":"2020-10-19","g28":"2021-04-21","g29":"2021-06-18","g32":"2021-10-22","g33":"2021-12-08","g35":"2022-05-27","g36":"2022-07-18","g39":"2022-11-09","g41":"2023-04-24","g43":"2023-08-23","g46":"2023-10-23","g49":"2024-04-29","g56":"2024-10-14","g58":"2024-11-27","g59":"2025-05-26"};
 function originalReleaseDate(row){
  if(row.releaseDate)return row.releaseDate;
  const key=row.artworkRelease;
@@ -569,7 +569,8 @@ function trackOriginalReleaseDates(){
    item.release_date||item.releaseDate||item.first_release_date;
   if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))continue;
   const title=String(item.title||'').toLowerCase();
-  if(/best album|anthology|remix/.test(title))continue;
+  // Compilation/reissue songs retain their FIRST release date.
+  if(/best album|anthology|remix|all tracks/.test(title))continue;
   const ids=item.tracks||[];
   const description=String(item.description||'');
   const match=description.match(/\(\d+\s+tracks?\)\s*:\s*(.*)$/i);
@@ -626,8 +627,11 @@ function buildRows(s,p,pp,baseline){
  else if(sortOrder==='oldest'||sortOrder==='newest'){
   const releaseDates=trackOriginalReleaseDates();
   rows.forEach(row=>{
+   const normalized=normTrackName(row.name);
+   // Prefer a precise recording ID; title fallback only when a recording
+   // has no verified catalog ID. Do not merge alternate-language versions.
    row.releaseDate=releaseDates.byId.get(row.id)||
-    releaseDates.byName.get(normTrackName(row.name))||null;
+    releaseDates.byName.get(normalized)||null;
   });
  }
  rows.sort((a,b)=>{
