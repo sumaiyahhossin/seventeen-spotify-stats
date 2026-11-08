@@ -567,3 +567,17 @@ footer{margin-top:64px!important;padding-block:34px!important}
 
 /* Missing values are bright white, never gain/loss colors. */
 .rank-row .num.missing-value,.rank-row .change.missing-value{color:#ffffff!important}
+
+/* Global date and period controls sit above the archive summary. */
+.archive-top-controls{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;margin:24px 0 26px;padding:20px 24px;border:1px solid #ffffff2b;border-radius:20px;background:linear-gradient(115deg,#f5f0ff,#edf5ff)}
+.archive-top-controls .rank-select{flex:0 0 190px;min-width:155px}
+.archive-top-controls #dailyPickerWrap{flex:1 1 300px;width:auto;max-width:570px;margin:0!important}
+.archive-top-controls #dailyPickerWrap .date-navigation{margin-bottom:5px!important}
+.archive-top-controls #dailyPickerWrap .date-navigation input{background:#fff!important;color:#202641!important;color-scheme:light!important;border-color:#c8c9e2!important}
+.archive-top-controls #dailyPickerWrap .date-navigation input::-webkit-calendar-picker-indicator{filter:none!important}
+.archive-top-controls .date-arrow{color:#705c91;background:#fff;border-color:#d5c8e7}
+.archive-top-controls .latest-date{color:#9865a4}
+.archive-top-controls .rank-select select{background:#fff;color:#202641;border-color:#c8c9e2}
+.archive-top-controls .rank-select select option{background:#fff;color:#202641}
+.archive-top-controls .date-notice{color:#737c98}
+@media(max-width:680px){.archive-top-controls{padding:15px;gap:14px}.archive-top-controls .rank-select,.archive-top-controls #dailyPickerWrap{flex:1 1 100%;max-width:none}}
