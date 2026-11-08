@@ -205,7 +205,8 @@ function trackRows(snapshot){
   if(!Number.isFinite(value)||!name||/total\s*:?$/i.test(name)||/total streams|monthly listener|followers|\b(?:album total|original tracks|new tracks|stream change|daily streams|weekly streams|monthly streams)\b/i.test(name))continue;
   const canonicalName=name.replace(/\bGOM\b/gi,'God of Music').replace(/^maestro$/i,'MAESTRO');
   const key='name:'+norm(canonicalName); // bridge spreadsheet legacy IDs and Spotify IDs by song name
-  out.set(key,{id,name:canonicalName,value});
+  const prior=out.get(key);
+  if(!prior||value>prior.value)out.set(key,{id,name:canonicalName,value});
  }
  return out;
 }
@@ -239,6 +240,7 @@ function build(){
  }
  rows.sort((a,b)=>{
   if(sort==='name')return a.name.localeCompare(b.name);
+  if(sort==='release-newest'||sort==='release-oldest')return (a.release==null?1:0)-(b.release==null?1:0)||(a.release&&b.release?(sort==='release-newest'?b.release.localeCompare(a.release):a.release.localeCompare(b.release)):0)||a.name.localeCompare(b.name);
   if(sort==='fast'||sort==='slow')return (a.duration==null?1:0)-(b.duration==null?1:0)||(a.duration!=null&&b.duration!=null?(sort==='fast'?a.duration-b.duration:b.duration-a.duration):0)||a.name.localeCompare(b.name);
   return (a.date==null?1:0)-(b.date==null?1:0)||(a.date&&b.date?(sort==='earliest'?a.date.localeCompare(b.date):b.date.localeCompare(a.date)):0)||a.name.localeCompare(b.name);
  });
