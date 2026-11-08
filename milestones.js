@@ -249,7 +249,7 @@ function renderUpcoming(){
   if(sort==='closest')return a.remaining-b.remaining||a.name.localeCompare(b.name);
   if(sort==='soonest')return (a.estimate==null?1:0)-(b.estimate==null?1:0)||(a.estimate??0)-(b.estimate??0)||a.name.localeCompare(b.name);
   if(sort==='streams')return b.value-a.value||a.name.localeCompare(b.name);
-  if(sort==='name')return a.name.localeCompare(b.name);
+  if(sort==='name')return a.name.trim().localeCompare(b.name.trim(),'en',{numeric:true,sensitivity:'base'});
   return a.target-b.target||b.value-a.value;
  });
  $('upcomingRows').innerHTML=rows.length?rows.map((r,i)=>{
@@ -260,7 +260,7 @@ function renderUpcoming(){
   '<td data-label="DAILY GAIN">'+(r.gain==null?'—':'+'+r.gain.toLocaleString())+'</td>'+
   '<td data-label="ESTIMATED ARRIVAL"><span class="days-value">'+(r.estimate==null?'—':r.estimate.toLocaleString()+' days')+'</span>'+(r.expected?'<div class="song-release">'+format(r.expected)+'</div>':'')+'</td></tr>';
  }).join(''):'<tr><td colspan="5">No tracks waiting for this milestone.</td></tr>';
- $('upcomingStatus').textContent=rows.length+' songs · Latest snapshot: '+format(currentSnapshot.date)+(deltaDays!==1?' · Daily growth unavailable until two consecutive snapshots exist':' · Estimates use the latest one-day gain');
+ $('upcomingStatus').textContent=rows.length+' songs · Sorted by '+($('upcomingSort').selectedOptions[0]?.textContent||'Next milestone')+' · Latest snapshot: '+format(currentSnapshot.date)+(deltaDays!==1?' · Daily growth unavailable until two consecutive snapshots exist':' · Estimates use the latest one-day gain');
  loadMilestoneCovers();
 }
 function setMilestoneView(view){
