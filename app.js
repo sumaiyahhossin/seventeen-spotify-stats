@@ -160,7 +160,7 @@ function displayTrackName(name){
   '20 0':'20','247 0':'247','gom':'God of Music','golm':'God of Light Music',
   'gom inst':'God of Music (Inst.)','gom trot remix':'God of Music (Trot Remix)',
   'golm inst':'God of Light Music (Inst.)',
-  'super':'Super','hot':'HOT','thunder':'THUNDER','rock with you':'Rock with you',
+  'f ck my life':'F*ck My Life','fuck my life':'F*ck My Life','super':'Super','hot':'HOT','thunder':'THUNDER','rock with you':'Rock with you',
   'very nice':'VERY NICE','maestro':'MAESTRO',"don't wanna cry":"Don't Wanna Cry",
   'darling':'Darl+ing','darl ing':'Darl+ing','shining diamond':'Shining Diamond',
   'adore u':'Adore U','left right':'Left & Right','ready to love':'Ready to love',
