@@ -196,13 +196,20 @@ function syncPeriodPicker(){
  picker.innerHTML=available.map(k=>'<option value="'+k+'">'+label(k)+'</option>').join('');
  picker.value=selectedPeriodKey;
 }
-async function selectedSnapshot(){
+async // To use the corrected Candy total without overwriting the original collector snapshot.
+function correctedSnapshot(saved){
+ if(!saved||tab!=='group'||saved.date!=='2026-11-06')return saved;
+ const id='1DQGGkXu9SIwWiK5uuBvcO';
+ if(saved.tracks?.[id]!==33303109)return saved;
+ return {...saved,tracks:{...saved.tracks,[id]:23603432}};
+}
+function selectedSnapshot(){
  if(['weekly','monthly','yearly'].some(p=>rank.endsWith(p))&&selectedPeriodKey){
   const matching=[...new Set([...dates,...(current[tab]?.date?[current[tab].date]:[])])].filter(d=>periodKey(d)===selectedPeriodKey).sort().reverse();
-  for(const d of matching){const saved=await getDate(tab,d);if(saved)return saved}
+  for(const d of matching){const saved=await getDate(tab,d);if(saved)return correctedSnapshot(saved)}
   return null;
  }
- if(selection==='latest')return latest(tab);const exact=await getDate(tab,selection);if(exact||tab!=='solo')return exact;for(const d of dates.filter(d=>d<=selection).slice(0,14)){const saved=await getDate(tab,d);if(saved)return saved}return null}
+ if(selection==='latest')return correctedSnapshot(await latest(tab));const exact=await getDate(tab,selection);if(exact||tab!=='solo')return correctedSnapshot(exact);for(const d of dates.filter(d=>d<=selection).slice(0,14)){const saved=await getDate(tab,d);if(saved)return saved}return null}
 async function prior(s){if(!s)return null;const yesterday=shifted(s.date,-1);return getDate(tab,yesterday)}
 function normTrackName(name){return String(name||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
 function comparablePrevious(s,p,id){
