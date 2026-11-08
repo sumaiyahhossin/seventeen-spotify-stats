@@ -15,7 +15,7 @@ const externalEvidence={
  'name:'+norm('To you'):{100000000:{date:'2025-11-22',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
  'name:'+norm('THUNDER'):{100000000:{date:'2026-04-18',source:'Pledis confirmation reported Apr 20 (Saturday crossing)',url:'https://www.koreaherald.com/article/10720987'}}
 };
-let records=[], releases=new Map(), first=new Map(), latestValues=new Map(), observations=new Map(), ready=false;
+let records=[], releases=new Map(), trackNames=new Map(), first=new Map(), latestValues=new Map(), observations=new Map(), ready=false;
 const milestones=[100000000,200000000,300000000,400000000,500000000,600000000,700000000,800000000,900000000,1000000000];
 function buildReleases(catalog){
  for(const item of catalog.group||[]){
@@ -30,6 +30,7 @@ function buildReleases(catalog){
    for(const ch of match[1]){if(ch==='(')depth++;else if(ch===')')depth--;if(ch===','&&depth===0){titles.push(part.trim());part=''}else part+=ch}
    if(part.trim())titles.push(part.trim());
    if(titles.length===ids.length)titles.forEach((title,i)=>{
+    if(!trackNames.has(ids[i]))trackNames.set(ids[i],title);
     const key='name:'+norm(title);
     if(!releases.has(key)||date<releases.get(key))releases.set(key,date);
    });
@@ -39,7 +40,7 @@ function buildReleases(catalog){
 function trackRows(snapshot){
  const out=new Map();
  for(const [id,value] of Object.entries(snapshot.tracks||{})){
-  const name=snapshot.names?.[id]||'';
+  const name=snapshot.names?.[id]||trackNames.get(id)||'';
   if(!Number.isFinite(value)||!name||/total\s*:?$/i.test(name)||/total streams|monthly listener|followers|\b(?:album total|original tracks|new tracks|stream change|daily streams|weekly streams|monthly streams)\b/i.test(name))continue;
   const canonicalName=name.replace(/\bGOM\b/gi,'God of Music');
   const key='name:'+norm(canonicalName); // bridge spreadsheet legacy IDs and Spotify IDs by song name
