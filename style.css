@@ -1418,7 +1418,7 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  -webkit-text-fill-color:transparent!important;
  font-size:clamp(10px,.95vw,13px)!important;font-weight:600!important;
  line-height:1.4!important;letter-spacing:.04em!important;white-space:nowrap!important;
- opacity:0!important;text-shadow:none!important;
+ opacity:0;text-shadow:none!important;
  animation:svt-name-rain var(--nt) linear var(--nd) infinite!important;
 }
 @keyframes svt-name-rain{
