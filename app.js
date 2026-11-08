@@ -883,6 +883,52 @@ function spotifyCover(id){
  if(!coverCache.has('fallback:'+id))coverCache.set('fallback:'+id,persistentCovers['fallback:'+id]?Promise.resolve(persistentCovers['fallback:'+id]):fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/'+kind+'/'+value)).then(r=>r.ok?r.json():null).then(d=>{const url=d?.thumbnail_url||null;rememberCover('fallback:'+id,url);return url}).catch(()=>null));
  return coverCache.get('fallback:'+id);
 }
+
+// Last-resort artwork lookup for specifically missing solo and collaboration covers.
+// Match the exact recording/version; never substitute a similarly named release.
+const missingSoloArtwork=[
+ [/^earth$/i,'THE8','Earth'],
+ [/^limbo\s*\(korean\s*(?:version|ver\.)\)$/i,'JUN','LIMBO Korean Version'],
+ [/^limbo\s*\(chinese\s*(?:version|ver\.)\)$/i,'JUN','LIMBO Chinese Version'],
+ [/^spring,?\s*summer,?\s*fall,?\s*winter\s*\(japanese\s*(?:version|ver\.)\)$/i,'SEVENTEEN','Spring Summer Fall Winter Japanese Version'],
+ [/^5,?4,?3\s*\(pretty woman\).*flo milli/i,'LAY BANKZ','5,4,3 Pretty Woman Flo Milli'],
+ [/^5,?4,?3\s*\(pretty woman\).*lay bankz/i,'LAY BANKZ','5,4,3 Pretty Woman Lay Bankz']
+];
+const missingSoloArtCache=new Map();
+function missingSoloCover(row){
+ if(tab!=='solo')return Promise.resolve(null);
+ const spec=missingSoloArtwork.find(([pattern])=>pattern.test(String(row.name||'')));
+ if(!spec)return Promise.resolve(null);
+ const key=spec[1]+'|'+spec[2];
+ if(missingSoloArtCache.has(key))return missingSoloArtCache.get(key);
+ const p=(async()=>{
+  const simplify=x=>String(x||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
+  const version=x=>/japanese/i.test(x)?'japanese':/chinese/i.test(x)?'chinese':/korean/i.test(x)?'korean':'';
+  const wantedVersion=version(row.name);
+  for(const country of ['US','JP']){
+   try{
+    const params=new URLSearchParams({term:spec[1]+' '+spec[2],entity:'song',limit:'200',country});
+    const response=await fetch('https://itunes.apple.com/search?'+params);
+    if(!response.ok)continue;
+    const data=await response.json();
+    const found=(data.results||[]).find(x=>{
+     const title=simplify(x.trackName),original=simplify(row.name);
+     const base=original.replace(/\b(?:korean|chinese|japanese)\s*(?:version|ver)\b/g,'').trim();
+     if(!title.includes(base)||!x.artworkUrl100)return false;
+     if(wantedVersion&&version(x.trackName+' '+x.collectionName)!==wantedVersion)return false;
+     if(/flo milli/i.test(row.name)&&!/flo milli/i.test(x.trackName+' '+x.artistName))return false;
+     if(/lay bankz/i.test(row.name)&&!/lay bankz/i.test(x.trackName+' '+x.artistName))return false;
+     return true;
+    });
+    if(found)return found.artworkUrl100.replace(/\d+x\d+bb/,'600x600bb');
+   }catch(e){console.warn('Solo artwork lookup failed',key,e)}
+  }
+  return null;
+ })();
+ missingSoloArtCache.set(key,p);
+ return p;
+}
+
 function fillArtwork(){
  const imgs=document.querySelectorAll('img[data-cover-track]');
  const setImage=(img,url)=>{if(!img.isConnected)return;if(!url){img.style.display='none';const placeholder=img.parentElement?.querySelector('.cover-placeholder');if(placeholder)placeholder.hidden=false;return}img.onload=()=>img.classList.add('loaded');img.onerror=()=>{img.style.display='none';const placeholder=img.parentElement?.querySelector('.cover-placeholder');if(placeholder)placeholder.hidden=false};img.src=url};
@@ -994,6 +1040,7 @@ function fillArtwork(){
     url=await releaseArtCache.get(title);
    }else url=await spotifyCover(id);
    if(!url&&fallback)url=await spotifyCover(fallback);
+   if(!url)url=await missingSoloCover({name:img.dataset.coverName||''});
    
    setImage(img,url);
   }catch(e){console.warn('Artwork unavailable',id,e);if(fallback){try{setImage(img,await spotifyCover(fallback))}catch{setImage(img,null)}}else setImage(img,null)}
@@ -1197,7 +1244,7 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
   $('#gain').textContent=memberIds.length&&memberGains.length===memberIds.length?'+'+fmt(memberGains.reduce((sum,v)=>sum+v,0)):'—';
   if(gainNote)gainNote.textContent=memberIds.length&&memberGains.length===memberIds.length?'Verified artist-specific daily gain':'Artist-specific daily gain unavailable until comparable snapshots exist';
  }
- $('#order').hidden=rank.startsWith('discography');const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),discography=rank.startsWith('discography'),periodLabel=rank.endsWith('weekly')?'WEEKLY':rank.endsWith('monthly')?'MONTHLY':'YEARLY';const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS ADDED':periodic?periodLabel+' STREAMS ADDED':'TOTAL STREAMS';headers[2].textContent=daily?'GAIN VS DAY BEFORE':periodic?rank.endsWith('weekly')?'GAIN VS LAST WEEK':rank.endsWith('monthly')?'GAIN VS LAST MONTH':'GAIN VS LAST YEAR':'GAIN VS YESTERDAY';document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=soloArtistRows(buildRows(s,p,pp,baseline),s,p,baseline).filter(x=>discography||x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${`<span class="cover-slot">${artworkTrack(r)?`<img class="cover" data-cover-track="${artworkTrack(r)}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden>💎</span>`:`<span class="cover-placeholder">💎</span>`}</span>`}${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}</div><div class="num">${periodic&&r.gain!=null?"+":""}${fmt(daily||periodic?r.gain:r.streams)}</div><div class="num change ${(daily||periodic?r.change:r.gain)<0?'negative':''}">${(daily||periodic?r.change:r.gain)==null?'—':((daily||periodic?r.change:r.gain)>=0?'+':'−')+fmt(Math.abs(daily||periodic?r.change:r.gain))}</div></div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
+ $('#order').hidden=rank.startsWith('discography');const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),discography=rank.startsWith('discography'),periodLabel=rank.endsWith('weekly')?'WEEKLY':rank.endsWith('monthly')?'MONTHLY':'YEARLY';const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS ADDED':periodic?periodLabel+' STREAMS ADDED':'TOTAL STREAMS';headers[2].textContent=daily?'GAIN VS DAY BEFORE':periodic?rank.endsWith('weekly')?'GAIN VS LAST WEEK':rank.endsWith('monthly')?'GAIN VS LAST MONTH':'GAIN VS LAST YEAR':'GAIN VS YESTERDAY';document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=soloArtistRows(buildRows(s,p,pp,baseline),s,p,baseline).filter(x=>discography||x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${`<span class="cover-slot">${artworkTrack(r)?`<img class="cover" data-cover-track="${artworkTrack(r)}" data-cover-name="${escapeHtml(r.name)}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden>💎</span>`:`<span class="cover-placeholder">💎</span>`}</span>`}${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}</div><div class="num">${periodic&&r.gain!=null?"+":""}${fmt(daily||periodic?r.gain:r.streams)}</div><div class="num change ${(daily||periodic?r.change:r.gain)<0?'negative':''}">${(daily||periodic?r.change:r.gain)==null?'—':((daily||periodic?r.change:r.gain)>=0?'+':'−')+fmt(Math.abs(daily||periodic?r.change:r.gain))}</div></div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 function syncRank(){rank=rankType+'-'+$('#rankPeriod').value;render()}
 $('#rankCategory').addEventListener('click',e=>{const button=e.target.closest('button[data-type]');if(!button)return;rankType=button.dataset.type;$('#rankCategory').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));syncRank()});
