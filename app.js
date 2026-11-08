@@ -3,7 +3,7 @@ let artworkMap={tracks:{},albums:{}};let sortOrder='most';let tab='group',rank='
 // Keep the visitor's exact view when the dashboard refreshes.
 const viewStateKey='svt-dashboard-view-v2';
 const savedArchiveKey='svt-selected-archive-date-v1';
-try{const remembered=localStorage.getItem(savedArchiveKey);if(remembered&&/^\\d{4}-\\d{2}-\\d{2}$/.test(remembered))selection=remembered}catch{}
+try{const remembered=localStorage.getItem(savedArchiveKey);if(remembered&&/^\d{4}-\d{2}-\d{2}$/.test(remembered))selection=remembered}catch{}
 try{
  const saved=JSON.parse(sessionStorage.getItem(viewStateKey)||'null');
  if(saved){
@@ -11,8 +11,8 @@ try{
   if(['tracks','albums','discography'].includes(saved.rankType))rankType=saved.rankType;
   if(['daily','weekly','monthly','yearly','overall'].includes(saved.period))rank=rankType+'-'+saved.period;
   if(['most','least'].includes(saved.sortOrder))sortOrder=saved.sortOrder;
-  if(saved.selection==='latest'||/^\\d{4}-\\d{2}-\\d{2}$/.test(saved.selection||''))selection=saved.selection;
-  try{const remembered=localStorage.getItem(savedArchiveKey);if(remembered&&/^\\d{4}-\\d{2}-\\d{2}$/.test(remembered))selection=remembered}catch{}
+  if(saved.selection==='latest'||/^\d{4}-\d{2}-\d{2}$/.test(saved.selection||''))selection=saved.selection;
+  try{const remembered=localStorage.getItem(savedArchiveKey);if(remembered&&/^\d{4}-\d{2}-\d{2}$/.test(remembered))selection=remembered}catch{}
  }
  if('scrollRestoration' in window.history)window.history.scrollRestoration='manual';
 }catch(e){console.warn('Could not restore saved view',e)}
@@ -610,7 +610,7 @@ function historicalArtworkId(row){
   if(releaseAliases[key])return {release:releaseAliases[key]};
   // Historical album labels include ordinal/type prefixes and "Total" suffixes.
   // Normalize them to the same release keys used for current-date artwork.
-  const strip=n=>coverKey(n).replace(/\\b(?:1st|2nd|3rd|4th|full|mini|special|japanese|korean|best|repackage|album|ep|single|digital|original|new|all|tracks|track|total|ost)\\b/g,' ').replace(/\\s+/g,' ').trim();
+  const strip=n=>coverKey(n).replace(/\b(?:1st|2nd|3rd|4th|full|mini|special|japanese|korean|best|repackage|album|ep|single|digital|original|new|all|tracks|track|total|ost)\b/g,' ').replace(/\s+/g,' ').trim();
   const normalized=strip(row.name);
   const candidates=items.filter(item=>{
    const names=[item.title,catalogReleaseLabel(item)];
