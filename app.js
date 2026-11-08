@@ -313,7 +313,7 @@ function buildRows(s,p,pp,baseline){
 const coverCache=new Map(),coverLookup=new Map(),releaseCoverLookup=new Map();
 const releaseArtNames={'fml album':'FML','al1 album':'Al1','you make my day album':'YOU MAKE MY DAY',';[semicolon] album':'Semicolon','we make you album':'WE MAKE YOU','24h single':'24H','24h mini album':'24H','fallin\' flower single':'Fallin\' Flower','hitorijanai single':'Not Alone','an ode new tracks album':'An Ode'};
 const releaseArtCache=new Map();
-const persistentCoverKey='svt-artwork-cache-v1';
+const persistentCoverKey='svt-artwork-cache-v2-original-releases';
 let persistentCovers={};
 try{persistentCovers=JSON.parse(localStorage.getItem(persistentCoverKey)||'{}')||{}}catch{}
 function rememberCover(key,url){
@@ -442,6 +442,12 @@ function artworkTrack(row){
  // the recording originally appeared years earlier.
  const isAlbumRow=row.kind==='album'||rank.startsWith('albums');
  const isAlternate=/\b(remix|instrumental|inst|sped up|slowed|workout|orchestra|feat|with|holiday|korean ver|chinese ver|japanese ver)\b/.test(originalCoverKey);
+ // Explicitly verified: all six FML songs debuted on April 24, 2023.
+ // The anthology Spotify IDs must never determine their artwork.
+ if(!isAlbumRow&&tab==='group'&&[
+  'f ck my life','super','fire','i don t understand but i luv u',
+  'dust','april shower'
+ ].includes(originalCoverKey))return 'album:1JBzeeCJ3axQMVkqWbKh0I';
  if(!isAlbumRow&&tab==='group'){
   if(japaneseOriginalArtwork[originalCoverKey])return 'release:'+encodeURIComponent(japaneseOriginalArtwork[originalCoverKey]);
   const original=originalReleaseLookup.get(originalCoverKey);
