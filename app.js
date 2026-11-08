@@ -193,12 +193,7 @@ function syncPeriodPicker(){
  picker.value=selectedPeriodKey;
 }
 // To use the corrected Candy total without overwriting the original collector snapshot.
-function correctedSnapshot(saved){
- if(!saved||tab!=='group'||saved.date!=='2026-11-06')return saved;
- const id='1DQGGkXu9SIwWiK5uuBvcO';
- if(saved.tracks?.[id]!==33303109)return saved;
- return {...saved,tracks:{...saved.tracks,[id]:23603432}};
-}
+function correctedSnapshot(saved){return saved;}
 async function selectedSnapshot(){
  if(['weekly','monthly','yearly'].some(p=>rank.endsWith(p))&&selectedPeriodKey){
   const matching=[...new Set([...dates,...(current[tab]?.date?[current[tab].date]:[])])].filter(d=>periodKey(d)===selectedPeriodKey).sort().reverse();
@@ -209,7 +204,7 @@ async function selectedSnapshot(){
 async function prior(s){if(!s)return null;const yesterday=shifted(s.date,-1);return getDate(tab,yesterday)}
 function normTrackName(name){
  return String(name||'').toLowerCase().normalize('NFKC')
-  .replace(/\\b(\\d+)\\.0\\b/g,'$1')
+  .replace(/\b(\d+)\.0\b/g,'$1')
   .replace(/[^a-z0-9]/g,'');
 }
 function comparablePrevious(s,p,id){
