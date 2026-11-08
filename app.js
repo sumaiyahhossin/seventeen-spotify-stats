@@ -436,7 +436,7 @@ function artworkTrack(row){
  // Use exact Spotify track identity for normal songs and their versions.
  // Never infer a cover from a similarly named song or another member.
  if(row.kind!=='album'&&!rank.startsWith('albums')&&row.id&&/^[A-Za-z0-9]{22}$/.test(row.id)){
-  const original=originalReleaseLookup.get(originalCoverKey);
+  const original=tab==='group'?originalReleaseLookup.get(originalCoverKey):null;
   const isVersion=/\b(remix|instrumental|inst|sped up|slowed|workout|orchestra|feat|with|holiday|korean ver|chinese ver|japanese ver)\b/.test(originalCoverKey);
   return !isVersion&&original?'track:'+original:'track:'+row.id;
  }
