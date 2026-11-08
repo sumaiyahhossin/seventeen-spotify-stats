@@ -84,8 +84,8 @@ function properReleaseName(item){
 function catalogReleaseLabel(item){
  const proper=properReleaseName(item);if(proper)return proper;
  const name=String(item.title||'').toLowerCase(),count=(item.tracks||[]).length;
- if(name.includes('love & letter repackage'))return 'LOVE & LETTER (Repackage) — '+(count===5?'New Tracks':count===10?'All Catalogued Tracks':'Partial Track List');
- if(name.includes('sector 17 repackage'))return 'SECTOR 17 — '+(count===4?'New Tracks':count===9?'All Catalogued Tracks':'Partial Track List');
+ if(name.includes('love & letter repackage'))return 'LOVE & LETTER (Repackage) — '+(count===5?'New Tracks':'All Tracks');
+ if(name.includes('sector 17 repackage'))return 'SECTOR 17 — '+(count===4?'New Tracks':'All Tracks');
  if(name.includes('17 is right here'))return '17 IS RIGHT HERE — '+(count===4?'New Tracks (4)':count===1?'Additional Track (1)':count===2?'Additional Tracks (2)':'Additional Tracks ('+count+')')+' · Partial Collection';
  return albumDisplayName(item.title);
 }
@@ -279,36 +279,49 @@ function sumDaily(s,p,ids){
  const gains=ids.map(id=>safeGain(s,p,id));
  return gains.every(n=>n!=null)?gains.reduce((a,b)=>a+b,0):null;
 }
+function formatDiscographyAlbumName(name){
+ const raw=String(name||'').replace(/\s*Total\s*:?$/i,'').trim();
+ if(/love\s*&\s*letter.*repackage/i.test(raw))return 'LOVE & LETTER (Repackage) — '+(/new tracks/i.test(raw)?'New Tracks':'All Tracks');
+ if(/sector\s*17.*repackage/i.test(raw))return 'SECTOR 17 — '+(/new tracks/i.test(raw)?'New Tracks':'All Tracks');
+ if(/\bost\b/i.test(raw))return raw.replace(/\bost\b/gi,'OST').replace(/\btotal\b/gi,'Total').replace(/\ba-teen\b/gi,'A-TEEN').replace(/\b9-teen\b/gi,'9-TEEN');
+ return albumDisplayName(raw).replace(/\bost\b/gi,'OST').replace(/\bep\b/gi,'EP');
+}
 function discographyRows(s,p,pp,baseline){
  if(!s)return [];
  if(isHistorical(s)){
   // Imported spreadsheet rows already contain full-album and split totals.
   // Preserve every original/new/full row in Discography.
   return Object.entries(s.tracks||{}).filter(([id])=>['album','track'].includes(historicalKind(s,id)))
-   .map(([id,streams],i)=>({id,name:albumDisplayName((s.names?.[id]||id).replace(/\s*Total\s*:?$/i,'').trim()),streams,
+   .map(([id,streams],i)=>({id,name:historicalKind(s,id)==='album'?formatDiscographyAlbumName(s.names?.[id]||id):displayTrackName(s.names?.[id]||id),streams,
     gain:periodGain(s,baseline,id)??safeGain(s,p,id),
     change:dailyChange(s,p,pp,id),kind:historicalKind(s,id),releaseOrder:i}));
  }
 
  const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly');
  const rows=[];
+ const releasesByKey=new Map((catalog[tab]||[]).map(item=>[item.key,item]));
+ const combined={
+  g7:{keys:['g5','g7'],name:'LOVE & LETTER (Repackage) — All Tracks'},
+  g36:{keys:['g35','g36'],name:'SECTOR 17 — All Tracks'}
+ };
  for(const item of catalog[tab]||[]){
-  const ids=[...new Set(item.tracks||[])];
+  const combo=tab==='group'?combined[item.key]:null;
+  const ids=[...new Set((combo?combo.keys.flatMap(k=>releasesByKey.get(k)?.tracks||[]):item.tracks)||[])];
   if(!ids.length)continue;
   const streams=ids.every(id=>s.tracks?.[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
   const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
   const previousGain=sumDaily(p,pp,ids);
-  const albumTotalRow={name:catalogReleaseLabel(item),artworkRelease:item.key,streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&previousGain!=null?gain-previousGain:null,kind:'album',releaseOrder:rows.length};
-  for(const id of ids){
+  const albumTotalRow={name:combo?.name||catalogReleaseLabel(item),artworkRelease:item.key,streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&previousGain!=null?gain-previousGain:null,kind:'album',releaseOrder:rows.length};
+  for(const id of [...new Set(item.tracks||[])]){
    if(s.tracks?.[id]==null)continue;
    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
    rows.push({id,name:displayTrackName(s.names?.[id]||idName[id]||id),streams:s.tracks[id],gain:g,change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),kind:'track',releaseOrder:rows.length});
   }
-  rows.push(albumTotalRow);
+  if(!['g6','g37'].includes(item.key))rows.push(albumTotalRow);
  }
  return rows;
 }
-const requestedGroupAlbums=[{"name":"1st Best Album - 17 IS RIGHT HERE","keys":["g49","g50","g51","g52","g53","g54"]},{"name":"Repackage Album - SECTOR 17","keys":["g36","g37"]},{"name":"4th Full Album - Face the Sun","keys":["g35"]},{"name":"1st Full Repackage Album - LOVE & LETTER","keys":["g7"]},{"name":"10th Mini Album - FML","keys":["g41"]},{"name":"9th Mini Album - Attacca","keys":["g32"]},{"name":"2nd Full Album - TEEN, AGE","keys":["g10"]},{"name":"3rd Full Album - An Ode","keys":["g20"]},{"name":"7th Mini Album - Heng:garæ","keys":["g23"]},{"name":"1st Japanese Best Album - ALWAYS YOURS","keys":["g43","g44"]},{"name":"4th Mini Album - Al1","keys":["g9"]},{"name":"6th Mini Album - YOU MADE MY DAWN","keys":["g16"]},{"name":"8th Mini Album - Your Choice","keys":["g29"]},{"name":"5th Full Album - HAPPY BURSTDAY","keys":["g59"]},{"name":"1st Full Album - LOVE & LETTER","keys":["g5"]},{"name":"3rd Mini Album - Going Seventeen","keys":["g8"]},{"name":"11th Mini Album - SEVENTEENTH HEAVEN","keys":["g46"]},{"name":"2nd Special Album - ; [Semicolon]","keys":["g27"]},{"name":"5th Mini Album - YOU MAKE MY DAY","keys":["g13"]},{"name":"12th Mini Album - SPILL THE FEELS","keys":["g56"]},{"name":"1st Special Album - DIRECTOR'S CUT","keys":["g11"]},{"name":"1st Mini Album - 17 CARAT","keys":["g1"]},{"name":"2nd Mini Album - BOYS BE","keys":["g2"]},{"name":"2nd Japanese Single Album - Fallin' Flower","keys":["g22"]},{"name":"1st Japanese Mini Album - WE MAKE YOU","keys":["g12"]},{"name":"2nd Japanese Mini Album - 24H","keys":["g25"]},{"name":"3rd Japanese Single Album - Hitorijanai","keys":["g28"]},{"name":"1st Japanese Single Album - Happy Ending","keys":["g18"]},{"name":"1st Japanese EP Album - DREAM","keys":["g39"]},{"name":"4th Japanese Single Album - Power of Love","keys":["g33"]},{"name":"5th Japanese Single Album - Shohikigen","keys":["g58"]}];
+const requestedGroupAlbums=[{"name":"1st Best Album - 17 IS RIGHT HERE","keys":["g49","g50","g51","g52","g53","g54"]},{"name":"Repackage Album - SECTOR 17","keys":["g35","g36"]},{"name":"4th Full Album - Face the Sun","keys":["g35"]},{"name":"1st Full Repackage Album - LOVE & LETTER","keys":["g5","g7"]},{"name":"10th Mini Album - FML","keys":["g41"]},{"name":"9th Mini Album - Attacca","keys":["g32"]},{"name":"2nd Full Album - TEEN, AGE","keys":["g10"]},{"name":"3rd Full Album - An Ode","keys":["g20"]},{"name":"7th Mini Album - Heng:garæ","keys":["g23"]},{"name":"1st Japanese Best Album - ALWAYS YOURS","keys":["g43","g44"]},{"name":"4th Mini Album - Al1","keys":["g9"]},{"name":"6th Mini Album - YOU MADE MY DAWN","keys":["g16"]},{"name":"8th Mini Album - Your Choice","keys":["g29"]},{"name":"5th Full Album - HAPPY BURSTDAY","keys":["g59"]},{"name":"1st Full Album - LOVE & LETTER","keys":["g5"]},{"name":"3rd Mini Album - Going Seventeen","keys":["g8"]},{"name":"11th Mini Album - SEVENTEENTH HEAVEN","keys":["g46"]},{"name":"2nd Special Album - ; [Semicolon]","keys":["g27"]},{"name":"5th Mini Album - YOU MAKE MY DAY","keys":["g13"]},{"name":"12th Mini Album - SPILL THE FEELS","keys":["g56"]},{"name":"1st Special Album - DIRECTOR'S CUT","keys":["g11"]},{"name":"1st Mini Album - 17 CARAT","keys":["g1"]},{"name":"2nd Mini Album - BOYS BE","keys":["g2"]},{"name":"2nd Japanese Single Album - Fallin' Flower","keys":["g22"]},{"name":"1st Japanese Mini Album - WE MAKE YOU","keys":["g12"]},{"name":"2nd Japanese Mini Album - 24H","keys":["g25"]},{"name":"3rd Japanese Single Album - Hitorijanai","keys":["g28"]},{"name":"1st Japanese Single Album - Happy Ending","keys":["g18"]},{"name":"1st Japanese EP Album - DREAM","keys":["g39"]},{"name":"4th Japanese Single Album - Power of Love","keys":["g33"]},{"name":"5th Japanese Single Album - Shohikigen","keys":["g58"]}];
 function cleanAlbumLabel(name){
  let n=String(name||'').replace(/\s*Total\s*:?$/i,'').trim();
  if(/17 is right here/i.test(n))return '1st Best Album - 17 IS RIGHT HERE';
@@ -341,11 +354,11 @@ function buildRows(s,p,pp,baseline){
    // In particular, repackage totals combine their base and added arrays.
    const releasesByKey=new Map((catalog.group||[]).map(item=>[item.key,item]));
    for(const spec of requestedGroupAlbums){
-     const ids=spec.keys.flatMap(key=>releasesByKey.get(key)?.tracks||[]);
+     const ids=[...new Set(spec.keys.flatMap(key=>releasesByKey.get(key)?.tracks||[]))];
      const streams=ids.length&&ids.every(id=>s.tracks[id]!=null)?ids.reduce((sum,id)=>sum+s.tracks[id],0):null;
      const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
      const yesterday=sumDaily(p,pp,ids);
-     rows.push({name:spec.name,artworkRelease:spec.keys[0],streams,gain,
+     rows.push({name:spec.name,artworkRelease:spec.name.includes('Repackage')?(spec.name.includes('SECTOR 17')?'g36':'g7'):spec.keys[0],streams,gain,
        change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&yesterday!=null?gain-yesterday:null});
    }
  }else if(albums){
