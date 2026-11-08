@@ -1486,18 +1486,27 @@ async function periodBaseline(s){
   return candidate?getDate(tab,candidate):null;
  };
  const [start,prevStart,prevEnd]=await Promise.all([get(range.start),get(range.prevStart),get(range.prevEnd)]);
- // November 2025 has no Nov 1–15 or Nov 27 group snapshots.
- // Sum only consecutive observed days: 17–26 and 29–30.
- // Never imply an October comparison when October data is absent.
- if(tab==='group'&&rank.endsWith('monthly')&&s.date.slice(0,7)==='2025-11'){
-  const days=['17','18','19','20','21','22','23','24','25','26','29','30'];
-  const pairs=await Promise.all(days.map(async day=>{
-   const now=await getDate('group','2025-11-'+day);
-   const previous=await getDate('group',shifted('2025-11-'+day,-1));
+ // Historical months with missing dates: count only actual consecutive daily
+ // observations. This prevents a gap from being reported as a single day's
+ // streams, and never assumes an absent spreadsheet row is zero.
+ if(tab==='group'&&rank.endsWith('monthly')&&['2025-11','2025-12'].includes(s.date.slice(0,7))){
+  const month=s.date.slice(0,7);
+  const observed=dates.filter(d=>d.startsWith(month)&&d<=s.date).sort();
+  const pairs=await Promise.all(observed.map(async day=>{
+   const previousDay=shifted(day,-1);
+   if(!dates.includes(previousDay))return null;
+   const [now,previous]=await Promise.all([getDate('group',day),getDate('group',previousDay)]);
    return now&&previous?[now,previous]:null;
   }));
-  return {start:await getDate('group','2025-11-16'),prevStart:null,prevEnd:null,range,
-   observedPairs:pairs.filter(Boolean),partialDates:'Nov 17–26 and Nov 29–30',missingDates:'Nov 1–15 and Nov 27'};
+  const missing=[];
+  const last=Number(s.date.slice(8));
+  for(let day=1;day<=last;day++){
+   const d=month+'-'+String(day).padStart(2,'0');
+   if(!dates.includes(d))missing.push(day);
+  }
+  return {start:await getDate('group',observed[0]),prevStart:null,prevEnd:null,range,
+   observedPairs:pairs.filter(Boolean),observedDays:observed.length,
+   missingDays:missing,partialMonth:month};
  }
  return {start,prevStart,prevEnd,range};
 }
@@ -1525,7 +1534,8 @@ function snapshotDelta(now,old,id){
 function periodGain(s,context,id){
  if(context?.observedPairs){
   const gains=context.observedPairs.map(([now,previous])=>snapshotDelta(now,previous,id));
-  return gains.length&&gains.every(v=>v!=null)?gains.reduce((a,b)=>a+b,0):null;
+  const valid=gains.filter(v=>v!=null);
+  return valid.length?valid.reduce((a,b)=>a+b,0):null;
  }
  return context?.start?snapshotDelta(s,context.start,id):null;
 }
@@ -1572,8 +1582,11 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
   return format(s.date);
  };
  $('#date').textContent=periodDateLabel();
- $('#dateDescription').textContent=baseline?.observedPairs
-  ?'PARTIAL NOVEMBER 2025 · Stream gains cover Nov 17–26 and Nov 29–30 only (12 observed daily intervals). Missing: Nov 1–15 and Nov 27; Nov 16 and Nov 28 are baseline-only. Previous-month comparison unavailable because October snapshots are missing.'
+ $('#dateDescription').textContent=baseline?.partialMonth
+  ?'PARTIAL '+new Date(baseline.partialMonth+'-01T12:00:00Z').toLocaleDateString('en-US',{month:'long',year:'numeric',timeZone:'UTC'}).toUpperCase()+
+   ' · '+baseline.observedDays+' saved days. Gains sum only '+baseline.observedPairs.length+
+   ' consecutive observed daily intervals. Missing entire days: '+baseline.missingDays.join(', ')+
+   '. Some songs may have fewer valid intervals; missing values are never counted as zero. Full previous-month comparison unavailable.'
   :isPeriod?'Latest available snapshot in selected '+periodName.toLowerCase()+' period.':'Spotify updates once a day.';
  $('#gainHeading').textContent=(isPeriod?periodName.toUpperCase():rank.endsWith('overall')?'TOTAL':'DAILY')+' STREAM GROWTH';
  const ids=s?trackIds(s):[];
