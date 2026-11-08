@@ -318,7 +318,7 @@ function buildRows(s,p,pp,baseline){
 const coverCache=new Map(),coverLookup=new Map(),releaseCoverLookup=new Map();
 const releaseArtNames={'fml album':'FML','al1 album':'Al1','you make my day album':'YOU MAKE MY DAY',';[semicolon] album':'Semicolon','we make you album':'WE MAKE YOU','24h single':'24H','24h mini album':'24H','fallin\' flower single':'Fallin\' Flower','hitorijanai single':'Not Alone','an ode new tracks album':'An Ode'};
 const releaseArtCache=new Map();
-const persistentCoverKey='svt-artwork-cache-v5-album-art-lookup';
+const persistentCoverKey='svt-artwork-cache-v6-discography-audit';
 let persistentCovers={};
 try{persistentCovers=JSON.parse(localStorage.getItem(persistentCoverKey)||'{}')||{}}catch{}
 function rememberCover(key,url){
@@ -574,7 +574,6 @@ function fillArtwork(){
        'LOVE & LETTER (Repackage)':['Love & Letter Repackage Album','Love & Letter'],
        'Not Alone':['ひとりじゃない','Hitorijanai','Not Alone'],
        'Fallin Flower':["Fallin' Flower",'舞い落ちる花びら',"Fallin' Flower - Single"],
-       'WE MAKE YOU':['WE MAKE YOU','We Make You - EP'],
        'God of Light Music':['God of Light Music','GOLM'],
        'DREAM':['DREAM','DREAM - EP'],
        'Happy Ending':['Happy Ending','Happy Ending - Single'],
