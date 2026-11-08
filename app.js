@@ -284,7 +284,14 @@ function formatDiscographyAlbumName(name){
  if(/love\s*&\s*letter.*repackage/i.test(raw))return 'LOVE & LETTER (Repackage) — '+(/new tracks/i.test(raw)?'New Tracks':'All Tracks');
  if(/sector\s*17.*repackage/i.test(raw))return 'SECTOR 17 — '+(/new tracks/i.test(raw)?'New Tracks':'All Tracks');
  if(/\bost\b/i.test(raw))return raw.replace(/\bost\b/gi,'OST').replace(/\btotal\b/gi,'Total').replace(/\ba-teen\b/gi,'A-TEEN').replace(/\b9-teen\b/gi,'9-TEEN');
- return albumDisplayName(raw).replace(/\bost\b/gi,'OST').replace(/\bep\b/gi,'EP');
+ const formatted=albumDisplayName(raw);
+ const titled=formatted===formatted.toLowerCase()?formatted.replace(/\b[a-z]/g,c=>c.toUpperCase()):formatted;
+ return titled.replace(/\bost\b/gi,'OST').replace(/\bep\b/gi,'EP')
+  .replace(/\b17 is right here\b/gi,'17 IS RIGHT HERE')
+  .replace(/\blove & letter\b/gi,'LOVE & LETTER')
+  .replace(/\bsector 17\b/gi,'SECTOR 17')
+  .replace(/\bteen, age\b/gi,'TEEN, AGE')
+  .replace(/\bfml\b/gi,'FML');
 }
 function discographyRows(s,p,pp,baseline){
  if(!s)return [];
