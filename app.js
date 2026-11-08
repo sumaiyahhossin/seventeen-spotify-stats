@@ -262,7 +262,7 @@ function sheetRows(s,p,pp){
 function isAlbumTitle(name){
  const n=String(name||'').toLowerCase();
  if(/remix|ost|digital single|\bsingle\b/.test(n))return false;
- return /always yours|17 is right here|sector 17|love & letter repackage|director.s cut|\balbum\b|\brepackage\b|\bmini\b|\bep\b|\bheng\b|\bsemicolon\b|\bserenade\b/.test(n);
+ return /always yours|17 is right here|sector 17|love & letter repackage|director.s cut|\balbum\b|\brepackage\b|\bmini\b|\bep\b|\bheng\b|\bsemicolon\b|\bserenade\b|\bdreamscape\b|^9$|^v8$|\bthis man\b|\bbeam\b|\bsecond wind\b|\bteleparty\b|\bhype vibes\b|\bgilboard\b/.test(n);
 }
 function uniqueRows(rows){
  const seen=new Set();
@@ -387,7 +387,7 @@ function discographyRows(s,p,pp,baseline){
   for(const id of [...new Set(item.tracks||[])]){
    if(s.tracks?.[id]==null)continue;
    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
-   rows.push({id,name:displayTrackName(s.names?.[id]||idName[id]||id),streams:s.tracks[id],gain:g,change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),kind:'track',releaseOrder:rows.length});
+   rows.push({id,name:displayTrackName(s.names?.[id]||idName[id]||id),artworkRelease:item.key,streams:s.tracks[id],gain:g,change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),kind:'track',releaseOrder:rows.length});
   }
   if(item.key==='g6'||item.key==='g36'){
    rows.push({...albumTotalRow,
@@ -461,7 +461,7 @@ function buildRows(s,p,pp,baseline){
      const ids=[...new Set(item.tracks)];
      const streams=ids.every(id=>s.tracks[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
      const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids),yesterday=sumDaily(p,pp,ids);
-     rows.push({name:catalogReleaseLabel(item),streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&yesterday!=null?gain-yesterday:null});
+     rows.push({name:catalogReleaseLabel(item),artworkRelease:item.key,kind:'album',streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&yesterday!=null?gain-yesterday:null});
    }
  }else{
    rows=trackIds(s).map(id=>({
@@ -1008,12 +1008,20 @@ function renderArtistProfiles(){
  area.hidden=tab!=='solo';
  if(tab!=='solo')return;
  area.innerHTML='<div class="artist-profiles-heading">MEMBERS & UNITS <span>✦</span></div>'+(selectedSoloArtist?'<div class="artist-selection-heading"><button type="button" id="allSoloArtists">← All units & solos</button><strong>'+escapeHtml(selectedSoloArtist)+' · STREAMING STATS</strong></div>':'')+'<div class="artist-profile-grid">'+soloArtists.map(([name,id])=>{
-  const photo=name==='V8'?'<img class="artist-profile-photo" data-artist-photo="v8-debut" alt="V8 debut album artwork featuring Vernon and The8" loading="lazy">':id?'<img class="artist-profile-photo" data-artist-photo="'+id+'" alt="" loading="lazy">':'<span class="artist-profile-placeholder">💎</span>';
+  const photo=name==='V8'||name==='JxJ'?'<img class="artist-profile-photo" data-unit-photo="'+name+'" alt="'+name+' unit concept photo" loading="lazy">':id?'<img class="artist-profile-photo" data-artist-photo="'+id+'" alt="" loading="lazy">':'<span class="artist-profile-placeholder">💎</span>';
   const label='<span class="artist-profile-name">'+escapeHtml(name)+'</span>';
   return '<button type="button" class="artist-profile'+(selectedSoloArtist===name?' selected':'')+'" data-solo-artist="'+escapeHtml(name)+'" aria-pressed="'+(selectedSoloArtist===name)+'" title="View '+escapeHtml(name)+' statistics">'+photo+label+'</button>';
  }).join('')+'</div>';
  area.querySelector('#allSoloArtists')?.addEventListener('click',()=>{selectedSoloArtist=null;saveView();render()});
  area.querySelectorAll('[data-solo-artist]').forEach(button=>button.addEventListener('click',()=>{selectedSoloArtist=button.dataset.soloArtist;saveView();render()}));
+ const unitPhotos={
+  V8:'https://books.r10s.jp/fan/images/oshiraku-images/v8_conceptphoto1_25f8875b2d.jpg',
+  JxJ:'https://www.allkpop.com/upload/2026/09/content/281130/web_data/allkpop_1790609592_htt9wk4biaabw8m.jpg'
+ };
+ area.querySelectorAll('img[data-unit-photo]').forEach(img=>{
+  img.src=unitPhotos[img.dataset.unitPhoto]||'';
+  img.classList.add('loaded');
+ });
  area.querySelectorAll('img[data-artist-photo]').forEach(img=>{
   const id=img.dataset.artistPhoto;
   if(!artistPhotoCache.has(id))artistPhotoCache.set(id,fetch('https://open.spotify.com/oembed?url='+encodeURIComponent(id==='v8-debut'?'https://open.spotify.com/album/5HQrHtpGthJMePFhXT3jKS':'https://open.spotify.com/artist/'+id))
@@ -1021,23 +1029,46 @@ function renderArtistProfiles(){
   artistPhotoCache.get(id).then(url=>{if(url&&img.isConnected){img.src=url;img.classList.add('loaded')}else if(img.isConnected){img.style.display='none';img.insertAdjacentHTML('afterend','<span class="artist-profile-placeholder">💎</span>')}})
  });
 }
-function soloArtistTrackIds(s){
- if(!s||tab!=='solo'||!selectedSoloArtist)return trackIds(s);
- const artist=selectedSoloArtist.toLowerCase();
- const items=(catalog.solo||[]).filter(item=>String(item.artist||'').toLowerCase()===artist);
- const knownIds=new Set(items.flatMap(item=>item.tracks||[]));
- const names=new Set([...knownIds].map(id=>normTrackName(idName[id])).filter(Boolean));
- return trackIds(s).filter(id=>knownIds.has(id)||(isHistorical(s)&&(
-   names.has(normTrackName(s.names?.[id]))||
-   String(s.names?.[id]||'').toLowerCase().includes(artist)
- )));
+// Artist ownership is based on the Unit & Solo workbook. Track IDs, not
+// matching titles, distinguish DREAMSCAPE "Coloring" from V8 "coloring".
+function ownedSoloIds(artist){
+ const releases=catalog.solo||[];
+ const ids=new Set(releases.filter(item=>String(item.artist||'').toLowerCase()===artist.toLowerCase()).flatMap(item=>item.tracks||[]));
+ const get=key=>releases.find(item=>item.key===key)?.tracks||[];
+ const add=(key,indices)=>indices.forEach(i=>{if(get(key)[i])ids.add(get(key)[i])});
+ if(artist==='Jeonghan')add('jxw_g1',[0,1]);
+ if(artist==='Wonwoo')add('jxw_g1',[0,2]);
+ if(artist==='Dino')add('picheolin_g3',[0]);
+ return ids;
 }
-function soloArtistRows(rows,s){
+function soloArtistTrackIds(s){
+ if(!s)return [];
+ if(tab!=='solo'||!selectedSoloArtist)return trackIds(s);
+ const ids=ownedSoloIds(selectedSoloArtist);
+ return trackIds(s).filter(id=>ids.has(id));
+}
+function soloArtistRows(rows,s,p,baseline){
  if(tab!=='solo'||!selectedSoloArtist)return rows;
- const ids=new Set(soloArtistTrackIds(s));
+ const ids=ownedSoloIds(selectedSoloArtist);
  const artist=selectedSoloArtist.toLowerCase();
- const keys=new Set((catalog.solo||[]).filter(item=>String(item.artist||'').toLowerCase()===artist).map(item=>item.key));
- return rows.filter(row=>ids.has(row.id)||keys.has(row.artworkRelease)||String(row.name||'').toLowerCase().includes(artist));
+ const releases=catalog.solo||[];
+ return rows.flatMap(row=>{
+  if(row.kind==='album'){
+   const release=releases.find(item=>item.key===row.artworkRelease);
+   if(!release)return [];
+   const allIds=[...new Set(release.tracks||[])];
+   const matching=allIds.filter(id=>ids.has(id));
+   if(!matching.length)return [];
+   // Only the unit profile receives all tracks. An individual member sees
+   // their own contribution and the corresponding 6/7-track subtotal.
+   const allAvailable=matching.every(id=>s?.tracks?.[id]!=null);
+   const streams=allAvailable?matching.reduce((sum,id)=>sum+Number(s.tracks[id]),0):null;
+   const gain=matching.every(id=>safeGain(s,p,id)!=null)?matching.reduce((sum,id)=>sum+safeGain(s,p,id),0):null;
+   return [{...row,streams,gain,change:null}];
+  }
+  if(row.id)return ids.has(row.id)?[row]:[];
+  return [];
+ });
 }
 function escapeHtml(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
 let renderToken=0;
@@ -1147,7 +1178,7 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
   $('#gain').textContent=memberIds.length&&memberGains.length===memberIds.length?'+'+fmt(memberGains.reduce((sum,v)=>sum+v,0)):'—';
   if(gainNote)gainNote.textContent=memberIds.length&&memberGains.length===memberIds.length?'Verified artist-specific daily gain':'Artist-specific daily gain unavailable until comparable snapshots exist';
  }
- $('#order').hidden=rank.startsWith('discography');const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),discography=rank.startsWith('discography'),periodLabel=rank.endsWith('weekly')?'WEEKLY':rank.endsWith('monthly')?'MONTHLY':'YEARLY';const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS ADDED':periodic?periodLabel+' STREAMS ADDED':'TOTAL STREAMS';headers[2].textContent=daily?'GAIN VS DAY BEFORE':periodic?rank.endsWith('weekly')?'GAIN VS LAST WEEK':rank.endsWith('monthly')?'GAIN VS LAST MONTH':'GAIN VS LAST YEAR':'GAIN VS YESTERDAY';document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=soloArtistRows(buildRows(s,p,pp,baseline),s).filter(x=>discography||x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${`<span class="cover-slot">${artworkTrack(r)?`<img class="cover" data-cover-track="${artworkTrack(r)}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden>💎</span>`:`<span class="cover-placeholder">💎</span>`}</span>`}${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}</div><div class="num">${periodic&&r.gain!=null?"+":""}${fmt(daily||periodic?r.gain:r.streams)}</div><div class="num change ${(daily||periodic?r.change:r.gain)<0?'negative':''}">${(daily||periodic?r.change:r.gain)==null?'—':((daily||periodic?r.change:r.gain)>=0?'+':'−')+fmt(Math.abs(daily||periodic?r.change:r.gain))}</div></div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
+ $('#order').hidden=rank.startsWith('discography');const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),discography=rank.startsWith('discography'),periodLabel=rank.endsWith('weekly')?'WEEKLY':rank.endsWith('monthly')?'MONTHLY':'YEARLY';const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS ADDED':periodic?periodLabel+' STREAMS ADDED':'TOTAL STREAMS';headers[2].textContent=daily?'GAIN VS DAY BEFORE':periodic?rank.endsWith('weekly')?'GAIN VS LAST WEEK':rank.endsWith('monthly')?'GAIN VS LAST MONTH':'GAIN VS LAST YEAR':'GAIN VS YESTERDAY';document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=soloArtistRows(buildRows(s,p,pp,baseline),s,p,baseline).filter(x=>discography||x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${`<span class="cover-slot">${artworkTrack(r)?`<img class="cover" data-cover-track="${artworkTrack(r)}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden>💎</span>`:`<span class="cover-placeholder">💎</span>`}</span>`}${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}</div><div class="num">${periodic&&r.gain!=null?"+":""}${fmt(daily||periodic?r.gain:r.streams)}</div><div class="num change ${(daily||periodic?r.change:r.gain)<0?'negative':''}">${(daily||periodic?r.change:r.gain)==null?'—':((daily||periodic?r.change:r.gain)>=0?'+':'−')+fmt(Math.abs(daily||periodic?r.change:r.gain))}</div></div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 function syncRank(){rank=rankType+'-'+$('#rankPeriod').value;render()}
 $('#rankCategory').addEventListener('click',e=>{const button=e.target.closest('button[data-type]');if(!button)return;rankType=button.dataset.type;$('#rankCategory').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));syncRank()});
