@@ -33,6 +33,10 @@ for(const [song,threshold,date,url,source] of [
  const key='name:'+norm(song);
  (externalEvidence[key]??={})[threshold]={date,source,url};
 }
+// Left & Right is sometimes catalogued with an ampersand or 'and'.
+for(const title of ['Left & Right','Left and Right','Left Right']){
+ (externalEvidence['name:'+norm(title)]??={})[100000000]={date:'2023-06-11',source:'Historical 100M Spotify milestone',url:''};
+}
 // Historical 100M dates supplied by milestone trackers.
 for(const [song,date,url,source] of [
  ['VERY NICE','2022-11-09','https://www.reddit.com/r/seventeen/comments/yqtt7l/221110_seventeens_very_nice_has_now_surpassed_100/','r/seventeen dated announcement'],
