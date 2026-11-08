@@ -15,6 +15,15 @@ const externalEvidence={
  'name:'+norm('To you'):{100000000:{date:'2025-11-22',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
  'name:'+norm('THUNDER'):{100000000:{date:'2026-04-18',source:'Pledis confirmation reported Apr 20 (Saturday crossing)',url:'https://www.koreaherald.com/article/10720987'}}
 };
+// Additional cross-checked milestones from independent reports.
+for(const [song,threshold,date,url,source] of [
+ ['Pretty U',100000000,'2023-12-22','https://www.allkpop.com/article/2023/12/seventeens-pretty-u-surpasses-100-million-streams-on-spotify','Allkpop, December 22, 2023'],
+ ['THUNDER',100000000,'2026-04-18','https://www.koreaherald.com/article/10720987','The Korea Herald, citing Pledis'],
+ ['HOT',100000000,'2023-02-03','https://twfan.net/user/1295744033680003072/favorite/2','SEVENTEEN Spotify fan update']
+]){
+ const key='name:'+norm(song);
+ (externalEvidence[key]??={})[threshold]={date,source,url};
+}
 // Additional published Spotify track milestones (not music-video views).
 for(const [song,threshold,date] of [
  ['HIT',100000000,'2025-09-25'],
