@@ -31,6 +31,8 @@ jobs:
       - name: Check daily schedule and pending state
         id: gate
         run: python tools/gate.py >> "$GITHUB_OUTPUT"
+      - name: Remove follower values before November 6, 2026
+        run: python tools/clean_followers_history.py
       - name: Collect Group streams
         if: steps.gate.outputs.run == 'true'
         env:
@@ -42,7 +44,6 @@ jobs:
           python tools/catalog.py
           python tools/pipeline.py group
       - name: Commit updated snapshots
-        if: steps.gate.outputs.run == 'true'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
