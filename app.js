@@ -594,7 +594,28 @@ const groupStandaloneReleaseDates={
  g42:'2023-08-16',g45:'2023-09-01',g47:'2023-12-25',g48:'2024-02-16',g55:'2024-05-03',g57:'2024-10-18',g60:'2025-06-30',g61:'2025-07-14',g62:'2025-07-25',g63:'2025-10-10',g64:'2026-02-27'
 };
 const groupOriginalReleaseDates={"g7":"2016-07-04","g23":"2020-06-22","g24":"2020-08-24","g37":"2022-07-18","g44":"2023-08-23","g50":"2024-04-29","g51":"2024-04-29","g52":"2024-04-29","g53":"2024-04-29","g54":"2024-04-29","g1":"2015-05-29","g2":"2015-09-10","g5":"2016-04-25","g6":"2016-07-04","g8":"2016-12-05","g9":"2017-05-22","g10":"2017-11-06","g11":"2018-02-05","g12":"2018-05-30","g13":"2018-07-16","g16":"2019-01-21","g18":"2019-05-29","g20":"2019-09-16","g22":"2020-04-01","g23":"2020-06-22","g25":"2020-09-09","g27":"2020-10-19","g28":"2021-04-21","g29":"2021-06-18","g32":"2021-10-22","g33":"2021-12-08","g35":"2022-05-27","g36":"2022-07-18","g39":"2022-11-09","g41":"2023-04-24","g43":"2023-08-23","g46":"2023-10-23","g49":"2024-04-29","g56":"2024-10-14","g58":"2024-11-27","g59":"2025-05-26"};
+// Anchor legacy spreadsheet song identities to the verified November 6, 2026
+// Spotify recording IDs, so archive dates and covers don't drift by snapshot.
+const archiveCanonicalIds=new Map();
+function buildArchiveCanonicalIds(snapshot){
+ archiveCanonicalIds.clear();
+ const matches=new Map();
+ for(const [id,name] of Object.entries(snapshot?.names||{})){
+  if(!/^[a-zA-Z0-9]{22}$/.test(id)||snapshot.tracks?.[id]==null)continue;
+  const key=normTrackName(name);
+  if(!key)continue;
+  if(matches.has(key)&&matches.get(key)!==id)matches.set(key,null);
+  else if(!matches.has(key))matches.set(key,id);
+ }
+ for(const [name,id] of matches)if(id)archiveCanonicalIds.set(name,id);
+}
+function canonicalArchiveRow(row){
+ if(tab!=='group'||rank.startsWith('discography')||row.kind==='album'||row.kind==='grand')return row;
+ const id=archiveCanonicalIds.get(normTrackName(row.name));
+ return id?{...row,id}:row;
+}
 function originalReleaseDate(row){
+ row=canonicalArchiveRow(row);
  // Later remix singles have distinct dates in all track, album and history views.
  if(tab==='group'){
   const remixName=String(row.name||'').toLowerCase();
@@ -997,6 +1018,7 @@ function historicalAlbumCoverFallback(row){
  return /^[A-Za-z0-9]{22}$/.test(id||'')?'track:'+id:null;
 }
 function artworkTrack(row){
+ row=canonicalArchiveRow(row);
  // Keep the Korean recording on its original An Ode artwork in Tracks and History.
  // Discography appearances on 17 IS RIGHT HERE retain that edition's sleeve.
  if(tab==='group'&&(row.id==='2lYLfG1WddMzvyJvc7imyB'||/happy\s*ending/i.test(row.name||'')&&/korean\s*ver/i.test(row.name||''))&&!(rank.startsWith('discography')&&/^g(49|50|51|52|53|54)$/.test(row.artworkRelease||'')))return 'release:'+encodeURIComponent('An Ode');
@@ -1962,7 +1984,10 @@ $('#archiveDate').addEventListener('change',e=>{
   '42m5wYT5EOnP1UoDF2pCxh':'mia',
   '7qNXDUu4dkeOm67eF35qiL':'8DM'
  });
- buildCoverLookup();buildFirstReleaseCovers();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();await render();
+ buildCoverLookup();buildFirstReleaseCovers();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);
+ const verifiedArchiveReference=await load('data/history/group-2026-11-06.json').catch(()=>null);
+ buildArchiveCanonicalIds(verifiedArchiveReference||current.group);
+ const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();await render();
  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,savedScroll)));
  // To refresh streams every five minutes and keep the selected view.
  setInterval(()=>{saveView();window.location.reload()},300000);
