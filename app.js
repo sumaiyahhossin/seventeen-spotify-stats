@@ -286,6 +286,7 @@ function discographyRows(s,p,pp,baseline){
  }
  return rows;
 }
+const requestedGroupAlbums=[{"name":"1st Best Album 17 IS RIGHT HERE Total","keys":["g49","g50","g51","g52","g53","g54"]},{"name":"4th Full Album Repackage SECTOR 17 Album Total","keys":["g37"]},{"name":"4th Full Album - Face the Sun Album Total","keys":["g35"]},{"name":"Love & Letter Repackage Album Total","keys":["g7"]},{"name":"10th Mini Album - FML Album Total","keys":["g41"]},{"name":"9th Mini Album - Attacca Album Total","keys":["g32"]},{"name":"2nd Full Album - TEEN, AGE Album Total","keys":["g10"]},{"name":"3rd Full Album - An Ode Album Total","keys":["g20"]},{"name":"7th Mini Album - Heng:garæ Album Total","keys":["g23"]},{"name":"1st Japanese Best Album ALWAYS YOURS Total","keys":["g44"]},{"name":"4th Mini Album - Al1 Album Total","keys":["g9"]},{"name":"4th Full Album Repackage SECTOR 17 New Tracks Total","keys":["g36"]},{"name":"6th Mini Album - YOU MAKE MY DAWN Album Total","keys":["g16"]},{"name":"8th Mini Album - YOUR CHOICE Album Total","keys":["g29"]},{"name":"1st Best Album 17 IS RIGHT HERE New Tracks Total","keys":["g49","g50","g51","g52"]},{"name":"5th Full Album - HAPPY BURSTDAY Album Total","keys":["g59"]},{"name":"Love & Letter Repackage New Tracks Total","keys":["g6"]},{"name":"1st Full Album - Love & Letter Album Total","keys":["g5"]},{"name":"3rd Mini Album - Going Seventeen Album Total","keys":["g8"]},{"name":"11th Mini Album - SEVENTEENTH HEAVEN Album Total","keys":["g46"]},{"name":"1st Best Album 17 IS RIGHT HERE Original Tracks Total","keys":["g53","g54"]},{"name":"2nd Special Album - ;[Semicolon] Album Total","keys":["g27"]},{"name":"5th Mini Album - YOU MAKE MY DAY Album Total","keys":["g13"]},{"name":"12th Mini Album - SPILL THE FEELS Album Total","keys":["g56"]},{"name":"1st Special Album - DIRECTOR'S CUT Album Total","keys":["g11"]},{"name":"1st Mini Album - 17 CARAT Album Total","keys":["g1"]},{"name":"2nd Mini Album - BOYS BE Album Total","keys":["g2"]},{"name":"2nd Japan Single Album - Fallin' Flower Album Total","keys":["g22"]},{"name":"1st Japan Mini Album - WE MAKE YOU Album Total","keys":["g12"]},{"name":"2nd Japan Mini Album - 24H Album Total","keys":["g25"]},{"name":"3rd Japan Single Album - Hitorijanai Album Total","keys":["g28"]},{"name":"1st Japanese Best Album ALWAYS YOURS New Tracks Total","keys":["g43"]},{"name":"1st Japan Single Album - Happy Ending Album Total","keys":["g18"]},{"name":"1st Japan EP Album - DREAM Album Total","keys":["g39"]},{"name":"3rd Japan Single Album - Power of Love Album Total","keys":["g33"]},{"name":"4th Japan Single Album - Shohikigen Album Total","keys":["g58"]}];
 function buildRows(s,p,pp,baseline){
  if(!s)return[];
  const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),albums=rank.startsWith('albums'),discography=rank.startsWith('discography');
@@ -296,6 +297,18 @@ function buildRows(s,p,pp,baseline){
      id,name:albumDisplayName((s.names[id]||id).replace(/\s*Total\s*:?$/i,'').trim()),streams,
      gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id)
    }));
+ }else if(albums&&tab==='group'){
+   // Explicit release totals, including Japanese singles and split anthology
+   // catalog entries. Deduplicate Spotify IDs within each release total.
+   const releasesByKey=new Map((catalog.group||[]).map(item=>[item.key,item]));
+   for(const spec of requestedGroupAlbums){
+     const ids=[...new Set(spec.keys.flatMap(key=>releasesByKey.get(key)?.tracks||[]))];
+     const streams=ids.length&&ids.every(id=>s.tracks[id]!=null)?ids.reduce((sum,id)=>sum+s.tracks[id],0):null;
+     const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
+     const yesterday=sumDaily(p,pp,ids);
+     rows.push({name:spec.name,streams,gain,
+       change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&yesterday!=null?gain-yesterday:null});
+   }
  }else if(albums){
    for(const item of catalog[tab]||[]){
      if(!isAlbumTitle(item.title))continue;
