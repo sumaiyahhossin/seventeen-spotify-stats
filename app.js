@@ -135,7 +135,7 @@ function sheetRows(s,p,pp){
 }
 function isAlbumTitle(name){
  const n=String(name||'').toLowerCase();
- return /\balbum\b|\brepackage\b|\bmini\b|\bep\b/.test(n)&&!/\bsingle\b|\bost\b/.test(n);
+ return /\balbum\b|\brepackage\b|\bmini\b|\bep\b|\bsingle\b|\bost\b|\bremix\b|\bdigital\b/.test(n);
 }
 function uniqueRows(rows){
  const seen=new Set();
@@ -197,13 +197,13 @@ function buildRows(s,p,pp,baseline){
  if(discography)return discographyRows(s,p,pp,baseline);
  let rows=[];
  if(albums&&isHistorical(s)){
-   rows=Object.entries(s.tracks).filter(([id])=>historicalKind(s,id)==='album'&&isAlbumTitle(s.names[id])).map(([id,streams])=>({
+   rows=Object.entries(s.tracks).filter(([id])=>historicalKind(s,id)==='album').map(([id,streams])=>({
      id,name:(s.names[id]||id).replace(/\s*Total\s*:?$/i,'').trim(),streams,
      gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id)
    }));
  }else if(albums){
    for(const item of catalog[tab]||[]){
-     if(!isAlbumTitle(item.title))continue;
+     // Include every catalogued release, including singles, OSTs, and unit/solo releases.
      const ids=[...new Set(item.tracks)];
      if(!ids.every(id=>s.tracks[id]!=null))continue;
      const streams=ids.reduce((a,id)=>a+s.tracks[id],0);
