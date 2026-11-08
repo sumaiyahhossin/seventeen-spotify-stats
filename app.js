@@ -1623,9 +1623,16 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
  $('#date').textContent=periodDateLabel();
  $('#dateDescription').textContent=baseline?.partialMonth
   ?'PARTIAL '+new Date(baseline.partialMonth+'-01T12:00:00Z').toLocaleDateString('en-US',{month:'long',year:'numeric',timeZone:'UTC'}).toUpperCase()+
-   ' · '+baseline.observedDays+' saved days. Gains sum only '+baseline.observedPairs.length+
-   ' consecutive observed daily intervals. Missing entire days: '+baseline.missingDays.join(', ')+
-   '. Some songs may have fewer valid intervals; missing values are never counted as zero. Full previous-month comparison unavailable.'
+   ' · Counted gains: '+(()=>{
+     const dates=[...new Set(baseline.observedPairs.map(([now])=>now.date))].sort();
+     const groups=[];
+     for(const d of dates){
+       const day=Number(d.slice(8)),last=groups[groups.length-1];
+       if(last&&day===last[1]+1)last[1]=day;
+       else groups.push([day,day]);
+     }
+     return groups.map(([a,b])=>a===b?String(a):a+'–'+b).join(', ');
+   })()
   :isPeriod?'Latest available snapshot in selected '+periodName.toLowerCase()+' period.':'Spotify updates once a day.';
  $('#gainHeading').textContent=(isPeriod?periodName.toUpperCase():rank.endsWith('overall')?'TOTAL':'DAILY')+' STREAM GROWTH';
  const ids=s?trackIds(s):[];
