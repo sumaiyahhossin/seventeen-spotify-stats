@@ -218,9 +218,12 @@ function normTrackName(name){
 }
 function comparablePrevious(s,p,id){
  if(!s||!p||s.tracks?.[id]==null)return null;
- if(p.date==='2026-11-05'&&s.baseline_ids_2026_11_05){
+ // Imported spreadsheet IDs stay stable across the historical workbook.
+ // The verified Nov 5 ID mapping is therefore valid for earlier months too.
+ if(isHistorical(p)&&s.baseline_ids_2026_11_05?.[id]){
   const priorId=s.baseline_ids_2026_11_05[id];
-  return priorId&&p.tracks[priorId]!=null?{id:priorId,value:p.tracks[priorId]}:null;
+  if(p.tracks[priorId]!=null&&historicalKind(p,priorId)==='track')
+   return {id:priorId,value:p.tracks[priorId]};
  }
  // To use the same Spotify ID when both snapshots contain it.
  if(p.tracks?.[id]!=null){
