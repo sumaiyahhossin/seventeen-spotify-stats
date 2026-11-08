@@ -568,21 +568,25 @@ function fillArtwork(){
      const cacheKey='release:'+title;
      const fetchOriginal=async()=>{
       const aliases={
-       'Semicolon':['; [Semicolon]','Semicolon','; [Semicolon] - EP'],
+       'Semicolon':['; [Semicolon]','Semicolon','; [Semicolon] - EP','SEVENTEEN Special Album ; [Semicolon]'],
        'Al1':['Al1','Al1 - EP'],
        'FML':['FML','FML - EP'],
        'LOVE & LETTER (Repackage)':['Love & Letter Repackage Album','Love & Letter'],
        'Not Alone':['ひとりじゃない','Hitorijanai','Not Alone'],
-       'Fallin Flower':["Fallin' Flower","Fallin' Flower - Single"],
+       'Fallin Flower':["Fallin' Flower",'舞い落ちる花びら',"Fallin' Flower - Single"],
        'WE MAKE YOU':['WE MAKE YOU','We Make You - EP'],
        'God of Light Music':['God of Light Music','GOLM'],
-       'DREAM':['DREAM','DREAM - EP']
+       'DREAM':['DREAM','DREAM - EP'],
+       'Happy Ending':['Happy Ending','Happy Ending - Single'],
+       '24H':['24H','24H - EP'],
+       'Power of Love':['Power of Love','あいのちから'],
+       'WE MAKE YOU':['WE MAKE YOU','WE MAKE YOU - EP']
       };
       const candidates=aliases[title]||[title];
-      const clean=n=>coverKey(n).replace(/\b(ep|single|album|mini album|the)\b/g,'').trim();
+      const clean=n=>coverKey(n).replace(/\b(mini album|ep|single|album)\b/g,'').trim();
       for(const term of candidates){
        try{
-        const params=new URLSearchParams({term:'SEVENTEEN '+term,entity:'album',limit:'100',country:'US'});
+        const params=new URLSearchParams({term:'SEVENTEEN '+term,entity:'album',limit:'100',country:/[\u3040-\u30ff\u4e00-\u9fff]/.test(term)?'JP':'US'});
         const response=await fetch('https://itunes.apple.com/search?'+params);
         if(!response.ok)continue;
         const data=await response.json();
