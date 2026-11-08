@@ -77,8 +77,9 @@ const coverKey=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const releaseAliases={'fml album':'FML','al1 album':'Al1','you make my day album':'YOU MAKE MY DAY','you made my dawn album':'YOU MADE MY DAWN','an ode album':'An Ode','seventeenth heaven album':'SEVENTEENTH HEAVEN','17 is right here best album':'17 IS RIGHT HERE','spill the feels album':'SPILL THE FEELS','happy burstday album':'HAPPY BURSTDAY','love & letter album':'LOVE & LETTER','attacca album':'Attacca','face the sun album':'Face the Sun','your choice album':'Your Choice','heng garae album':'Heng:garæ','you make my dawn':'YOU MADE MY DAWN'};
 async function originalArtwork(name){
  const entry=milestoneArtwork.tracks[coverKey(name)];
- if(!entry?.release)return '';
- const release=releaseAliases[coverKey(entry.release)]||entry.release.replace(/\\s+(?:album|single|mini album|ep)$/i,'').trim();
+ if(!entry?.release&&!['oh my','god of music'].includes(coverKey(name)))return '';
+ const forced={'oh my':'YOU MAKE MY DAY','god of music':'SEVENTEENTH HEAVEN'};
+ const release=forced[coverKey(name)]||releaseAliases[coverKey(entry?.release)]||String(entry?.release||'').replace(/\\s+(?:album|single|mini album|ep)$/i,'').trim();
  const cacheKey='release:'+release;
  if(!milestoneCoverCache.has(cacheKey))milestoneCoverCache.set(cacheKey,(async()=>{
   try{
