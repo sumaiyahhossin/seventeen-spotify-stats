@@ -37,6 +37,13 @@ function buildNames(){
   if(names.length!==item.tracks.length)continue;
   item.tracks.forEach((id,i)=>{if(names[i]&&!idName[id])idName[id]=names[i]});
  }
+ // 17 IS RIGHT HERE original-hits disc: its catalog lacks a usable
+ // track-list description, so provide its release-order titles explicitly.
+ const hits=(catalog.group||[]).find(x=>x.key==='g53');
+ const hitNames=['Adore U','MANSAE','Pretty U','VERY NICE','BOOMBOOM',"Don't Wanna Cry",'CLAP','THANKS','Oh My!','Home','Fear','Left & Right','HOME;RUN','Ready to love','Rock with you','HOT','_WORLD (feat. Anne-Marie)','F*ck My Life','Super','God of Music'];
+ if(hits?.tracks?.length===hitNames.length)hits.tracks.forEach((id,i)=>{idName[id]=hitNames[i]});
+ const digital=(catalog.group||[]).find(x=>x.key==='g54');
+ if(digital?.tracks?.length===1)idName[digital.tracks[0]]='Adore U (Inst.) (Digital Only)';
  // Spotify's official HAPPY BURSTDAY track order, absent from the source catalog description.
  const burstday=(catalog.group||[]).find(x=>x.title==='happy burstday album');
  const burstdayNames=['HBD','THUNDER','Bad Influence (Prod. by Pharrell Williams)','Skyfall (THE 8 Solo)','Fortunate Change (JOSHUA Solo)','99.9% (WONWOO Solo)','Raindrops (SEUNGKWAN Solo)','Damage (HOSHI Solo) (feat. Timbaland)','Shake It Off (MINGYU Solo)','Happy Virus (DK Solo)','Destiny (WOOZI Solo)','Shining Star (Vernon Solo)','Gemini (JUN Solo)','Trigger (DINO Solo)','Coincidence (JEONGHAN Solo)','Jungle (S.COUPS Solo)'];
@@ -200,6 +207,15 @@ function displayTrackName(name){
   'circles japanese ver':'Circles (Japanese Ver.)',
   'love money fame english ver':'LOVE, MONEY, FAME (English Ver.)',
   'oh my chinese ver':'Oh My! (Chinese Ver.)',
+  'don t listen in secret':"Don't Listen in Secret",'when i grow up':'When I Grow Up',
+  'thinkin about you':"Thinkin' About You",'run to you':'Run to You',
+  'come to me':'Come to Me','our dawn is hotter than day':'Our Dawn Is Hotter Than Day',
+  'let me hear you say':'Let Me Hear You Say','back it up':'Back It Up',
+  'ready to love':'Ready to Love','to you':'To You','rock with you':'Rock with You',
+  'i can t run away':"I Can't Run Away",'april shower':'April Shower',
+  'same dream same mind same night':'Same Dream, Same Mind, Same Night',
+  'cheers to youth':'Cheers to Youth','eyes on you':'Eyes on You',
+  'power of love':'Power of Love','sweetest thing':'Sweetest Thing',
   'world feat anne marie':'_WORLD (feat. Anne-Marie)',
   'power of love holiday ver':'Power of Love (Holiday Ver.)',
   'power of love inst':'Power of Love (Inst.)',
