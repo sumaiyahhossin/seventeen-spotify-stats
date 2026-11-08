@@ -502,26 +502,4 @@ document.querySelectorAll('.name-fall>.falling-name').forEach(el=>{
 });
  if(window.matchMedia('(hover: none)').matches){document.addEventListener('click',e=>{if(!e.target.closest('.falling-name'))hide()})}
 })();
-</script><script id="svt-spaced-name-rain-v144">
-(()=>{
- const names=[...document.querySelectorAll('.name-fall>.falling-name')];
- const mobile=matchMedia('(max-width:680px)').matches;
- const lanes=mobile?3:4,slots=mobile?4:7,total=lanes*slots;
- // Fixed columns and equally spaced animation phases prevent names
- // from crossing or stacking on each other. Fewer animated elements
- // also lower mobile CPU/GPU usage.
- names.forEach(el=>el.style.setProperty('display','none','important'));
- for(let i=0;i<total;i++){
-  const index=Math.floor(i*names.length/total),el=names[index];
-  if(!el)continue;
-  const lane=i%lanes,slot=Math.floor(i/lanes);
-  el.style.setProperty('display','block','important');
-  el.style.setProperty('--nx',(mobile?4+lane*32:4+lane*24)+'%');
-  el.style.setProperty('--nt','140s');
-  el.style.setProperty('--nd',(-slot*20-lane*3)+'s');
-  el.style.setProperty('max-width',mobile?'30vw':'22vw','important');
-  el.style.setProperty('font-size',mobile?'9px':'11px','important');
-  el.style.setProperty('white-space','normal','important');
- }
-})();
 </script></body></html>
