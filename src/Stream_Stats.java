@@ -457,6 +457,7 @@ public class Stream_Stats {
 
 
         // Final extraction step: Monthly Listeners
+        fetchMonthlyListeners();
         // Total group streams use original releases and standalone singles.
         // Best-of compilations repeat recordings under alternative Spotify IDs;
         // including all of those IDs inflates the artist-wide total.
@@ -466,7 +467,7 @@ public class Stream_Stats {
             g33,g34,g35,g36,g37,g38,g39,g40,g41,g42,g43,g44,g45,g46,g47,g48,
             g55,g56,g57,g58,g59,g60,g61,g62,g63,g64
         });
-        fetchMonthlyListeners();
+
 
 
         // Clean shutdown (No killing your personal Chrome tabs)
