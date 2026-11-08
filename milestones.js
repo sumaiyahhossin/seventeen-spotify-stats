@@ -79,13 +79,25 @@ async function start(){
   const [manifest,catalog]=await Promise.all([fetch('data/manifest.json').then(r=>r.json()),fetch('data/catalog.json').then(r=>r.json())]);
   buildReleases(catalog);
   const dates=[...new Set(manifest.dates)].sort();
+  // Render immediately from the newest complete group snapshot; historical
+  // milestone research must never block the page from becoming usable.
+  const latestResponse=await fetch('data/group.json');
+  if(latestResponse.ok){
+   const latest=await latestResponse.json();
+   const latestRows=trackRows(latest);
+   for(const [key,item] of latestRows){
+    first.set(key,{...item,firstValue:item.value});
+    latestValues.set(key,item.value);
+   }
+   ready=true;build();
+  }
   const snapshots=new Array(dates.length);
   let cursor=0,done=0;
   async function worker(){
    while(cursor<dates.length){
     const index=cursor++,date=dates[index];
     try{const response=await fetch('data/history/group-'+date+'.json');if(response.ok)snapshots[index]=await response.json()}catch{}
-    done++;$('status').textContent='Checking historical snapshots: '+done+' / '+dates.length;
+    done++;if(done%25===0&&$('status'))$('status').dataset.progress=done+'/'+dates.length;
    }
   }
   await Promise.all(Array.from({length:12},worker));
@@ -112,7 +124,7 @@ async function start(){
      }
     }
    }
-   for(const [key,item] of current)latestValues.set(key,item.value);
+   for(const [key,item] of current){if(!latestValues.has(key))latestValues.set(key,item.value)}
    previous={date:snapshot.date,rows:current};
   }
   ready=true;build();
