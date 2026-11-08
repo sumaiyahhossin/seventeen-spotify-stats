@@ -219,6 +219,13 @@ function normTrackName(name){
 }
 function comparablePrevious(s,p,id){
  if(!s||!p||s.tracks?.[id]==null)return null;
+ // The 2026-11-05 workbook misspells Anne-Marie as Anne-Marrie.
+ // Match the verified Spotify track ID to that exact legacy row, preserving
+ // the recorded stream totals and day-over-day comparisons.
+ if(id==='2kDrUAONMhG6CbDGBkhdrY'&&isHistorical(p)){
+  const legacyId='legacy:worldfeatannemarrie:213';
+  if(p.tracks?.[legacyId]!=null)return {id:legacyId,value:p.tracks[legacyId]};
+ }
  // Imported spreadsheet IDs stay stable across the historical workbook.
  // The verified Nov 5 ID mapping is therefore valid for earlier months too.
  if(isHistorical(p)&&s.baseline_ids_2026_11_05?.[id]){
