@@ -917,7 +917,7 @@ function artworkTrack(row){
   const key=coverKey(row.name||'');
   const release=row.artworkRelease;
   const albumRow=row.kind==='album'||rank.startsWith('albums');
-  const direct={g5:'LOVE & LETTER',g6:'LOVE & LETTER (Repackage)',g7:'LOVE & LETTER (Repackage)',g19:'HIT',g20:'An Ode',g24:'24H',g25:'24H',g35:'Face the Sun',g36:'SECTOR 17',g37:'SECTOR 17'};
+  const direct={g5:'LOVE & LETTER',g6:'LOVE & LETTER (Repackage)',g7:'LOVE & LETTER (Repackage)',g19:'HIT',g20:'An Ode',g24:'24H',g25:'24H',g35:'Face the Sun',g36:'SECTOR 17',g37:'SECTOR 17',g43:'ALWAYS YOURS',g44:'ALWAYS YOURS'};
   if(release&&direct[release])return 'release:'+encodeURIComponent(direct[release]);
   if(release==='g34')return 'release:'+encodeURIComponent('Darl+ing');
   if(!albumRow){
