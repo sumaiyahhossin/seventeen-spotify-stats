@@ -39,16 +39,19 @@ if kind=='group':
             }
             // Wait for the About popup, then read its exact follower number.
             // Avoid searching the whole page: other sections contain large numbers.
+            // Spotify uses a native <dialog open aria-label="SEVENTEEN">.
+            // Find the numeric value by its nearby Followers label, never by
+            // guessing that the first large number belongs to followers.
             org.openqa.selenium.By popup = org.openqa.selenium.By.cssSelector(
-                "[role='dialog'], [data-testid='modal'], [data-testid='artist-about-modal']");
-            org.openqa.selenium.By exactNumber = org.openqa.selenium.By.cssSelector(
-                "div[data-encore-id='text'].encore-text-title-medium");
+                "dialog[open][aria-label='SEVENTEEN'], dialog[open], [role='dialog']");
+            org.openqa.selenium.By followerValue = org.openqa.selenium.By.xpath(
+                ".//*[normalize-space(text())='Followers']/preceding-sibling::*[1]");
             for (int attempt = 0; attempt < 15; attempt++) {
                 for (org.openqa.selenium.WebElement dialog : driver.findElements(popup)) {
                     if (!dialog.isDisplayed()) continue;
-                    for (org.openqa.selenium.WebElement element : dialog.findElements(exactNumber)) {
+                    for (org.openqa.selenium.WebElement element : dialog.findElements(followerValue)) {
                         String value = element.getText().trim();
-                        if (!value.matches("(?:[0-9]{1,3}(?:,[0-9]{3})+|[0-9]{7,10})")) continue;
+                        if (!value.matches("[0-9]{1,3}(?:,[0-9]{3})+|[0-9]{7,10}")) continue;
                         long followers = Long.parseLong(value.replace(",", ""));
                         if (followers >= 1000000L && followers <= 1000000000L) {
                             System.out.println("STAT_FOLLOWERS|" + followers);
