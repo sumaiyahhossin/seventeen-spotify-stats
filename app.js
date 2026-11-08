@@ -746,7 +746,15 @@ async function periodBaseline(s){
  const available=new Set(dates);
  const get=async d=>available.has(d)?getDate(tab,d):null;
  const [start,prevStart,prevEnd]=await Promise.all([get(range.start),get(range.prevStart),get(range.prevEnd)]);
- return {start,prevStart,prevEnd,range};
+ // Never invent missing historical snapshots. A missing boundary can be
+ // compared using a shorter, equal-duration window anchored at both ends.
+ // This also avoids blank rankings on dates before a full month/year exists.
+ if(start&&prevStart&&prevEnd)return {start,prevStart,prevEnd,range};
+ const length=rank.endsWith('weekly')?7:rank.endsWith('monthly')?30:365;
+ const currentStart=shifted(s.date,-length);
+ const previousStart=shifted(s.date,-length*2);
+ const [rollingStart,rollingPreviousStart]=await Promise.all([get(currentStart),get(previousStart)]);
+ return {start:rollingStart,prevStart:rollingPreviousStart,prevEnd:rollingStart,range};
 }
 function snapshotDelta(now,old,id){
  if(!now||!old||now.tracks?.[id]==null)return null;
