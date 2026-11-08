@@ -1035,10 +1035,10 @@ function renderArtistProfiles(){
 // matching titles, distinguish DREAMSCAPE "Coloring" from V8 "coloring".
 function ownedSoloIds(artist){
  const releases=catalog.solo||[];
- const ids=new Set(releases.filter(item=>String(item.artist||'').toLowerCase()===artist.toLowerCase()).flatMap(item=>item.tracks||[]));
+ const ids=new Set(releases.filter(item=>String(item.artist||'').toLowerCase()===artist.toLowerCase() && !(artist==='Jeonghan' && ['jeonghan_g2','jxj_dreamscape','jxw_g1'].includes(item.key))).flatMap(item=>item.tracks||[]));
  const get=key=>releases.find(item=>item.key===key)?.tracks||[];
  const add=(key,indices)=>indices.forEach(i=>{if(get(key)[i])ids.add(get(key)[i])});
- if(artist==='Jeonghan')add('jxw_g1',[0,1]);
+ // Jeonghan's individual Spotify profile is not credited on THIS MAN or DREAMSCAPE.
  if(artist==='Wonwoo')add('jxw_g1',[0,2]);
  if(artist==='Dino')add('picheolin_g3',[0]);
  return ids;
@@ -1058,6 +1058,7 @@ function soloArtistRows(rows,s,p,baseline){
   if(row.kind==='album'){
    const release=releases.find(item=>item.key===row.artworkRelease);
    if(!release)return [];
+   if(selectedSoloArtist==='Jeonghan'&&['jeonghan_g2','jxj_dreamscape','jxw_g1'].includes(release.key))return [];
    const preferredV8={V8:'v8',The8:'the8_g12',Vernon:'vernon_g9'};
    if(['v8','the8_g12','vernon_g9'].includes(release.key)&&release.key!==preferredV8[selectedSoloArtist])return [];
    const dreamscapeKeys=['jeonghan_g2','joshua_g8','jxj_dreamscape'];
@@ -1077,6 +1078,7 @@ function soloArtistRows(rows,s,p,baseline){
   if(row.id){
    if(!ids.has(row.id))return [];
    const key=row.artworkRelease;
+   if(selectedSoloArtist==='Jeonghan'&&['jeonghan_g2','jxj_dreamscape','jxw_g1'].includes(key))return [];
    const v8={V8:'v8',The8:'the8_g12',Vernon:'vernon_g9'};
    if(['v8','the8_g12','vernon_g9'].includes(key)&&key!==v8[selectedSoloArtist])return [];
    const dreamscape={Jeonghan:'jeonghan_g2',Joshua:'joshua_g8',JxJ:'jxj_dreamscape'};
