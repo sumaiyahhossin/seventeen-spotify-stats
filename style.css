@@ -940,3 +940,31 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid #f3b
  .rank-row .track .track-copy .release-date{font-size:9px!important}
 }
 @media(max-width:390px){.rank-row .track{grid-template-columns:13px 32px minmax(0,1fr)!important;column-gap:5px!important}}
+
+/* v91 — single-row, balanced header at every viewport width */
+header{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;
+ align-items:center!important;
+ gap:10px!important;
+ width:100%!important;
+ max-width:1180px!important;
+}
+header .header-credit{grid-column:1!important;grid-row:1!important;justify-self:start!important;min-width:0!important;text-align:left!important;white-space:nowrap!important}
+header .logo{grid-column:2!important;grid-row:1!important;justify-self:center!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:5px!important;text-align:center!important;white-space:nowrap!important;min-width:0!important}
+header .logo span{margin:0!important}
+header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:end!important;position:static!important;white-space:nowrap!important;min-width:0!important}
+@media(max-width:680px){
+ header{padding:13px 9px!important;gap:4px!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;flex-wrap:nowrap!important}
+ header .header-credit{font-size:clamp(7px,1.75vw,10px)!important;letter-spacing:-.15px!important;line-height:1.15!important}
+ header .logo{font-size:clamp(9px,2.5vw,14px)!important;letter-spacing:-.35px!important;gap:2px!important;line-height:1!important}
+ header .logo span{font-size:clamp(6px,1.45vw,9px)!important;letter-spacing:0!important}
+ header .concert-sound{font-size:clamp(8px,1.9vw,11px)!important;padding:6px 5px!important;border-radius:9px!important;line-height:1!important}
+}
+@media(max-width:370px){
+ header{padding-inline:6px!important;gap:2px!important}
+ header .header-credit{font-size:7px!important}
+ header .logo{font-size:9px!important}
+ header .logo span{font-size:6px!important}
+ header .concert-sound{font-size:8px!important;padding:5px 3px!important}
+}
