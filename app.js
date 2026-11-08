@@ -476,6 +476,37 @@ function artworkTrack(row){
  const validId=id=>/^[A-Za-z0-9]{22}$/.test(id||'');
  const isVersion=/\b(remix|instrumental|inst|sped up|slowed|workout|orchestra|feat|with|holiday|korean ver|chinese ver|japanese ver)\b/.test(name);
  const releases=catalog[tab]||[];
+ if(isAlbum&&tab==='group'){
+  const spec=requestedGroupAlbums.find(item=>item.name===row.name);
+  if(spec){
+   const first=(catalog.group||[]).find(item=>item.key===spec.keys[0]);
+   const title=first?.title||'';
+   const aliases={
+    '17 is right here best album':'17 IS RIGHT HERE',
+    'sector 17 repackage album new tracks':'SECTOR 17',
+    'face the sun album':'Face the Sun',
+    'love & letter repackage new tracks':'LOVE & LETTER (Repackage)',
+    'fml album':'FML','attacca album':'Attacca','teen, age album':'TEEN, AGE',
+    'an ode new tracks album':'An Ode','heng':'Heng:garæ',
+    'always yours best album':'ALWAYS YOURS',
+    'always yours new tracks album':'ALWAYS YOURS',
+    'al1 album':'Al1','you make my dawn album':'YOU MADE MY DAWN',
+    'your choice album':'Your Choice','happy burstday album':'HAPPY BURSTDAY',
+    'love & letter album':'LOVE & LETTER','going seventeen album':'Going Seventeen',
+    'seventeenth heaven album':'SEVENTEENTH HEAVEN',
+    ';[semicolon] album':'Semicolon','you make my day album':'YOU MAKE MY DAY',
+    'spill the feels album':'SPILL THE FEELS',
+    "director's cut album":"DIRECTOR'S CUT",
+    '17 carat album':'17 CARAT','boys be album':'BOYS BE',
+    "fallin' flower single":"Fallin Flower",
+    'we make you album':'WE MAKE YOU','24h mini album':'24H',
+    'hitorijanai single':'Not Alone','happy ending single':'Happy Ending',
+    'dream ep album':'DREAM','power of love single':'Power of Love',
+    'shohikigen album':'Shohikigen'
+   };
+   if(aliases[title])return 'release:'+encodeURIComponent(aliases[title]);
+  }
+ }
  if(isAlbum){
   // Album rows must display their own release, including compilations.
   const release=releases.find(item=>coverKey(item.title)===name)
