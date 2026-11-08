@@ -261,3 +261,36 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #ffb8
 .ranking-category button{display:flex!important;justify-content:center;align-items:center;width:100%!important;min-width:0;min-height:48px;max-width:100%;white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;font-size:clamp(10px,2.6vw,14px);letter-spacing:-.025em;padding:10px 3px!important;border-radius:13px}
 .rank-select{width:100%;max-width:330px}
 @media(max-width:480px){.ranking-category{gap:7px}.ranking-category button{font-size:clamp(10px,2.65vw,12px);min-height:48px;padding:10px 2px!important}.rank-select{max-width:100%}}
+
+/* Mobile uses desktop proportions, not squashed columns or wrapped navigation. */
+@media(max-width:680px){
+ main{padding-left:12px!important;padding-right:12px!important}
+ .panel{padding:18px 14px!important;border-radius:20px}
+ .ranking-pickers{display:grid!important;grid-template-columns:1fr!important;width:100%!important}
+ .ranking-category{width:100%!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px!important}
+ .ranking-category button{min-width:0!important;width:100%!important;white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;font-size:clamp(11px,3vw,14px)!important;letter-spacing:-.04em!important;padding:12px 2px!important;min-height:48px}
+ .controls{gap:14px!important}
+ .search{width:100%!important;min-width:0!important;box-sizing:border-box}
+ .search input{min-width:0!important;width:100%!important}
+ .table-head,.rank-row{grid-template-columns:minmax(0,1fr) 110px 98px!important;gap:8px!important}
+ .table-head{padding:13px 8px!important;font-size:9px!important;letter-spacing:.03em!important}
+ .rank-row{padding:14px 8px!important}
+ .rank-row .track{gap:7px!important;min-width:0!important}
+ .rank-row .place{flex:0 0 22px!important;width:22px!important}
+ .rank-row .cover-slot{flex:0 0 38px!important;width:38px!important}
+ .rank-row .cover{width:38px!important;height:38px!important}
+ .rank-row .track-name{min-width:0!important;overflow-wrap:break-word!important;font-size:12px!important}
+ .rank-row .num{font-size:11px!important;letter-spacing:-.02em}
+ .stats{grid-template-columns:repeat(2,minmax(0,1fr))!important}
+ .stat{min-width:0!important}
+}
+@media(max-width:360px){
+ .table-head,.rank-row{grid-template-columns:minmax(0,1fr) 90px 80px!important;gap:5px!important}
+ .rank-row .cover-slot{flex-basis:30px!important;width:30px!important}
+ .rank-row .cover{width:30px!important;height:30px!important}
+ .ranking-category button{font-size:10px!important}
+}
+/* Bright calendar icon on the dark date input, including iOS Safari. */
+.date-navigation input[type="date"]{color-scheme:dark!important;color:#f8f8ff!important}
+.date-navigation input[type="date"]::-webkit-calendar-picker-indicator{filter:brightness(0) invert(1)!important;opacity:1!important;cursor:pointer}
+.date-navigation input[type="date"]::-webkit-datetime-edit{color:#f8f8ff!important}
