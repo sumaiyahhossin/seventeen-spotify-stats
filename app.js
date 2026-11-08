@@ -133,7 +133,9 @@ function comparablePrevious(s,p,id){
   const candidates=Object.keys(p.tracks).filter(k=>historicalKind(p,k)==='track'&&normTrackName(p.names?.[k])===name&&p.tracks[k]<=s.tracks[id]);
   if(!candidates.length)return null;
   const best=candidates.sort((a,b)=>p.tracks[b]-p.tracks[a])[0];
-  if(s.tracks[id]-p.tracks[best]>100000)return null;
+  // Historical-to-current comparisons may span weeks or months. The old
+  // 100k limit incorrectly hid legitimate gains for popular tracks.
+  // Daily anomaly checks remain in safeGain and snapshotDelta.
   return {id:best,value:p.tracks[best]};
  }
  return null;
@@ -746,10 +748,10 @@ async function periodBaseline(s){
  const available=new Set(dates);
  const get=async d=>available.has(d)?getDate(tab,d):null;
  const [start,prevStart,prevEnd]=await Promise.all([get(range.start),get(range.prevStart),get(range.prevEnd)]);
- // Never invent missing historical snapshots. A missing boundary can be
- // compared using a shorter, equal-duration window anchored at both ends.
- // This also avoids blank rankings on dates before a full month/year exists.
- if(start&&prevStart&&prevEnd)return {start,prevStart,prevEnd,range};
+ // Show the current period's gain even when the previous comparable period
+ // has not been archived (particularly year-over-year comparisons).
+ if(start)return {start,prevStart,prevEnd,range};
+ // Only fall back to a full rolling period when the calendar boundary is absent.
  const length=rank.endsWith('weekly')?7:rank.endsWith('monthly')?30:365;
  const currentStart=shifted(s.date,-length);
  const previousStart=shifted(s.date,-length*2);
