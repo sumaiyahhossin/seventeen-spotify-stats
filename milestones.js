@@ -133,6 +133,11 @@ function loadMilestoneCovers(){
 }
 
 let records=[], releases=new Map(), trackNames=new Map(), first=new Map(), latestValues=new Map(), observations=new Map(), ready=false;
+// Original song releases, never the 2024 anthology reissue.
+const originalSongDates={
+ hot:'2022-05-27',prettyu:'2016-04-25',rockwithyou:'2021-10-22',
+ verynice:'2016-07-04'
+};
 const milestones=[100000000,200000000,300000000,400000000,500000000,600000000,700000000,800000000,900000000,1000000000];
 function buildReleases(catalog){
  for(const item of catalog.group||[]){
@@ -188,7 +193,7 @@ function build(){
   const currentValue=latestValues.get(key);
   const reached=Number.isFinite(currentValue)&&currentValue>=threshold;
   if(!reached)continue;
-  const release=releases.get(item.id)||releases.get(key)||null;
+  const release=originalSongDates[normalized]||releases.get('name:'+normalized)||releases.get(item.id)||releases.get(key)||null;
   const verifiedDate=evidence?.date||(crossed?.exact?crossed.date:null);
   const duration=verifiedDate&&release&&days(release,verifiedDate)>=0?days(release,verifiedDate):null;
   rows.push({id:item.id,name:item.name,release,date:verifiedDate,range:!evidence&&crossed&&!crossed.exact?crossed:null,duration,source:evidence?.source,url:evidence?.url,status:evidence?'Published historical record':crossed?.exact?'Verified daily crossing':crossed?'Between saved dates':'Before archive'});
