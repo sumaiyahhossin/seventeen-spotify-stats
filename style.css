@@ -1528,3 +1528,91 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
   font-size:8px!important;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;
  }
 }
+
+/* v121 — final unified archive control alignment */
+.archive-top-controls{
+ display:grid!important;
+ grid-template-columns:minmax(0,1fr) minmax(0,1.8fr) minmax(0,.7fr)!important;
+ gap:12px!important;align-items:start!important;
+ width:min(100%,1050px)!important;max-width:1050px!important;
+ margin:16px auto 22px!important;padding:16px!important;
+}
+.archive-top-controls>.rank-select,
+.archive-top-controls>#dailyPickerWrap{
+ display:flex!important;flex-direction:column!important;gap:8px!important;
+ width:100%!important;min-width:0!important;max-width:none!important;
+ margin:0!important;padding:0!important;
+}
+.archive-top-controls .rank-select>span,
+.archive-top-controls #dailyPickerWrap>label{
+ display:block!important;margin:0!important;padding:0!important;
+ height:18px!important;line-height:18px!important;
+ font-size:11px!important;letter-spacing:1px!important;
+}
+.archive-top-controls>.milestone-nav-link{
+ align-self:start!important;justify-self:stretch!important;
+ height:46px!important;min-height:46px!important;
+ margin:26px 0 0!important;padding:0 8px!important;
+ display:flex!important;align-items:center!important;justify-content:center!important;
+}
+.archive-top-controls #dailyPickerWrap .date-navigation{
+ display:flex!important;align-items:center!important;gap:5px!important;
+ width:100%!important;min-width:0!important;
+ padding:0!important;margin:0!important;border:0!important;
+ background:transparent!important;box-shadow:none!important;
+}
+.archive-top-controls .pretty-date-wrap{
+ position:relative!important;display:block!important;
+ flex:1 1 0!important;min-width:0!important;height:46px!important;
+ overflow:hidden!important;border-radius:12px!important;
+}
+.archive-top-controls .pretty-date-wrap #prettyDate{
+ position:absolute!important;inset:0!important;
+ z-index:2!important;display:flex!important;align-items:center!important;
+ margin:0!important;padding:0 12px!important;
+ background:#292c50!important;color:#f8f4ff!important;
+ -webkit-text-fill-color:#f8f4ff!important;
+ border:1px solid #7b70ad!important;border-radius:12px!important;
+ font-size:13px!important;font-weight:750!important;white-space:nowrap!important;
+ overflow:hidden!important;pointer-events:none!important;
+}
+.archive-top-controls .pretty-date-wrap #archiveDate{
+ position:absolute!important;inset:0!important;
+ z-index:3!important;display:block!important;
+ width:100%!important;height:100%!important;min-height:0!important;
+ margin:0!important;padding:0!important;
+ opacity:0!important;cursor:pointer!important;
+}
+.archive-top-controls .pretty-date-wrap:focus-within #prettyDate{
+ border-color:#d1b7f7!important;box-shadow:0 0 0 2px rgba(201,167,244,.25)!important;
+}
+.archive-top-controls #dailyPickerWrap .date-arrow,
+.archive-top-controls #dailyPickerWrap #latestDate{
+ height:46px!important;min-height:46px!important;
+}
+.archive-top-controls #dailyPickerWrap #dateNotice{
+ display:block!important;min-height:12px!important;
+ margin:0!important;text-align:left!important;
+}
+@media(max-width:760px){
+ .archive-top-controls{
+  grid-template-columns:minmax(0,1fr) minmax(0,1.8fr) minmax(0,.65fr)!important;
+  gap:5px!important;padding:8px 5px!important;
+ }
+ .archive-top-controls .rank-select>span,
+ .archive-top-controls #dailyPickerWrap>label{
+  height:13px!important;line-height:13px!important;
+  font-size:8px!important;letter-spacing:0!important;
+ }
+ .archive-top-controls>.milestone-nav-link{
+  margin-top:21px!important;height:38px!important;min-height:38px!important;
+ }
+ .archive-top-controls .pretty-date-wrap{height:38px!important}
+ .archive-top-controls .pretty-date-wrap #prettyDate{
+  font-size:10px!important;padding:0 4px!important;
+ }
+ .archive-top-controls #dailyPickerWrap .date-arrow,
+ .archive-top-controls #dailyPickerWrap #latestDate{
+  height:38px!important;min-height:38px!important;
+ }
+}
