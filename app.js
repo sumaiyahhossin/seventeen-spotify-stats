@@ -1704,6 +1704,9 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
      return groups.map(([a,b])=>a===b?String(a):a+'–'+b).join(', ');
    })()
   :isPeriod?'Latest available snapshot in selected '+periodName.toLowerCase()+' period.':'Spotify updates once a day.';
+ if(baseline?.partialMonth==='2025-12'){
+  $('#dateDescription').textContent+=' · Versus November 2025: comparison uses only saved consecutive-day gains in each month; missing days are not estimated.';
+ }
  $('#gainHeading').textContent=(isPeriod?periodName.toUpperCase():rank.endsWith('overall')?'TOTAL':'DAILY')+' STREAM GROWTH';
  const ids=s?trackIds(s):[];
  const memberIds=tab==='solo'&&selectedSoloArtist&&s?soloArtistTrackIds(s):ids;
