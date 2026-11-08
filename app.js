@@ -468,16 +468,16 @@ function artworkTrack(row){
  }
 
  const originalCoverKey=coverKey(row.name);
- // Resolve known solo and group tracks by their earliest catalog release,
- // not the cover from a later compilation or an arbitrary similarly named track.
- if(row.kind!=='album'&&!rank.startsWith('albums')){
-  const originalArt=firstReleaseByName.get(tab+':'+originalCoverKey);
-  if(originalArt)return originalArt;
- }
- // Specific versions, remixes, instrumentals and collaborations must use
- // their own Spotify release cover, not an earlier song with a similar title.
+ // Unique mixes, instrumentals and language versions retain the artwork
+ // of their actual Spotify release (including remixes from separate singles).
  const specialVersion=/\b(remix|instrumental|inst|sped up|slowed|workout|orchestra|feat|with|holiday|korean ver|chinese ver)\b/.test(originalCoverKey);
- if(row.kind!=='album'&&!rank.startsWith('albums')&&specialVersion&&row.id&&/^[A-Za-z0-9]{22}$/.test(row.id))return 'track:'+row.id;
+ if(row.kind!=='album'&&!rank.startsWith('albums')){
+  if(specialVersion&&row.id&&/^[A-Za-z0-9]{22}$/.test(row.id))return 'track:'+row.id;
+  const byId=firstReleaseByTrackId.get(row.id);
+  if(byId)return byId;
+  const byName=firstReleaseByName.get(tab+':'+originalCoverKey);
+  if(byName)return byName;
+ }
  // Release artwork must come from the release itself, not whichever track
  // happens to be first in the collector's list.
  if(row.kind==='album'||rank.startsWith('albums')){
