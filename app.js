@@ -233,8 +233,7 @@ function buildRows(s,p,pp,baseline){
    for(const item of catalog[tab]||[]){
      if(!isAlbumTitle(item.title))continue;
      const ids=[...new Set(item.tracks)];
-     if(!ids.every(id=>s.tracks[id]!=null))continue;
-     const streams=ids.reduce((a,id)=>a+s.tracks[id],0);
+     const streams=ids.every(id=>s.tracks[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
      const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids),yesterday=sumDaily(p,pp,ids);
      rows.push({name:albumDisplayName(item.title),streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):gain!=null&&yesterday!=null?gain-yesterday:null});
    }
@@ -244,7 +243,7 @@ function buildRows(s,p,pp,baseline){
      streams:s.tracks[id],gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:dailyChange(s,p,pp,id)
    }));
  }
- rows=uniqueRows(rows).filter(r=>r.streams!=null);
+ rows=uniqueRows(rows).filter(r=>albums||r.streams!=null);
  rows.sort((a,b)=>{const x=daily||periodic?a.gain:a.streams,y=daily||periodic?b.gain:b.streams;if(x==null)return y==null?0:1;if(y==null)return -1;return sortOrder==='least'?x-y:y-x});
  return rows;
 }
