@@ -1855,6 +1855,9 @@ function syncCalendar(){
  if(periodic){
   const selectedDates=available.filter(d=>periodKey(d)===selectedPeriodKey);
   picker.value=selectedDates.at(-1)||available.at(-1)||'';
+ const pretty=$('#prettyDate');
+ if(pretty&&picker.value){const [year,month,day]=picker.value.split('-').map(Number);pretty.textContent=new Date(Date.UTC(year,month-1,day)).toLocaleDateString('en-US',{timeZone:'UTC',month:'long',day:'numeric',year:'numeric'});}
+
   const keys=[...$('#periodPicker').options].map(o=>o.value),i=keys.indexOf(selectedPeriodKey);
   $('#prevDate').disabled=i<0||i===keys.length-1;
   $('#nextDate').disabled=i<=0;
@@ -1863,6 +1866,9 @@ function syncCalendar(){
   $('#prevDate').disabled=!date||available.indexOf(date)<=0;
   $('#nextDate').disabled=!date||available.indexOf(date)>=available.length-1;
   $('#dateNotice').textContent=selection==='latest'?'Latest confirmed snapshot':'Saved snapshot · '+(date||'');
+ const pretty=$('#prettyDate');
+ if(pretty&&picker.value){const [year,month,day]=picker.value.split('-').map(Number);pretty.textContent=new Date(Date.UTC(year,month-1,day)).toLocaleDateString('en-US',{timeZone:'UTC',month:'long',day:'numeric',year:'numeric'});}
+
  }
 }
 $('#prevDate').addEventListener('click',()=>navigateDate(-1));
