@@ -47,9 +47,9 @@ if kind=='group':
             // Spotify changes the dialog markup. Match a full, exact integer
             // adjacent to the Followers label instead of a brittle sibling XPath.
             java.util.regex.Pattern before = java.util.regex.Pattern.compile(
-                "([0-9]{1,3}(?:[,\\\\s][0-9]{3})+|[0-9]{7,10})\\\\s*Followers", java.util.regex.Pattern.CASE_INSENSITIVE);
+                "([0-9]{1,3}(?:[,\\s][0-9]{3})+|[0-9]{7,10})\\s*Followers", java.util.regex.Pattern.CASE_INSENSITIVE);
             java.util.regex.Pattern after = java.util.regex.Pattern.compile(
-                "Followers\\\\s*([0-9]{1,3}(?:[,\\\\s][0-9]{3})+|[0-9]{7,10})", java.util.regex.Pattern.CASE_INSENSITIVE);
+                "Followers\\s*([0-9]{1,3}(?:[,\\s][0-9]{3})+|[0-9]{7,10})", java.util.regex.Pattern.CASE_INSENSITIVE);
             for (int attempt = 0; attempt < 15; attempt++) {
                 for (org.openqa.selenium.WebElement dialog : driver.findElements(popup)) {
                     if (!dialog.isDisplayed()) continue;
