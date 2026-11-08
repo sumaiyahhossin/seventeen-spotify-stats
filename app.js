@@ -563,25 +563,28 @@ function originalReleaseDate(row){
 // Track chronology comes from the original catalog release containing each song,
 // not from the track's alphabetical name or its cumulative streams.
 function trackOriginalReleaseDates(){
- const byId=new Map(),byName=new Map();
- for(const item of catalog[tab]||[]){
+ const byId=new Map(),byName=new Map(),orderById=new Map(),orderByName=new Map();
+ // The catalog follows the supplied original discography. Include singles,
+ // OSTs and bonus tracks even when their exact day is not documented.
+ // Reissue entries cannot replace an earlier appearance of a recording.
+ for(const [releaseIndex,item] of (catalog[tab]||[]).entries()){
   const date=tab==='group'?groupOriginalReleaseDates[item.key]:
    item.release_date||item.releaseDate||item.first_release_date;
-  if(!/^\d{4}-\d{2}-\d{2}$/.test(date||''))continue;
-  const title=String(item.title||'').toLowerCase();
-  // Compilation/reissue songs retain their FIRST release date.
-  if(/best album|anthology|remix|all tracks/.test(title))continue;
+  const verifiedDate=/^\d{4}-\d{2}-\d{2}$/.test(date||'')?date:null;
   const ids=item.tracks||[];
   const description=String(item.description||'');
-  const match=description.match(/\(\d+\s+tracks?\)\s*:\s*(.*)$/i);
-  const names=match?match[1].split(/,\s*/):[];
+  const names=description.includes(':')?description.slice(description.indexOf(':')+1).split(/,\s*/):[];
   ids.forEach((id,i)=>{
-   if(!byId.has(id)||date<byId.get(id))byId.set(id,date);
-   const name=normTrackName(names[i]||'');
-   if(names.length===ids.length&&name&&(!byName.has(name)||date<byName.get(name)))byName.set(name,date);
+   if(!orderById.has(id))orderById.set(id,releaseIndex);
+   if(verifiedDate&&(!byId.has(id)||verifiedDate<byId.get(id)))byId.set(id,verifiedDate);
+   const name=names.length===ids.length?normTrackName(names[i]):'';
+   if(name){
+    if(!orderByName.has(name))orderByName.set(name,releaseIndex);
+    if(verifiedDate&&(!byName.has(name)||verifiedDate<byName.get(name)))byName.set(name,verifiedDate);
+   }
   });
  }
- return {byId,byName};
+ return {byId,byName,orderById,orderByName};
 }
 function formatOriginalRelease(date){return new Date(date+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric',year:'numeric'})}
 function buildRows(s,p,pp,baseline){
@@ -628,10 +631,10 @@ function buildRows(s,p,pp,baseline){
   const releaseDates=trackOriginalReleaseDates();
   rows.forEach(row=>{
    const normalized=normTrackName(row.name);
-   // Prefer a precise recording ID; title fallback only when a recording
-   // has no verified catalog ID. Do not merge alternate-language versions.
    row.releaseDate=releaseDates.byId.get(row.id)||
     releaseDates.byName.get(normalized)||null;
+   row.releaseOrder=releaseDates.orderById.get(row.id)??
+    releaseDates.orderByName.get(normalized)??null;
   });
  }
  rows.sort((a,b)=>{
@@ -643,7 +646,17 @@ function buildRows(s,p,pp,baseline){
    const x=originalReleaseDate(a),y=originalReleaseDate(b);
    // Preserve the oldest-release ordering, and reverse ONLY the dated
    // release order for newest. Undated records always follow dated ones.
-   if(!x||!y)return x? -1:y?1:String(a.name||'').localeCompare(String(b.name||''),'en',{sensitivity:'base'});
+   // For tracks, the supplied discography sequence covers singles and OSTs
+   // that have no verified calendar date. Reverse the SAME sequence for newest.
+   if(!albums&&tab==='group'){
+    const ai=a.releaseOrder,bi=b.releaseOrder;
+    if(ai!=null||bi!=null){
+     if(ai==null)return 1;
+     if(bi==null)return -1;
+     if(ai!==bi)return sortOrder==='oldest'?ai-bi:bi-ai;
+    }
+   }
+   if(!x||!y)return x?-1:y?1:String(a.name||'').localeCompare(String(b.name||''),'en',{sensitivity:'base'});
    const cmp=x.localeCompare(y);
    return cmp?(sortOrder==='oldest'?cmp:-cmp):String(a.name||'').localeCompare(String(b.name||''),'en',{sensitivity:'base'});
   }
