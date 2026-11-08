@@ -182,13 +182,12 @@ function uniqueRows(rows){
 function trackIds(s){
  const ids=Object.keys(s?.tracks||{}).filter(id=>!isHistorical(s)||historicalKind(s,id)==='track');
  const seen=new Set();
- const namedValues=new Set(ids.filter(id=>normTrackName(s.names?.[id]||idName[id])!==normTrackName(id)).map(id=>s.tracks[id]));
  return ids.filter(id=>{
    const name=normTrackName(s.names?.[id]||idName[id]);
-   // The catalog has alternate Spotify IDs for the same recordings; some
-   // aliases have no title and exactly repeat a named recording's count.
-   if(!isHistorical(s)&&(!name||name===normTrackName(id))&&namedValues.has(s.tracks[id]))return false;
-   const key=(name||id)+'|'+s.tracks[id];
+   // Never remove an unidentified Spotify track merely because its stream
+   // count matches another song. Equal play counts do not prove duplication.
+   // Only collapse rows whose verified normalized title AND count match.
+   const key=(name&&name!==normTrackName(id)?name:id)+'|'+s.tracks[id];
    if(seen.has(key))return false;
    seen.add(key);
    return true;
