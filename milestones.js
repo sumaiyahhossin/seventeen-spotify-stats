@@ -234,9 +234,11 @@ function build(){
   const reached=Number.isFinite(currentValue)&&currentValue>=threshold;
   if(!reached)continue;
   const release=originalSongDates[normalized]||releases.get('name:'+normalized)||releases.get(item.id)||releases.get(key)||null;
-  const verifiedDate=evidence?.date||(crossed?.exact?crossed.date:null);
+  // Daily snapshot crossings use the date of the first snapshot at/above the milestone.
+  // Keep earlier documented announcement dates when a gap in snapshots could hide the true crossing.
+  const verifiedDate=crossed?.exact?crossed.date:(evidence?.date||crossed?.date||null);
   const duration=verifiedDate&&release&&days(release,verifiedDate)>=0?days(release,verifiedDate):null;
-  rows.push({id:item.id,name:item.name,release,date:verifiedDate,range:!evidence&&crossed&&!crossed.exact?crossed:null,duration,source:evidence?.source,url:evidence?.url,status:evidence?'Published historical record':crossed?.exact?'Verified daily crossing':crossed?'Between saved dates':'Before archive'});
+  rows.push({id:item.id,name:item.name,release,date:verifiedDate,range:!evidence&&crossed&&!crossed.exact?crossed:null,duration,source:evidence?.source,url:evidence?.url,status:crossed?.exact?'Verified daily snapshot crossing':evidence?'Published historical record':crossed?'First snapshot at milestone (date may be later than crossing)':'Before archive'});
  }
  rows.sort((a,b)=>{
   if(sort==='name')return a.name.localeCompare(b.name);
