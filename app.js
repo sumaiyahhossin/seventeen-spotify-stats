@@ -522,7 +522,7 @@ function discographyRows(s,p,pp,baseline){
   // Period baselines retain their original archive values; translate their
   // snapshots as well rather than treating missing records as zero.
   if(baseline){
-   baseline={...baseline,start:remap(baseline.start),
+   baseline={...baseline,start:remap(baseline.start),prevStart:remap(baseline.prevStart),prevEnd:remap(baseline.prevEnd),
     observedPairs:(baseline.observedPairs||[]).map(([now,before])=>[remap(now),remap(before)]),
     previousObservedPairs:(baseline.previousObservedPairs||[]).map(([now,before])=>[remap(now),remap(before)])};
   }
@@ -556,9 +556,11 @@ function discographyRows(s,p,pp,baseline){
   const ids=[...new Set((combo?combo.keys.flatMap(k=>releasesByKey.get(k)?.tracks||[]):item.tracks)||[])];
   if(!ids.length)continue;
   const streams=ids.every(id=>s.tracks?.[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
-  const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
+  const observedGains=periodic?ids.map(id=>periodGain(s,baseline,id)).filter(v=>v!=null):[];
+  const partialGain=periodic&&observedGains.length>0&&observedGains.length<ids.length;
+  const gain=periodic?(observedGains.length?observedGains.reduce((a,b)=>a+b,0):null):sumDaily(s,p,ids);
   const dayChange=sumDailyChange(s,p,pp,ids);
-  const albumTotalRow={name:combo?.name||catalogReleaseLabel(item),artworkRelease:item.key,releaseDate:tab==='group'?(groupOriginalReleaseDates[item.key]||groupStandaloneReleaseDates[item.key]||null):null,streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):dayChange,changePartial:periodic?periodComparison(s,baseline,ids).partial:dailyComparison(s,p,pp,ids).partial,kind:'album',releaseOrder:rows.length};
+  const albumTotalRow={name:combo?.name||catalogReleaseLabel(item),artworkRelease:item.key,releaseDate:tab==='group'?(groupOriginalReleaseDates[item.key]||groupStandaloneReleaseDates[item.key]||null):null,streams,gain,estimatedGain:partialGain,change:periodic?sumPeriodChange(s,baseline,ids):dayChange,changePartial:periodic?periodComparison(s,baseline,ids).partial:dailyComparison(s,p,pp,ids).partial,kind:'album',releaseOrder:rows.length};
   for(const id of [...new Set(item.tracks||[])]){
    // Show the complete catalog even when a historical snapshot has no matching Spotify ID.
    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
@@ -578,10 +580,12 @@ function discographyRows(s,p,pp,baseline){
      .flatMap(k=>releasesByKey.get(k)?.tracks||[]))];
     const allStreams=allIds.every(id=>s.tracks?.[id]!=null)
      ?allIds.reduce((total,id)=>total+s.tracks[id],0):null;
-    const allGain=periodic?sumPeriod(s,baseline,allIds):sumDaily(s,p,allIds);
+    const allObserved=periodic?allIds.map(id=>periodGain(s,baseline,id)).filter(v=>v!=null):[];
+    const allPartial=periodic&&allObserved.length>0&&allObserved.length<allIds.length;
+    const allGain=periodic?(allObserved.length?allObserved.reduce((a,b)=>a+b,0):null):sumDaily(s,p,allIds);
     const dayChange=sumDailyChange(s,p,pp,allIds);
     rows.push({name:'17 IS RIGHT HERE — All Tracks',artworkRelease:'g49',
-     streams:allStreams,gain:allGain,
+     streams:allStreams,gain:allGain,estimatedGain:allPartial,
      change:periodic?sumPeriodChange(s,baseline,allIds):
       dayChange,changePartial:periodic?periodComparison(s,baseline,allIds).partial:dailyComparison(s,p,pp,allIds).partial,
      kind:'album',releaseOrder:rows.length});
