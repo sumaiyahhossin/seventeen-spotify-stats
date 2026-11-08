@@ -522,7 +522,8 @@ function discographyRows(s,p,pp,baseline){
   // snapshots as well rather than treating missing records as zero.
   if(baseline){
    baseline={...baseline,start:remap(baseline.start),
-    observedPairs:(baseline.observedPairs||[]).map(([now,before])=>[remap(now),remap(before)])};
+    observedPairs:(baseline.observedPairs||[]).map(([now,before])=>[remap(now),remap(before)]),
+    previousObservedPairs:(baseline.previousObservedPairs||[]).map(([now,before])=>[remap(now),remap(before)])};
   }
  }
 
@@ -1596,9 +1597,20 @@ async function periodBaseline(s){
    const d=month+'-'+String(day).padStart(2,'0');
    if(!dates.includes(d))missing.push(day);
   }
+  let previousPairs=[];
+  if(month==='2025-12'){
+   const november=dates.filter(d=>d.startsWith('2025-11')).sort();
+   const comparison=await Promise.all(november.map(async day=>{
+    const yesterday=shifted(day,-1);
+    if(!dates.includes(yesterday))return null;
+    const [now,before]=await Promise.all([getDate('group',day),getDate('group',yesterday)]);
+    return now&&before?[now,before]:null;
+   }));
+   previousPairs=comparison.filter(Boolean);
+  }
   return {start:await getDate('group',observed[0]),prevStart:null,prevEnd:null,range,
-   observedPairs:pairs.filter(Boolean),observedDays:observed.length,
-   missingDays:missing,partialMonth:month};
+   observedPairs:pairs.filter(Boolean),previousObservedPairs:previousPairs,
+   observedDays:observed.length,missingDays:missing,partialMonth:month};
  }
  return {start,prevStart,prevEnd,range};
 }
@@ -1632,7 +1644,12 @@ function periodGain(s,context,id){
  return context?.start?snapshotDelta(s,context.start,id):null;
 }
 function periodChange(s,context,id){
- if(context?.observedPairs)return null; // No October 2025 snapshots to compare.
+ if(context?.observedPairs){
+  if(!context.previousObservedPairs?.length)return null;
+  const sum=pairs=>{const values=pairs.map(([now,previous])=>snapshotDelta(now,previous,id)).filter(v=>v!=null);return values.length?values.reduce((a,b)=>a+b,0):null};
+  const current=sum(context.observedPairs),previous=sum(context.previousObservedPairs);
+  return current!=null&&previous!=null?current-previous:null;
+ }
  if(!context?.start||!context.prevStart||!context.prevEnd)return null;
  const now=snapshotDelta(s,context.start,id);
  // Follow the identity already resolved at the start of this period,
