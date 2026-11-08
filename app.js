@@ -1476,6 +1476,19 @@ async function periodBaseline(s){
   return candidate?getDate(tab,candidate):null;
  };
  const [start,prevStart,prevEnd]=await Promise.all([get(range.start),get(range.prevStart),get(range.prevEnd)]);
+ // November 2025 has no Nov 1–15 or Nov 27 group snapshots.
+ // Sum only consecutive observed days: 17–26 and 29–30.
+ // Never imply an October comparison when October data is absent.
+ if(tab==='group'&&rank.endsWith('monthly')&&s.date.slice(0,7)==='2025-11'){
+  const days=['17','18','19','20','21','22','23','24','25','26','29','30'];
+  const pairs=await Promise.all(days.map(async day=>{
+   const now=await getDate('group','2025-11-'+day);
+   const previous=await getDate('group',shifted('2025-11-'+day,-1));
+   return now&&previous?[now,previous]:null;
+  }));
+  return {start:await getDate('group','2025-11-16'),prevStart:null,prevEnd:null,range,
+   observedPairs:pairs.filter(Boolean),partialDates:'Nov 17–26 and Nov 29–30',missingDates:'Nov 1–15 and Nov 27'};
+ }
  return {start,prevStart,prevEnd,range};
 }
 // To reuse the verified November 5 track match for earlier spreadsheet dates.
@@ -1500,9 +1513,14 @@ function snapshotDelta(now,old,id){
  return delta;
 }
 function periodGain(s,context,id){
+ if(context?.observedPairs){
+  const gains=context.observedPairs.map(([now,previous])=>snapshotDelta(now,previous,id));
+  return gains.length&&gains.every(v=>v!=null)?gains.reduce((a,b)=>a+b,0):null;
+ }
  return context?.start?snapshotDelta(s,context.start,id):null;
 }
 function periodChange(s,context,id){
+ if(context?.observedPairs)return null; // No October 2025 snapshots to compare.
  if(!context?.start||!context.prevStart||!context.prevEnd)return null;
  const now=snapshotDelta(s,context.start,id);
  // Follow the identity already resolved at the start of this period,
@@ -1544,7 +1562,9 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
   return format(s.date);
  };
  $('#date').textContent=periodDateLabel();
- $('#dateDescription').textContent=isPeriod?'Latest available snapshot in selected '+periodName.toLowerCase()+' period.':'Spotify updates once a day.';
+ $('#dateDescription').textContent=baseline?.observedPairs
+  ?'PARTIAL NOVEMBER 2025 · Stream gains cover Nov 17–26 and Nov 29–30 only (12 observed daily intervals). Missing: Nov 1–15 and Nov 27; Nov 16 and Nov 28 are baseline-only. Previous-month comparison unavailable because October snapshots are missing.'
+  :isPeriod?'Latest available snapshot in selected '+periodName.toLowerCase()+' period.':'Spotify updates once a day.';
  $('#gainHeading').textContent=(isPeriod?periodName.toUpperCase():rank.endsWith('overall')?'TOTAL':'DAILY')+' STREAM GROWTH';
  const ids=s?trackIds(s):[];
  const memberIds=tab==='solo'&&selectedSoloArtist&&s?soloArtistTrackIds(s):ids;
