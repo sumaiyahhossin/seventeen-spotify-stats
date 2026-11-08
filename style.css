@@ -428,3 +428,43 @@ body{
 button,select,input{color:#f0f2ff}
 input::placeholder{color:#9ba3c4}
 @media(min-width:800px){.panel{box-shadow:0 30px 90px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1)!important}}
+
+/* Spacious dark glass layout and precision-square album artwork. */
+main{max-width:1260px!important;padding-inline:clamp(16px,3vw,40px)!important}
+.stats{gap:clamp(16px,2.2vw,28px)!important;margin-block:38px 46px!important}
+.stat{padding:clamp(22px,2.4vw,32px)!important;min-width:0}
+.panel{padding:clamp(22px,3.4vw,46px)!important;margin-block:28px!important}
+.section-top,.archive{gap:28px!important}
+.controls{gap:20px!important;margin:34px 0 28px!important}
+.ranktabs,.ranking-category{gap:10px!important}
+.ranking-pickers{gap:16px!important}
+.rank-row{min-height:76px;column-gap:18px!important}
+.rank-row .track{gap:13px!important}
+.cover-slot,.rank-row .cover-slot{
+ aspect-ratio:1 / 1!important;
+ border-radius:7px!important;
+ overflow:hidden!important;
+ flex-shrink:0!important;
+}
+.cover,.rank-row .cover{
+ display:block!important;
+ width:100%!important;
+ height:100%!important;
+ aspect-ratio:1 / 1!important;
+ object-fit:cover!important;
+ object-position:center!important;
+ border-radius:7px!important;
+}
+@media(max-width:800px){
+ .stats{gap:14px!important}
+ .panel{margin-block:20px!important}
+ .rank-row{column-gap:9px!important}
+}
+@media(max-width:680px){
+ .stats{gap:12px!important;margin-block:24px 30px!important}
+ .stat{padding:17px 13px!important}
+ .panel{padding:22px 14px!important}
+ .controls{gap:14px!important}
+ .rank-row .cover-slot{aspect-ratio:1 / 1!important;border-radius:6px!important}
+ .rank-row .cover{aspect-ratio:1 / 1!important;object-fit:cover!important;border-radius:6px!important}
+}
