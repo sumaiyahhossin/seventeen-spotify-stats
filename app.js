@@ -313,7 +313,7 @@ function buildRows(s,p,pp,baseline){
 const coverCache=new Map(),coverLookup=new Map(),releaseCoverLookup=new Map();
 const releaseArtNames={'fml album':'FML','al1 album':'Al1','you make my day album':'YOU MAKE MY DAY',';[semicolon] album':'Semicolon','we make you album':'WE MAKE YOU','24h single':'24H','24h mini album':'24H','fallin\' flower single':'Fallin\' Flower','hitorijanai single':'Not Alone','an ode new tracks album':'An Ode'};
 const releaseArtCache=new Map();
-const persistentCoverKey='svt-artwork-cache-v4-exact-releases';
+const persistentCoverKey='svt-artwork-cache-v5-original-album-images';
 let persistentCovers={};
 try{persistentCovers=JSON.parse(localStorage.getItem(persistentCoverKey)||'{}')||{}}catch{}
 function rememberCover(key,url){
@@ -378,6 +378,28 @@ const originalReleaseSongs={
  'seventeenth heaven album':['sos','god of music','diamond days','back 2 back','monster','yawn','headliner'],
  'spill the feels album':['eyes on you','love money fame','1 to 13','candy','rain','water']
 };
+// Original album art is looked up by release title, not by a track ID
+// (the same song can be catalogued under a later compilation).
+const originalArtworkTitles={
+ '17 carat album':'17 CARAT','boys be album':'BOYS BE',
+ 'love & letter album':'LOVE&LETTER',
+ 'love & letter repackage new tracks':'Love&Letter Repackage Album',
+ 'going seventeen album':'Going Seventeen','al1 album':'Al1',
+ 'teen, age album':'TEEN, AGE',"director's cut album":"DIRECTOR'S CUT",
+ 'you make my day album':'YOU MAKE MY DAY','you make my dawn album':'YOU MADE MY DAWN',
+ 'an ode new tracks album':'An Ode','heng':'Heng:garæ',
+ ';[semicolon] album':'Semicolon','your choice album':'Your Choice',
+ 'attacca album':'Attacca','face the sun album':'Face the Sun',
+ 'sector 17 repackage album new tracks':'SECTOR 17',
+ 'fml album':'FML','seventeenth heaven album':'SEVENTEENTH HEAVEN',
+ 'spill the feels album':'SPILL THE FEELS',
+ '17 is right here best album':'17 IS RIGHT HERE'
+};
+const originalArtworkBySong=new Map();
+for(const [release,songs] of Object.entries(originalReleaseSongs)){
+ const title=originalArtworkTitles[release];
+ if(title)for(const song of songs)originalArtworkBySong.set(coverKey(song),title);
+}
 const originalReleaseLookup=new Map();
 function buildOriginalReleaseLookup(){
  for(const [title,names] of Object.entries(originalReleaseSongs)){
@@ -470,6 +492,8 @@ function artworkTrack(row){
  // Specific Japanese versions have their own original Japanese release.
  if(japaneseOriginalArtwork[key])return 'release:'+encodeURIComponent(japaneseOriginalArtwork[key]);
  // This map follows the song-to-original-album discography listing.
+ const releaseTitle=originalArtworkBySong.get(key);
+ if(releaseTitle&&!version)return 'release:'+encodeURIComponent(releaseTitle);
  const first=originalReleaseLookup.get(key);
  if(first&&!version)return 'track:'+first;
  const discography=firstReleaseByTitle.get(key);
@@ -503,7 +527,9 @@ function fillArtwork(){
    else if(id?.startsWith('release:')){
     const title=decodeURIComponent(id.slice(8));
     if(!releaseArtCache.has(title))releaseArtCache.set(title,persistentCovers['release:'+title]?Promise.resolve(persistentCovers['release:'+title]):fetch('https://itunes.apple.com/search?'+new URLSearchParams({term:'SEVENTEEN '+title,entity:'album',limit:'50'})).then(r=>r.ok?r.json():null).then(data=>{
-     const matches=(data?.results||[]).filter(x=>/seventeen/i.test(x.artistName||'')&&coverKey(x.collectionName).replace(/\\b(ep|single|album)\\b/g,'').trim()===coverKey(title));
+     const clean=t=>coverKey(t).replace(/\\b(ep|single|album|mini)\\b/g,'').trim();
+     const wanted=clean(title);
+     const matches=(data?.results||[]).filter(x=>/seventeen/i.test(x.artistName||'')&&clean(x.collectionName)===wanted);
      const url=matches[0]?.artworkUrl100?.replace('100x100bb','600x600bb')||null;rememberCover('release:'+title,url);return url;
     }).catch(()=>null));
     url=await releaseArtCache.get(title);
