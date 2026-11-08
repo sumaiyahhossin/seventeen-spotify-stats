@@ -1579,6 +1579,25 @@ async function periodBaseline(s){
   return candidate?getDate(tab,candidate):null;
  };
  const [start,prevStart,prevEnd]=await Promise.all([get(range.start),get(range.prevStart),get(range.prevEnd)]);
+ // Early November 2025 has no pre-November baseline. Build weekly gains
+ // from the real consecutive-day observations instead of returning blanks.
+ if(tab==='group'&&rank.endsWith('weekly')&&s.date.startsWith('2025-11')){
+  const weekStart=range.first;
+  const observed=dates.filter(d=>d>=weekStart&&d<=s.date).sort();
+  const makePairs=async dayList=>(await Promise.all(dayList.map(async day=>{
+   const previousDay=shifted(day,-1);
+   if(!available.has(previousDay))return null;
+   const [now,previous]=await Promise.all([getDate('group',day),getDate('group',previousDay)]);
+   return now&&previous?[now,previous]:null;
+  }))).filter(Boolean);
+  const previousWeekStart=shifted(weekStart,-7);
+  const previousWeekEnd=shifted(weekStart,-1);
+  const previousDates=dates.filter(d=>d>=previousWeekStart&&d<=previousWeekEnd).sort();
+  return {start,prevStart,prevEnd,range,
+   observedPairs:await makePairs(observed),
+   previousObservedPairs:await makePairs(previousDates),
+   partialWeek:true};
+ }
  // Historical months with missing dates: count only actual consecutive daily
  // observations. This prevents a gap from being reported as a single day's
  // streams, and never assumes an absent spreadsheet row is zero.
