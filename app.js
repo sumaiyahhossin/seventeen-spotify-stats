@@ -12,7 +12,7 @@ try{
   if(['group','solo'].includes(saved.tab))tab=saved.tab;
   if(['tracks','albums','discography'].includes(saved.rankType))rankType=saved.rankType;
   if(['daily','weekly','monthly','yearly','overall'].includes(saved.period))rank=rankType+'-'+saved.period;
-  if(['most','least','newest','oldest'].includes(saved.sortOrder))sortOrder=saved.sortOrder;
+  if(['most','least','newest','oldest','az','za'].includes(saved.sortOrder))sortOrder=saved.sortOrder;
   if(saved.selection==='latest'||/^\d{4}-\d{2}-\d{2}$/.test(saved.selection||''))selection=saved.selection;
   try{const remembered=localStorage.getItem(savedArchiveKey);if(remembered&&/^\d{4}-\d{2}-\d{2}$/.test(remembered))selection=remembered}catch{}
  }
@@ -601,7 +601,24 @@ function buildRows(s,p,pp,baseline){
  if(albums)rows.forEach(row=>{row.name=cleanAlbumLabel(row.name)});
  rows=uniqueRows(rows).filter(r=>albums||r.streams!=null);
  if(albums)rows.forEach(row=>{row.releaseDate=originalReleaseDate(row)});
- rows.sort((a,b)=>{if(sortOrder==='newest'||sortOrder==='oldest'){const x=originalReleaseDate(a),y=originalReleaseDate(b);if(!x)return y?1:0;if(!y)return -1;return sortOrder==='newest'?y.localeCompare(x):x.localeCompare(y)}const x=daily||periodic?a.gain:a.streams,y=daily||periodic?b.gain:b.streams;if(x==null)return y==null?0:1;if(y==null)return -1;return sortOrder==='least'?x-y:y-x});
+ rows.sort((a,b)=>{
+  if(sortOrder==='az'||sortOrder==='za'){
+   const cmp=String(a.name||'').localeCompare(String(b.name||''),'en',{sensitivity:'base',numeric:true});
+   return sortOrder==='az'?cmp:-cmp;
+  }
+  if(sortOrder==='oldest'||sortOrder==='newest'){
+   const x=originalReleaseDate(a),y=originalReleaseDate(b);
+   // Preserve the oldest-release ordering, and reverse ONLY the dated
+   // release order for newest. Undated records always follow dated ones.
+   if(!x||!y)return x? -1:y?1:String(a.name||'').localeCompare(String(b.name||''),'en',{sensitivity:'base'});
+   const cmp=x.localeCompare(y);
+   return cmp?(sortOrder==='oldest'?cmp:-cmp):String(a.name||'').localeCompare(String(b.name||''),'en',{sensitivity:'base'});
+  }
+  const x=daily||periodic?a.gain:a.streams,y=daily||periodic?b.gain:b.streams;
+  if(x==null)return y==null?0:1;
+  if(y==null)return -1;
+  return sortOrder==='least'?x-y:y-x;
+ });
  return rows;
 }
 
