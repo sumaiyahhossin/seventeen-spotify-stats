@@ -336,6 +336,10 @@ function buildCoverLookup(){
  }
 }
 const originalReleaseSongs={
+ '17 carat album':['shining diamond','adore u','ah yeah','jam jam','20'],
+ 'fml album':['f ck my life','super','fire','i don t understand but i luv u','dust','april shower'],
+ 'sector 17 repackage album new tracks':['circles','world','cheers','fallin flower korean ver'],
+ '17 is right here best album':['maestro','lalali','spell','cheers to youth','call call call korean ver','happy ending korean ver','24h korean ver','not alone korean ver','power of love korean ver','dream korean ver','ima even if the world ends tomorrow korean ver','adore u inst'],
  'boys be album':['fronting','mansae','when i grow up','omg','rock'],
  'love & letter album':['chuck','pretty u','still lonely','hit song','say yes','drift away','adore u vocal team ver','monday to saturday hiphop team ver','shining diamond performance team ver','love letter'],
  'love & letter repackage new tracks':['no f u n','very nice','healing','simple','space'],
@@ -433,13 +437,23 @@ function artworkTrack(row){
  }
 
  const originalCoverKey=coverKey(row.name);
- // Use exact Spotify track identity for normal songs and their versions.
- // Never infer a cover from a similarly named song or another member.
- if(row.kind!=='album'&&!rank.startsWith('albums')&&row.id&&/^[A-Za-z0-9]{22}$/.test(row.id)){
-  const original=tab==='group'?originalReleaseLookup.get(originalCoverKey):null;
-  const isVersion=/\b(remix|instrumental|inst|sped up|slowed|workout|orchestra|feat|with|holiday|korean ver|chinese ver|japanese ver)\b/.test(originalCoverKey);
-  return !isVersion&&original?'track:'+original:'track:'+row.id;
+ // Resolve the FIRST release before any anthology track-ID artwork.
+ // An anthology's Spotify track ID points to the anthology cover even when
+ // the recording originally appeared years earlier.
+ const isAlbumRow=row.kind==='album'||rank.startsWith('albums');
+ const isAlternate=/\b(remix|instrumental|inst|sped up|slowed|workout|orchestra|feat|with|holiday|korean ver|chinese ver|japanese ver)\b/.test(originalCoverKey);
+ if(!isAlbumRow&&tab==='group'){
+  if(japaneseOriginalArtwork[originalCoverKey])return 'release:'+encodeURIComponent(japaneseOriginalArtwork[originalCoverKey]);
+  const original=originalReleaseLookup.get(originalCoverKey);
+  if(original&&!isAlternate)return 'track:'+original;
+  // The Korean versions and anthology-exclusive recordings are first
+  // released on 17 IS RIGHT HERE, not the earlier Japanese singles.
+  if(['call call call korean ver','happy ending korean ver','fallin flower korean ver',
+      '24h korean ver','not alone korean ver','power of love korean ver',
+      'dream korean ver','ima even if the world ends tomorrow korean ver',
+      'adore u inst'].includes(originalCoverKey))return 'release:'+encodeURIComponent('17 IS RIGHT HERE');
  }
+ if(!isAlbumRow&&row.id&&/^[A-Za-z0-9]{22}$/.test(row.id))return 'track:'+row.id;
  // Release artwork must come from the release itself, not whichever track
  // happens to be first in the collector's list.
  if(row.kind==='album'||rank.startsWith('albums')){
