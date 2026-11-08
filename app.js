@@ -218,7 +218,7 @@ function normTrackName(name){
 }
 function comparablePrevious(s,p,id){
  if(!s||!p||s.tracks?.[id]==null)return null;
- if(s.date==='2026-11-06'&&p.date==='2026-11-05'&&s.baseline_ids_2026_11_05){
+ if(p.date==='2026-11-05'&&s.baseline_ids_2026_11_05){
   const priorId=s.baseline_ids_2026_11_05[id];
   return priorId&&p.tracks[priorId]!=null?{id:priorId,value:p.tracks[priorId]}:null;
  }
@@ -361,7 +361,7 @@ function uniqueRows(rows){
 // saved values agree; never infer duplicates from matching numbers alone.
 const groupStreamAliases=[["2kDrUAONMhG6CbDGBkhdrY","2TLzrymJ9lpH2wXp1ub5Aj"],["6I2tqFhk8tq69iursYxuxd","3g9z9amouOxjEZve1SpSTE"],["1Rrj7KyS2R6SP9CQMDJW1w","3nAUdBQxle8l1EeOxW3m0R"],["6LnEoRQKMcaFTR5UvaKuBy","4CAK2Dmo5YVGDQxs789pbx"],["1117juaaAkSIUsQxTmmcKM","2mFCN72V3rTq1BT4WWddIF"],["2UE9XGbAzicJIyo4bB6sqM","743yOACnWcrrijTnWdT5YN"],["4MTNimMDRyFZv37Thcktwa","6KNp9wSUGYhtbE33su6xZv"],["3I5W8iA8iZAyO62UVceK3F","2r3aqjJhVFc5JjQAaFKNdR"],["63jDEQCIg1YJLYeiqKJxFg","0C49m3uL232ZGOwrEZucxS"]];
 function trackIds(s){
- if(tab==='group'&&s?.date==='2026-11-06'&&Array.isArray(s.canonical_track_ids))
+ if(tab==='group'&&Array.isArray(s?.canonical_track_ids))
   return s.canonical_track_ids.filter(id=>s.tracks?.[id]!=null);
  const ids=Object.keys(s?.tracks||{}).filter(id=>(!isHistorical(s)||historicalKind(s,id)==='track')&&!/^\s*picheolin\s+streams\s*$/i.test(s.names?.[id]||id));
  const seen=new Set();
@@ -1324,7 +1324,7 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
  $('#date').textContent=s?.date||'—';const ids=s?trackIds(s):[];// Historical spreadsheets repeat songs under repackages and compilations,
  // so their raw row count is not the canonical distinct-song count.
  // To keep the displayed group count at the verified 227 until duplicate IDs are checked.
- const groupTrackCount=s&&tab==='group'?(isHistorical(s)?(Object.values(s.names||{}).some(n=>/^tiny light$/i.test(String(n).trim()))?227:226):Math.min(ids.length,227)):ids.length;
+ const groupTrackCount=s&&tab==='group'&&isHistorical(s)?(Object.values(s.names||{}).some(n=>/^tiny light$/i.test(String(n).trim()))?227:226):ids.length;
  $('#count').textContent=s?fmt(groupTrackCount):'—';$('#listeners').textContent=fmt(audienceValue(s,'listeners'));const currentFollowers=audienceValue(s,'followers'),previousFollowers=audienceValue(p,'followers');
  $('#followers').textContent=fmt(currentFollowers);
  if(currentFollowers==null)$('#followersChange').textContent=previousFollowers!=null?'Current count unavailable · previous count '+fmt(previousFollowers)+' ('+(p?.date||'')+')':'Current follower count unavailable';const listenerNow=audienceValue(s,'listeners'),listenerPrev=audienceValue(p,'listeners'),followerNow=audienceValue(s,'followers'),followerPrev=audienceValue(p,'followers');const showDelta=(selector,now,prev)=>{const n=now!=null&&prev!=null&&p&&s&&((Date.parse(s.date)-Date.parse(p.date))/86400000===1)?now-prev:null;$(selector).textContent=n==null?'Change from previous day unavailable':(n>=0?'+':'−')+fmt(Math.abs(n))+' vs previous day';};showDelta('#listenersChange',listenerNow,listenerPrev);
