@@ -44,7 +44,6 @@ function buildNames(){
  // Explicit names for catalog entries whose descriptions are missing or
  // malformed. These IDs are grounded in the corresponding release listings.
  const verifiedNames={
-  '1WEk8mX0loccWCAcTZqVH8':"Don't Wanna Cry",
   '2UE9XGbAzicJIyo4bB6sqM':'MAESTRO',
   '469YeZRBzZw8AnNQvG5GRS':'CALL CALL CALL! (Korean Ver.)',
   '5NfUbEKgLTdUWHTcU7F56Q':'LOVE, MONEY, FAME (Sped Up Ver.)',
@@ -164,7 +163,6 @@ function displayTrackName(name){
  const raw=String(name||'').trim(),key=coverKey(raw);
  if(/^[A-Za-z0-9]{22}$/.test(raw))return 'Unidentified Spotify track';
  const official={
-  'don t listen in secret':"Don't Listen in Secret",'i don t know':"I Don't Know",'i don t understand but i luv u':"I Don't Understand But I Luv U",'i can t run away':"I Can't Run Away",'when i grow up':'When I Grow Up','don quixote':'DON QUIXOTE','don t wanna cry':"Don't Wanna Cry",'thinkin about you':"Thinkin' About You",'heaven s cloud':"Heaven's Cloud",'what s good':"What's Good",'f ck my life':'F*ck My Life",'bout you':"'bout you",'can t see the end':"Can't See the End",'no f u n':'NO F.U.N',
   '20 0':'20','247 0':'247','gom':'God of Music','golm':'God of Light Music',
   'gom inst':'God of Music (Inst.)','gom trot remix':'God of Music (Trot Remix)',
   'golm inst':'God of Light Music (Inst.)',
@@ -215,14 +213,16 @@ function isAlbumTitle(name){
  return /always yours|17 is right here|sector 17|love & letter repackage|director.s cut|\balbum\b|\brepackage\b|\bmini\b|\bep\b|\bheng\b|\bsemicolon\b|\bserenade\b/.test(n);
 }
 function uniqueRows(rows){
- // Keep all distinct Spotify track IDs. Two releases can have the same
- // title and stream count without being the same catalog entry.
  const seen=new Set();
  return rows.filter(row=>{
-  const key=row.id||row.releaseKey||row.name;
+  // Spotify may expose separate track IDs for the same recording. A title
+  // alone is not enough to merge versions, and matching counts alone are
+  // not enough either. Keep unidentified IDs distinct.
+  const title=normTrackName(row.name);
+  const hasVerifiedTitle=title&&title!==normTrackName(row.id||'');
+  const key=(hasVerifiedTitle?title:(row.id||title))+'|'+row.streams;
   if(seen.has(key))return false;
-  seen.add(key);
-  return true;
+  seen.add(key);return true;
  });
 }
 // Confirmed November 6 alias pairs: different catalog IDs carrying the
@@ -230,9 +230,24 @@ function uniqueRows(rows){
 // saved values agree; never infer duplicates from matching numbers alone.
 const groupStreamAliases=[["6I2tqFhk8tq69iursYxuxd","3g9z9amouOxjEZve1SpSTE"],["1Rrj7KyS2R6SP9CQMDJW1w","3nAUdBQxle8l1EeOxW3m0R"],["6LnEoRQKMcaFTR5UvaKuBy","4CAK2Dmo5YVGDQxs789pbx"],["1117juaaAkSIUsQxTmmcKM","2mFCN72V3rTq1BT4WWddIF"],["2UE9XGbAzicJIyo4bB6sqM","743yOACnWcrrijTnWdT5YN"],["4MTNimMDRyFZv37Thcktwa","6KNp9wSUGYhtbE33su6xZv"],["2kDrUAONMhG6CbDGBkhdrY","2TLzrymJ9lpH2wXp1ub5Aj"],["3I5W8iA8iZAyO62UVceK3F","2r3aqjJhVFc5JjQAaFKNdR"],["63jDEQCIg1YJLYeiqKJxFg","0C49m3uL232ZGOwrEZucxS"],["74rpBQDDUA116sss0a0Tiy","3bxt2gMvBO1Q1g0WZVOSdq"],["2UHaIBd2uiIFLZ9pgHMpJl","1GzYKagCh7jmdETXLcxT3H"]];
 function trackIds(s){
- // Never discard collected tracks because names or stream counts coincide.
- // A catalog audit must not silently remove legitimate Spotify IDs.
- return Object.keys(s?.tracks||{}).filter(id=>!isHistorical(s)||historicalKind(s,id)==='track');
+ const ids=Object.keys(s?.tracks||{}).filter(id=>!isHistorical(s)||historicalKind(s,id)==='track');
+ const seen=new Set();
+ const redundant=new Set();
+ if(!isHistorical(s))for(const [primary,alias] of groupStreamAliases){
+  if(s.tracks[primary]!=null&&s.tracks[alias]!=null&&s.tracks[primary]===s.tracks[alias])
+   redundant.add(alias);
+ }
+ return ids.filter(id=>{
+   if(redundant.has(id))return false;
+   const name=normTrackName(s.names?.[id]||idName[id]);
+   // Never remove an unidentified Spotify track merely because its stream
+   // count matches another song. Equal play counts do not prove duplication.
+   // Only collapse rows whose verified normalized title AND count match.
+   const key=(name&&name!==normTrackName(id)?name:id)+'|'+s.tracks[id];
+   if(seen.has(key))return false;
+   seen.add(key);
+   return true;
+ });
 }
 // The daily ranking compares two consecutive daily stream counts, not
 // a daily stream count with zero. Missing days or values remain unavailable.
@@ -298,7 +313,7 @@ function buildRows(s,p,pp,baseline){
 const coverCache=new Map(),coverLookup=new Map(),releaseCoverLookup=new Map();
 const releaseArtNames={'fml album':'FML','al1 album':'Al1','you make my day album':'YOU MAKE MY DAY',';[semicolon] album':'Semicolon','we make you album':'WE MAKE YOU','24h single':'24H','24h mini album':'24H','fallin\' flower single':'Fallin\' Flower','hitorijanai single':'Not Alone','an ode new tracks album':'An Ode'};
 const releaseArtCache=new Map();
-const persistentCoverKey='svt-artwork-cache-v6-reviewed-track-titles';
+const persistentCoverKey='svt-artwork-cache-v5-original-album-images';
 let persistentCovers={};
 try{persistentCovers=JSON.parse(localStorage.getItem(persistentCoverKey)||'{}')||{}}catch{}
 function rememberCover(key,url){
@@ -448,137 +463,89 @@ function streamTrackUrl(row){
 }
 // Artwork is resolved from the discography release, never from an
 // anthology track or a fuzzy search result for a similarly named release.
-// KProfiles discography is the authority for original song/release associations
-// and release dates. Covers are fetched only for the matching album, never a Spotify track.
-const kprofilesReleaseDates={
- '17 CARAT':'2015-05-29','BOYS BE':'2015-09-10',
- 'LOVE&LETTER':'2016-04-25','Love&Letter Repackage Album':'2016-07-04',
- 'Going Seventeen':'2016-12-05','Al1':'2017-05-22',
- 'TEEN, AGE':'2017-11-06',"DIRECTOR'S CUT":'2018-02-05',
- 'WE MAKE YOU':'2018-05-30','YOU MAKE MY DAY':'2018-07-16',
- 'YOU MADE MY DAWN':'2019-01-21','Happy Ending':'2019-05-29',
- 'An Ode':'2019-09-16',"Fallin' Flower":'2020-04-01',
- 'Heng:garæ':'2020-06-22','24H':'2020-09-09',
- 'Semicolon':'2020-10-19','Not Alone':'2021-04-21',
- 'Your Choice':'2021-06-18','Attacca':'2021-10-22',
- 'Power of Love':'2021-12-08','Darl+ing':'2022-04-15',
- 'Face the Sun':'2022-05-27','SECTOR 17':'2022-07-18',
- 'DREAM':'2022-11-09','FML':'2023-04-24',
- 'ALWAYS YOURS':'2023-08-23','SEVENTEENTH HEAVEN':'2023-10-23',
- '17 IS RIGHT HERE':'2024-04-29','SPILL THE FEELS':'2024-10-14',
- 'HAPPY BURSTDAY':'2025-05-26'
-};
-const kprofilesAlbumNames={
- '17 carat album':'17 CARAT','boys be album':'BOYS BE',
- 'love & letter album':'LOVE&LETTER',
- 'love & letter repackage new tracks':'Love&Letter Repackage Album',
- 'going seventeen album':'Going Seventeen','al1 album':'Al1',
- 'teen age album':'TEEN, AGE','directors cut album':"DIRECTOR'S CUT",
- 'we make you album':'WE MAKE YOU','you make my day album':'YOU MAKE MY DAY',
- 'you make my dawn album':'YOU MADE MY DAWN','an ode new tracks album':'An Ode',
- 'heng':'Heng:garæ','semicolon album':'Semicolon',
- 'your choice album':'Your Choice','attacca album':'Attacca',
- 'face the sun album':'Face the Sun','sector 17 repackage album new tracks':'SECTOR 17',
- 'fml album':'FML','seventeenth heaven album':'SEVENTEENTH HEAVEN',
- '17 is right here best album':'17 IS RIGHT HERE',
- 'spill the feels album':'SPILL THE FEELS',
- 'happy burstday album':'HAPPY BURSTDAY'
-};
-function kprofilesAlbumForItem(item){
- const key=coverKey(item.title);
- if(kprofilesAlbumNames[key])return kprofilesAlbumNames[key];
- if(key.includes('happy burstday'))return 'HAPPY BURSTDAY';
- if(key.includes('17 is right here'))return '17 IS RIGHT HERE';
- if(key.includes('love letter repackage'))return 'Love&Letter Repackage Album';
- if(key.includes('sector 17'))return 'SECTOR 17';
- if(key.includes('always yours'))return 'ALWAYS YOURS';
- if(key.includes('dream ep'))return 'DREAM';
- if(key.includes('24h'))return '24H';
- if(key.includes('fallin flower'))return "Fallin' Flower";
- if(key.includes('happy ending'))return 'Happy Ending';
- if(key.includes('hitorijanai'))return 'Not Alone';
- if(key.includes('power of love'))return 'Power of Love';
- if(key.includes('darl ing'))return 'Darl+ing';
- return item.title.replace(/\b(album|single|ep|new tracks)\b/gi,'').trim();
-}
 function artworkTrack(row){
+ const valid=id=>/^[A-Za-z0-9]{22}$/.test(id||'');
  const key=coverKey(row.name).replace(/\btotal\b/g,'').trim();
  const items=catalog[tab]||[];
- if(row.kind==='album'||rank.startsWith('albums')){
-  const item=items.find(x=>x.key===row.releaseKey)
-   ||items.find(x=>coverKey(catalogReleaseLabel(x))===key)
-   ||items.find(x=>coverKey(x.title)===key);
-  return item?'release:'+encodeURIComponent(kprofilesAlbumForItem(item)):null;
+ const album=row.kind==='album'||rank.startsWith('albums');
+ if(album){
+  // The exact catalog item is carried by ranking/discography rows.
+  let release=row.releaseKey?items.find(x=>x.key===row.releaseKey):null;
+  if(!release){
+   release=items.find(x=>coverKey(catalogReleaseLabel(x))===key)
+    ||items.find(x=>coverKey(x.title)===key)
+    ||items.find(x=>key.includes(coverKey(x.title))&&coverKey(x.title).length>7);
+  }
+  const first=release?.tracks?.find(valid);
+  if(first)return 'track:'+first;
+  const mapped=artworkMap.albums[key];
+  return mapped?.id?'track:'+mapped.id:null;
  }
- if(tab==='group'){
-  // Distinct Japanese recordings keep their Japanese original release.
-  if(japaneseOriginalArtwork[key])return 'release:'+encodeURIComponent(japaneseOriginalArtwork[key]);
-  const original=originalArtworkBySong.get(key);
-  if(original)return 'release:'+encodeURIComponent(original);
-  if(['maestro','lalali','spell','cheers to youth'].includes(key))
-   return 'release:'+encodeURIComponent('17 IS RIGHT HERE');
-  if(['thunder','hbd','bad influence','skyfall','fortunate change','99 9','raindrops','damage','shake it off','happy virus','destiny','shining star','gemini','trigger','coincidence','jungle'].includes(key))
-   return 'release:'+encodeURIComponent('HAPPY BURSTDAY');
-  const match=items.find(item=>{
-   const names=(item.description||'').split(':').slice(1).join(':').split(',').map(coverKey);
-   return names.includes(key);
-  });
-  return match?'release:'+encodeURIComponent(kprofilesAlbumForItem(match)):null;
+ if(tab==='solo'){
+  // The solo/unit catalog's Spotify IDs retain each member's own artwork.
+  if(valid(row.id))return 'track:'+row.id;
+  const matched=items.find(x=>coverKey(x.title)===key);
+  const first=matched?.tracks?.find(valid);
+  return first?'track:'+first:null;
  }
- // Solo/unit: use its catalogued release title, not Spotify track artwork.
- const match=items.find(item=>item.key===row.releaseKey)
-  ||items.find(item=>(item.tracks||[]).includes(row.id))
-  ||items.find(item=>(item.description||'').split(':').slice(1).join(':').split(',').map(coverKey).includes(key));
- return match?'release:'+encodeURIComponent(kprofilesAlbumForItem(match)):null;
+ const version=/\b(remix|instrumental|inst|sped up|slowed|workout|orchestra|feat|with|holiday|korean ver|chinese ver|japanese ver)\b/.test(key);
+ // Specific Japanese versions have their own original Japanese release.
+ if(japaneseOriginalArtwork[key])return 'release:'+encodeURIComponent(japaneseOriginalArtwork[key]);
+ // This map follows the song-to-original-album discography listing.
+ const releaseTitle=originalArtworkBySong.get(key);
+ if(releaseTitle&&!version)return 'release:'+encodeURIComponent(releaseTitle);
+ const first=originalReleaseLookup.get(key);
+ if(first&&!version)return 'track:'+first;
+ const discography=firstReleaseByTitle.get(key);
+ if(discography&&!version)return discography;
+ // Anthology-only recordings must not be assigned an older album.
+ if(['maestro','lalali','spell','cheers to youth','call call call korean ver',
+ 'happy ending korean ver','24h korean ver','not alone korean ver',
+ 'power of love korean ver','dream korean ver',
+ 'ima even if the world ends tomorrow korean ver','adore u inst'].includes(key))
+ return 'track:2UE9XGbAzicJIyo4bB6sqM';
+ // The original release of this exact Spotify ID is used when catalogued.
+ const byId=firstReleaseById.get(row.id);
+ if(byId&&!version)return byId;
+ return valid(row.id)?'track:'+row.id:null;
 }
-const albumArtPromises=new Map();
-function albumCover(title){
- if(albumArtPromises.has(title))return albumArtPromises.get(title);
- const promise=(async()=>{
-  const response=await fetch('https://itunes.apple.com/search?'+new URLSearchParams({
-   term:(title==='Love&Letter Repackage Album'?'SEVENTEEN Love Letter repackage':'SEVENTEEN '+title),
-   entity:'album',limit:'100',country:'US'
-  }));
-  if(!response.ok)return null;
-  const data=await response.json();
-  const normalize=t=>coverKey(t).replace(/\b(ep|single|album|mini|the)\b/g,'').trim();
-  const target=normalize(title),expected=kprofilesReleaseDates[title];
-  const matches=(data.results||[]).filter(x=>{
-   if(!/seventeen/i.test(x.artistName||''))return false;
-   const candidate=normalize(x.collectionName);
-   return candidate===target
-    ||(title==='Love&Letter Repackage Album'&&candidate.includes('love letter')&&candidate.includes('repackage'));
-  });
-  // Dates come from KProfiles; Apple may list a different territorial
-  // release date, so prefer the closest date but never a different album.
-  matches.sort((a,b)=>{
-   const dist=x=>expected&&x.releaseDate?Math.abs(Date.parse(x.releaseDate)-Date.parse(expected)):Number.MAX_SAFE_INTEGER;
-   return dist(a)-dist(b);
-  });
-  return matches[0]?.artworkUrl100?.replace('100x100bb','600x600bb')||null;
- })().catch(()=>null);
- albumArtPromises.set(title,promise);
- return promise;
+function spotifyCover(id){
+ if(!id)return Promise.resolve(null);
+ const kind=id.startsWith('album:')?'album':'track';
+ const value=id.replace(/^(album:|track:)/,'');
+ if(!coverCache.has('fallback:'+id))coverCache.set('fallback:'+id,persistentCovers['fallback:'+id]?Promise.resolve(persistentCovers['fallback:'+id]):fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/'+kind+'/'+value)).then(r=>r.ok?r.json():null).then(d=>{const url=d?.thumbnail_url||null;rememberCover('fallback:'+id,url);return url}).catch(()=>null));
+ return coverCache.get('fallback:'+id);
 }
 function fillArtwork(){
  const imgs=document.querySelectorAll('img[data-cover-track]');
- const setImage=(img,url)=>{
-  if(!img.isConnected)return;
-  if(!url){img.style.display='none';img.parentElement?.querySelector('.cover-placeholder')?.removeAttribute('hidden');return}
-  img.onload=()=>img.classList.add('loaded');
-  img.onerror=()=>{img.style.display='none';img.parentElement?.querySelector('.cover-placeholder')?.removeAttribute('hidden')};
-  img.src=url;
- };
- const resolve=async img=>{
-  const key=img.dataset.coverTrack;
-  if(!key?.startsWith('release:'))return setImage(img,null);
-  const title=decodeURIComponent(key.slice(8));
-  setImage(img,await albumCover(title));
+ const setImage=(img,url)=>{if(!img.isConnected)return;if(!url){img.style.display='none';const placeholder=img.parentElement?.querySelector('.cover-placeholder');if(placeholder)placeholder.hidden=false;return}img.onload=()=>img.classList.add('loaded');img.onerror=()=>{img.style.display='none';const placeholder=img.parentElement?.querySelector('.cover-placeholder');if(placeholder)placeholder.hidden=false};img.src=url};
+ const resolve=async(img)=>{
+  const id=img.dataset.coverTrack, fallback=img.dataset.coverFallback;
+  let url=null;
+  try{
+   if(id?.startsWith('image:'))url=id.slice(6);
+   else if(id?.startsWith('release:')){
+    const title=decodeURIComponent(id.slice(8));
+    if(!releaseArtCache.has(title))releaseArtCache.set(title,persistentCovers['release:'+title]?Promise.resolve(persistentCovers['release:'+title]):fetch('https://itunes.apple.com/search?'+new URLSearchParams({term:'SEVENTEEN '+title,entity:'album',limit:'50'})).then(r=>r.ok?r.json():null).then(data=>{
+     const clean=t=>coverKey(t).replace(/\\b(ep|single|album|mini)\\b/g,'').trim();
+     const wanted=clean(title);
+     const matches=(data?.results||[]).filter(x=>/seventeen/i.test(x.artistName||'')&&clean(x.collectionName)===wanted);
+     const url=matches[0]?.artworkUrl100?.replace('100x100bb','600x600bb')||null;rememberCover('release:'+title,url);return url;
+    }).catch(()=>null));
+    url=await releaseArtCache.get(title);
+   }else url=await spotifyCover(id);
+   if(!url&&fallback)url=await spotifyCover(fallback);
+   if(!url&&id?.startsWith('release:')){
+    // Avoid a blank album cover if the exact release lookup is unavailable.
+    const title=decodeURIComponent(id.slice(8));
+    const fallbackId=releaseCoverLookup.get(coverKey(title));
+    if(fallbackId)url=await spotifyCover('track:'+fallbackId);
+   }
+   setImage(img,url);
+  }catch(e){console.warn('Artwork unavailable',id,e);if(fallback){try{setImage(img,await spotifyCover(fallback))}catch{setImage(img,null)}}else setImage(img,null)}
  };
  if(!('IntersectionObserver' in window)){imgs.forEach(resolve);return}
- const observer=new IntersectionObserver(entries=>{
-  for(const entry of entries){if(entry.isIntersecting){observer.unobserve(entry.target);resolve(entry.target)}}
- },{rootMargin:'240px'});
+ const observer=new IntersectionObserver(entries=>{for(const entry of entries){if(!entry.isIntersecting)continue;observer.unobserve(entry.target);resolve(entry.target)}},{rootMargin:'240px'});
  imgs.forEach(img=>observer.observe(img));
 }
 const soloArtists=[["Jeonghan","6KDLlQYeeqUe5OQ2JrdNzF"],["Joshua","74AwWFYdjQ3ER5vHO4H7b0"],["Jun","38Gn0ZVC8TQwuaMxBK1yRV"],["Hoshi","6nWKAdMv1BDq1zHfZzkdbR"],["Wonwoo","3rHcBT06Vb1XGVUWhDALZt"],["Woozi","4TdiASPlU3QdZvGQBothcQ"],["DK","7G1kUsPtQCdolV6CPwHmh2"],["Mingyu","5gUpo0BRmo6EOTbyU3z5Ay"],["The8","4DqFd6XE3dX4LWXHJVVpLk"],["Seungkwan","0Vb2DjojEYsasFpc3aTZb6"],["Vernon","2Y34b9AOK30zXgL7cAH4NG"],["Dino","5YaeXxzvqGNBCguELlKo6G"],["BSS","1uAT5bTSp6dWbNmixIUP5t"],["JxW","7GvlsjcgBrsE578yghOq7D"],["HxW","1EReYiseDwE51FzGm7EK9n"],["CxM","7kjuLdYbtTkWBToMu2ebZN"],["DxS","4wBjmEkWhY4T22q00CiF5V"],["V8",null],["Picheolin","3V2EC4dPYLgtbi0TtrB1RA"],["Gilboard",null]];
@@ -685,7 +652,7 @@ async function render(){const token=++renderToken;$('#ranking').innerHTML='<div 
  const gainNote=$('#gain').nextElementSibling;
  if(gainNote)gainNote.textContent=hasVerifiedTotal?'Verified gain for '+s.date+' versus '+p.date:partialGain!=null?'* Partial gain for '+s.date+': '+gains.length+' of '+ids.length+' tracks matched against '+(p?.date||'the previous snapshot')+'. NOT the full daily total.':'Daily gain unavailable for '+(s?.date||'this date')+' — waiting for two comparable consecutive snapshots.';
 
- $('#order').hidden=rank.startsWith('discography');const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),discography=rank.startsWith('discography'),periodLabel=rank.endsWith('weekly')?'WEEKLY':rank.endsWith('monthly')?'MONTHLY':'YEARLY';const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS ADDED':periodic?periodLabel+' STREAMS ADDED':'TOTAL STREAMS';headers[2].textContent=daily?'VS PREVIOUS DAY':periodic?'VS PREVIOUS PERIOD':'DAILY GAIN';document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=buildRows(s,p,pp,baseline).filter(x=>discography||x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${discography&&r.kind!=='album'?'':`<span class="cover-slot">${artworkTrack(r)?`<img class="cover" data-cover-track="${artworkTrack(r)}"  alt="" loading="lazy"><span class="cover-placeholder" hidden>💎</span>`:`<span class="cover-placeholder">💎</span>`}</span>`}${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}</div><div class="num">${periodic&&r.gain!=null?"+":""}${fmt(daily||periodic?r.gain:r.streams)}</div><div class="num change ${(daily||periodic?r.change:r.gain)<0?'negative':''}">${(daily||periodic?r.change:r.gain)==null?'—':((daily||periodic?r.change:r.gain)>=0?'+':'−')+fmt(Math.abs(daily||periodic?r.change:r.gain))}</div></div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
+ $('#order').hidden=rank.startsWith('discography');const q=$('#search').value.toLowerCase();const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),discography=rank.startsWith('discography'),periodLabel=rank.endsWith('weekly')?'WEEKLY':rank.endsWith('monthly')?'MONTHLY':'YEARLY';const headers=document.querySelectorAll('.table-head span');headers[1].textContent=daily?'DAILY STREAMS ADDED':periodic?periodLabel+' STREAMS ADDED':'TOTAL STREAMS';headers[2].textContent=daily?'VS PREVIOUS DAY':periodic?'VS PREVIOUS PERIOD':'DAILY GAIN';document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=buildRows(s,p,pp,baseline).filter(x=>discography||x.name.toLowerCase().includes(q));$('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${discography&&r.kind!=='album'?'':`<span class="cover-slot">${artworkTrack(r)?`<img class="cover" data-cover-track="${artworkTrack(r)}" data-cover-fallback="${artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden>💎</span>`:`<span class="cover-placeholder">💎</span>`}</span>`}${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}</div><div class="num">${periodic&&r.gain!=null?"+":""}${fmt(daily||periodic?r.gain:r.streams)}</div><div class="num change ${(daily||periodic?r.change:r.gain)<0?'negative':''}">${(daily||periodic?r.change:r.gain)==null?'—':((daily||periodic?r.change:r.gain)>=0?'+':'−')+fmt(Math.abs(daily||periodic?r.change:r.gain))}</div></div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 function syncRank(){rank=rankType+'-'+$('#rankPeriod').value;render()}
 $('#rankCategory').addEventListener('click',e=>{const button=e.target.closest('button[data-type]');if(!button)return;rankType=button.dataset.type;$('#rankCategory').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));syncRank()});
