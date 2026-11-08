@@ -629,6 +629,13 @@ function originalReleaseDate(row){
  if(tab==='group'&&(row.id==='4rrGSoMxUV0diSX4zpoCTf'||row.id==='2h1Ul51I7yWhu2KcI6RSaO'||/^is it still beautiful(?:\s*[-–]\s*instrumental)?$/i.test(String(row.name||'').trim())))return '2021-08-13';
  // Exact Spotify recording: Chinese single released August 28, 2018.
  if(row.id==='65QDnqGpWrHhnViAM1D4Sd'||(tab==='group'&&/oh my/i.test(row.name||'')&&/chinese/i.test(row.name||'')))return '2018-08-28';
+ // Historical spreadsheet rows can carry a later compilation date. Prefer
+ // the original recording's canonical catalog date on all archive views.
+ if(tab==='group'&&!rank.startsWith('discography')&&row.kind!=='album'&&row.kind!=='grand'){
+  const original=trackOriginalReleaseDates();
+  const verified=original.byId.get(row.id)||original.byName.get(normTrackName(row.name||''));
+  if(verified)return verified;
+ }
  if(row.releaseDate)return row.releaseDate;
  const key=row.artworkRelease;
  if(rank.startsWith('discography')&&tab==='group'&&key==='g62'&&row.id==='0L3tD2Sc15kj9WQyUF7uTm')return '2025-08-15';
