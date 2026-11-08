@@ -213,20 +213,18 @@ async function selectedSnapshot(){
 async function prior(s){if(!s)return null;const yesterday=shifted(s.date,-1);return getDate(tab,yesterday)}
 function normTrackName(name){return String(name||'').toLowerCase().replace(/[^a-z0-9]/g,'')}
 function comparablePrevious(s,p,id){
- if(p?.tracks?.[id]!=null){const a=normTrackName(s?.names?.[id]||idName[id]),b=normTrackName(p.names?.[id]);if(!a||!b||a===b)return {id,value:p.tracks[id]};}
- // Historical Excel rows may have legacy row IDs rather than Spotify track IDs.
- if(!isHistorical(s)&&isHistorical(p)){
-  const name=normTrackName(s.names?.[id]||idName[id]);
-  if(!name||name===normTrackName(id))return null;
-  const candidates=Object.keys(p.tracks).filter(k=>historicalKind(p,k)==='track'&&normTrackName(p.names?.[k])===name&&p.tracks[k]<=s.tracks[id]);
-  if(!candidates.length)return null;
-  const best=candidates.sort((a,b)=>p.tracks[b]-p.tracks[a])[0];
-  // Historical-to-current comparisons may span weeks or months. The old
-  // 100k limit incorrectly hid legitimate gains for popular tracks.
-  // Daily anomaly checks remain in safeGain and snapshotDelta.
-  return {id:best,value:p.tracks[best]};
+ if(!s||!p||s.tracks?.[id]==null)return null;
+ // To use the same Spotify ID when both snapshots contain it.
+ if(p.tracks?.[id]!=null){
+  const a=normTrackName(s.names?.[id]||idName[id]),b=normTrackName(p.names?.[id]);
+  if(!a||!b||a===b)return {id,value:p.tracks[id]};
+  return null;
  }
- return null;
+ // To match legacy spreadsheet IDs only when the song title is unique.
+ const name=normTrackName(s.names?.[id]||idName[id]);
+ if(!name||name===normTrackName(id))return null;
+ const matches=Object.keys(p.tracks||{}).filter(k=>historicalKind(p,k)==='track'&&normTrackName(p.names?.[k])===name);
+ return matches.length===1?{id:matches[0],value:p.tracks[matches[0]]}:null;
 }
 function safeGain(s,p,id){
  if(!p||!s||!s.tracks||!p.tracks||s.tracks[id]==null)return null;
@@ -1297,15 +1295,14 @@ function periodGain(s,context,id){
 function periodChange(s,context,id){
  if(!context?.start||!context.prevStart||!context.prevEnd)return null;
  const now=snapshotDelta(s,context.start,id);
- const prevId=comparablePrevious(s,context.prevEnd,id)?.id;
- if(!prevId)return null;
- const before=snapshotDelta(context.prevEnd,context.prevStart,prevId);
+ const matched=comparablePrevious(s,context.prevEnd,id);
+ if(!matched)return null;
+ const before=snapshotDelta(context.prevEnd,context.prevStart,matched.id);
  if(now==null||before==null)return null;
- // To avoid comparing unequal partial periods.
+ // To compare the same elapsed number of days.
  const elapsed=(Date.parse(s.date)-Date.parse(context.start.date))/86400000;
  const previousElapsed=(Date.parse(context.prevEnd.date)-Date.parse(context.prevStart.date))/86400000;
- if(elapsed!==previousElapsed)return null;
- return now-before;
+ return elapsed===previousElapsed?now-before:null;
 }
 // To keep album and track comparisons aligned to the same dates.
 function sumPeriod(s,context,ids){if(!ids.length)return null;const values=ids.map(id=>periodGain(s,context,id));return values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null}
