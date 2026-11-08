@@ -35,7 +35,9 @@ def checkout_json(path):
 
 
 def iso(value, field):
-    return value.get(field, "") if isinstance(value, dict) else ""
+    """Return a comparable timestamp/date even when JSON contains null."""
+    raw = value.get(field) if isinstance(value, dict) else None
+    return str(raw) if raw is not None else ""
 
 
 def reconcile(old, collected, latest):
