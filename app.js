@@ -1874,6 +1874,10 @@ function syncCalendar(){
 $('#prevDate').addEventListener('click',()=>navigateDate(-1));
 $('#nextDate').addEventListener('click',()=>navigateDate(1));
 $('#latestDate').addEventListener('click',()=>{selection='latest';selectedPeriodKey=null;saveView();render()});
+$('#prettyDate').addEventListener('click',()=>{
+ const picker=$('#archiveDate');
+ try{if(typeof picker.showPicker==='function')picker.showPicker();else picker.focus()}catch{picker.focus();picker.click()}
+});
 $('#archiveDate').addEventListener('change',e=>{
  const requested=e.target.value,available=availableDates();
  if(!requested||!available.length)return;
