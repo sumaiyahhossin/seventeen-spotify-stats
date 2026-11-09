@@ -43,6 +43,14 @@ def check_viewport(driver,width,height):
     driver.set_window_size(width,height)
     driver.get(f'http://127.0.0.1:{PORT}/')
     read_layout(driver,f'OT13 {width}px')
+    # The history inspector must open on metric click and close without leaving
+    # the page covered by an invisible blocking overlay.
+    click(driver,'#total')
+    WebDriverWait(driver,15).until(lambda d:d.execute_script(
+        "return !document.querySelector('.svt-history-dialog')?.hidden"))
+    click(driver,'.svt-history-close')
+    WebDriverWait(driver,15).until(lambda d:d.execute_script(
+        "return document.querySelector('.svt-history-dialog')?.hidden===true"))
     click(driver,'#tabs button[data-tab="solo"]')
     read_layout(driver,f'Units & Solo {width}px')
     click(driver,'#rankCategory button[data-type="albums"]')
