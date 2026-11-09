@@ -548,6 +548,7 @@ function archivedAlbumMetrics(s,p,pp,baseline,id){
 
 function discographyRows(s,p,pp,baseline){
  if(!s)return [];
+ if(tab==='solo'&&isHistorical(s))return soloLegacyRows(s,p,pp,baseline,'discography');
  const periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly');
  if(isHistorical(s)&&tab==='group'){
   // Render historical streams against the SAME catalog, release sequence,
@@ -916,6 +917,7 @@ function canonicalGroupAlbumKey(keys){
 
 function buildRows(s,p,pp,baseline){
  if(!s)return[];
+ if(tab==='solo'&&isHistorical(s))return soloLegacyRows(s,p,pp,baseline,rank.startsWith('albums')?'albums':rank.startsWith('discography')?'discography':'tracks');
  const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),albums=rank.startsWith('albums'),discography=rank.startsWith('discography');
  if(discography)return discographyRows(s,p,pp,baseline);
  let rows=[];
@@ -1678,13 +1680,117 @@ function ownedSoloIds(artist){
  if(artist==='Dino')add('picheolin_g3',[0]);
  return ids;
 }
+
+/* Keep the original Unit & Solo workbook credits when displaying archived
+   snapshots. Workbook row IDs differ from Spotify IDs; artist block boundaries
+   (not fuzzy song-title matching) keep recordings such as Jeonghan's Coloring
+   separate from V8's coloring and correctly separate unit members' tracks. */
+const soloLegacyOwners=['Jeonghan','Joshua','Jun','Hoshi','Wonwoo','Woozi',
+ 'Dokyeom','Mingyu','The8','Seungkwan','Vernon','Dino','BSS',
+ 'JxW','HxW','CxM','DxS'];
+const soloLegacyCache=new WeakMap();
+function soloLegacySections(s){
+ if(!s||!isHistorical(s))return null;
+ if(soloLegacyCache.has(s))return soloLegacyCache.get(s);
+ const rows=Object.keys(s.tracks||{}).map(id=>({
+  id,name:String(s.names?.[id]||'').trim(),value:s.tracks[id],
+  index:Number(String(id).split(':').at(-1))
+ })).filter(row=>Number.isFinite(row.index)).sort((a,b)=>a.index-b.index);
+ const groups={};let cursor=0;
+ const norm=name=>String(name||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+ for(const owner of soloLegacyOwners){
+  const end=rows.findIndex((row,i)=>i>=cursor&&
+   norm(row.name)===norm(owner+' TOTAL STREAMS'));
+  if(end<0)continue;
+  groups[owner]=rows.slice(cursor,end+1);
+  cursor=end+1;
+ }
+ // V8 has no artist profile, but does have its own eight-track unit total.
+ let end=rows.findIndex((row,i)=>i>=cursor&&norm(row.name)==='v8total');
+ if(end>=0){groups.V8=rows.slice(cursor,end+1);cursor=end+1}
+ end=rows.findIndex((row,i)=>i>=cursor&&norm(row.name)==='picheolinstreams');
+ if(end>=0){groups.Picheolin=rows.slice(cursor,end+1);cursor=end+1}
+ // The seven-track full Gilboard compilation follows the six Picheolin
+ // credits; LIKE IT belongs to Dino, not Picheolin.
+ end=rows.findIndex((row,i)=>i>=cursor&&
+  /(?:gilboard|board)/i.test(row.name)&&/\btotal\s*:?$/i.test(row.name));
+ if(end>=0){groups.Gilboard=rows.slice(cursor,end+1);cursor=end+1}
+ // The last seven-track DREAMSCAPE group is JxJ's shared unit album.
+ end=rows.findIndex((row,i)=>i>=cursor&&norm(row.name)==='dreamscapetotal');
+ if(end>=0){groups.JxJ=rows.slice(cursor,end+1);cursor=end+1}
+ soloLegacyCache.set(s,groups);
+ return groups;
+}
+function soloLegacyTrackIds(s,owner){
+ const sections=soloLegacySections(s);if(!sections)return [];
+ const chosen=owner?[owner]:[...soloLegacyOwners,'V8','Picheolin','Gilboard','JxJ'];
+ const seen=new Set(),ids=[];
+ for(const key of chosen)for(const row of sections[key]||[]){
+  if(historicalKind(s,row.id)!=='track')continue;
+  if(/\btota\s*;\s*:?$/i.test(row.name))continue;
+  // The original sheet repeats a recording under individual and unit albums.
+  // Only collapse truly identical named rows with identical saved totals.
+  const signature=normTrackName(row.name)+'|'+row.value;
+  if(seen.has(signature))continue;
+  seen.add(signature);ids.push(row.id);
+ }
+ return ids;
+}
+function soloLegacyRows(s,p,pp,baseline,view){
+ const sections=soloLegacySections(s);if(!sections)return [];
+ const periodic=['weekly','monthly','yearly'].some(period=>rank.endsWith(period));
+ const owners=selectedSoloArtist?[selectedSoloArtist]:[...soloLegacyOwners,'V8','Picheolin','Gilboard','JxJ'];
+ const rows=[];const seen=new Set();
+ for(const owner of owners)for(const source of sections[owner]||[]){
+  const kind=historicalKind(s,source.id);
+  const album=kind==='album'||/\btota\s*;\s*:?$/i.test(source.name);
+  if(kind==='grand'||kind==='audience')continue;
+  if(view==='albums'&&!album)continue;
+  if(view==='tracks'&&album)continue;
+  if(!album){
+   const fingerprint=normTrackName(source.name)+'|'+source.value;
+   if(seen.has(fingerprint))continue;
+   seen.add(fingerprint);
+  }
+  const name=album?source.name.replace(/\s*(?:Total|Tota;)\s*:?$/i,'').trim():displayTrackName(source.name);
+  const row={id:source.id,name,streams:source.value,
+   gain:periodic?periodGain(s,baseline,source.id):safeGain(s,p,source.id),
+   change:periodic?periodChange(s,baseline,source.id):dailyChange(s,p,pp,source.id),
+   kind:album?'album':'track',soloOwner:owner,releaseOrder:rows.length};
+  // Include dates only where the catalog or a verified release map identifies
+  // the recording; never borrow another member's similarly named song date.
+  row.releaseDate=originalReleaseDate(row)||null;
+  rows.push(row);
+ }
+ if(view==='discography')return rows;
+ rows.sort((a,b)=>{
+  if(sortOrder==='az'||sortOrder==='za'){
+   const v=a.name.localeCompare(b.name,'en',{sensitivity:'base',numeric:true});
+   return sortOrder==='az'?v:-v;
+  }
+  if(sortOrder==='oldest'||sortOrder==='newest'){
+   const x=a.releaseDate,y=b.releaseDate;
+   if(!x||!y)return x?-1:y?1:a.releaseOrder-b.releaseOrder;
+   return sortOrder==='oldest'?x.localeCompare(y):y.localeCompare(x);
+  }
+  const x=rank.endsWith('overall')?a.streams:a.gain;
+  const y=rank.endsWith('overall')?b.streams:b.gain;
+  if(x==null)return y==null?0:1;
+  if(y==null)return -1;
+  return sortOrder==='least'?x-y:y-x;
+ });
+ return rows;
+}
+
 function soloArtistTrackIds(s){
  if(!s)return [];
+ if(tab==='solo'&&isHistorical(s))return soloLegacyTrackIds(s,selectedSoloArtist);
  if(tab!=='solo'||!selectedSoloArtist)return trackIds(s);
  const ids=ownedSoloIds(selectedSoloArtist);
  return trackIds(s).filter(id=>ids.has(id));
 }
 function soloArtistRows(rows,s,p,baseline,pp){
+ if(tab==='solo'&&isHistorical(s))return rows; // Already filtered by the workbook's artist credit blocks.
  if(tab!=='solo'||!selectedSoloArtist)return rows;
  const ids=ownedSoloIds(selectedSoloArtist);
  const artist=selectedSoloArtist.toLowerCase();
