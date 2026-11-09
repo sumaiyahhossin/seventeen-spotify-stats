@@ -2985,10 +2985,18 @@ async function render(){const token=++renderToken;
   }else{
    if(gainNote)gainNote.textContent='Comparison unavailable for this saved period';
    $('#gain').textContent=valid.length?'+'+fmt(valid.reduce((a,b)=>a+b,0))+(valid.length<memberIds.length?'*':''):'—';
-   if(gainNote)gainNote.textContent=!baseline?.start
-    ?'Unavailable: the required '+(baseline?.range?.start||'previous period-end')+' baseline snapshot is missing from the archive. No streams have been estimated.'
-    :!valid.length?'No comparable saved track counts for this '+periodName.toLowerCase()+' period.'
-    :(valid.length<memberIds.length?'* Partial '+periodName.toLowerCase()+' gain ('+valid.length+' of '+memberIds.length+' tracks).':'Matched '+periodName.toLowerCase()+' gain')+' for '+periodWindowLabel;
+   if(gainNote){
+    const compared=tab==='solo'?periodComparison(s,baseline,memberIds):null;
+    gainNote.textContent=!valid.length
+     ?'No comparable saved track counts for this '+periodName.toLowerCase()+' period.'
+     :(valid.length<memberIds.length?'* Partial '+periodName.toLowerCase()+' gain ('+valid.length+' of '+memberIds.length+' tracks)':'Matched '+periodName.toLowerCase()+' gain')+' for '+periodWindowLabel;
+    if(compared?.value!=null){
+     const delta=compared.value;
+     gainNote.textContent+=' · Change vs previous '+periodName.toLowerCase()+': '+
+      (delta>=0?'+':'−')+fmt(Math.abs(delta))+
+      (compared.partial?'* (matched days only)':'');
+    }
+   }
   }
  }else{
   const gains=s?memberIds.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];
@@ -3006,17 +3014,18 @@ async function render(){const token=++renderToken;
   const verifiedDailyGain=tab==='group'&&s?.date==='2026-11-06'&&ids.length===227&&s.verified_daily_gain_2026_11_05===1891578?1891578:null;
   // A partial set of per-song matches is not a trustworthy OT13 daily gain.
   const completeSoloGain=memberIds.length>0&&gains.length===memberIds.length;
+  const verifiedSoloGain=tab==='solo'&&gains.length?gains.reduce((sum,value)=>sum+value,0):null;
   const fullIds=tab==='group'&&!isHistorical(s)&&s?.canonical_track_ids?.length
    ? [...new Set(s.canonical_track_ids)] : null;
   const fullGroupGain=fullIds&&p&&s&&shifted(s.date,-1)===p.date&&
     fullIds.every(id=>Number.isFinite(s.tracks?.[id])&&Number.isFinite(p.tracks?.[id]))
    ?fullIds.reduce((sum,id)=>sum+s.tracks[id]-p.tracks[id],0):null;
   const authoritativeGain=verifiedDailyGain??grandGain??(fullGroupGain!=null&&fullGroupGain>=0?fullGroupGain:null);
-  const hasVerifiedTotal=authoritativeGain!=null||(tab==='solo'&&completeSoloGain);
-  const partialGain=null;
-  $('#gain').textContent=hasVerifiedTotal?'+'+fmt(authoritativeGain!=null?authoritativeGain:gains.reduce((a,b)=>a+b,0)):'—';
+  const hasVerifiedTotal=authoritativeGain!=null||verifiedSoloGain!=null;
+  $('#gain').textContent=hasVerifiedTotal?'+'+fmt(authoritativeGain??verifiedSoloGain)+
+   (tab==='solo'&&!completeSoloGain?'*':''):'—';
   if(gainNote){
-   const today=authoritativeGain!=null?authoritativeGain:(hasVerifiedTotal?gains.reduce((a,b)=>a+b,0):null);
+   const today=authoritativeGain??verifiedSoloGain;
    const previousGrand=grandId&&p&&pp?safeGain(p,pp,grandId):null;
    const previousGains=p&&pp?memberIds.map(id=>safeGain(p,pp,id)):[];
    const archivedGrand=snapshot=>{
@@ -3028,7 +3037,20 @@ async function render(){const token=++renderToken;
    const historicalPreviousGain=prevTotal!=null&&beforePrevTotal!=null&&prevTotal>=beforePrevTotal?prevTotal-beforePrevTotal:null;
    const yesterday=historicalPreviousGain!=null?historicalPreviousGain:previousGrand!=null?previousGrand:previousGains.length&&previousGains.every(v=>v!=null)?previousGains.reduce((a,b)=>a+b,0):null;
    const consecutive=s&&p&&pp&&shifted(s.date,-1)===p.date&&shifted(p.date,-1)===pp.date;
-   if(today!=null&&yesterday!=null&&consecutive){
+   if(tab==='solo'){
+    // Match the recording across saved spreadsheet and Spotify snapshots.
+    const comparable=consecutive?dailyComparison(s,p,pp,memberIds):null;
+    if(today==null)gainNote.textContent='No comparable dated solo/unit track increases available';
+    else {
+     gainNote.textContent=completeSoloGain?'Verified daily gain':
+      '* Partial verified daily gain ('+gains.length+' of '+memberIds.length+' recordings)';
+     if(comparable?.value!=null){
+      const delta=comparable.value;
+      gainNote.textContent+=' · Change vs previous day: '+(delta>=0?'+':'−')+fmt(Math.abs(delta))+
+       (comparable.partial?'* ('+comparable.matched+' matched recordings)':'');
+     }else gainNote.textContent+=' · Previous-day change unavailable for comparable recordings';
+    }
+   }else if(today!=null&&yesterday!=null&&consecutive){
     const change=today-yesterday;
     comparisonValue.textContent=(change>=0?'+':'−')+fmt(Math.abs(change));
     comparisonDetail.textContent=change>=0?'More streams than previous day':'Fewer streams than previous day';
