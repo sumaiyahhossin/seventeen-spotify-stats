@@ -1,6 +1,6 @@
 const $=s=>document.querySelector(s),fmt=n=>n==null?'—':Number(n).toLocaleString('en-US');
 let selectedSoloArtist=null;
-let artworkMap={tracks:{},albums:{}};let sortOrder='most';let tab='group',rank='tracks-daily',rankType='tracks',catalog={},current={},history={},dates=[],selection='latest',period='week';
+let artworkMap={tracks:{},albums:{}};let sortOrder='most';let tab='group',rank='tracks-daily',rankType='tracks',catalog={},current={},history={},dates=[],groupDates=[],soloDates=[],soloHistoricalDates=new Set(),selection='latest',period='week';
 // To keep the selected view after refresh.
 const viewStateKey='svt-dashboard-view-v2';
 const savedArchiveKey='svt-selected-archive-date-v1';
@@ -30,7 +30,12 @@ function saveView(){
 window.addEventListener('pagehide',saveView);
 let scrollSavePending=false;
 window.addEventListener('scroll',()=>{if(!scrollSavePending){scrollSavePending=true;requestAnimationFrame(()=>{scrollSavePending=false;saveView()})}},{passive:true});
-const load=async p=>{try{const r=await fetch(p+'?v='+Date.now());return r.ok?await r.json():null}catch{return null}};
+// Cache static history files instead of forcing new URLs for every visit.
+const load=async p=>{
+ const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
+ try{const r=await fetch(p,{signal:controller.signal});return r.ok?await r.json():null}
+ catch{return null}finally{clearTimeout(timer)}
+};
 const idName={};
 function buildNames(){
  // Artwork metadata is not a reliable track-ID title source: some artwork
@@ -154,8 +159,31 @@ function restoreGroupNames(s,p){
   if(!idName[id]&&s.names?.[id])idName[id]=s.names[id];
  }
 }
-function typeDates(type){return dates.filter(d=>history[type+'-'+d]!==null)}
-async function getDate(type,date){if(!date)return null;const key=type+'-'+date;if(!(key in history))history[key]=await load('data/history/'+key+'.json');return history[key]}
+// Keep a bounded cache and deduplicate simultaneous historical requests.
+const archiveInFlight=new Map(),archiveLRU=[];
+function useDatesForTab(){
+ const source=tab==='solo'?soloDates:groupDates;
+ dates=[...new Set([...source,...(current[tab]?.date?[current[tab].date]:[])])].sort().reverse();
+}
+function typeDates(type){return type==='solo'?soloDates:groupDates}
+async function getDate(type,date){
+ if(!date)return null;
+ const key=type+'-'+date;
+ if(Object.prototype.hasOwnProperty.call(history,key))return history[key];
+ if(archiveInFlight.has(key))return archiveInFlight.get(key);
+ const path=type==='solo'&&soloHistoricalDates.has(date)
+  ?'solo-'+date+'.json':'data/history/'+key+'.json';
+ const request=load(path).then(snapshot=>{
+  if(snapshot&&snapshot.date===date&&snapshot.tracks&&typeof snapshot.tracks==='object'){
+   history[key]=snapshot;archiveLRU.push(key);
+   while(archiveLRU.length>56)delete history[archiveLRU.shift()];
+   return snapshot;
+  }
+  return null;
+ }).finally(()=>archiveInFlight.delete(key));
+ archiveInFlight.set(key,request);
+ return request;
+}
 async function latest(type){
  if(current[type]){
   const archived=await getDate(type,current[type].date);
@@ -210,7 +238,10 @@ async function selectedSnapshot(){
   for(const d of matching){const saved=await getDate(tab,d);if(saved)return correctedSnapshot(saved)}
   return null;
  }
- if(selection==='latest')return correctedSnapshot(await latest(tab));const exact=await getDate(tab,selection);if(exact||tab!=='solo')return correctedSnapshot(exact);for(const d of dates.filter(d=>d<=selection).slice(0,14)){const saved=await getDate(tab,d);if(saved)return saved}return null}
+ if(selection==='latest')return correctedSnapshot(await latest(tab));
+ const target=dates.includes(selection)?selection:dates.find(d=>d<=selection);
+ return correctedSnapshot(await getDate(tab,target));
+}
 async function prior(s){if(!s)return null;const yesterday=shifted(s.date,-1);return getDate(tab,yesterday)}
 function normTrackName(name){
  return String(name||'').toLowerCase().normalize('NFKC')
@@ -1978,7 +2009,7 @@ document.fonts?.ready.then(scheduleMobileRankingNameFit).catch(()=>{});
 
 async function render(){const token=++renderToken;
  document.body.classList.toggle('svt-units-solo',tab==='solo');
- $('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';try{renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;if(tab==='group')updateYear2026Streams();syncCalendar();restoreGroupNames(s,p);
+ $('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';try{useDatesForTab();renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;if(tab==='group')updateYear2026Streams();syncCalendar();restoreGroupNames(s,p);
  document.body.classList.toggle('svt-overall-four-cols',rank.endsWith('overall'));
  document.body.classList.toggle('svt-daily-ranking',rank.endsWith('daily'));
  document.body.classList.toggle('svt-discography-table',rank.startsWith('discography'));
@@ -2269,7 +2300,7 @@ $('#rankPeriod').addEventListener('change',()=>{
 $('#periodPicker').addEventListener('change',e=>{selectedPeriodKey=e.target.value;saveView();render()});
 
 $('#order').addEventListener('change',e=>{sortOrder=e.target.value;render()});
-$('#search').addEventListener('input',render);function availableDates(){return [...new Set([...dates,...(current[tab]?.date?[current[tab].date]:[])])].filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d>='2025-01-01').sort()}
+$('#search').addEventListener('input',render);function availableDates(){return [...new Set([...(tab==='solo'?soloDates:groupDates),current[tab]?.date].filter(Boolean))].filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d>='2025-01-01').sort()}
 function navigateDate(step){
  const periodic=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
  if(periodic){
@@ -2369,7 +2400,11 @@ $('#archiveDate').addEventListener('change',e=>{
  buildCoverLookup();buildFirstReleaseCovers();buildOriginalReleaseLookup();buildSpotifyTrackLinks();[current.group,current.solo]=await Promise.all([load('data/group.json'),load('data/solo.json')]);
  const verifiedArchiveReference=await load('data/history/group-2026-11-06.json').catch(()=>null);
  buildArchiveCanonicalIds(verifiedArchiveReference||current.group);
- const manifest=await load('data/manifest.json')||{dates:[]};dates=[...new Set([...(manifest.dates||[]),...['group','solo'].map(t=>current[t]?.date).filter(Boolean)])].sort().reverse();syncCalendar();await render();
+ const manifest=await load('data/manifest.json')||{dates:[],solo_dates:[]};
+ groupDates=[...new Set([...(manifest.dates||[]),current.group?.date].filter(Boolean))].sort().reverse();
+ soloHistoricalDates=new Set(manifest.solo_dates||[]);
+ soloDates=[...new Set([...(manifest.solo_dates||[]),current.solo?.date].filter(Boolean))].sort().reverse();
+ useDatesForTab();syncCalendar();await render();
  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,savedScroll)));
  // Refresh only while the page is visible, and never interrupt a historical view.
  // Daily snapshots update far less often than every five minutes.
