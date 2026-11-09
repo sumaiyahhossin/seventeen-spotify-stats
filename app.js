@@ -690,6 +690,13 @@ function discographyRows(s,p,pp,baseline){
     converted.observedPairs=baseline.observedPairs.map(([now,before])=>[remap(now),remap(before)]);
    if(Array.isArray(baseline.previousObservedPairs))
     converted.previousObservedPairs=baseline.previousObservedPairs.map(([now,before])=>[remap(now),remap(before)]);
+   // Sparse-month/track-anomaly verification pairs ALSO require the same
+   // legacy-ID-to-Spotify-ID mapping. Leaving them raw made individual
+   // discography track gains disappear while album subtotals survived.
+   if(Array.isArray(baseline.fallbackPairs))
+    converted.fallbackPairs=baseline.fallbackPairs.map(([now,before])=>[remap(now),remap(before)]);
+   if(Array.isArray(baseline.previousFallbackPairs))
+    converted.previousFallbackPairs=baseline.previousFallbackPairs.map(([now,before])=>[remap(now),remap(before)]);
    baseline=converted;
   }
  }
