@@ -64,6 +64,10 @@
   const vals=[];
   for(const id of ids){
    let value=numberOrNull(snapshot.tracks?.[id]);
+   if(value==null&&!scopeIsSolo()&&typeof historicalGroupTrackId==='function'){
+    const mappedId=historicalGroupTrackId(snapshot,id);
+    value=numberOrNull(snapshot.tracks?.[mappedId]);
+   }
    if(value==null&&reference&&snapshot.date<reference.date&&
       typeof comparablePrevious==='function'){
     const mapped=(scopeIsSolo()&&isHistorical(snapshot)&&typeof verifiedSoloLegacyValue==='function'
@@ -112,8 +116,15 @@
     return null;
    }
    // Never use a numeric legacy ID in a live Spotify snapshot.
-   if(String(metric.id).startsWith('legacy:'))return null;
+   if(String(metric.id).startsWith('legacy:')&&!isHistorical(snapshot))return null;
    let value=numberOrNull(snapshot.tracks?.[metric.id]);
+   if(value==null&&scope==='group'&&typeof historicalGroupTrackId==='function')
+    value=numberOrNull(snapshot.tracks?.[historicalGroupTrackId(snapshot,metric.id)]);
+   if(value==null&&scope==='group'&&isHistorical(snapshot)&&isHistorical(reference)&&
+      typeof comparablePrevious==='function'){
+    const previous=comparablePrevious(reference,snapshot,metric.id);
+    value=previous?numberOrNull(previous.value):null;
+   }
    if(value==null&&reference&&snapshot.date<reference.date&&
       !isHistorical(reference)){
     const found=comparablePrevious(reference,snapshot,metric.id);
