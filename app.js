@@ -2295,6 +2295,11 @@ function soloArtistRows(rows,s,p,baseline,pp){
  const releases=catalog.solo||[];
  return rows.flatMap(row=>{
   if(row.kind==='album'){
+   // Keep multi-release combined totals intact. Recomputing from just the
+   // artwork release discards the Korean LIMBO version from Jun's total.
+   if(row.historyReleases?.includes('jun_g4Chinese')&&row.historyReleases?.includes('jun_g4Korean')){
+    return selectedSoloArtist==='Jun'?[row]:[];
+   }
    const release=releases.find(item=>item.key===row.artworkRelease);
    if(!release)return [];
    if(selectedSoloArtist==='Jeonghan'&&['jxj_dreamscape','jxw_g1'].includes(release.key))return [];
