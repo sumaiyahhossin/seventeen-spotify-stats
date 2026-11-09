@@ -69,8 +69,8 @@ function buildNames(){
  // malformed. These IDs are grounded in the corresponding release listings.
  const verifiedNames={
   '1FlIEnP3DdFgeP3dhVfNZf':"247",
-  '2UHaIBd2uiIFLZ9pgHMpJl':"Power of Love (Holiday Ver.)",
-  '74rpBQDDUA116sss0a0Tiy':"Power of Love (Inst.)",
+  '2UHaIBd2uiIFLZ9pgHMpJl':"Home - Japanese ver.",
+  '74rpBQDDUA116sss0a0Tiy':"Snap Shoot - Japanese ver.",
   '2kDrUAONMhG6CbDGBkhdrY':"_WORLD (feat. Anne-Marie)",
   '6KfYVOicblNB8CaDZwbxiT':"Dirty Dancing (feat. JOSHUA, DK & DINO)",
   '3oTDi9MWC0JB39FcsLRon3':"SOS",
