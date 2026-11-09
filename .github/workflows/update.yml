@@ -83,7 +83,9 @@ jobs:
   followers:
     name: Diagnose solo and unit follower counts (manual only)
     # Do not repeatedly scan all profiles while Spotify's About parser is broken.
-    if: github.event_name == 'workflow_dispatch'
+    # Run exactly one diagnostic artist when this workflow is edited.
+    # Routine hourly runs stay paused until the Spotify parser is proven.
+    if: github.event_name == 'workflow_dispatch' || (github.event_name == 'push' && github.event.head_commit.message == 'Run one-profile Spotify follower diagnostic')
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
