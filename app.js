@@ -805,7 +805,12 @@ function canonicalArchiveRow(row){
 }
 function originalReleaseDate(row){
  row=canonicalArchiveRow(row);
- if(tab==='solo'&&/^legacy:/.test(String(row.id||''))&&row.releaseDate)return row.releaseDate;
+ if(tab==='solo'&&/^legacy:/.test(String(row.id||''))){
+  if(row.releaseDate)return row.releaseDate;
+  // Earlier workbooks have dynamically shifted row indexes. An ambiguous
+  // unrecognized older source is undated rather than borrowing a false date.
+  if(row.sourceDate&&row.sourceDate!=='2026-11-06')return null;
+ }
  if(tab==='solo'&&row.kind!=='album'){
   const archive=/^legacy:/.test(String(row.id||''))&&
    (!row.sourceDate||row.sourceDate==='2026-11-06')
@@ -1939,8 +1944,18 @@ function canonicalSoloAlbumRows(s,p,pp,baseline){
  if(!s)return [];
  const periodic=['weekly','monthly','yearly'].some(k=>rank.endsWith(k));
  const historical=isHistorical(s);
- const idAt=(snapshot,index)=>index&&snapshot?
-  Object.keys(snapshot.tracks||{}).find(id=>Number(String(id).split(':').at(-1))===index):null;
+ const idAt=(snapshot,index,owner)=>snapshot&&index&&owner?
+  soloSnapshotAlbumRow(snapshot,owner,index)?.id||null:null;
+ const delta=(newer,older,index,owner,requireConsecutive=true)=>{
+  if(!newer||!older)return null;
+  const a=idAt(newer,index,owner),b=idAt(older,index,owner);
+  if(!a||!b)return null;
+  const gap=(Date.parse(newer.date)-Date.parse(older.date))/86400000;
+  if(gap<=0||(requireConsecutive&&gap!==1))return null;
+  const current=Number(newer.tracks?.[a]),previous=Number(older.tracks?.[b]);
+  if(!Number.isFinite(current)||!Number.isFinite(previous)||current<previous)return null;
+  return current-previous;
+ };
  const result=(soloAlbums||[]).filter(a=>!selectedSoloArtist||
   a.owners?.some(owner=>owner.toLowerCase()===selectedSoloArtist.toLowerCase())
  ).map(a=>{
@@ -1953,15 +1968,24 @@ function canonicalSoloAlbumRows(s,p,pp,baseline){
   if(!ids.length)return null;
   let streams=null,gain=null,change=null;
   if(historical){
-   const index=selectedSoloArtist?a.legacyTotalIndices?.[selectedSoloArtist]:
-    (a.legacyTotalIndices?.all||
-      a.legacyTotalIndices?.[a.key==='jxj_dreamscape'?'JxJ':a.key==='v8'?'V8':
-        a.key==='gilboard'?'all':Object.keys(a.legacyTotalIndices||{})[0]]);
-   const key=idAt(s,index);
+   const ref=a.legacyTotalIndices||{};
+   const sourceOwner=selectedSoloArtist&&ref[selectedSoloArtist]!=null
+    ?selectedSoloArtist:ref.all!=null?'Gilboard':
+      a.key==='jxj_dreamscape'?'JxJ':a.key==='v8'?'V8':Object.keys(ref)[0];
+   const index=ref[sourceOwner]??ref.all;
+   const key=idAt(s,index,sourceOwner);
    if(!key)return null;
    streams=s.tracks[key];
-   gain=periodic?periodGain(s,baseline,key):safeGain(s,p,key);
-   change=periodic?periodChange(s,baseline,key):dailyChange(s,p,pp,key);
+   if(periodic){
+    gain=baseline?.start?delta(s,baseline.start,index,sourceOwner,false):null;
+    const previous=baseline?.prevStart&&baseline?.prevEnd
+     ?delta(baseline.prevEnd,baseline.prevStart,index,sourceOwner,false):null;
+    change=gain!=null&&previous!=null?gain-previous:null;
+   }else{
+    gain=delta(s,p,index,sourceOwner,true);
+    const yesterday=delta(p,pp,index,sourceOwner,true);
+    change=gain!=null&&yesterday!=null?gain-yesterday:null;
+   }
   }else{
    const vals=ids.map(id=>s.tracks?.[id]);
    if(vals.every(v=>v!=null))streams=vals.reduce((sum,value)=>sum+value,0);
