@@ -12,7 +12,8 @@ current_path=DATA/f'{kind}.json'
 previous=json.loads(current_path.read_text()) if current_path.exists() else None
 if entry.get('checked_date')!=today:
     entry['pending']=today
-force_collect = os.getenv('FORCE_COLLECT') == 'true' or (kind == 'group' and not (previous or {}).get('followers'))
+force_collect = os.getenv('FORCE_COLLECT') == 'true'
+# Missing follower counts never restart an otherwise completed stream scan.
 if not entry.get('pending') and not force_collect:
     print(kind,'already updated today');sys.exit(0)
 if force_collect:
@@ -25,14 +26,16 @@ subprocess.run(['javac','-cp',os.environ['COLLECTOR_CLASSPATH'],'-d',str(ROOT/'b
 # Only the first catalog track determines whether to start the full group scan.
 # A missing baseline falls back to the normal full collection.
 collector_env=os.environ.copy()
-if kind=='group' and previous:
-    first_id='4BHThgh4ODCszIJ6e4YGGw'  # Shining Diamond, first catalog track
+if kind in ('group','solo') and previous:
+    first_id='4BHThgh4ODCszIJ6e4YGGw' if kind=='group' else '1beUALLSloBEvYre65QiW6'
     first_old=previous.get('tracks',{}).get(first_id)
+    if first_old is None and kind=='solo' and previous.get('source')=='historical spreadsheet':
+        first_old=previous['tracks'].get('legacy:betterhalffeatomoinotake:2')
     if isinstance(first_old,int) and first_old>0:
         collector_env['SVT_FIRST_TRACK_PREVIOUS']=str(first_old)
 result=subprocess.run(['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],classname],capture_output=True,text=True,timeout=18000,env=collector_env)
-if kind=='group' and ('STAT_FIRST_UNCHANGED|' in result.stdout or 'STAT_FIRST_PROBE_FAILED|' in result.stdout):
-    print('group: first song has not refreshed (or probe failed); skip remaining songs and retry next hour')
+if 'STAT_FIRST_UNCHANGED|' in result.stdout or 'STAT_FIRST_PROBE_FAILED|' in result.stdout:
+    print(kind,': first song has not refreshed (or probe failed); retry next hour')
     entry['last_attempt']=now.isoformat()
     state_path.write_text(json.dumps(state,indent=2))
     sys.exit(0)
@@ -91,12 +94,29 @@ if not previous:
         for old_date in sorted(manifest.get('dates',[]),reverse=True):
             if old_date>=report_date:continue
             old_path=DATA/'history'/f'{kind}-{old_date}.json'
+            if not old_path.exists() and kind=='solo':
+                old_path=ROOT/f'solo-{old_date}.json'
+            if old_path.exists():
+                previous=json.loads(old_path.read_text())
+                break
+    if previous is None and kind=='solo':
+        for old_date in sorted(manifest.get('solo_dates',[]),reverse=True):
+            if old_date >= report_date:continue
+            old_path=ROOT/f'solo-{old_date}.json'
             if old_path.exists():
                 previous=json.loads(old_path.read_text())
                 break
 if previous:
     old=previous['tracks']
     comparable=[k for k in expected if k in old]
+    if kind=='solo' and previous.get('source')=='historical spreadsheet':
+        # Trust the verified spreadsheet position of Better Half, not title
+        # matching among other artists' recordings.
+        first_id='1beUALLSloBEvYre65QiW6'
+        legacy_id='legacy:betterhalffeatomoinotake:2'
+        if legacy_id in old and first_id in tracks:
+            comparable.append(first_id)
+            old={**old,first_id:old[legacy_id]}
     if comparable and not any(tracks[k]>old[k] for k in comparable):
         # Followers may update before Spotify publishes fresh track streams.
         # Save a newly obtained exact follower count without overwriting the
@@ -147,15 +167,18 @@ if kind=='group':
     # Do not carry a previous or manually supplied value forward.
 if previous:
     p=DATA/'history'/f'{kind}-{previous["date"]}.json'
-    if not p.exists():p.write_text(json.dumps(previous,ensure_ascii=False,indent=2))
+    if not p.exists() and previous.get('source')!='historical spreadsheet':
+        p.write_text(json.dumps(previous,ensure_ascii=False,indent=2))
 current_path.write_text(json.dumps(snapshot,ensure_ascii=False,indent=2))
 archive_path=DATA/'history'/f'{kind}-{report_date}.json'
 archive_path.write_text(json.dumps(snapshot,ensure_ascii=False,indent=2))
 manifest_path=DATA/'manifest.json'
 manifest=json.loads(manifest_path.read_text()) if manifest_path.exists() else {'dates':[]}
-if previous and previous['date'] not in manifest['dates']:manifest['dates'].append(previous['date'])
-if report_date not in manifest['dates']:manifest['dates'].append(report_date)
-manifest['dates']=sorted(set(manifest['dates']),reverse=True)
+date_key='solo_dates' if kind=='solo' else 'dates'
+manifest.setdefault(date_key,[])
+if previous and previous['date'] not in manifest[date_key]:manifest[date_key].append(previous['date'])
+if report_date not in manifest[date_key]:manifest[date_key].append(report_date)
+manifest[date_key]=sorted(set(manifest[date_key]),reverse=True)
 manifest_path.write_text(json.dumps(manifest,indent=2))
 entry.update({'checked_date':today,'pending':None,'last_success':now.isoformat()})
 state_path.write_text(json.dumps(state,indent=2))
