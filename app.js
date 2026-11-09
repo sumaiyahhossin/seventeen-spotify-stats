@@ -803,6 +803,7 @@ function discographyRows(s,p,pp,baseline){
    rows.push({id,name:tab==='solo'?(soloMedia.tracks?.[id]?.title||displayTrackName(s.names?.[id]||idName[id]||id)):displayTrackName(s.names?.[id]||idName[id]||id),artworkRelease:item.key,
     edition:gilboardEdition?'Gilboard album version':null,
     streams:s.tracks?.[id]??null,gain:g,change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),
+    gainPartial:periodic&&g!=null&&incompleteObservedPeriod(s,baseline,id),
     kind:'track',releaseOrder:rows.length});
   }
   if(item.key==='g6'||item.key==='g36'){
