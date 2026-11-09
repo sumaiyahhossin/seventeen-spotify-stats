@@ -2471,6 +2471,25 @@ async function periodBaseline(s){
    observedPairs:pairs.filter(Boolean),previousObservedPairs:previousPairs,
    observedDays:observed.length,missingDays:missing,partialMonth:month};
  }
+ // Keep a verified consecutive-day fallback for tracks whose boundary
+ // observations are flagged as anomalous. Never count a reset as streams.
+ if((rank.endsWith('weekly')||rank.endsWith('monthly'))&&
+    (!start||(start.anomalies||[]).length||(s.anomalies||[]).length)){
+  const pairsFor=async(first,last)=>{
+   const dayList=dates.filter(date=>date>=first&&date<=last).sort();
+   return (await Promise.all(dayList.map(async day=>{
+    const yesterday=shifted(day,-1);
+    if(!available.has(yesterday))return null;
+    const [now,previous]=await Promise.all([getDate(tab,day),getDate(tab,yesterday)]);
+    return now&&previous?[now,previous]:null;
+   }))).filter(Boolean);
+  };
+  const currentPairs=await pairsFor(range.first,s.date);
+  const previousFirst=rank.endsWith('weekly')?shifted(range.first,-7):shiftedMonth(range.first,-1);
+  const previousPairs=await pairsFor(previousFirst,range.prevEnd);
+  return {start,prevStart,prevEnd,range,
+   fallbackPairs:currentPairs,previousFallbackPairs:previousPairs};
+ }
  return {start,prevStart,prevEnd,range};
 }
 // To reuse the verified November 5 track match for earlier spreadsheet dates.
@@ -2500,7 +2519,10 @@ function periodGain(s,context,id){
   const valid=gains.filter(v=>v!=null);
   return valid.length?valid.reduce((a,b)=>a+b,0):null;
  }
- return context?.start?snapshotDelta(s,context.start,id):null;
+ const direct=context?.start?snapshotDelta(s,context.start,id):null;
+ if(direct!=null)return direct;
+ const valid=(context?.fallbackPairs||[]).map(([now,prev])=>snapshotDelta(now,prev,id)).filter(v=>v!=null);
+ return valid.length?valid.reduce((a,b)=>a+b,0):null;
 }
 function periodChange(s,context,id){
  if(context?.observedPairs){
@@ -2521,7 +2543,21 @@ function periodChange(s,context,id){
   const current=sum(context.observedPairs),previous=sum(context.previousObservedPairs);
   return current!=null&&previous!=null?current-previous:null;
  }
- if(!context?.start||!context.prevStart||!context.prevEnd)return null;
+ const fallbackChange=()=>{
+  if(!context?.fallbackPairs?.length||!context.previousFallbackPairs?.length)return null;
+  const previous=new Map(context.previousFallbackPairs.map(([now,prev])=>[now.date,[now,prev]]));
+  const offset=date=>rank.endsWith('weekly')?shifted(date,-7):shiftedMonth(date,-1);
+  const matched=[];
+  for(const pair of context.fallbackPairs){
+   const old=previous.get(offset(pair[0].date));
+   if(!old)continue;
+   const today=snapshotDelta(pair[0],pair[1],id);
+   const before=snapshotDelta(old[0],old[1],id);
+   if(today!=null&&before!=null)matched.push(today-before);
+  }
+  return matched.length?matched.reduce((sum,v)=>sum+v,0):null;
+ };
+ if(!context?.start||!context.prevStart||!context.prevEnd)return fallbackChange();
  const now=snapshotDelta(s,context.start,id);
  // Follow the identity already resolved at the start of this period,
  // which is more reliable for imported spreadsheets with legacy IDs.
@@ -2532,14 +2568,14 @@ function periodChange(s,context,id){
    ?{id:startMatch.id,value:context.prevEnd.tracks[startMatch.id]}:null);
  if(!matched)return null;
  const before=snapshotDelta(context.prevEnd,context.prevStart,matched.id);
- if(now==null||before==null)return null;
+ if(now==null||before==null)return fallbackChange();
  // To compare the same elapsed number of days.
  const elapsed=(Date.parse(s.date)-Date.parse(context.start.date))/86400000;
  const previousElapsed=(Date.parse(context.prevEnd.date)-Date.parse(context.prevStart.date))/86400000;
  // Weekly and year-to-date comparisons require equal observed durations.
  // Completed calendar months may legitimately contain different day counts:
  // compare full monthly totals, rather than incorrectly hiding their change.
- return rank.endsWith('monthly')||elapsed===previousElapsed?now-before:null;
+ return rank.endsWith('monthly')||elapsed===previousElapsed?now-before:fallbackChange();
 }
 // To keep album and track comparisons aligned to the same dates.
 function sumPeriod(s,context,ids){if(!ids.length)return null;const values=ids.map(id=>periodGain(s,context,id));return values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null}
