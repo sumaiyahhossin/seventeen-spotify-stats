@@ -1,5 +1,6 @@
 const $=s=>document.querySelector(s),fmt=n=>n==null?'—':Number(n).toLocaleString('en-US');
 let selectedSoloArtist=null;
+let soloAlbums=[],soloMedia={tracks:{},albums:{}},soloLegacyLinks={byIndex:{}},soloDiscographyTemplate={rows:[]};
 let artworkMap={tracks:{},albums:{}};let sortOrder='most';let tab='group',rank='tracks-daily',rankType='tracks',catalog={},current={},history={},dates=[],groupDates=[],soloDates=[],soloHistoricalDates=new Set(),selection='latest',period='week';
 // To keep the selected view after refresh.
 const viewStateKey='svt-dashboard-view-v2';
@@ -802,6 +803,15 @@ function canonicalArchiveRow(row){
 }
 function originalReleaseDate(row){
  row=canonicalArchiveRow(row);
+ if(tab==='solo'&&row.kind!=='album'){
+  const archive=/^legacy:/.test(String(row.id||''))?soloLegacyLinks.byIndex?.[Number(String(row.id).split(':').at(-1))]:null;
+  if(archive?.releaseDate)return archive.releaseDate;
+  if(rank.startsWith('discography')&&row.artworkRelease){
+   const item=(catalog.solo||[]).find(x=>x.key===row.artworkRelease);
+   const releaseDate=item?.track_release_dates?.[row.id]||item?.release_date;
+   if(releaseDate)return releaseDate;
+  }
+ }
  // The historical workbook lists the original singles and separate later
  // Gilboard album copies. Use their particular edition's release date.
  if(tab==='solo'&&/^legacy:/.test(String(row.id||''))&&
@@ -1179,6 +1189,20 @@ function buildSpotifyTrackLinks(){
 }
 function streamTrackUrl(row){
  if(row.kind==='album'||row.kind==='grand'||row.kind==='audience'||rank.startsWith('albums'))return null;
+ if(tab==='solo'){
+  let id=row.spotifyTrackId||(/^legacy:/.test(String(row.id||''))?
+   soloLegacyLinks.byIndex?.[Number(String(row.id).split(':').at(-1))]?.id:
+   /^[A-Za-z0-9]{22}$/.test(row.id||'')?row.id:null);
+  if(id){
+   if(!rank.startsWith('discography')){
+    const first={'34wTGQ1yV5XtrSMR5dMLWY':'594CTGIIVVTitwRhQJcWgM',
+      '5W1bn5PzFgKok4GAZ1JUAw':'3Y0ZwgYVHuwbW0JGjsYodR'};
+    id=first[id]||id;
+   }
+   return 'https://open.spotify.com/track/'+id;
+  }
+ }
+
  const key=coverKey(row.name);
  const aliases={'god of music':'gom','god of light music':'golm','god of music inst':'gom inst','god of light music inst':'golm inst','god of music trot remix':'gom trot remix','20 0':'20','247 0':'247'};
  const normalized=aliases[key]||key;
@@ -1311,6 +1335,24 @@ function historicalAlbumCoverFallback(row){
 }
 function artworkTrack(row){
  row=canonicalArchiveRow(row);
+ if(tab==='solo'){
+  const archived=/^legacy:/.test(String(row.id||''))?
+    soloLegacyLinks.byIndex?.[Number(String(row.id).split(':').at(-1))]:null;
+  const spec=soloAlbums.find(a=>a.key===row.artworkRelease)||
+    soloAlbums.find(a=>a.releaseKeys?.includes(row.artworkRelease));
+  const isAlbum=row.kind==='album'||rank.startsWith('albums');
+  if(isAlbum&&spec&&soloMedia.albums?.[spec.key])return 'image:'+soloMedia.albums[spec.key];
+  let id=row.spotifyTrackId||archived?.id||row.id;
+  if(!rank.startsWith('discography')){
+   const first={'34wTGQ1yV5XtrSMR5dMLWY':'594CTGIIVVTitwRhQJcWgM',
+    '5W1bn5PzFgKok4GAZ1JUAw':'3Y0ZwgYVHuwbW0JGjsYodR'};
+   id=first[id]||id;
+  }
+  const photo=soloMedia.tracks?.[id]?.local;
+  if(photo)return 'image:'+photo;
+  if(spec&&soloMedia.albums?.[spec.key])return 'image:'+soloMedia.albums[spec.key];
+ }
+
  // Keep the Korean recording on its original An Ode artwork in Tracks and History.
  // Discography appearances on 17 IS RIGHT HERE retain that edition's sleeve.
  if(tab==='group'&&(row.id==='2lYLfG1WddMzvyJvc7imyB'||/happy\s*ending/i.test(row.name||'')&&/korean\s*ver/i.test(row.name||''))&&!(rank.startsWith('discography')&&/^g(49|50|51|52|53|54)$/.test(row.artworkRelease||'')))return 'release:'+encodeURIComponent('An Ode');
@@ -2476,7 +2518,7 @@ async function render(){const token=++renderToken;
    });
   }
  }
- $('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="rank-position"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${!discography?`<span class="rank-trend ${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'rank-up':rankMovements.get(positionKeyForDisplay(r))<0?'rank-down':'rank-same':'rank-unknown'}" title="${rankMovements.has(positionKeyForDisplay(r))?'Streaming rank change versus previous '+(daily?'day':rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'period'):'Previous streaming rank unavailable'}">${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'↑ '+rankMovements.get(positionKeyForDisplay(r)):rankMovements.get(positionKeyForDisplay(r))<0?'↓ '+Math.abs(rankMovements.get(positionKeyForDisplay(r))):'=':'—'}</span>`:''}</span>${`<span class="cover-slot">${true?`<img class="cover" data-cover-track="${artworkTrack(r)||'missing'}" data-cover-name="${escapeHtml(r.name)}" data-cover-kind="${r.kind==='album'?'album':'track'}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden>💎</span>`:`<span class="cover-placeholder">💎</span>`}</span>`}<span class="track-copy">${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}${(rankType==="albums"||rankType==="tracks"||discography||r.kind==="album")&&originalReleaseDate(r)?`<span class="release-date">Released ${formatOriginalRelease(originalReleaseDate(r))}</span>`:""}${r.edition?`<span class="release-edition">${escapeHtml(r.edition)}</span>`:""}</span></div>${renderRankMetrics(r)}</div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork();scheduleMobileRankingNameFit()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
+ $('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="rank-position"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${!discography?`<span class="rank-trend ${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'rank-up':rankMovements.get(positionKeyForDisplay(r))<0?'rank-down':'rank-same':'rank-unknown'}" title="${rankMovements.has(positionKeyForDisplay(r))?'Streaming rank change versus previous '+(daily?'day':rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'period'):'Previous streaming rank unavailable'}">${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'↑ '+rankMovements.get(positionKeyForDisplay(r)):rankMovements.get(positionKeyForDisplay(r))<0?'↓ '+Math.abs(rankMovements.get(positionKeyForDisplay(r))):'=':'—'}</span>`:''}</span>${`<span class="cover-slot">${true?`<img class="cover" data-cover-track="${artworkTrack(r)||'missing'}" data-cover-name="${escapeHtml(r.name)}" data-cover-kind="${r.kind==='album'?'album':'track'}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden></span>`:`<span class="cover-placeholder"></span>`}</span>`}<span class="track-copy">${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}${(rankType==="albums"||rankType==="tracks"||discography||r.kind==="album")&&originalReleaseDate(r)?`<span class="release-date">Released ${formatOriginalRelease(originalReleaseDate(r))}</span>`:""}</span></div>${renderRankMetrics(r)}</div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork();scheduleMobileRankingNameFit()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 function syncRank(){rank=rankType+'-'+$('#rankPeriod').value;syncPeriodPicker();saveView();render()}
 $('#rankCategory').addEventListener('click',e=>{const button=e.target.closest('button[data-type]');if(!button)return;rankType=button.dataset.type;$('#rankCategory').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));syncRank()});
@@ -2583,12 +2625,19 @@ $('#archiveDate').addEventListener('change',e=>{
    $('#rankCategory').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.type===rankType));
   }
  }catch{}
- [catalog,artworkMap]=await Promise.all([load('data/catalog.json'),load('data/artwork-map.json')]);catalog=catalog||{};
+ [catalog,artworkMap,soloAlbums,soloMedia,soloLegacyLinks,soloDiscographyTemplate]=await Promise.all([
+ load('data/catalog.json'),load('data/artwork-map.json'),
+ load('data/solo-albums.json'),load('data/solo-media.json'),
+ load('data/solo-legacy-track-links.json'),load('data/solo-discography-template.json')]);
+ catalog=catalog||{};soloAlbums=soloAlbums||[];
+ soloMedia=soloMedia||{tracks:{},albums:{}};
+ soloLegacyLinks=soloLegacyLinks||{byIndex:{}};
+ soloDiscographyTemplate=soloDiscographyTemplate||{rows:[]};
  // DREAMSCAPE is credited to Jeonghan × Joshua; reuse their seven existing
  // Spotify IDs instead of inventing a second set of stream counts.
  const jxjTracks=['5ZMx7DaPnVisUBLcrFcnCl','1dp1GI9YcKDoxrKBpp0u9F','4XBeSUSswrGhqYrwm3IS7A','1bGAA82A31CWflD6bqY5g6','2SWWDlOjKqgVvocnIfxId9','69umJ9yk5uay7PQmhBOKk8','2lDG4sMZwAC2TTlXNHMgA1'];
  if(Array.isArray(catalog.solo)&&!catalog.solo.some(item=>item.key==='jxj_dreamscape'))
-  catalog.solo.push({key:'jxj_dreamscape',title:'DREAMSCAPE',description:"DREAMSCAPE (7 tracks): Like you, 12 o'clock, Outside, One plus one, Not personal, Coloring, No looking back",artist:'JxJ',tracks:jxjTracks});
+  catalog.solo.push({key:'jxj_dreamscape',title:'DREAMSCAPE',release_date:'2026-10-19',description:"DREAMSCAPE (7 tracks): Like you, 12 o'clock, Outside, One plus one, Not personal, Coloring, No looking back",artist:'JxJ',tracks:jxjTracks});
  artworkMap=artworkMap||{tracks:{},albums:{}};buildNames();
  // Keep the two distinct Coloring recordings and official sheet spellings
  // attached to their Spotify track IDs, not to the shared song title.
