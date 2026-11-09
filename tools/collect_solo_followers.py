@@ -1,8 +1,7 @@
 """Collect exact Spotify followers for all solo/unit profiles, independently of streams.
 
 Never backfill these into old dated stream snapshots: a follower count observed
-now is not the follower count on November 7. GitHub Actions retries missing
-profiles every hour, and refreshes older verified readings daily.
+now is not the follower count on November 7. Scheduled verification is daily.
 """
 import base64
 import datetime as dt
@@ -70,16 +69,20 @@ if client_id and client_secret:
             headers={'Authorization':'Basic '+credential,'Content-Type':'application/x-www-form-urlencoded'})
         with urllib.request.urlopen(token_request,timeout=25) as response:
             token=json.load(response)['access_token']
-        for offset in range(0,len(pending),50):
-            group=pending[offset:offset+50]
-            url='https://api.spotify.com/v1/artists?'+urllib.parse.urlencode({'ids':','.join(group)})
-            req=urllib.request.Request(url,headers={'Authorization':'Bearer '+token})
-            with urllib.request.urlopen(req,timeout=35) as response:
-                artists=json.load(response).get('artists',[])
-            for artist in artists or []:
-                if not artist or artist.get('id') not in group: continue
+        # Spotify removed GET /v1/artists?ids=... in Development Mode.
+        # The single-artist endpoint remains supported, although Spotify may
+        # omit the followers field entirely for Development Mode apps.
+        for artist_id in pending:
+            try:
+                url='https://api.spotify.com/v1/artists/'+artist_id
+                req=urllib.request.Request(url,headers={'Authorization':'Bearer '+token})
+                with urllib.request.urlopen(req,timeout=25) as response:
+                    artist=json.load(response)
                 count=(artist.get('followers') or {}).get('total')
-                if isinstance(count,int) and count>=0:found[artist['id']]=count
+                if isinstance(count,int) and count>=0:
+                    found[artist_id]=count
+            except Exception as error:
+                print(f'Artist API unavailable for {artist_id} ({type(error).__name__})',flush=True)
         print(f'Spotify API: verified {len(found)} follower totals',flush=True)
     except Exception as error:
         print(f'Spotify API unavailable ({type(error).__name__}); using the artist About dialog',flush=True)
@@ -90,14 +93,14 @@ if missing:
     if not classpath:
         print('Missing COLLECTOR_CLASSPATH: cannot run fallback artist collector',file=sys.stderr)
     else:
-        missing=missing[:1]
-        print('One-profile browser fallback: '+missing[0],flush=True)
+        missing=missing[:3]
+        print('Browser fallback for '+str(len(missing))+' unresolved profiles',flush=True)
         subprocess.run([sys.executable,str(ROOT/'tools/instrument.py'),'solo'],check=True)
         subprocess.run(['javac','-cp',classpath,'-d',str(ROOT/'build'),
                         str(ROOT/'build'/'Stream_Stats_Units_Duos.java')],check=True)
         env=os.environ.copy()
         env.pop('SVT_FIRST_TRACK_PREVIOUS',None)
-        env['SVT_FOLLOWERS_ONLY']=missing[0]  # Diagnose ONE profile only, never scan all 18 on a failed parser.
+        env['SVT_FOLLOWERS_ONLY']=','.join(missing)
         result=subprocess.run(['java','-cp',str(ROOT/'build')+os.pathsep+classpath,
                                'Stream_Stats_Units_Duos'],capture_output=True,text=True,
                               timeout=2400,env=env)
@@ -109,11 +112,11 @@ if missing:
                 print(line,flush=True)
         if result.returncode:
             print(f'Browser follower probe failed (Java exit {result.returncode}): {result.stderr[-500:]}',file=sys.stderr)
-        if missing[0] not in found:
+        if any(id not in found for id in missing):
             diagnostics=[line for line in result.stdout.splitlines() if line.startswith(('STAT_FOLLOWERS_UNAVAILABLE|','STAT_FOLLOWERS_DIAGNOSTIC|'))]
-            print('Exact follower total still unavailable; retaining the profile as unverified. '+ ' ; '.join(diagnostics[-4:]),flush=True)
+            print('Some exact follower totals are still unavailable; retaining those profiles as unverified. '+ ' ; '.join(diagnostics[-6:]),flush=True)
         else:
-            print('Browser fallback verified one additional artist.',flush=True)
+            print('Browser fallback verified '+str(sum(id in found for id in missing))+' additional artists.',flush=True)
 
 if found:
     now=TODAY.isoformat()
