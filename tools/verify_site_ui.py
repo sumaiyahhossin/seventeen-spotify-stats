@@ -101,7 +101,9 @@ def main():
             # Check the actual content, not just the page heading: 'Like you'
             # is below 1M on Nov 6 and must be an upcoming UNIT milestone.
             WebDriverWait(driver,45).until(
-                lambda d:len(d.find_elements(By.CSS_SELECTOR,'#upcomingRows .song-title'))>40)
+                lambda d:'183 songs' in d.find_element(By.ID,'upcomingStatus').text
+                  and any(el.text.strip().lower()=='like you' for el in
+                    d.find_elements(By.CSS_SELECTOR,'#upcomingRows .song-title')))
             milestone_names=[el.text.strip() for el in driver.find_elements(
                 By.CSS_SELECTOR,'#upcomingRows .song-title')]
             details=driver.execute_script("""
