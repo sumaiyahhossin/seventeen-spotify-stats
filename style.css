@@ -2019,3 +2019,9 @@ body.svt-solo-without-audience .stats>.stat:nth-child(5){
  align-items:center!important;justify-content:center!important;
  padding-block:10px!important;line-height:1.2!important
 }
+
+/* Portraits: full V8/JxJ concept photograph, without cropping. Other
+   artist avatars use the regular close-up circular/square photo framing. */
+.artist-profile-photo:not([data-unit-photo]){object-fit:cover!important}
+.artist-profile-photo[data-unit-photo]{object-fit:contain!important;object-position:center!important;aspect-ratio:1/1!important;background:#242340!important;border-radius:12px!important}
+.artist-profile-photo:not(.loaded){background:#242340!important}
