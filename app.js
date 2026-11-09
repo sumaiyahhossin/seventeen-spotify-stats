@@ -492,6 +492,29 @@ function formatDiscographyAlbumName(name){
   .replace(/\bTeen, Age\b/g,'TEEN, AGE')
   .replace(/\bFml\b/g,'FML');
 }
+
+/* Legacy spreadsheet supplied release-total rows. Prefer those exact totals
+   and their historical deltas to partially matched catalog track sums. */
+function historicalAlbumAggregate(snapshot,releaseKey,variant='full'){
+ if(!isHistorical(snapshot)||!releaseKey)return null;
+ const matches=Object.keys(snapshot.tracks||{}).filter(id=>{
+  if(historicalKind(snapshot,id)!=='album'||historicalAlbumReleaseKey(snapshot.names?.[id])!==releaseKey)return false;
+  const label=String(snapshot.names?.[id]||'');
+  if(variant==='new')return /\bnew\s+tracks?\b/i.test(label);
+  if(variant==='original')return /\boriginal\s+tracks?\b/i.test(label);
+  return !/\b(?:new|original)\s+tracks?\b/i.test(label);
+ });
+ return matches.length===1?matches[0]:null;
+}
+function archivedAlbumMetrics(s,p,pp,baseline,id){
+ if(!id)return null;
+ const periodic=['weekly','monthly','yearly'].some(part=>rank.endsWith(part));
+ return {streams:s.tracks[id],
+  gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),
+  change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),
+  changePartial:false};
+}
+
 function discographyRows(s,p,pp,baseline){
  if(!s)return [];
  const periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly');
@@ -588,7 +611,19 @@ function discographyRows(s,p,pp,baseline){
   const partialGain=periodic&&observedGains.length>0&&observedGains.length<ids.length;
   const gain=periodic?(observedGains.length?observedGains.reduce((a,b)=>a+b,0):null):sumDaily(s,p,ids);
   const dayChange=sumDailyChange(s,p,pp,ids);
-  const albumTotalRow={name:combo?.name||catalogReleaseLabel(item),artworkRelease:item.key,releaseDate:tab==='group'?(groupOriginalReleaseDates[item.key]||groupStandaloneReleaseDates[item.key]||null):null,streams,gain,estimatedGain:partialGain,change:periodic?sumPeriodChange(s,baseline,ids):dayChange,changePartial:periodic?periodComparison(s,baseline,ids).partial:dailyComparison(s,p,pp,ids).partial,kind:'album',releaseOrder:rows.length};
+  // A saved workbook total has the authoritative historical album count.
+  // Do not apply the full ALWAYS YOURS/17 IS RIGHT HERE total to smaller
+  // anthology subdivisions (which intentionally contain fewer tracks).
+  const historicalMode=['g6','g36','g43'].includes(item.key)?'new':item.key==='g49'?'original':'full';
+  const sourceKey=tab==='group'&&item.key!=='g44'&&!/^g5[0-4]$/.test(item.key)
+   ?historicalAlbumAggregate(s,item.key==='g6'?'g7':item.key==='g36'?'g37':historicalAlbumReleaseKey(item.title)||item.key,historicalMode)
+   :null;
+  const savedAlbum=archivedAlbumMetrics(s,p,pp,baseline,sourceKey);
+  const albumTotalRow={name:combo?.name||catalogReleaseLabel(item),artworkRelease:item.key,releaseDate:tab==='group'?(groupOriginalReleaseDates[item.key]||groupStandaloneReleaseDates[item.key]||null):null,
+   streams:savedAlbum?.streams??streams,gain:savedAlbum?.gain??gain,estimatedGain:!savedAlbum&&partialGain,
+   change:savedAlbum?savedAlbum.change:(periodic?sumPeriodChange(s,baseline,ids):dayChange),
+   changePartial:savedAlbum?savedAlbum.changePartial:(periodic?periodComparison(s,baseline,ids).partial:dailyComparison(s,p,pp,ids).partial),
+   kind:'album',releaseOrder:rows.length};
   for(const id of [...new Set(item.tracks||[])]){
    // Show the complete catalog even when a historical snapshot has no matching Spotify ID.
    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
@@ -612,10 +647,12 @@ function discographyRows(s,p,pp,baseline){
     const allPartial=periodic&&allObserved.length>0&&allObserved.length<allIds.length;
     const allGain=periodic?(allObserved.length?allObserved.reduce((a,b)=>a+b,0):null):sumDaily(s,p,allIds);
     const dayChange=sumDailyChange(s,p,pp,allIds);
+    const archivedId=historicalAlbumAggregate(s,'g49','full');
+    const saved=archivedAlbumMetrics(s,p,pp,baseline,archivedId);
     rows.push({name:'17 IS RIGHT HERE — All Tracks',artworkRelease:'g49',
-     streams:allStreams,gain:allGain,estimatedGain:allPartial,
-     change:periodic?sumPeriodChange(s,baseline,allIds):
-      dayChange,changePartial:periodic?periodComparison(s,baseline,allIds).partial:dailyComparison(s,p,pp,allIds).partial,
+     streams:saved?.streams??allStreams,gain:saved?.gain??allGain,estimatedGain:!saved&&allPartial,
+     change:saved?saved.change:(periodic?sumPeriodChange(s,baseline,allIds):dayChange),
+     changePartial:saved?saved.changePartial:(periodic?periodComparison(s,baseline,allIds).partial:dailyComparison(s,p,pp,allIds).partial),
      kind:'album',releaseOrder:rows.length});
    }
   }else rows.push(albumTotalRow);
