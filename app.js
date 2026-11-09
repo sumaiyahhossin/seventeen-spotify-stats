@@ -2656,10 +2656,22 @@ async function render(){const token=++renderToken;
   }
  }else{
   const gains=s?memberIds.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];
-  const grandGain=grandId&&!(tab==='solo'&&selectedSoloArtist)?safeGain(s,p,grandId):null;
+  // Historical group totals come from the verified workbook grand-total row,
+  // never from a potentially partial subset of tracks.
+  const getGrand=snapshot=>{
+   if(!snapshot||tab!=='group'||!isHistorical(snapshot))return null;
+   const key=Object.keys(snapshot.tracks||{}).find(id=>historicalKind(snapshot,id)==='grand');
+   const value=key?snapshot.tracks[key]:null;
+   return Number.isFinite(value)?value:null;
+  };
+  const sGrand=getGrand(s),pGrand=getGrand(p);
+  const historicalGrandGain=sGrand!=null&&pGrand!=null&&shifted(s.date,-1)===p.date&&sGrand>=pGrand?sGrand-pGrand:null;
+  const grandGain=historicalGrandGain??(grandId&&!(tab==='solo'&&selectedSoloArtist)?safeGain(s,p,grandId):null);
   const verifiedDailyGain=tab==='group'&&s?.date==='2026-11-06'&&ids.length===227&&s.verified_daily_gain_2026_11_05===1891578?1891578:null;
   const hasVerifiedTotal=verifiedDailyGain!=null||grandGain!=null||memberIds.length>0&&gains.length===memberIds.length;
-  const partialGain=!hasVerifiedTotal&&gains.length?gains.reduce((a,b)=>a+b,0):null;
+  // Never present partial individual matches as the whole OT13 gain.
+  const partialGain=tab==='group'&&isHistorical(s)?null:
+   !hasVerifiedTotal&&gains.length?gains.reduce((a,b)=>a+b,0):null;
   $('#gain').textContent=hasVerifiedTotal?'+'+fmt(verifiedDailyGain!=null?verifiedDailyGain:grandGain!=null?grandGain:gains.reduce((a,b)=>a+b,0)):partialGain!=null?'+'+fmt(partialGain)+'*':'—';
   if(gainNote){
    const today=verifiedDailyGain!=null?verifiedDailyGain:grandGain!=null?grandGain:(hasVerifiedTotal?gains.reduce((a,b)=>a+b,0):null);
