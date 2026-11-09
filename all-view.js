@@ -81,6 +81,22 @@ function buildRows(){
  const byRelease=new Map((state.catalog.solo||[]).map(r=>[r.key,r]));
  const assign=(artist,key,indices)=>{const r=byRelease.get(key);for(const i of indices){const row=byId.get(r?.tracks?.[i]);if(row)row.owners.add(artist)}};
  assign('Wonwoo','jxw_g1',[0,2]);assign('Dino','picheolin_g3',[0]);
+ // Gilboard's pre-release singles have the same recorded cumulative
+ // streams as their album editions. Keep their oldest release dates,
+ // but count each verified identical recording exactly once.
+ for(const [singleId,albumId] of [
+  ['3Y0ZwgYVHuwbW0JGjsYodR','5W1bn5PzFgKok4GAZ1JUAw'],
+  ['594CTGIIVVTitwRhQJcWgM','34wTGQ1yV5XtrSMR5dMLWY']
+ ]){
+  const single=byId.get(singleId),album=byId.get(albumId);
+  if(!single||!album||!Number.isFinite(single.streams)||
+     single.streams!==album.streams)continue;
+  for(const owner of single.owners)album.owners.add(owner);
+  for(const release of single.releaseNames)album.releaseNames.add(release);
+  if(single.date&&(!album.date||single.date<album.date))
+   album.date=single.date;
+  byId.delete(singleId);
+ }
  // Jeonghan's six DREAMSCAPE credits are already represented by jeonghan_g2.
  // Avoid assigning Joshua's separate solo recording to Jeonghan.
  state.rows=[...byId.values()].map(r=>({...r,owners:[...r.owners],releaseNames:[...r.releaseNames]}));
