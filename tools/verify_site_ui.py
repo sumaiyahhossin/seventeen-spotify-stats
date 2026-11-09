@@ -53,6 +53,33 @@ def check_viewport(driver,width,height):
         "return document.querySelector('.svt-history-dialog')?.hidden===true"))
     click(driver,'#tabs button[data-tab="solo"]')
     read_layout(driver,f'Units & Solo {width}px')
+    # Regression: a saved count of zero is not a missing song. The main
+    # combined total must include all distinct Spotify IDs exactly once.
+    latest=json.loads((ROOT/'data/solo.json').read_text(encoding='utf-8'))
+    catalogue=json.loads((ROOT/'data/catalog.json').read_text(encoding='utf-8'))
+    expected=sum(latest['tracks'].values())
+    assert len(latest['tracks'])>=183
+    WebDriverWait(driver,30).until(lambda d:
+        d.find_element(By.ID,'total').text.strip()==f'{expected:,}')
+    print('Verified all solo/unit streams:', f'{expected:,}',flush=True)
+    # Test zero-count profiles and units with a separately grouped album.
+    artist_releases=catalogue['solo']
+    for owner in ('Hoshi','Seungkwan','JxJ','V8'):
+        releases=[release for release in artist_releases
+                  if release.get('artist','').lower()==owner.lower()]
+        ids={track for release in releases for track in release['tracks']}
+        if owner=='JxJ':
+            ids={track for release in artist_releases if release['key']=='sharedTracks'
+                 for track in release['tracks']}
+        assert ids, f'{owner} has no mapped recordings'
+        count=sum(latest['tracks'][track] for track in ids)
+        click(driver,f'#artistProfiles [data-solo-artist="{owner}"]')
+        WebDriverWait(driver,30).until(lambda d:
+            d.find_element(By.ID,'total').text.strip()==f'{count:,}')
+        print(owner,'verified solo/unit streams:',f'{count:,}',flush=True)
+    click(driver,'#allSoloArtists')
+    WebDriverWait(driver,30).until(lambda d:
+        d.find_element(By.ID,'total').text.strip()==f'{expected:,}')
     click(driver,'#rankCategory button[data-type="albums"]')
     # The daily tab sorts by daily gain; verify Most/Least STREAMED
     # using the cumulative Overall tab rather than confusing the two.
