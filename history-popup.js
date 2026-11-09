@@ -54,10 +54,32 @@
  const modal=document.createElement('div');modal.className='svt-history-dialog';modal.hidden=true;modal.setAttribute('role','presentation');
  modal.innerHTML='<section class="svt-history-window" role="dialog" aria-modal="true" aria-labelledby="svtHistoryTitle"><div class="svt-history-top"><div><div style="font:750 10px system-ui;letter-spacing:.15em;color:#d6b1f5">✦ VERIFIED STREAM HISTORY</div><h2 id="svtHistoryTitle">History</h2></div><button type="button" class="svt-history-close" aria-label="Close history">×</button></div><p class="svt-history-note" id="svtHistoryNote"></p><div class="svt-history-wrap"><table class="svt-history-table"><thead><tr><th>Date</th><th>Total</th><th>Increase</th><th>Change in increase</th></tr></thead><tbody id="svtHistoryRows"></tbody></table></div><p class="svt-history-note">A dash means comparable saved data is unavailable. Daily increases need consecutive dates; weekly and monthly gains need verified period boundaries. No missing dates are estimated.</p></section>';
  document.body.append(modal);
- const close=()=>{modal.hidden=true;document.body.style.removeProperty('overflow')};
+ // Keep keyboard focus inside the modal and return it to the opener.
+ let historyOpener=null;
+ const close=()=>{
+  if(modal.hidden)return;
+  modal.hidden=true;
+  document.body.style.removeProperty('overflow');
+  if(historyOpener?.isConnected&&typeof historyOpener.focus==='function')
+   historyOpener.focus();
+  historyOpener=null;
+ };
  modal.querySelector('.svt-history-close').addEventListener('click',close);
  modal.addEventListener('click',e=>{if(e.target===modal)close()});
- document.addEventListener('keydown',e=>{if(!modal.hidden&&e.key==='Escape')close()});
+ document.addEventListener('keydown',e=>{
+  if(modal.hidden)return;
+  if(e.key==='Escape'){e.preventDefault();close();return}
+  if(e.key!=='Tab')return;
+  const focusable=[...modal.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),select:not([disabled]),textarea:not([disabled]),[tabindex]:not([tabindex="-1"])')]
+   .filter(el=>el.getClientRects().length);
+  if(!focusable.length){e.preventDefault();return}
+  const first=focusable[0],last=focusable[focusable.length-1];
+  if(e.shiftKey&&(document.activeElement===first||!modal.contains(document.activeElement))){
+   e.preventDefault();last.focus();
+  }else if(!e.shiftKey&&(document.activeElement===last||!modal.contains(document.activeElement))){
+   e.preventDefault();first.focus();
+  }
+ });
  const numberOrNull=n=>n!=null&&Number.isFinite(Number(n))?Number(n):null;
  const scopeIsSolo=()=>tab==='solo';
  const exactIds=(snapshot,ids,reference)=>{
@@ -401,6 +423,7 @@
    $('#svtHistoryNote').textContent+=' · * Partial observed dates or an in-progress period; changes compare matching elapsed calendar days.';
 
   }
+  historyOpener=document.activeElement instanceof HTMLElement?document.activeElement:null;
   modal.querySelector('.svt-history-close').focus();
  }
  for(const [id,title] of [['total','Track streams · Total'],['gain','Total stream growth'],['listeners','Monthly listeners'],['followers','Followers']]){
