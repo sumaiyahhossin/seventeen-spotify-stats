@@ -683,18 +683,25 @@ function discographyRows(s,p,pp,baseline){
   the8_g4:3,the8_g3:4
  };
  const duplicateAlbumSections=new Set(['jeonghan_g2','joshua_g8','the8_g12','vernon_g9','dino_g4','picheolin_g3']);
- const releasesForDiscography=tab==='solo'?[...(catalog.solo||[])].filter(x=>
-  !duplicateAlbumSections.has(x.key)||
-  // Member-specific discographies must include their credited songs from
-  // the unit releases; only the unfiltered combined view omits duplicate
-  // representations of the same album.
-  (selectedSoloArtist&&String(x.artist).toLowerCase()===selectedSoloArtist.toLowerCase())
- ).sort((a,b)=>{
+ const releasesForDiscography=tab==='solo'?[...(catalog.solo||[])].filter(x=>{
+  const owner=String(x.artist||'').toLowerCase();
+  if(selectedSoloArtist){
+   const selected=selectedSoloArtist.toLowerCase();
+   // A shared Spotify track ID is not permission to list another artist's
+   // entire release. Vernon participates in 54321 on The8's STARDUST,
+   // but his discography should contain his own single entry, not the
+   // STARDUST album and the same recording a second time.
+   // The one additional member-unit appearance without a separate member
+   // catalog release is Wonwoo's credited JxW tracks.
+   return owner===selected||(selected==='wonwoo'&&x.key==='jxw_g1');
+  }
+  return !duplicateAlbumSections.has(x.key);
+ }).sort((a,b)=>{
   const ai=soloSheetArtistOrder.findIndex(n=>n.toLowerCase()===String(a.artist).toLowerCase());
   const bi=soloSheetArtistOrder.findIndex(n=>n.toLowerCase()===String(b.artist).toLowerCase());
   // Each member's release chronology must follow verified calendar dates,
   // not Java collector groups (which can put newer singles before old songs).
-  if(ai!==bi)return (ai<0?999:ai)-(bi<0?999:bi);
+  if(!selectedSoloArtist&&ai!==bi)return (ai<0?999:ai)-(bi<0?999:bi);
   const aDate=String(a.release_date||''),bDate=String(b.release_date||'');
   if(aDate!==bDate){
    if(!/^20\\d{2}-\\d{2}-\\d{2}$/.test(aDate))return 1;
