@@ -687,6 +687,23 @@ public class Stream_Stats_Units_Duos {
                         } catch (Exception ignored) {}
                     }
                 }
+                // First inspect Spotify's exact visible Followers
+                // structure independently of whether the UI uses a dialog.
+                // It is a value sibling followed by a 'Followers' label.
+                for (WebElement label : driver.findElements(By.xpath(
+                        "//*[text()[normalize-space(.)='Followers']]"))) {
+                    try {
+                        if (!label.isDisplayed()) continue;
+                        WebElement value = label.findElement(By.xpath("preceding-sibling::*[1]"));
+                        String raw = value.getText().replace((char)160, ' ').trim();
+                        if (!raw.matches("[0-9]{1,3}(?:[, ]+[0-9]{3})+|[0-9]{4,11}")) continue;
+                        long count = Long.parseLong(raw.replaceAll("[^0-9]", ""));
+                        if (count > 0 && count < 1000000000L) {
+                            System.out.println("STAT_FOLLOWERS|" + artistId + "|" + count);
+                            return;
+                        }
+                    } catch (Exception ignored) {}
+                }
                 // Spotify's profile artwork opens the artist About dialog.
                 // Prefer the actual artist image (alt="JEONGHAN", etc.)
                 // instead of relying on the old artist-named button.
@@ -783,20 +800,9 @@ public class Stream_Stats_Units_Duos {
                         }
                     } catch (Exception ignored) {}
                 }
-                if (!aboutClicked) {
-                    // Some Spotify layouts expose the About heading as a
-                    // clickable section rather than a button.
-                    for (WebElement el : driver.findElements(By.xpath(
-                            "//*[self::span or self::div or self::h2][normalize-space(text())='About']"))) {
-                        try {
-                            if (!el.isDisplayed()) continue;
-                            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", el);
-                            aboutClicked = true;
-                            clickMethod = "about-heading";
-                            break;
-                        } catch (Exception ignored) {}
-                    }
-                }
+                // An ordinary 'About' heading is NOT an interactive control.
+                // Do not record it as an opened popup: this was masking the
+                // true missing-dialog failure for several artist profiles.
                 if (aboutClicked) {
                     Thread.sleep(1300);
                 } else {
@@ -888,9 +894,17 @@ public class Stream_Stats_Units_Duos {
                     catch (Exception ignored) { return false; }
                 }).count();
             long profileImages = driver.findElements(By.cssSelector("img[alt][src*='ab676161']")).size();
+            long matchingArtistImages = driver.findElements(By.cssSelector("img[alt][src*='ab676161']")).stream()
+                .filter(image -> {
+                    try { return artistLabel.equalsIgnoreCase(image.getAttribute("alt")); }
+                    catch (Exception ignored) { return false; }
+                }).count();
+            long exactFollowerLabels = driver.findElements(By.xpath(
+                "//*[text()[normalize-space(.)='Followers']]")).size();
             System.out.println("STAT_FOLLOWERS_DIAGNOSTIC|" + artistId +
                 "|artist-heading-present=" + !artistName.isBlank() +
-                "|profile-images=" + profileImages + "|matching-about-buttons=" + namedButtons +
+                "|profile-images=" + profileImages + "|artist-images=" + matchingArtistImages +
+                "|follower-labels=" + exactFollowerLabels + "|matching-about-buttons=" + namedButtons +
                 "|clicked=" + aboutClicked + "|click-method=" + clickMethod +
                 "|visible-dialogs=" + displayedDialogs);
             System.out.println("STAT_FOLLOWERS_UNAVAILABLE|" + artistId + "|exact-about-number-not-found");
