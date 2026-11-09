@@ -253,6 +253,25 @@ function normTrackName(name){
 }
 function comparablePrevious(s,p,id){
  if(!s||!p||s.tracks?.[id]==null)return null;
+ // Historical workbooks insert and remove rows. Match within the same
+ // member's section and the same title, not the previous sheet's row number.
+ if(tab==='solo'&&isHistorical(s)&&isHistorical(p)){
+  const nowSections=soloLegacySections(s)||{};
+  const priorSections=soloLegacySections(p)||{};
+  const owner=Object.keys(nowSections).find(name=>(nowSections[name]||[]).some(row=>row.id===id));
+  if(!owner)return null;
+  const nowRow=(nowSections[owner]||[]).find(row=>row.id===id);
+  const kind=historicalKind(s,id);
+  const key=soloHistoricalNameKey(nowRow.name);
+  const sourceMatches=(nowSections[owner]||[]).filter(row=>
+   historicalKind(s,row.id)===kind&&soloHistoricalNameKey(row.name)===key);
+  const previousMatches=(priorSections[owner]||[]).filter(row=>
+   historicalKind(p,row.id)===kind&&soloHistoricalNameKey(row.name)===key);
+  if(!previousMatches.length||previousMatches.length!==sourceMatches.length)return null;
+  const position=sourceMatches.findIndex(row=>row.id===id);
+  const prior=previousMatches[position];
+  return prior&&Number.isFinite(prior.value)?{id:prior.id,value:prior.value}:null;
+ }
  // Live solo IDs and archived spreadsheet row identifiers are different.
  // Match by the explicit Spotify-ID-to-workbook mapping, not loose titles.
  if(tab==='solo'&&!isHistorical(s)&&isHistorical(p)){
@@ -1984,24 +2003,34 @@ function soloSnapshotAlbumRow(snapshot,owner,canonicalIndex){
 // "legacy:" row IDs are not Spotify IDs, so ordinary key lookups cannot
 // compute the daily gains at the November 6 -> November 7 transition.
 // Only use the owner-specific, verified Nov 6 workbook track linkage.
+// Resolve Spotify IDs to a row in each dated workbook by member and
+// exact track title, never by a row index copied from another month.
 function verifiedSoloLegacyValue(snapshot,spotifyId){
  if(!snapshot||!isHistorical(snapshot)||!soloHistoryReference)return null;
- const ownerBlocks=soloLegacySections(soloHistoryReference)||{};
- const historicalBlocks=soloLegacySections(snapshot)||{};
+ const referenceSections=soloLegacySections(soloHistoryReference)||{};
+ const snapshotSections=soloLegacySections(snapshot)||{};
  const possibilities=[];
  for(const [index,link] of Object.entries(soloLegacyLinks.byIndex||{})){
   if(link?.id!==spotifyId)continue;
-  const referenceRow=Object.values(ownerBlocks).flat().find(row=>row.index===Number(index)&&historicalKind(soloHistoryReference,row.id)==='track');
-  if(!referenceRow)continue;
-  const owner=Object.keys(ownerBlocks).find(name=>(ownerBlocks[name]||[]).includes(referenceRow));
-  if(!owner)continue;
-  const matchedIndex=matchedSoloReferenceIndex(snapshot,owner,referenceRow,'track');
-  const row=(historicalBlocks[owner]||[]).find(item=>item.index===matchedIndex);
-  if(!row||historicalKind(snapshot,row.id)!=='track'||!Number.isFinite(row.value))continue;
-  possibilities.push({id:row.id,value:row.value});
+  const referenceOwner=Object.keys(referenceSections).find(owner=>
+   (referenceSections[owner]||[]).some(row=>row.index===Number(index)&&historicalKind(soloHistoryReference,row.id)==='track'));
+  if(!referenceOwner)continue;
+  const referenceRows=(referenceSections[referenceOwner]||[]).filter(row=>
+   historicalKind(soloHistoryReference,row.id)==='track');
+  const target=referenceRows.find(row=>row.index===Number(index));
+  if(!target)continue;
+  const key=soloHistoricalNameKey(target.name);
+  const referenceMatches=referenceRows.filter(row=>soloHistoricalNameKey(row.name)===key);
+  const snapshotMatches=(snapshotSections[referenceOwner]||[]).filter(row=>
+   historicalKind(snapshot,row.id)==='track'&&soloHistoricalNameKey(row.name)===key);
+  // If the workbook added/removed an identically titled edition, its
+  // ordinal is ambiguous. Do not assign a different song's streams.
+  if(!snapshotMatches.length||snapshotMatches.length!==referenceMatches.length)continue;
+  const position=referenceMatches.findIndex(row=>row.index===target.index);
+  const matched=snapshotMatches[position];
+  if(matched&&Number.isFinite(matched.value)&&matched.value>=0)
+   possibilities.push({id:matched.id,value:matched.value});
  }
- // Duplicated unit/member credits must resolve to identical numbers.
- // Otherwise the workbook does not establish a unique verified count.
  if(!possibilities.length||new Set(possibilities.map(row=>row.value)).size!==1)return null;
  return possibilities[0];
 }
