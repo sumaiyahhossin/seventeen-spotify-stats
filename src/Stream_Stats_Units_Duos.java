@@ -673,6 +673,24 @@ public class Stream_Stats_Units_Duos {
             boolean aboutClicked = false;
             String clickMethod = "none";
             for (int attempt = 0; attempt < 5; attempt++) {
+                // Spotify's profile artwork opens the artist About dialog.
+                // Prefer the actual artist image (alt="JEONGHAN", etc.)
+                // instead of relying on the old artist-named button.
+                if (!aboutClicked) {
+                    for (WebElement picture : driver.findElements(By.cssSelector("img[alt][src]"))) {
+                        try {
+                            if (!picture.isDisplayed()) continue;
+                            String alt = picture.getAttribute("alt");
+                            String src = picture.getAttribute("src");
+                            if (artistName.isBlank() || alt == null || !alt.trim().equalsIgnoreCase(artistName)
+                                || src == null || !(src.contains("scdn.co/image/") || src.contains("spotifycdn.com/image/"))) continue;
+                            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", picture);
+                            aboutClicked = true;
+                            clickMethod = "artist-profile-image";
+                            break;
+                        } catch (Exception ignored) {}
+                    }
+                }
                 // Spotify has changed from an artist-named button to an
                 // About control in some layouts. Try visible controls first.
                 List<WebElement> buttons = driver.findElements(By.cssSelector(
@@ -724,6 +742,26 @@ public class Stream_Stats_Units_Duos {
                     Thread.sleep(1300);
                 }
                 Thread.sleep(900);
+                // Read the exact integer in the SAME compact Spotify
+                // Followers container supplied by the current About markup:
+                // <div><div>118,017</div><div>Followers</div></div>.
+                // Only accept an unabridged number next to the Followers
+                // label, never an unrelated number or a rounded K/M badge.
+                for (WebElement label : driver.findElements(By.xpath(
+                        "//*[normalize-space(text())='Followers']"))) {
+                    try {
+                        if (!label.isDisplayed()) continue;
+                        // The value is the immediate preceding sibling of the label.
+                        WebElement value = label.findElement(By.xpath("preceding-sibling::*[1]"));
+                        if (!value.isDisplayed()) continue;
+                        String raw = value.getText().replace((char)160, ' ').trim();
+                        if (!raw.matches("[0-9]{1,3}(?:[, ]+[0-9]{3})+|[0-9]{4,11}")) continue;
+                        long count = Long.parseLong(raw.replaceAll("[^0-9]", ""));
+                        if (count < 1 || count > 1000000000L) continue;
+                        System.out.println("STAT_FOLLOWERS|" + artistId + "|" + count);
+                        return;
+                    } catch (Exception ignored) {}
+                }
                 List<WebElement> dialogs = driver.findElements(By.cssSelector(
                     "dialog[open], [role='dialog']"));
                 for (WebElement dialog : dialogs) {
