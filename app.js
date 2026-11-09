@@ -2513,6 +2513,14 @@ function snapshotDelta(now,old,id){
  if(historical&&delta>Math.max(100000*days,now.tracks[id]*0.05))return null;
  return delta;
 }
+// A single anomalous day inside a period invalidates the full-boundary
+// difference for that recording, even if both month-end values look valid.
+function incompleteObservedPeriod(s,context,id){
+ if(!context?.fallbackPairs||!context.range?.first)return false;
+ const expected=Math.round((Date.parse(s.date)-Date.parse(context.range.first))/86400000)+1;
+ return context.fallbackPairs.length!==expected||
+  context.fallbackPairs.some(([now,prev])=>snapshotDelta(now,prev,id)==null);
+}
 function periodGain(s,context,id){
  if(context?.observedPairs){
   const gains=context.observedPairs.map(([now,previous])=>snapshotDelta(now,previous,id));
@@ -2520,7 +2528,7 @@ function periodGain(s,context,id){
   return valid.length?valid.reduce((a,b)=>a+b,0):null;
  }
  const direct=context?.start?snapshotDelta(s,context.start,id):null;
- if(direct!=null)return direct;
+ if(direct!=null&&!incompleteObservedPeriod(s,context,id))return direct;
  const valid=(context?.fallbackPairs||[]).map(([now,prev])=>snapshotDelta(now,prev,id)).filter(v=>v!=null);
  return valid.length?valid.reduce((a,b)=>a+b,0):null;
 }
@@ -2557,6 +2565,7 @@ function periodChange(s,context,id){
   }
   return matched.length?matched.reduce((sum,v)=>sum+v,0):null;
  };
+ if(incompleteObservedPeriod(s,context,id))return fallbackChange();
  if(!context?.start||!context.prevStart||!context.prevEnd)return fallbackChange();
  const now=snapshotDelta(s,context.start,id);
  // Follow the identity already resolved at the start of this period,
@@ -2974,7 +2983,8 @@ async function render(){const token=++renderToken;
     (catalog[tab]||[]).find(item=>item.key===key)?.tracks||[]))];
    if(!ids.length)continue;
    const incomplete=ids.some(id=>!baseline.start||
-    snapshotDelta(s,baseline.start,id)==null);
+    snapshotDelta(s,baseline.start,id)==null||
+    incompleteObservedPeriod(s,baseline,id));
    if(incomplete){
     row.gainPartial=true;
     if(row.change!=null)row.changePartial=true;
