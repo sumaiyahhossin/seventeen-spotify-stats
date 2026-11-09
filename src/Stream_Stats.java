@@ -221,7 +221,7 @@ public class Stream_Stats {
         String[] g32 = {"https://open.spotify.com/track/25osmdhvjltPlN7gI2Javd", "https://open.spotify.com/track/6LnEoRQKMcaFTR5UvaKuBy", "https://open.spotify.com/track/68kHuoBxtNcWZWxBu1V007", "https://open.spotify.com/track/1ZpiUfzl9P0pMkA03xqmUy", "https://open.spotify.com/track/35jvwACXmrreYIEOAGc2Kr", "https://open.spotify.com/track/0bFiLUmBmFX0aWyhVqIwiN", "https://open.spotify.com/track/6o2Pu5qZcinw4mlDlQZFqu"};
 
 
-        //power of love single (3 tracks): power of love, power of love - holiday ver., power of love - inst.
+        //power of love single (3 tracks): power of love, home - japanese ver., snap shoot - japanese ver.
         String[] g33 = {"https://open.spotify.com/track/3I5W8iA8iZAyO62UVceK3F", "https://open.spotify.com/track/2UHaIBd2uiIFLZ9pgHMpJl", "https://open.spotify.com/track/74rpBQDDUA116sss0a0Tiy"};
 
 
