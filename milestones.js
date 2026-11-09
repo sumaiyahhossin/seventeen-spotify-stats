@@ -1,5 +1,9 @@
 'use strict';
 const $=id=>document.getElementById(id);
+const milestoneMode=new URLSearchParams(location.search).get('type')==='solo'?'solo':'group';
+const inSoloMilestones=milestoneMode==='solo';
+let unitTrackLinks={byIndex:{}},unitMedia={tracks:{},albums:{}};
+let knownMilestoneTrackIds=new Set();
 const releaseByKey={"g3":"2015-12-04","g4":"2016-02-12","g14":"2018-08-13","g17":"2019-05-19","g19":"2019-08-05","g21":"2019-12-01","g26":"2020-09-15","g30":"2021-07-30","g31":"2021-06-30","g34":"2022-04-15","g38":"2022-08-26","g40":"2022-12-08","g42":"2023-08-16","g45":"2023-09-01","g47":"2023-12-25","g48":"2024-02-16","g55":"2024-05-03","g57":"2024-10-18","g60":"2025-06-30","g61":"2025-07-14","g62":"2025-07-25","g63":"2025-10-10","g64":"2026-02-27","g7":"2016-07-04","g23":"2020-06-22","g24":"2020-08-24","g37":"2022-07-18","g44":"2023-08-23","g50":"2024-04-29","g51":"2024-04-29","g52":"2024-04-29","g53":"2024-04-29","g54":"2024-04-29","g1":"2015-05-29","g2":"2015-09-10","g5":"2016-04-25","g6":"2016-07-04","g8":"2016-12-05","g9":"2017-05-22","g10":"2017-11-06","g11":"2018-02-05","g12":"2018-05-30","g13":"2018-07-16","g16":"2019-01-21","g18":"2019-05-29","g20":"2019-09-16","g22":"2020-04-01","g25":"2020-09-09","g27":"2020-10-19","g28":"2021-04-21","g29":"2021-06-18","g32":"2021-10-22","g33":"2021-12-08","g35":"2022-05-27","g36":"2022-07-18","g39":"2022-11-09","g41":"2023-04-24","g43":"2023-08-23","g46":"2023-10-23","g49":"2024-04-29","g56":"2024-10-14","g58":"2024-11-27","g59":"2025-05-26"};
 const norm=s=>String(s||'').toLowerCase().normalize('NFKC').replace(/[^a-z0-9]/g,'');
 const format=d=>new Date(d+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric',year:'numeric'});
@@ -154,6 +158,11 @@ async function trackArtwork(name){
 }
 function loadMilestoneCovers(){
  for(const img of document.querySelectorAll('.song-cover[data-song-name]')){
+  if(inSoloMilestones){
+   const local=unitMedia.tracks?.[img.dataset.spotifyId]?.local;
+   if(local)img.src=local;
+   continue;
+  }
   const name=img.dataset.songName,id=img.dataset.spotifyId;
   (async()=>{
    // Pin to the verified original 2018 YOU MAKE MY DAY album, not a reissue track.
@@ -184,12 +193,13 @@ const originalSongDates={
  hot:'2022-05-27',prettyu:'2016-04-25',rockwithyou:'2021-10-22',
  verynice:'2016-07-04'
 };
-const milestones=[100000000,200000000,300000000,400000000,500000000,600000000,700000000,800000000,900000000,1000000000];
+const milestones=inSoloMilestones?[1000000,10000000,20000000,30000000,40000000,50000000,60000000,70000000,80000000,90000000,100000000,200000000,300000000,400000000]:[100000000,200000000,300000000,400000000,500000000,600000000,700000000,800000000,900000000,1000000000];
 function buildReleases(catalog){
- for(const item of catalog.group||[]){
-  const date=releaseByKey[item.key]||item.release_date||item.releaseDate;
+ for(const item of (inSoloMilestones?catalog.solo:catalog.group)||[]){
+  const date=inSoloMilestones?(item.release_date||item.releaseDate):(releaseByKey[item.key]||item.release_date||item.releaseDate);
   if(!/^\d{4}-\d\d-\d\d$/.test(date||''))continue;
   const ids=item.tracks||[];
+  if(inSoloMilestones)ids.forEach(id=>knownMilestoneTrackIds.add(id));
   for(const id of ids){if(!releases.has(id)||date<releases.get(id))releases.set(id,date)}
   const description=String(item.description||'');
   const match=description.match(/\(\d+\s+tracks?\)\s*:\s*(.*)$/i);
@@ -207,11 +217,21 @@ function buildReleases(catalog){
 }
 function trackRows(snapshot){
  const out=new Map();
- for(const [id,value] of Object.entries(snapshot.tracks||{})){
-  const name=snapshot.names?.[id]||trackNames.get(id)||'';
-  if(!Number.isFinite(value)||!name||/total\s*:?$/i.test(name)||/total streams|monthly listener|followers|\b(?:album total|original tracks|new tracks|stream change|daily streams|weekly streams|monthly streams)\b/i.test(name))continue;
+ for(const [rawId,value] of Object.entries(snapshot.tracks||{})){
+  if(!Number.isFinite(value)||value<0)continue;
+  let id=rawId;
+  if(inSoloMilestones){
+   if(/^legacy:/.test(id)){
+    const index=Number(id.split(':').at(-1));
+    id=unitTrackLinks.byIndex?.[index]?.id;
+   }
+   if(!id||!knownMilestoneTrackIds.has(id))continue;
+  }
+  const savedName=inSoloMilestones?unitMedia.tracks?.[id]?.title:null;
+  const name=savedName||snapshot.names?.[rawId]||trackNames.get(id)||'';
+  if(!name||/total\s*:?$/i.test(name)||/total streams|monthly listener|followers|\b(?:album total|original tracks|new tracks|stream change|daily streams|weekly streams|monthly streams)\b/i.test(name))continue;
   const canonicalName=name.replace(/\bGOM\b/gi,'God of Music').replace(/^maestro$/i,'MAESTRO');
-  const key='name:'+norm(canonicalName); // bridge spreadsheet legacy IDs and Spotify IDs by song name
+  const key=inSoloMilestones?'track:'+id:'name:'+norm(canonicalName);
   const prior=out.get(key);
   if(!prior||value>prior.value)out.set(key,{id,name:canonicalName,value});
  }
@@ -228,7 +248,7 @@ function updateMilestoneOptions(){
  const max=Math.max(0,...values);
  const reached=$('threshold'),upcoming=$('upcomingThreshold');
  const previousReached=reached.value,previousUpcoming=upcoming.value;
- reached.innerHTML=milestones.filter(target=>target<=300000000||max>=target).map(target=>'<option value="'+target+'">'+shortStreams(target)+'</option>').join('');
+ reached.innerHTML=milestones.filter(target=>target<=(inSoloMilestones?30000000:300000000)||max>=target).map(target=>'<option value="'+target+'">'+shortStreams(target)+'</option>').join('');
  upcoming.innerHTML='<option value="0">All next milestones</option>'+upcomingTargets.filter(target=>target<=400000000||max>=upcomingTargets[upcomingTargets.indexOf(target)-1]).map(target=>'<option value="'+target+'">'+shortStreams(target)+'</option>').join('');
  if([...reached.options].some(o=>o.value===previousReached))reached.value=previousReached;
  if([...upcoming.options].some(o=>o.value===previousUpcoming))upcoming.value=previousUpcoming;
@@ -343,7 +363,7 @@ function build(){
   const currentValue=latestValues.get(key);
   const reached=Number.isFinite(currentValue)&&currentValue>=threshold;
   if(!reached)continue;
-  const release=originalSongDates[normalized]||releases.get('name:'+normalized)||releases.get(item.id)||releases.get(key)||null;
+  const release=inSoloMilestones?(releases.get(item.id)||null):(originalSongDates[normalized]||releases.get('name:'+normalized)||releases.get(item.id)||releases.get(key)||null);
   // Daily snapshot crossings use the date of the first snapshot at/above the milestone.
   // Keep earlier documented announcement dates when a gap in snapshots could hide the true crossing.
   const verifiedDate=crossed?.exact?crossed.date:(evidence?.date||crossed?.date||null);
@@ -384,11 +404,14 @@ async function start(){
  // Older history is an optional enhancement, never a loading prerequisite.
  let latest;
  try{
-  const [catalog,group,artwork]=await Promise.all([
-   jsonWithTimeout('data/catalog.json',12000).catch(()=>({group:[]})),
-   jsonWithTimeout('data/group.json',15000),
-   jsonWithTimeout('data/artwork-map.json',12000).catch(()=>({tracks:{}}))
+  const [catalog,group,artwork,unitLinks,unitCovers]=await Promise.all([
+   jsonWithTimeout('data/catalog.json',12000).catch(()=>({group:[],solo:[]})),
+   jsonWithTimeout('data/'+milestoneMode+'.json',15000),
+   jsonWithTimeout('data/artwork-map.json',12000).catch(()=>({tracks:{}})),
+   inSoloMilestones?jsonWithTimeout('data/solo-legacy-track-links.json',12000).catch(()=>({byIndex:{}})):Promise.resolve({byIndex:{}}),
+   inSoloMilestones?jsonWithTimeout('data/solo-media.json',12000).catch(()=>({tracks:{}})):Promise.resolve({tracks:{}})
   ]);
+  unitTrackLinks=unitLinks;unitMedia=unitCovers;
   milestoneArtwork=artwork;
   latest=group;
   currentSnapshot=group;
@@ -402,7 +425,7 @@ async function start(){
   ready=true;build();renderUpcoming();
   // Only one previous daily snapshot is used to calculate the current growth rate.
   // Upcoming milestones never wait for the historical milestone scan.
-  (async()=>{try{const previousDate=new Date(Date.parse(group.date+'T12:00:00Z')-86400000).toISOString().slice(0,10);previousSnapshot=await jsonWithTimeout('data/history/group-'+previousDate+'.json',10000);renderUpcoming()}catch{renderUpcoming()}})();
+  (async()=>{try{const previousDate=new Date(Date.parse(group.date+'T12:00:00Z')-86400000).toISOString().slice(0,10);previousSnapshot=await jsonWithTimeout('data/history/'+milestoneMode+'-'+previousDate+'.json',10000);renderUpcoming()}catch{renderUpcoming()}})();
   $('status').textContent+=' · Checking historical dates in background…';
  }catch(error){
   $('status').textContent='Could not load the current song snapshot. Please refresh the page.';
@@ -412,7 +435,7 @@ async function start(){
  }
  try{
   const manifest=await jsonWithTimeout('data/manifest.json',12000);
-  const dates=[...new Set(manifest.dates||[])].filter(date=>date<=latest.date).sort();
+  const dates=[...new Set((inSoloMilestones?manifest.solo_dates:manifest.dates)||[])].filter(date=>date<=latest.date).sort();
   // Cap historical requests per session; this page must not wait an hour
   // for hundreds of simultaneous archive downloads.
   const selected=dates.slice(-120);
@@ -421,7 +444,7 @@ async function start(){
   async function worker(){
    while(cursor<selected.length){
     const index=cursor++,date=selected[index];
-    try{snapshots[index]=await jsonWithTimeout('data/history/group-'+date+'.json',7000)}catch{}
+    try{snapshots[index]=await jsonWithTimeout('data/history/'+milestoneMode+'-'+date+'.json',7000)}catch{}
    }
   }
   await Promise.all(Array.from({length:6},worker));
