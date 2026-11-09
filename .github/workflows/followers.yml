@@ -7,6 +7,7 @@ on:
   schedule:
     - cron: '0 * * * *'
   workflow_dispatch:
+  # Full 18-artist scan with browser-loaded artist stats response fallback; each result is verified against its Spotify ID.
   # A change to this workflow starts one full due-profile collection.
   push:
     paths:
