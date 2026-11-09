@@ -122,7 +122,7 @@ if admin_ids:
          'Admin_Track_Collector',*admin_ids],
         capture_output=True,text=True,timeout=3600)
     for line in admin_result.stdout.splitlines():
-        m=re.match(r'STAT_TRACK\\|https://open\\.spotify\\.com/track/([A-Za-z0-9]+)\\|(\\d+)',line)
+        m=re.match(r'STAT_TRACK\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|(\d+)',line)
         if m: tracks[m.group(1)]=int(m.group(2))
     if admin_result.returncode:
         raise SystemExit('Admin-added track scan failed; retry later instead of publishing incomplete data')
@@ -157,7 +157,7 @@ for attempt in (2,3):
              'Admin_Track_Collector',*retry_admin_ids],
             capture_output=True,text=True,timeout=3600)
         for line in retry_admin.stdout.splitlines():
-            m=re.match(r'STAT_TRACK\\|https://open\\.spotify\\.com/track/([A-Za-z0-9]+)\\|(\\d+)',line)
+            m=re.match(r'STAT_TRACK\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|(\d+)',line)
             if m and int(m.group(2))>0: tracks[m.group(1)]=int(m.group(2))
         if retry_admin.returncode:
             raise SystemExit('Admin track retry crashed; not accepting missing results')
