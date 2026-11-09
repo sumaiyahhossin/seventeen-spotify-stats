@@ -2020,8 +2020,22 @@ body.svt-solo-without-audience .stats>.stat:nth-child(5){
  padding-block:10px!important;line-height:1.2!important
 }
 
-/* Portraits: full V8/JxJ concept photograph, without cropping. Other
-   artist avatars use the regular close-up circular/square photo framing. */
+/* Portraits v162: BOTH duo faces are near the center of their original
+   landscape concept photos, so crop the sides to fill a TRUE square.
+   Never use "contain" for the V8/JxJ profile cards: it letterboxes them.
+   Keep the name-hover preview a separate component (#svt-name-photo). */
 .artist-profile-photo:not([data-unit-photo]){object-fit:cover!important}
-.artist-profile-photo[data-unit-photo]{object-fit:contain!important;object-position:center!important;aspect-ratio:1/1!important;background:#242340!important;border-radius:12px!important}
+.artist-profile img.artist-profile-photo[data-unit-photo]{
+ width:72px!important;height:72px!important;
+ min-width:72px!important;min-height:72px!important;
+ aspect-ratio:1 / 1!important;object-fit:cover!important;
+ object-position:50% 50%!important;
+ border-radius:12px!important;background:#242340!important;
+}
+@media(max-width:480px){
+ .artist-profile img.artist-profile-photo[data-unit-photo]{
+  width:54px!important;height:54px!important;
+  min-width:54px!important;min-height:54px!important;
+ }
+}
 .artist-profile-photo:not(.loaded){background:#242340!important}
