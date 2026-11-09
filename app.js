@@ -2484,7 +2484,9 @@ function renderRankMetrics(row){
   rank.endsWith('yearly')?'last year':'yesterday';
  // Daily ranks by daily growth only; Overall adds cumulative stream totals.
  // Weekly/monthly/yearly retain their full saved history and comparison values.
- return (rank.endsWith('daily')?'':rankMetricHtml(row.streams,'streams','Total streams'))+
+ // Solo/unit daily discographies need their real cumulative Spotify counts.
+ // A missing previous-day comparison must not hide a verified stream total.
+ return (rank.endsWith('daily')&&tab==='group'?'':rankMetricHtml(row.streams,'streams','Total streams'))+
   rankMetricHtml(row.gain,'gain',gainLabel,{signed:true,estimated:row.estimatedGain})+
   rankMetricHtml(row.change,'change','Change vs '+compareWith,{signed:true,partial:row.changePartial});
 }
@@ -2533,7 +2535,7 @@ async function render(){const token=++renderToken;
  document.body.classList.toggle('svt-solo-without-audience',tab==='solo'&&['JxJ','V8'].includes(selectedSoloArtist));
  $('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';try{useDatesForTab();renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;if(tab==='group')updateYear2026Streams();syncCalendar();restoreGroupNames(s,p);
  document.body.classList.toggle('svt-overall-four-cols',rank.endsWith('overall'));
- document.body.classList.toggle('svt-daily-ranking',rank.endsWith('daily'));
+ document.body.classList.toggle('svt-daily-ranking',rank.endsWith('daily')&&tab==='group');
  document.body.classList.toggle('svt-discography-table',rank.startsWith('discography'));
  const isPeriod=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
  const periodName=rank.endsWith('weekly')?'Weekly':rank.endsWith('monthly')?'Monthly':rank.endsWith('yearly')?'Yearly':'Daily';
