@@ -332,24 +332,66 @@ def main():
         try:
             check_viewport(driver,1300,900)
             check_viewport(driver,390,850)
-            # The All view has its own ranking module: ensure it never
-            # counts Picheolin's two reissued singles as distinct recordings.
+            # All is an in-page tab with the original header, OG image resolvers
+            # and canonical album sleeves, not a second dark-themed website.
+            for width in (1300,390):
+                driver.set_window_size(width,850)
+                driver.get(f'http://127.0.0.1:{PORT}/index.html?view=all')
+                WebDriverWait(driver,60).until(lambda d:
+                    d.execute_script("return document.body.classList.contains('svt-all-view')") and
+                    len(d.find_elements(By.CSS_SELECTOR,'#all-artists tr'))>=15)
+                assert not driver.find_element(By.ID,'svtAllView').get_attribute('hidden')
+                assert driver.find_element(By.ID,'svtPrimaryStats').get_attribute('hidden') is not None
+                assert driver.find_element(By.CSS_SELECTOR,'#tabs [data-tab="all"]').get_attribute('class').find('active')>=0
+                assert len(driver.find_elements(By.CSS_SELECTOR,'main .hero h1'))==1,'All lost the original site hero'
+                assert driver.execute_script("""
+                    return document.documentElement.scrollWidth<=window.innerWidth+5
+                """),f'All overflowed the viewport at {width}px'
+                WebDriverWait(driver,30).until(lambda d:d.execute_script("""
+                    return document.querySelector('#all-artists [data-all-artist-photo="V8"]')?.getAttribute('src')?.includes('assets/profile-photos/v8.jpg')
+                """))
+                picheolin=driver.execute_script("""
+                    return [...document.querySelectorAll('#all-artists tr')]
+                     .filter(row=>/Picheolin/i.test(row.querySelector('.svt-all-song')?.textContent||''))
+                     .map(row=>row.querySelectorAll('td')[1]?.textContent.trim());
+                """)
+                assert picheolin==['12,745,528'],f'All Artists doubled Picheolin streams: {picheolin}'
+                driver.execute_script("""
+                    const el=document.getElementById('all-owner');
+                    el.value='Picheolin';el.dispatchEvent(new Event('change',{bubbles:true}));
+                """)
+                WebDriverWait(driver,15).until(lambda d:
+                    d.find_element(By.ID,'all-recordCount').text.startswith('6 recordings'))
+                sources=driver.execute_script("""
+                    return [...document.querySelectorAll('#all-recordings img[data-cover-track]')]
+                       .map(img=>img.dataset.coverTrack);
+                """)
+                assert len(sources)==6 and all(v.startswith('image:assets/solo-track-covers/') for v in sources),(
+                    f'All tracks did not reuse original solo covers: {sources}')
+                driver.execute_script("""
+                    document.getElementById('all-viewType').value='albums';
+                    document.getElementById('all-viewType').dispatchEvent(new Event('change',{bubbles:true}));
+                    document.getElementById('all-owner').value='JxJ';
+                    document.getElementById('all-owner').dispatchEvent(new Event('change',{bubbles:true}));
+                """)
+                WebDriverWait(driver,15).until(lambda d:
+                    len(d.find_elements(By.CSS_SELECTOR,'#all-recordings .svt-all-record'))>0)
+                album_sources=driver.execute_script("""
+                    return [...document.querySelectorAll('#all-recordings img[data-cover-track]')]
+                       .map(img=>img.dataset.coverTrack);
+                """)
+                assert any('solo-album-covers/jxj_dreamscape.jpg' in x for x in album_sources),(
+                    f'All Albums did not reuse JxJ album sleeve: {album_sources}')
+                click(driver,'#tabs button[data-tab="group"]')
+                read_layout(driver,f'OT13 after All {width}px')
+                assert not driver.execute_script("return document.body.classList.contains('svt-all-view')")
+                print('In-page All photo, song cover, album sleeve and navigation verified:',width,flush=True)
+            # Legacy All links should land on this same in-page view.
             driver.get(f'http://127.0.0.1:{PORT}/all.html')
             WebDriverWait(driver,40).until(lambda d:
-                len(d.find_elements(By.CSS_SELECTOR,'#artists tr'))>=15)
-            picheolin=driver.execute_script("""
-              return [...document.querySelectorAll('#artists tr')]
-               .filter(row=>/\\bPicheolin\\b/i.test(row.querySelector('.song')?.textContent||''))
-               .map(row=>row.querySelectorAll('td')[1]?.textContent.trim());
-            """)
-            assert picheolin==['12,745,528'],f'All Artists doubles Picheolin streams: {picheolin}'
-            driver.execute_script("""
-              const el=document.getElementById('owner');
-              el.value='Picheolin';el.dispatchEvent(new Event('change',{bubbles:true}));
-            """)
-            WebDriverWait(driver,15).until(lambda d:
-                d.find_element(By.ID,'recordCount').text.startswith('6 recordings'))
-            print('All Artists Picheolin: 12,745,528 streams across 6 tracks',flush=True)
+                d.execute_script("return document.body.classList.contains('svt-all-view')"))
+            assert 'index.html?view=all' in driver.current_url,'Legacy All did not redirect to the main dashboard'
+            print('All legacy navigation, Picheolin streams and both responsive views verified',flush=True)
             driver.get(f'http://127.0.0.1:{PORT}/milestones.html?type=solo')
             WebDriverWait(driver,40).until(lambda d:'UNITS & SOLO' in d.find_element(By.CSS_SELECTOR,'.eyebrow').text)
             # Selenium .text is empty inside the hidden Upcoming panel unless
