@@ -1118,7 +1118,8 @@ function buildRows(s,p,pp,baseline){
  }else{
    rows=trackIds(s).map(id=>({
      id,name:tab==='solo'?(soloMedia.tracks?.[id]?.title||displayTrackName(s.names?.[id]||idName[id]||id)):displayTrackName((s.names?.[id]||idName[id]||id)==='247.0'?'247':s.names?.[id]||idName[id]||id),
-     streams:Number.isFinite(s.tracks[id])&&s.tracks[id]>0?s.tracks[id]:null,gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id)
+     streams:Number.isFinite(s.tracks[id])&&s.tracks[id]>0?s.tracks[id]:null,gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),
+     gainPartial:periodic&&incompleteObservedPeriod(s,baseline,id)
    }));
  }
  if(albums)rows.forEach(row=>{row.name=cleanAlbumLabel(row.name)});
