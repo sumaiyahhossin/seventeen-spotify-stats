@@ -1785,6 +1785,7 @@ function renderRankMetrics(row){
 }
 async function render(){const token=++renderToken;$('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';try{renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;updateYear2026Streams();syncCalendar();restoreGroupNames(s,p);
  document.body.classList.toggle('svt-overall-four-cols',rank.endsWith('overall'));
+ document.body.classList.toggle('svt-discography-table',rank.startsWith('discography'));
  const isPeriod=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
  const periodName=rank.endsWith('weekly')?'Weekly':rank.endsWith('monthly')?'Monthly':rank.endsWith('yearly')?'Yearly':'Daily';
  const periodDateLabel=()=>{
