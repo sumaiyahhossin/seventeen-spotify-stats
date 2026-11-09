@@ -1687,7 +1687,7 @@ function renderArtistProfiles(){
   const id=img.dataset.artistPhoto;
   if(!artistPhotoCache.has(id))artistPhotoCache.set(id,fetch('https://open.spotify.com/oembed?url='+encodeURIComponent(id==='v8-debut'?'https://open.spotify.com/album/5HQrHtpGthJMePFhXT3jKS':'https://open.spotify.com/artist/'+id))
     .then(r=>r.ok?r.json():null).then(d=>d?.thumbnail_url||null).catch(()=>null));
-  artistPhotoCache.get(id).then(url=>{if(url&&img.isConnected){img.src=url;img.classList.add('loaded')}else if(img.isConnected){img.style.display='none';img.insertAdjacentHTML('afterend','<span class="artist-profile-placeholder">💎</span>')}})
+  artistPhotoCache.get(id).then(url=>{if(url&&img.isConnected){img.onload=()=>{if(img.isConnected)img.classList.add('loaded')};img.onerror=()=>{if(img.isConnected){img.style.display='none';if(!img.nextElementSibling?.classList.contains('artist-profile-placeholder'))img.insertAdjacentHTML('afterend','<span class="artist-profile-placeholder" title="Photo temporarily unavailable">💎</span>')}};img.src=url}else if(img.isConnected){img.style.display='none';if(!img.nextElementSibling?.classList.contains('artist-profile-placeholder'))img.insertAdjacentHTML('afterend','<span class="artist-profile-placeholder">💎</span>')}})
  });
 }
 // Artist ownership is based on the Unit & Solo workbook. Track IDs, not
