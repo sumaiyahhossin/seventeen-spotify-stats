@@ -52,10 +52,22 @@ def check_viewport(driver,width,height):
     assert len(entries)==11, f"Album view needs exactly 11 official releases, got {len(entries)}"
     for name in expected:
         assert any(name.lower() in title.lower() for title in titles),f"Missing album {name}"
+    # The album type and full dated title must be visible on every album.
+    undated=[row.find_element(By.CSS_SELECTOR,'.track-copy').text for row in entries
+            if 'Released ' not in row.find_element(By.CSS_SELECTOR,'.track-copy').text]
+    assert not undated, f"Official albums without release dates: {undated}"
     read_layout(driver,f'Units & Solo albums {width}px')
     # Check both original single and full album artwork with no diamond fallback.
     click(driver,'#rankCategory button[data-type="tracks"]')
     WebDriverWait(driver,40).until(lambda d:len(d.find_elements(By.CSS_SELECTOR,'#ranking .rank-row'))>150)
+    # Every unit/solo song in the combined Tracks view must be linked to
+    # its exact Spotify recording, not the first similarly named group song.
+    missing_links=driver.execute_script("""
+      return [...document.querySelectorAll('#ranking .rank-row')]
+       .filter(row=>!row.querySelector('a.track-name[href^="https://open.spotify.com/track/"]'))
+       .map(row=>row.querySelector('.track-name')?.textContent?.trim()||'unknown');
+    """)
+    assert not missing_links, f"Tracks without their exact Spotify links: {missing_links[:12]}"
     # Off-screen image elements can remain unpainted with native lazy loading,
     # so load only visible images and assert every local URL is assigned.
     images=driver.find_elements(By.CSS_SELECTOR,'#ranking .rank-row img.cover')
