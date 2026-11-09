@@ -303,9 +303,14 @@
    const currentPeriod=async first=>{
     const last=endOf(first),visibleEnd=last<ref.date?last:ref.date;
     const boundary=previousDate(first);
-    const total=await cachedValue(visibleEnd);
+    // The end-of-period snapshot may be missing while earlier dated totals
+    // exist. Show the most recent actual observation, but NEVER call it a
+    // completed-period gain or silently use it as the exact period end.
+    const lastObserved=dateList.filter(d=>d>=first&&d<=visibleEnd).at(-1)||null;
+    const total=lastObserved?await cachedValue(lastObserved):null;
     const before=await cachedValue(boundary);
-    const complete=total!=null&&before!=null&&(canDecrease||total>=before);
+    const complete=lastObserved===visibleEnd&&total!=null&&before!=null&&
+      (canDecrease||total>=before);
     if(complete)return {total,gain:total-before,partial:false,days:elapsedDays(first,visibleEnd)};
     // Missing boundaries: add only real consecutive daily differences.
     // Flag the incomplete result with *, never classify it as a whole period.
