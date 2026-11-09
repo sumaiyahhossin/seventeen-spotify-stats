@@ -708,6 +708,21 @@ public class Stream_Stats_Units_Duos {
                     }
                 }
             }
+            // Diagnostic only: record page structure, never claim a shortened
+            // K/M follower badge is an exact integer.
+            int displayedDialogs = 0;
+            for (WebElement dialog : driver.findElements(By.cssSelector("dialog[open], [role='dialog']"))) {
+                if (dialog.isDisplayed()) displayedDialogs++;
+            }
+            long namedButtons = driver.findElements(By.cssSelector("button[aria-label]")).stream()
+                .filter(button -> {
+                    try { return artistName.equalsIgnoreCase(button.getAttribute("aria-label")); }
+                    catch (Exception ignored) { return false; }
+                }).count();
+            System.out.println("STAT_FOLLOWERS_DIAGNOSTIC|" + artistId +
+                "|artist-heading-present=" + !artistName.isBlank() +
+                "|matching-about-buttons=" + namedButtons +
+                "|visible-dialogs=" + displayedDialogs);
             System.out.println("STAT_FOLLOWERS_UNAVAILABLE|" + artistId + "|exact-about-number-not-found");
         } catch (Exception e) {
             System.out.println("STAT_FOLLOWERS_UNAVAILABLE|" + artistId + "|" + e.getClass().getSimpleName());
