@@ -93,7 +93,8 @@ if missing:
     if not classpath:
         print('Missing COLLECTOR_CLASSPATH: cannot run fallback artist collector',file=sys.stderr)
     else:
-        missing=missing[:3]
+        # Attempt every unresolved profile; limiting to the first three
+        # repeatedly starved later artists of any browser verification.
         print('Browser fallback for '+str(len(missing))+' unresolved profiles',flush=True)
         subprocess.run([sys.executable,str(ROOT/'tools/instrument.py'),'solo'],check=True)
         subprocess.run(['javac','-cp',classpath,'-d',str(ROOT/'build'),
@@ -103,12 +104,12 @@ if missing:
         env['SVT_FOLLOWERS_ONLY']=','.join(missing)
         result=subprocess.run(['java','-cp',str(ROOT/'build')+os.pathsep+classpath,
                                'Stream_Stats_Units_Duos'],capture_output=True,text=True,
-                              timeout=2400,env=env)
+                              timeout=3300,env=env)
         for line in result.stdout.splitlines():
             match=re.fullmatch(r'STAT_FOLLOWERS\|([a-zA-Z0-9]{22})\|(\d+)',line.strip())
             if match and match.group(1) in missing:
                 found[match.group(1)]=int(match.group(2))
-            elif line.startswith('STAT_FOLLOWERS_UNAVAILABLE|'):
+            elif line.startswith(('STAT_FOLLOWERS_UNAVAILABLE|','STAT_FOLLOWERS_DIAGNOSTIC|')):
                 print(line,flush=True)
         if result.returncode:
             print(f'Browser follower probe failed (Java exit {result.returncode}): {result.stderr[-500:]}',file=sys.stderr)
