@@ -65,7 +65,7 @@ def check_viewport(driver,width,height):
     # assuming a particular release must permanently lead the chart.
     totals=driver.execute_script("""
       return [...document.querySelectorAll('#ranking .rank-row')].map(row=>{
-        const value=row.querySelector('.rank-metric-total .metric-value')?.textContent||'';
+        const value=row.querySelector('.rank-metric-streams .metric-value')?.textContent||'';
         return Number(value.replace(/[^0-9]/g,''))||0;
       });
     """)
@@ -80,7 +80,7 @@ def check_viewport(driver,width,height):
     print('Album least-streamed order:',smallest,flush=True)
     least_totals=driver.execute_script("""
       return [...document.querySelectorAll('#ranking .rank-row')].map(row=>{
-        const value=row.querySelector('.rank-metric-total .metric-value')?.textContent||'';
+        const value=row.querySelector('.rank-metric-streams .metric-value')?.textContent||'';
         return Number(value.replace(/[^0-9]/g,''))||0;
       });
     """)
