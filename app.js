@@ -1344,6 +1344,21 @@ function artworkTrack(row){
     soloAlbums.find(a=>a.releaseKeys?.includes(row.artworkRelease));
   const isAlbum=row.kind==='album'||rank.startsWith('albums');
   if(isAlbum&&spec&&soloMedia.albums?.[spec.key])return 'image:'+soloMedia.albums[spec.key];
+  // Every individual single/OST release total also gets its own exact cover.
+  // The preceding workbook row holds the last track of that SAME release;
+  // never search by a generic title or another artist's matching song.
+  if(isAlbum){
+   const entry=(catalog.solo||[]).find(item=>item.key===row.artworkRelease);
+   const firstId=entry?.tracks?.[0];
+   const firstCover=soloMedia.tracks?.[firstId]?.local;
+   if(firstCover)return 'image:'+firstCover;
+   if(/^legacy:/.test(String(row.id||''))){
+    const index=Number(String(row.id).split(':').at(-1));
+    const previous=soloLegacyLinks.byIndex?.[index-1];
+    const matchedCover=soloMedia.tracks?.[previous?.id]?.local;
+    if(matchedCover)return 'image:'+matchedCover;
+   }
+  }
   let id=row.spotifyTrackId||archived?.id||row.id;
   if(!rank.startsWith('discography')){
    const first={'34wTGQ1yV5XtrSMR5dMLWY':'594CTGIIVVTitwRhQJcWgM',
