@@ -1,0 +1,66 @@
+name: Spotify followers — all 18 solo and unit profiles
+
+# Check every hour; the gate only runs profiles missing a verified reading
+# since the latest 2 PM America/New_York reporting cutoff. After all 18
+# have an observation, checks pause until the next cutoff.
+on:
+  schedule:
+    - cron: '0 * * * *'
+  workflow_dispatch:
+  # A change to this workflow starts one full due-profile collection.
+  push:
+    paths:
+      - '.github/workflows/followers.yml'
+
+permissions:
+  contents: write
+
+# Follower checks must not queue behind long group/solo stream collectors.
+concurrency:
+  group: spotify-followers
+  cancel-in-progress: false
+
+jobs:
+  followers:
+    name: Verify followers for 18 solo and unit artist profiles
+    runs-on: ubuntu-24.04
+    timeout-minutes: 80
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: true
+      - name: Check 2 PM New York reporting period and 18-profile coverage
+        id: follower_gate
+        run: python tools/solo_followers_due.py >> "$GITHUB_OUTPUT"
+      - uses: actions/setup-java@v5
+        if: steps.follower_gate.outputs.due == 'true'
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - uses: actions/setup-python@v6
+        if: steps.follower_gate.outputs.due == 'true'
+        with:
+          python-version: '3.12'
+      - uses: browser-actions/setup-chrome@v2
+        if: steps.follower_gate.outputs.due == 'true'
+      - name: Install Selenium dependencies
+        if: steps.follower_gate.outputs.due == 'true'
+        run: mvn -q dependency:build-classpath -Dmdep.outputFile=classpath.txt
+      - name: Verify every due Spotify artist independently
+        if: steps.follower_gate.outputs.due == 'true'
+        env:
+          SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
+          SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
+          SVT_FOLLOWERS_FULL_SCAN: '1'
+        run: |
+          python -m py_compile tools/collect_solo_followers.py tools/solo_followers_due.py tools/instrument.py
+          export COLLECTOR_CLASSPATH="$(cat classpath.txt)"
+          python tools/collect_solo_followers.py
+      - name: Publish every new verified follower reading
+        if: steps.follower_gate.outputs.due == 'true'
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add -- data/solo-followers.json
+          python tools/publish_snapshots.py
