@@ -1812,12 +1812,13 @@ function renderArtistProfiles(){
  area.hidden=tab!=='solo';
  if(tab!=='solo')return;
  area.innerHTML='<div class="artist-profiles-heading">SOLOS & UNITS <span>✦</span></div>'+(selectedSoloArtist?'<div class="artist-selection-heading"><button type="button" id="allSoloArtists">← All units & solos</button><strong>'+escapeHtml(selectedSoloArtist)+' · STREAMING STATS</strong></div>':'')+'<div class="artist-profile-grid">'+soloArtists.map(([name,id])=>{
-  const photo=name==='V8'||name==='JxJ'?'<img class="artist-profile-photo" data-unit-photo="'+name+'" alt="'+name+' full unit concept photo" loading="lazy">':id?'<img class="artist-profile-photo" data-artist-photo="'+id+'" alt="'+name+' artist photo" loading="lazy">':'';
+  const photo=name==='V8'||name==='JxJ'||name==='S.Coups'?'<img class="artist-profile-photo" data-unit-photo="'+name+'" alt="'+name+' full unit concept photo" loading="lazy">':id?'<img class="artist-profile-photo" data-artist-photo="'+id+'" alt="'+name+' artist photo" loading="lazy">':'';
   return '<button type="button" class="artist-profile'+(selectedSoloArtist===name?' selected':'')+'" data-solo-artist="'+escapeHtml(name)+'" aria-pressed="'+(selectedSoloArtist===name)+'" title="View '+escapeHtml(name)+' statistics">'+photo+'<span class="artist-profile-name">'+escapeHtml(name)+'</span></button>';
  }).join('')+'</div>';
  area.querySelector('#allSoloArtists')?.addEventListener('click',()=>{selectedSoloArtist=null;saveView();render()});
  area.querySelectorAll('[data-solo-artist]').forEach(button=>button.addEventListener('click',()=>{selectedSoloArtist=button.dataset.soloArtist;saveView();render()}));
  const unitPhotos={
+  'S.Coups':['https://phinf.wevpstatic.net/MjAyNTA3MjVfMjgx/MDAxNzUzNDI1NTMzNDIx.mPjSKpU0QNocmPRt5gcnA4ZM0uh-Q7fTQXyJf9rfayEg.rQGw7A4vM2sUo0Gn9DFLLxint8wzxdSxfrviWyE4gxcg.JPEG/image.jpg?type=w670'],
   V8:['assets/profile-photos/v8.jpg','https://books.r10s.jp/fan/images/oshiraku-images/v8_conceptphoto1_25f8875b2d.jpg'],
   JxJ:['assets/profile-photos/jxj.jpg','https://www.allkpop.com/upload/2026/09/content/281130/web_data/allkpop_1790609592_htt9wk4biaabw8m.jpg']
  };
