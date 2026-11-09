@@ -38,7 +38,11 @@ function buildRows(){
   const snapshot=state[scope];
   for(const release of state.catalog[scope]||[]){
    const canonicalOwner=artistIds.find(([name])=>name.toLowerCase()===String(release.artist||'').toLowerCase())?.[0];
-   const artist=scope==='group'?'SEVENTEEN':(canonicalOwner||release.artist);
+   // "Gilboard" is a release grouping, not a Spotify artist profile.
+   // The sharedTracks release is DREAMSCAPE's JxJ catalog grouping.
+   const artist=scope==='group'?'SEVENTEEN':
+    release.key==='sharedTracks'?'JxJ':
+    release.key==='gilboard'?'Picheolin':(canonicalOwner||release.artist);
    const releaseDate=scope==='group'?(groupOriginalReleaseDates[release.key]||groupStandaloneReleaseDates[release.key]||release.release_date):release.release_date;
    (release.tracks||[]).forEach((id,index)=>{
     if(!validId(id))return;
@@ -49,6 +53,8 @@ function buildRows(){
     let row=byId.get(id);
     if(!row){row={id,scope,owners:new Set(),releaseNames:new Set(),date:null,title:null,streams:null};byId.set(id,row)}
     if(artist)row.owners.add(artist);
+    // The Gilboard-only "Like It" recording is Dino's solo, not Picheolin's.
+    if(release.key==='gilboard'&&index===6){row.owners.delete('Picheolin');row.owners.add('Dino')}
     if(release.title)row.releaseNames.add(release.title);
     const date=release.track_release_dates?.[id]||releaseDate;
     if(/^\d{4}-\d{2}-\d{2}$/.test(date||'')&&(!row.date||date<row.date))row.date=date;
