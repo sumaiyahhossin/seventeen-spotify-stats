@@ -676,7 +676,7 @@ function discographyRows(s,p,pp,baseline){
  // Keep Units & Solo discography in the same member/release sequence as
  // the latest 11/26 tab of the uploaded Unit & Solo Spotify Streams workbook.
  // Newer catalog releases stay after their member's spreadsheet entries.
- const soloSheetArtistOrder=['Jeonghan','Joshua','Jun','Hoshi','Wonwoo','Woozi','Dokyeom','Mingyu','The8','Seungkwan','Vernon','Dino','Bss','Jxw','Hxw','Cxm','Dxs','V8','Picheolin','JxJ'];
+ const soloSheetArtistOrder=['S.Coups','Jeonghan','Joshua','Jun','Hoshi','Wonwoo','Woozi','Dokyeom','Mingyu','The8','Seungkwan','Vernon','Dino','Bss','Jxw','Hxw','Cxm','Dxs','V8','Picheolin','JxJ'];
  const soloSheetReleaseOverrides={
   the8_g4:3,the8_g3:4
  };
@@ -1014,7 +1014,7 @@ function buildRows(s,p,pp,baseline){
    // Match the album sum expressions printed by Stream_Stats.java.
    // In particular, repackage totals combine their base and added arrays.
    const releasesByKey=new Map((catalog.group||[]).map(item=>[item.key,item]));
-   for(const spec of requestedGroupAlbums){
+   for(const spec of [...requestedGroupAlbums,...(catalog.group||[]).filter(x=>x.admin_added&&x.release_type==='album').map(x=>({keys:[x.key],name:x.title}))]){
      const ids=[...new Set(spec.keys.flatMap(key=>releasesByKey.get(key)?.tracks||[]))];
      const streams=ids.length&&ids.every(id=>s.tracks[id]!=null)?ids.reduce((sum,id)=>sum+s.tracks[id],0):null;
      const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
@@ -1024,7 +1024,7 @@ function buildRows(s,p,pp,baseline){
    }
  }else if(albums){
    for(const item of catalog[tab]||[]){
-     if(!isAlbumTitle(item.title)&&!['dino_g4','jxj_dreamscape','jeonghan_g2','joshua_g8','picheolin_g3'].includes(item.key))continue;
+     if(!(item.admin_added&&item.release_type==='album')&&!isAlbumTitle(item.title)&&!['dino_g4','jxj_dreamscape','jeonghan_g2','joshua_g8','picheolin_g3'].includes(item.key))continue;
      if(['gilboard','sharedTracks'].includes(item.key))continue;
      const ids=[...new Set(item.tracks)];
      const streams=ids.every(id=>s.tracks[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
@@ -1794,7 +1794,7 @@ function fillArtwork(){
   observer.observe(img);
  });
 }
-const soloArtists=[["Jeonghan","6KDLlQYeeqUe5OQ2JrdNzF"],["Joshua","74AwWFYdjQ3ER5vHO4H7b0"],["Jun","38Gn0ZVC8TQwuaMxBK1yRV"],["Hoshi","6nWKAdMv1BDq1zHfZzkdbR"],["Wonwoo","3rHcBT06Vb1XGVUWhDALZt"],["Woozi","4TdiASPlU3QdZvGQBothcQ"],["Dokyeom","7G1kUsPtQCdolV6CPwHmh2"],["Mingyu","5gUpo0BRmo6EOTbyU3z5Ay"],["The8","4DqFd6XE3dX4LWXHJVVpLk"],["Seungkwan","0Vb2DjojEYsasFpc3aTZb6"],["Vernon","2Y34b9AOK30zXgL7cAH4NG"],["Dino","5YaeXxzvqGNBCguELlKo6G"],["BSS","1uAT5bTSp6dWbNmixIUP5t"],["JxW","7GvlsjcgBrsE578yghOq7D"],["HxW","1EReYiseDwE51FzGm7EK9n"],["CxM","7kjuLdYbtTkWBToMu2ebZN"],["DxS","4wBjmEkWhY4T22q00CiF5V"],["V8",null],["Picheolin","3V2EC4dPYLgtbi0TtrB1RA"],["JxJ",null]];
+const soloArtists=[["S.Coups",null],["Jeonghan","6KDLlQYeeqUe5OQ2JrdNzF"],["Joshua","74AwWFYdjQ3ER5vHO4H7b0"],["Jun","38Gn0ZVC8TQwuaMxBK1yRV"],["Hoshi","6nWKAdMv1BDq1zHfZzkdbR"],["Wonwoo","3rHcBT06Vb1XGVUWhDALZt"],["Woozi","4TdiASPlU3QdZvGQBothcQ"],["Dokyeom","7G1kUsPtQCdolV6CPwHmh2"],["Mingyu","5gUpo0BRmo6EOTbyU3z5Ay"],["The8","4DqFd6XE3dX4LWXHJVVpLk"],["Seungkwan","0Vb2DjojEYsasFpc3aTZb6"],["Vernon","2Y34b9AOK30zXgL7cAH4NG"],["Dino","5YaeXxzvqGNBCguELlKo6G"],["BSS","1uAT5bTSp6dWbNmixIUP5t"],["JxW","7GvlsjcgBrsE578yghOq7D"],["HxW","1EReYiseDwE51FzGm7EK9n"],["CxM","7kjuLdYbtTkWBToMu2ebZN"],["DxS","4wBjmEkWhY4T22q00CiF5V"],["V8",null],["Picheolin","3V2EC4dPYLgtbi0TtrB1RA"],["JxJ",null]];
 const artistPhotoCache=new Map();
 const artistImageManifest=fetch('data/profile-images.json',{cache:'no-cache'})
  .then(r=>r.ok?r.json():{}).catch(()=>({}));
@@ -1850,7 +1850,7 @@ function ownedSoloIds(artist){
    snapshots. Workbook row IDs differ from Spotify IDs; artist block boundaries
    (not fuzzy song-title matching) keep recordings such as Jeonghan's Coloring
    separate from V8's coloring and correctly separate unit members' tracks. */
-const soloLegacyOwners=['Jeonghan','Joshua','Jun','Hoshi','Wonwoo','Woozi',
+const soloLegacyOwners=['S.Coups','Jeonghan','Joshua','Jun','Hoshi','Wonwoo','Woozi',
  'Dokyeom','Mingyu','The8','Seungkwan','Vernon','Dino','BSS',
  'JxW','HxW','CxM','DxS'];
 const soloLegacyCache=new WeakMap();
@@ -1984,7 +1984,8 @@ function canonicalSoloAlbumRows(s,p,pp,baseline){
   if(!Number.isFinite(current)||!Number.isFinite(previous)||current<previous)return null;
   return current-previous;
  };
- const result=(soloAlbums||[]).filter(a=>!selectedSoloArtist||
+ const adminSoloAlbums=(catalog.solo||[]).filter(x=>x.admin_added&&x.release_type==='album').map(x=>({key:x.key,displayName:x.title,releaseDate:x.release_date,owners:[x.artist],tracks:x.tracks}));
+ const result=[...(soloAlbums||[]),...adminSoloAlbums].filter(a=>!selectedSoloArtist||
   a.owners?.some(owner=>owner.toLowerCase()===selectedSoloArtist.toLowerCase())
  ).map(a=>{
   let ids=[...new Set(a.tracks||[])];
@@ -2891,11 +2892,43 @@ $('#archiveDate').addEventListener('change',e=>{
    $('#rankCategory').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.type===rankType));
   }
  }catch{}
- [catalog,artworkMap,soloAlbums,soloMedia,soloLegacyLinks,soloHistoryReference]=await Promise.all([
+ let adminReleases;
+ [catalog,artworkMap,soloAlbums,soloMedia,soloLegacyLinks,soloHistoryReference,adminReleases]=await Promise.all([
  load('data/catalog.json'),load('data/artwork-map.json'),
  load('data/solo-albums.json'),load('data/solo-media.json'),
- load('data/solo-legacy-track-links.json'),load('solo-2026-11-06.json')]);
+ load('data/solo-legacy-track-links.json'),load('solo-2026-11-06.json'),load('data/admin-releases.json')]);
  catalog=catalog||{};soloAlbums=soloAlbums||[];
+ // Preview newly published releases immediately, even before the next collector
+ // regenerates catalog.json. Existing snapshots are never filled with fake data.
+ adminReleases=adminReleases||{releases:[],artists:[]};
+ for(const entry of adminReleases.releases||[]){
+  const list=catalog[entry.scope]||(catalog[entry.scope]=[]);
+  if(!list.some(item=>item.key===entry.key))
+   list.push({...entry,admin_added:true});
+ }
+ for(const release of adminReleases.releases||[]){
+  for(const [id,title] of Object.entries(release.track_titles||{})){
+   if(!idName[id])idName[id]=title;
+  }
+ }
+ const unitDebutOrder=['BSS','JxW','HxW','CxM','DxS','V8','Picheolin','JxJ'];
+ const newUnits=(adminReleases.artists||[]).filter(x=>x.kind==='unit')
+  .sort((a,b)=>String(a.debut_date).localeCompare(String(b.debut_date)));
+ for(const profile of newUnits){
+  if(!soloArtists.some(([name])=>name.toLowerCase()===profile.name.toLowerCase()))
+   soloArtists.push([profile.name,null]);
+ }
+ // Keep all solo members first, followed by units in debut order.
+ const memberOrder=['S.Coups','Jeonghan','Joshua','Jun','Hoshi','Wonwoo','Woozi','Dokyeom','Mingyu','The8','Seungkwan','Vernon','Dino'];
+ soloArtists.sort((a,b)=>{
+  const order=name=>{
+   const member=memberOrder.indexOf(name);if(member>=0)return member;
+   const unit=unitDebutOrder.indexOf(name);if(unit>=0)return 100+unit;
+   const added=newUnits.find(x=>x.name===name);
+   return 200+(added?newUnits.indexOf(added):999);
+  };
+  return order(a[0])-order(b[0]);
+ });
  soloMedia=soloMedia||{tracks:{},albums:{}};
  soloLegacyLinks=soloLegacyLinks||{byIndex:{}};
  // DREAMSCAPE is credited to Jeonghan × Joshua; reuse their seven existing
