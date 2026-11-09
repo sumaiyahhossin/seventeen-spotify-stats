@@ -105,10 +105,16 @@ def main():
             latest=json.loads((ROOT/'data/solo.json').read_text(encoding='utf-8'))
             day=datetime.date.fromisoformat(latest['date'])
             expected_date=f"{day.strftime('%b')} {day.day}, {day.year}"
-            WebDriverWait(driver,18).until(
-                lambda d: d.find_element(By.ID,'upcomingStatus').text.strip()
-                    not in ('','Loading latest Spotify snapshot…'))
-            time.sleep(2)
+            time.sleep(5)
+            print('Solo milestone initial DOM:',driver.execute_script("""
+              return {status:document.getElementById('status')?.textContent,
+                upcoming:document.getElementById('upcomingStatus')?.textContent,
+                rows:document.querySelectorAll('#rows tr').length,
+                upcomingRows:document.querySelectorAll('#upcomingRows tr').length,
+                scriptLoaded:typeof window.location?.pathname};
+            """),flush=True)
+            try: print('Browser JS errors:',driver.get_log('browser')[-15:],flush=True)
+            except Exception: pass
             milestone_names=[el.text.strip() for el in driver.find_elements(
                 By.CSS_SELECTOR,'#upcomingRows .song-title')]
             details=driver.execute_script("""
