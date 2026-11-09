@@ -2505,8 +2505,33 @@ function bridgeHistoricalTrack(now,old,id){
  if(!now||!old||isHistorical(now)||!isHistorical(old))return null;
  return comparablePrevious(now,old,id)?.id||null;
 }
+// A current Spotify track ID may not appear in a pre-November-2026
+// spreadsheet. Resolve it using the workbook ID verified at the November 5
+// crossover; do not substitute album or anthology subtotal rows.
+function historicalGroupTrackId(snapshot,id){
+ if(!snapshot||!isHistorical(snapshot)||tab!=='group'||snapshot.tracks?.[id]!=null)return id;
+ const mapped=current.group?.baseline_ids_2026_11_05?.[id];
+ const liveName=current.group?.names?.[id]||idName[id]||'';
+ const oldName=mapped?snapshot.names?.[mapped]:'';
+ const clean=n=>normTrackName(String(n||'')
+  .replace(/\s*\((?:prod\.?\s*by|feat\.?|ft\.?)\s+[^)]*\)/gi,'')
+  .replace(/\s*\b(?:feat\.?|ft\.?)\s+.*$/i,''));
+ if(mapped&&snapshot.tracks?.[mapped]!=null&&historicalKind(snapshot,mapped)==='track'&&
+    (normTrackName(liveName)===normTrackName(oldName)||
+     (clean(liveName).length>=5&&clean(liveName)===clean(oldName))))
+  return mapped;
+ // Duplicate workbook rows for the same song are safe ONLY when every
+ // matching track row has an identical recorded stream count.
+ const matches=Object.keys(snapshot.tracks||{}).filter(key=>
+  historicalKind(snapshot,key)==='track'&&
+  normTrackName(snapshot.names?.[key])===normTrackName(liveName));
+ if(!matches.length||new Set(matches.map(key=>snapshot.tracks[key])).size!==1)return id;
+ return matches[0];
+}
 function snapshotDelta(now,old,id){
- if(!now||!old||now.tracks?.[id]==null)return null;
+ if(!now||!old)return null;
+ id=historicalGroupTrackId(now,id);
+ if(now.tracks?.[id]==null)return null;
  const historical=!isHistorical(now)&&isHistorical(old);
  const matched=historical?bridgeHistoricalTrack(now,old,id):null;
  const prev=matched?{id:matched,value:old.tracks[matched]}:comparablePrevious(now,old,id);
