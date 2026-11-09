@@ -81,10 +81,11 @@ jobs:
           python tools/publish_snapshots.py
 
   followers:
-    name: Diagnose solo and unit follower counts (manual only)
-    # Check all due profiles by official API daily; only one unresolved
-    # profile gets the slower browser fallback. Never invent exact counts.
+    name: Collect verified solo and unit followers
+    # Check all due profiles by single-artist API daily; up to three unresolved
+    # profiles get the browser fallback. Never invent exact counts.
     # At 19:00 UTC daily (2 PM EST / 3 PM EDT) or when manually dispatched.
+    # Verified follower counts are stored separately from dated stream snapshots.
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'push' && github.event.head_commit.message == 'Run one-profile Spotify follower diagnostic')
     runs-on: ubuntu-24.04
     timeout-minutes: 90
