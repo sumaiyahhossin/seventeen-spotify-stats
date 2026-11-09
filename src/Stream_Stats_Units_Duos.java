@@ -788,21 +788,35 @@ public class Stream_Stats_Units_Duos {
         for (int attempt = 0; attempt < 3; attempt++) {
             try {
                 driver.get(songUrl);
-                String text = new WebDriverWait(driver, Duration.ofSeconds(15))
+                String text = new WebDriverWait(driver, Duration.ofSeconds(25))
                         .until(d -> {
-                            List<WebElement> elements = d.findElements(By.xpath("//span[@data-testid='playcount']"));
-                            if (elements.isEmpty()) {
-                                return null;
+                            // Spotify alternates span/div markup, and some pages
+                            // expose a playcount in the aria-label instead.
+                            for (WebElement element : d.findElements(By.cssSelector(
+                                    "[data-testid='playcount'], [aria-label*=' plays'], [aria-label*=' streams']"))) {
+                                String candidate = element.getText().trim();
+                                if (candidate.isEmpty()) candidate = element.getAttribute("aria-label");
+                                if (candidate == null) continue;
+                                java.util.regex.Matcher m = java.util.regex.Pattern.compile(
+                                    "(?<![0-9])([0-9]{1,3}(?:[,\\s][0-9]{3})+|[0-9]{4,15})(?![0-9])")
+                                    .matcher(candidate);
+                                if (m.find()) return m.group(1);
                             }
-                            String count = elements.get(0).getText().trim();
-                            return count.isEmpty() || count.equals("0") ? null : count;
+                            return null;
                         });
+                long parsedValue = Long.parseLong(text.replaceAll("[^0-9]", ""));
+                if (parsedValue <= 0) throw new IllegalStateException("Empty Spotify playcount");
                 streamCache.put(songUrl, text);
-                long parsedValue = Long.parseLong(text.replace(",", "").replace(".", ""));
                 System.out.println(nf.format(parsedValue));
                 return parsedValue;
             } catch (Exception e) {
-                // Retry up to three times, allowing the playcount 15 seconds to appear each time.
+                // A Spotify page can load without a playcount (regional or
+                // temporary restriction). Never substitute yesterday's total.
+                if (attempt == 2) {
+                    System.out.println("STAT_TRACK_UNAVAILABLE|" + songUrl +
+                        "|" + e.getClass().getSimpleName());
+                }
+                if (attempt < 2) Thread.sleep(1400L * (attempt + 1));
             }
         }
 
