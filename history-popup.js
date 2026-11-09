@@ -116,6 +116,21 @@
      (catalog.group||[]).find(item=>item.key===key)?.tracks||[]))];
     return ids.length?exactIds(snapshot,ids,reference):null;
    }
+   // Multi-release solo/unit totals must use ALL of their recording IDs,
+   // not only the artwork release. Historical spreadsheets use different row
+   // identifiers, so resolve each recording by its verified workbook mapping.
+   if(scope==='solo'&&metric.releases?.length){
+    const ids=[...new Set(metric.releases.flatMap(key=>
+     (catalog.solo||[]).find(item=>item.key===key)?.tracks||[]))];
+    if(!ids.length)return null;
+    if(isHistorical(snapshot)){
+     if(typeof verifiedSoloLegacyValue!=='function')return null;
+     const values=ids.map(id=>verifiedSoloLegacyValue(snapshot,id)?.value);
+     return values.every(value=>numberOrNull(value)!=null)
+      ?values.reduce((sum,value)=>sum+Number(value),0):null;
+    }
+    return exactIds(snapshot,ids,reference);
+   }
    // A legacy subtotal ID must be rematched by member/title each month;
    // the same row number can mean a different album in an older workbook.
    if(scope==='solo'&&String(metric.id).startsWith('legacy:')&&
@@ -170,7 +185,7 @@
   const mode=rank.endsWith('monthly')?'monthly':rank.endsWith('weekly')?'weekly':'daily';
   const periodCount=mode==='monthly'?12:10;
   const titleLabel=mode==='monthly'?'month':mode==='weekly'?'week':'day';
-  $('#svtHistoryNote').textContent='Last 10 '+titleLabel+'s through '+dateText(ref.date)+' · '+(scope==='group'?'OT13':owner||'Units & Solo')+' · oldest first. Total is cumulative; increase requires verified comparable snapshots.';
+  $('#svtHistoryNote').textContent='Last '+periodCount+' '+titleLabel+'s through '+dateText(ref.date)+' · '+(scope==='group'?'OT13':owner||'Units & Solo')+' · oldest first. Total is cumulative; increase requires verified comparable snapshots.';
   const lookup=async date=>{
    try{return date===ref.date?ref:await getDate(scope,date)}
    catch{return null}
