@@ -2041,3 +2041,37 @@ body.svt-solo-without-audience .stats>.stat:nth-child(5){
  }
 }
 .artist-profile-photo:not(.loaded){background:#242340!important}
+
+/* Solo/Unit ranking: non-Overall views show only gains and changes.
+   Overall keeps all four columns. OT13 keeps its existing layout. */
+body.svt-units-solo.svt-solo-period-only .table-head .svt-total-heading{display:none!important}
+body.svt-units-solo.svt-solo-period-only .table-head,
+body.svt-units-solo.svt-solo-period-only .rank-row{
+ grid-template-columns:minmax(0,1fr) minmax(130px,165px) minmax(115px,145px)!important;
+}
+@media(max-width:900px){
+ body.svt-compact-ranking-table.svt-units-solo.svt-solo-period-only .table-head,
+ body.svt-compact-ranking-table.svt-units-solo.svt-solo-period-only .rank-row{
+  grid-template-columns:minmax(0,1fr) minmax(0,79px) minmax(0,74px)!important;
+  column-gap:5px!important;
+ }
+ body.svt-compact-ranking-table.svt-units-solo.svt-solo-period-only .rank-row>.rank-metric-gain{
+  grid-column:2!important;
+ }
+ body.svt-compact-ranking-table.svt-units-solo.svt-solo-period-only .rank-row>.rank-metric-change{
+  grid-column:3!important;
+ }
+ body.svt-compact-ranking-table.svt-units-solo.svt-solo-period-only .table-head span:nth-child(3)::after{
+  content:"GAIN"!important;
+ }
+ body.svt-compact-ranking-table.svt-units-solo.svt-solo-period-only.svt-solo-daily .table-head span:nth-child(3)::after{
+  content:"DAILY"!important;
+ }
+}
+@media(max-width:370px){
+ body.svt-compact-ranking-table.svt-units-solo.svt-solo-period-only .table-head,
+ body.svt-compact-ranking-table.svt-units-solo.svt-solo-period-only .rank-row{
+  grid-template-columns:minmax(0,1fr) 64px 61px!important;
+  column-gap:3px!important;
+ }
+}
