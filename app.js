@@ -1704,7 +1704,10 @@ async function periodBaseline(s){
  const [start,prevStart,prevEnd]=await Promise.all([get(range.start),get(range.prevStart),get(range.prevEnd)]);
  // Early November 2025 has no pre-November baseline. Build weekly gains
  // from the real consecutive-day observations instead of returning blanks.
- if(tab==='group'&&rank.endsWith('weekly')&&s.date.startsWith('2025-11')){
+ if(tab==='group'&&rank.endsWith('weekly')&&
+    (s.date.startsWith('2025-11')||!start||start.date!==range.start||
+     !prevStart||prevStart.date!==range.prevStart||
+     !prevEnd||prevEnd.date!==range.prevEnd)){
   const weekStart=range.first;
   const observed=dates.filter(d=>d>=weekStart&&d<=s.date).sort();
   const makePairs=async dayList=>(await Promise.all(dayList.map(async day=>{
@@ -1714,7 +1717,8 @@ async function periodBaseline(s){
    return now&&previous?[now,previous]:null;
   }))).filter(Boolean);
   const previousWeekStart=shifted(weekStart,-7);
-  const previousWeekEnd=shifted(weekStart,-1);
+  // Align the comparison to the same weekday in the prior week.
+  const previousWeekEnd=range.prevEnd;
   const previousDates=dates.filter(d=>d>=previousWeekStart&&d<=previousWeekEnd).sort();
   return {start,prevStart,prevEnd,range,
    observedPairs:await makePairs(observed),
@@ -1801,6 +1805,13 @@ function periodGain(s,context,id){
 function periodChange(s,context,id){
  if(context?.observedPairs){
   if(!context.previousObservedPairs?.length)return null;
+  // For incomplete weeks, all observed days must match the same days last
+  // week. Comparing a two-day sample with a six-day sample is not a change.
+  if(context.partialWeek){
+   const prev=new Set(context.previousObservedPairs.map(([now])=>now.date));
+   if(context.observedPairs.length!==context.previousObservedPairs.length||
+      context.observedPairs.some(([now])=>!prev.has(shifted(now.date,-7))))return null;
+  }
   const sum=pairs=>{const values=pairs.map(([now,previous])=>snapshotDelta(now,previous,id)).filter(v=>v!=null);return values.length?values.reduce((a,b)=>a+b,0):null};
   const current=sum(context.observedPairs),previous=sum(context.previousObservedPairs);
   return current!=null&&previous!=null?current-previous:null;
@@ -1957,6 +1968,10 @@ async function render(){const token=++renderToken;
      return groups.map(([a,b])=>a===b?String(a):a+'–'+b).join(', ');
    })()
   :isPeriod?'Latest available snapshot in selected '+periodName.toLowerCase()+' period.':'Spotify updates once a day.';
+ if(baseline?.partialWeek){
+  $('#dateDescription').textContent='Partial week: '+(baseline.observedPairs?.length||0)+
+   ' verified consecutive-day gains. Missing days are not estimated; comparisons require matching weekdays.';
+ }
  if(baseline?.partialYear){
   $('#dateDescription').textContent='Partial 2025: only '+baseline.observedDates.length+
    ' confirmed consecutive-day gains from the saved November–December archive. January–October and missing dates are not counted.';
