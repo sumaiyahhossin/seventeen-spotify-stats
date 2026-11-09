@@ -620,7 +620,7 @@ function discographyRows(s,p,pp,baseline){
    :null;
   const savedAlbum=archivedAlbumMetrics(s,p,pp,baseline,sourceKey);
   const albumTotalRow={name:combo?.name||catalogReleaseLabel(item),artworkRelease:item.key,releaseDate:tab==='group'?(groupOriginalReleaseDates[item.key]||groupStandaloneReleaseDates[item.key]||null):null,
-   streams:savedAlbum?.streams??streams,gain:savedAlbum?.gain??gain,estimatedGain:!savedAlbum&&partialGain,
+   streams:savedAlbum?.streams??streams,gain:savedAlbum?savedAlbum.gain:gain,estimatedGain:!savedAlbum&&partialGain,
    change:savedAlbum?savedAlbum.change:(periodic?sumPeriodChange(s,baseline,ids):dayChange),
    changePartial:savedAlbum?savedAlbum.changePartial:(periodic?periodComparison(s,baseline,ids).partial:dailyComparison(s,p,pp,ids).partial),
    kind:'album',releaseOrder:rows.length};
@@ -650,7 +650,7 @@ function discographyRows(s,p,pp,baseline){
     const archivedId=historicalAlbumAggregate(s,'g49','full');
     const saved=archivedAlbumMetrics(s,p,pp,baseline,archivedId);
     rows.push({name:'17 IS RIGHT HERE — All Tracks',artworkRelease:'g49',
-     streams:saved?.streams??allStreams,gain:saved?.gain??allGain,estimatedGain:!saved&&allPartial,
+     streams:saved?.streams??allStreams,gain:saved?saved.gain:allGain,estimatedGain:!saved&&allPartial,
      change:saved?saved.change:(periodic?sumPeriodChange(s,baseline,allIds):dayChange),
      changePartial:saved?saved.changePartial:(periodic?periodComparison(s,baseline,allIds).partial:dailyComparison(s,p,pp,allIds).partial),
      kind:'album',releaseOrder:rows.length});
@@ -1721,6 +1721,19 @@ async function periodBaseline(s){
    previousObservedPairs:await makePairs(previousDates),
    partialWeek:true};
  }
+ // The 2025 archive begins on November 16, not January 1.
+ // Show only real consecutive observations for 2025 Yearly; never call the
+ // incomplete archive a full-year gain or manufacture January–October data.
+ if(tab==='group'&&rank.endsWith('yearly')&&s.date.startsWith('2025-')&&!start){
+  const observed=dates.filter(d=>d.startsWith('2025-')&&d<=s.date&&available.has(shifted(d,-1))).sort();
+  const observedPairs=(await Promise.all(observed.map(async d=>{
+   const [now,before]=await Promise.all([getDate('group',d),getDate('group',shifted(d,-1))]);
+   return now&&before?[now,before]:null;
+  }))).filter(Boolean);
+  return {start:null,prevStart:null,prevEnd:null,range,
+   observedPairs,previousObservedPairs:[],partialYear:true,
+   observedDates:observedPairs.map(([now])=>now.date)};
+ }
  // Historical months with missing dates: count only actual consecutive daily
  // observations. This prevents a gap from being reported as a single day's
  // streams, and never assumes an absent spreadsheet row is zero.
@@ -1944,6 +1957,10 @@ async function render(){const token=++renderToken;
      return groups.map(([a,b])=>a===b?String(a):a+'–'+b).join(', ');
    })()
   :isPeriod?'Latest available snapshot in selected '+periodName.toLowerCase()+' period.':'Spotify updates once a day.';
+ if(baseline?.partialYear){
+  $('#dateDescription').textContent='Partial 2025: only '+baseline.observedDates.length+
+   ' confirmed consecutive-day gains from the saved November–December archive. January–October and missing dates are not counted.';
+ }
  if(baseline?.partialMonth==='2025-12'){
   $('#dateDescription').textContent+=' · Versus November 2025: comparison uses only saved consecutive-day gains in each month; missing days are not estimated.';
  }
