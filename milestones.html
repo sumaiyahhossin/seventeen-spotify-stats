@@ -14,7 +14,116 @@ select,input{width:100%;height:47px;min-width:0;background:#292c50;border:1px so
 .song-cell{display:flex;align-items:center;gap:14px;min-width:185px}.song-cover{width:56px;height:56px;flex:0 0 56px;border-radius:12px;object-fit:cover;background:linear-gradient(135deg,#f5b9ce,#a8d6e9);box-shadow:0 5px 18px #0003}.song-meta{display:flex;flex-direction:column;gap:5px;min-width:0}.song-title{font-weight:800;font-size:13px;overflow-wrap:anywhere}.song-release{font-size:11px;font-weight:500;color:#bfc2d8}.reached-value{font-weight:700;color:#f6f1fc}.days-value{font-size:16px;font-weight:800;color:var(--rose)}.muted{color:#aeb4ca;font-size:11px;line-height:1.7;margin:20px 4px 0}
 @media(max-width:650px){main{padding:17px 13px 65px}.hero{padding:37px 4px 26px}.hero h1{font-size:36px;letter-spacing:-1.8px}.hero p{font-size:12px}.panel{padding:13px;border-radius:19px}.controls{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.controls label:last-child{grid-column:1/-1}select,input{font-size:12px;height:45px}.table{overflow:visible;border:none;background:transparent}table{min-width:0;width:100%;display:block}thead{display:none}tbody{display:grid;gap:10px}tbody tr{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:12px 8px;padding:14px;border:1px solid #ffffff24;border-radius:16px;background:#ffffff0b}tbody td{display:block;min-width:0;padding:0;border:0;font-size:12px}tbody td:first-child{grid-column:1/-1;padding-bottom:12px;border-bottom:1px solid #ffffff20}.song-cell{min-width:0;gap:12px}.song-cover{width:49px;height:49px;flex-basis:49px}tbody td:not(:first-child):before{content:attr(data-label);display:block;font-size:9px;letter-spacing:.6px;color:#bfc2d8;margin-bottom:6px;font-weight:800}.days-value{font-size:14px}tbody td[colspan]{grid-column:1/-1}.summary{font-size:11px}}
 @media(prefers-reduced-motion:reduce){*{transition:none!important}}
- .days-value{font-size:14px}.elapsed-calendar{font-size:11px;font-weight:600;color:#bfc2d8;white-space:normal}@media(max-width:650px){.days-value{font-size:12px}.elapsed-calendar{font-size:10px}}  .controls select{appearance:none;-webkit-appearance:none;padding-right:44px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23eee7ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 20px center;background-size:16px}  .song-rank{display:inline-flex;align-items:center;justify-content:center;min-width:25px;flex:0 0 25px;color:#ffb8d7;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}@media(max-width:650px){.song-rank{min-width:20px;flex-basis:20px;font-size:11px}} .milestone-tabs{display:flex;gap:9px;margin:0 0 18px;flex-wrap:wrap}.milestone-tabs button{border:1px solid #ffffff30;background:#ffffff0d;color:#d5d1e4;border-radius:999px;padding:12px 19px;font:800 12px 'Plus Jakarta Sans',sans-serif;cursor:pointer}.milestone-tabs button[aria-selected="true"]{background:linear-gradient(120deg,#f1b7d9,#b5d8ff);color:#182039;border-color:transparent}.milestone-tabs button:hover{border-color:#ffb8d7}section[hidden]{display:none!important}#upcomingView table{min-width:780px}@media(max-width:650px){#upcomingView table{min-width:0}.milestone-tabs{display:grid;grid-template-columns:1fr 1fr}.milestone-tabs button{padding:11px 8px;font-size:11px}#upcomingView tbody tr{grid-template-columns:repeat(2,minmax(0,1fr))}#upcomingView tbody td:last-child{grid-column:1/-1}} </style></head>
+ .days-value{font-size:14px}.elapsed-calendar{font-size:11px;font-weight:600;color:#bfc2d8;white-space:normal}@media(max-width:650px){.days-value{font-size:12px}.elapsed-calendar{font-size:10px}}  .controls select{appearance:none;-webkit-appearance:none;padding-right:44px;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23eee7ff' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 20px center;background-size:16px}  .song-rank{display:inline-flex;align-items:center;justify-content:center;min-width:25px;flex:0 0 25px;color:#ffb8d7;font-size:12px;font-weight:800;font-variant-numeric:tabular-nums}@media(max-width:650px){.song-rank{min-width:20px;flex-basis:20px;font-size:11px}} .milestone-tabs{display:flex;gap:9px;margin:0 0 18px;flex-wrap:wrap}.milestone-tabs button{border:1px solid #ffffff30;background:#ffffff0d;color:#d5d1e4;border-radius:999px;padding:12px 19px;font:800 12px 'Plus Jakarta Sans',sans-serif;cursor:pointer}.milestone-tabs button[aria-selected="true"]{background:linear-gradient(120deg,#f1b7d9,#b5d8ff);color:#182039;border-color:transparent}.milestone-tabs button:hover{border-color:#ffb8d7}section[hidden]{display:none!important}#upcomingView table{min-width:780px}@media(max-width:650px){#upcomingView table{min-width:0}.milestone-tabs{display:grid;grid-template-columns:1fr 1fr}.milestone-tabs button{padding:11px 8px;font-size:11px}#upcomingView tbody tr{grid-template-columns:repeat(2,minmax(0,1fr))}#upcomingView tbody td:last-child{grid-column:1/-1}} 
+/* v3: desktop-style single-line milestones tables on every mobile width */
+.narrow-value{display:none}
+@media(max-width:650px){
+ #reachedView .table,#upcomingView .table{
+  display:block!important;width:100%!important;max-width:100%!important;
+  overflow-x:hidden!important;border:1px solid #ffffff22!important;
+  border-radius:12px!important;background:#ffffff08!important
+ }
+ #reachedView table,#upcomingView table{
+  display:table!important;table-layout:fixed!important;
+  width:100%!important;min-width:0!important;max-width:100%!important;
+  border-collapse:collapse!important
+ }
+ #reachedView thead,#upcomingView thead{display:table-header-group!important}
+ #reachedView tbody,#upcomingView tbody{display:table-row-group!important}
+ #reachedView thead tr,#upcomingView thead tr,
+ #reachedView tbody tr,#upcomingView tbody tr{
+  display:table-row!important;background:transparent!important;
+  border:0!important;border-radius:0!important;
+  padding:0!important;margin:0!important;
+ }
+ #reachedView tbody tr:hover,#upcomingView tbody tr:hover{background:#ffffff0b!important}
+ #reachedView th,#reachedView td,
+ #upcomingView th,#upcomingView td{
+  display:table-cell!important;box-sizing:border-box!important;
+  min-width:0!important;max-width:none!important;
+  padding:9px 4px!important;margin:0!important;
+  border:0!important;border-bottom:1px solid #ffffff16!important;
+  vertical-align:middle!important;
+  white-space:nowrap!important;word-break:normal!important;
+  overflow:hidden!important;text-overflow:ellipsis!important;
+  font-size:9px!important;line-height:1.25!important;
+  text-align:right!important;letter-spacing:0!important;
+ }
+ #reachedView th,#upcomingView th{
+  font-size:0!important;background:#ffffff0d!important;
+  color:#c8c8dc!important
+ }
+ #reachedView th::after,#upcomingView th::after{
+  display:inline!important;font-size:8px!important;
+  font-weight:800!important;white-space:nowrap!important
+ }
+ #reachedView th:nth-child(1)::after,#upcomingView th:nth-child(1)::after{content:"NAME"}
+ #reachedView th:nth-child(2)::after{content:"REACHED"}
+ #reachedView th:nth-child(3)::after{content:"DAYS"}
+ #upcomingView th:nth-child(2)::after{content:"NEXT"}
+ #upcomingView th:nth-child(3)::after{content:"LEFT"}
+ #upcomingView th:nth-child(4)::after{content:"DAILY"}
+ #upcomingView th:nth-child(5)::after{content:"ETA"}
+ #reachedView th:nth-child(1),#reachedView td:nth-child(1){width:49%!important}
+ #reachedView th:nth-child(2),#reachedView td:nth-child(2){width:27%!important}
+ #reachedView th:nth-child(3),#reachedView td:nth-child(3){width:24%!important}
+ #upcomingView th:nth-child(1),#upcomingView td:nth-child(1){width:36%!important}
+ #upcomingView th:nth-child(2),#upcomingView td:nth-child(2){width:12%!important}
+ #upcomingView th:nth-child(3),#upcomingView td:nth-child(3){width:16%!important}
+ #upcomingView th:nth-child(4),#upcomingView td:nth-child(4){width:16%!important}
+ #upcomingView th:nth-child(5),#upcomingView td:nth-child(5){width:20%!important}
+ #reachedView td:first-child,#upcomingView td:first-child,
+ #reachedView th:first-child,#upcomingView th:first-child{text-align:left!important}
+ #reachedView tbody td:not(:first-child)::before,#upcomingView tbody td:not(:first-child)::before{
+  display:none!important;content:none!important
+ }
+ #reachedView td[colspan],#upcomingView td[colspan]{display:table-cell!important;text-align:center!important}
+ .song-cell{
+  display:flex!important;align-items:center!important;gap:4px!important;
+  min-width:0!important;width:100%!important;
+  overflow:hidden!important;white-space:nowrap!important
+ }
+ .song-rank{font-size:9px!important;min-width:12px!important;flex:0 0 12px!important}
+ .song-cover{
+  width:23px!important;height:23px!important;
+  flex:0 0 23px!important;border-radius:5px!important
+ }
+ .song-meta{
+  display:block!important;flex:1 1 0!important;
+  min-width:0!important;overflow:hidden!important;white-space:nowrap!important
+ }
+ .song-title{
+  display:block!important;max-width:100%!important;
+  white-space:nowrap!important;overflow:hidden!important;
+  text-overflow:ellipsis!important;word-break:normal!important;
+  font-size:9px!important;line-height:1.3!important;
+ }
+ .song-meta .song-release{display:none!important}
+ .wide-value{display:none!important}
+ .narrow-value{
+  display:inline!important;font-size:inherit!important;font-weight:inherit!important;
+  white-space:nowrap!important
+ }
+ .days-value,.reached-value{font-size:9px!important;white-space:nowrap!important}
+ .elapsed-calendar{display:none!important}
+ .summary{margin-bottom:12px!important}
+}
+@media(max-width:360px){
+ #reachedView th,#reachedView td,#upcomingView th,#upcomingView td{
+  padding:8px 2px!important;font-size:8px!important
+ }
+ #reachedView th::after,#upcomingView th::after{font-size:7px!important}
+ #upcomingView th:nth-child(1),#upcomingView td:nth-child(1){width:34%!important}
+ #upcomingView th:nth-child(2),#upcomingView td:nth-child(2){width:13%!important}
+ #upcomingView th:nth-child(3),#upcomingView td:nth-child(3){width:17%!important}
+ #upcomingView th:nth-child(4),#upcomingView td:nth-child(4){width:16%!important}
+ #upcomingView th:nth-child(5),#upcomingView td:nth-child(5){width:20%!important}
+ .song-rank{display:none!important}
+ .song-cover{width:19px!important;height:19px!important;flex-basis:19px!important}
+ .song-title{font-size:8px!important}
+ .days-value,.reached-value{font-size:8px!important}
+}
+</style></head>
 <body><main><a class="back" href="./">← Back to Spotify Stats</a><section class="hero"><div class="eyebrow">SEVENTEEN · SPOTIFY HISTORY</div><h1>Streaming <em>Milestones</em> ✦</h1><p>Browse milestone dates and how many days each song took to reach its streaming milestone.</p></section><nav class="milestone-tabs" aria-label="Milestone views"><button type="button" id="tabReached" aria-selected="true">Milestones</button><button type="button" id="tabUpcoming" aria-selected="false">Milestones to Be Reached</button></nav>
 <section id="reachedView" class="panel">
 <div class="controls"><label>Milestone <select id="threshold"><option value="100000000">100M</option><option value="200000000">200M</option><option value="300000000">300M</option></select></label><label>Sort <select id="sort"><option value="fast">Fastest to reach</option><option value="slow">Slowest to reach</option><option value="earliest">Earliest milestone</option><option value="newest">Most recently reached</option><option value="release-newest">Newest release</option><option value="release-oldest">Oldest release</option><option value="name">Song A–Z</option></select></label><label>Find song <input id="search" placeholder="Search tracks"></label></div>
@@ -24,4 +133,4 @@ select,input{width:100%;height:47px;min-width:0;background:#292c50;border:1px so
 <div class="controls"><label>Next milestone <select id="upcomingThreshold"><option value="0">All next milestones</option><option value="1000000">1M</option><option value="10000000">10M</option><option value="20000000">20M</option><option value="30000000">30M</option><option value="40000000">40M</option><option value="50000000">50M</option><option value="60000000">60M</option><option value="70000000">70M</option><option value="80000000">80M</option><option value="90000000">90M</option><option value="100000000">100M</option><option value="200000000">200M</option><option value="300000000">300M</option><option value="400000000">400M</option></select></label><label>Sort <select id="upcomingSort"><option value="target">Next milestone</option><option value="soonest">Soonest expected</option><option value="closest">Fewest streams left</option><option value="streams">Most streams</option><option value="name">Song A–Z</option></select></label><label>Find song <input id="upcomingSearch" placeholder="Search tracks"></label></div>
 <div class="summary" id="upcomingStatus">Loading latest snapshot…</div>
 <div class="table"><table><thead><tr><th>SONG</th><th>NEXT MILESTONE</th><th>STREAMS LEFT</th><th>DAILY GAIN</th><th>ESTIMATED ARRIVAL</th></tr></thead><tbody id="upcomingRows"></tbody></table></div>
-<p class="muted">Estimates use the latest daily gain and can change with future updates. A date is shown only when a valid daily gain is available.</p></section></main><script src="milestones.js?v=20261108-sort-az-fix" onerror="document.getElementById('status').textContent='Milestone details unavailable; showing saved song totals when loaded.'"></script></body></html>
+<p class="muted">Estimates use the latest daily gain and can change with future updates. A date is shown only when a valid daily gain is available.</p></section></main><script src="milestones.js?v=20261108-compact-milestones-v3" onerror="document.getElementById('status').textContent='Milestone details unavailable; showing saved song totals when loaded.'"></script></body></html>
