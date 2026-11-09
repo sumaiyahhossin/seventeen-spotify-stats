@@ -24,17 +24,20 @@ records=data.get('followers',{})
 # saving transitions. Before 2 PM, finish yesterday's missing observations;
 # at/after 2 PM begin today's, retrying only missing profiles hourly.
 target_date=(now.date() if now.hour>=14 else (now.date()-dt.timedelta(days=1)))
+cutoff=dt.datetime.combine(target_date,dt.time(14,0),tzinfo=ZoneInfo('America/New_York'))
 due=[]
 for artist_id in manifest:
     record=records.get(artist_id,{})
     try:
         captured=dt.datetime.fromisoformat(record['captured_at'])
         observed_date=captured.astimezone(ZoneInfo('America/New_York')).date()
+        valid_for_reporting_period=captured.astimezone(ZoneInfo('America/New_York'))>=cutoff
         has_exact=isinstance(record.get('count'),int) and record['count']>=0
     except (ValueError,TypeError,KeyError,AttributeError):
         observed_date=None
         has_exact=False
-    if not has_exact or observed_date is None or observed_date<target_date:
+        valid_for_reporting_period=False
+    if not has_exact or not valid_for_reporting_period:
         due.append(artist_id)
 print('due='+str(bool(due)).lower())
 print(f'Follower reporting date {target_date}: {len(due)} of {len(manifest)} profiles due',file=__import__('sys').stderr)
