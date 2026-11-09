@@ -714,9 +714,10 @@ public class Stream_Stats_Units_Duos {
             for (WebElement dialog : driver.findElements(By.cssSelector("dialog[open], [role='dialog']"))) {
                 if (dialog.isDisplayed()) displayedDialogs++;
             }
+            final String artistLabel = artistName;
             long namedButtons = driver.findElements(By.cssSelector("button[aria-label]")).stream()
                 .filter(button -> {
-                    try { return artistName.equalsIgnoreCase(button.getAttribute("aria-label")); }
+                    try { return artistLabel.equalsIgnoreCase(button.getAttribute("aria-label")); }
                     catch (Exception ignored) { return false; }
                 }).count();
             System.out.println("STAT_FOLLOWERS_DIAGNOSTIC|" + artistId +
