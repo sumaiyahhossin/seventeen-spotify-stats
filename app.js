@@ -1771,8 +1771,11 @@ function rankMetricHtml(value,key,label,{signed=false,estimated=false,partial=fa
  const missing=value==null||!Number.isFinite(Number(value));
  const number=Number(value);
  const display=missing?'—':(estimated?'≈':signed?(number>=0?'+':'−'):'')+fmt(Math.abs(number))+(partial?'*':'');
- return '<div class="num rank-metric rank-metric-'+key+(missing?' missing-value':number<0?' negative':'')+'">'+
-  '<span class="metric-label">'+label+'</span><span class="metric-value">'+display+'</span></div>';
+ const compact=missing?'—':(estimated?'≈':signed?(number>=0?'+':'−'):'')+
+  new Intl.NumberFormat('en-US',{notation:'compact',maximumFractionDigits:1}).format(Math.abs(number))+(partial?'*':'');
+ return '<div class="num rank-metric rank-metric-'+key+(missing?' missing-value':number<0?' negative':'')+'" title="'+label+': '+display+'">'+
+  '<span class="metric-label">'+label+'</span><span class="metric-value">'+display+'</span>'+
+  '<span class="metric-compact" aria-hidden="true">'+compact+'</span></div>';
 }
 function renderRankMetrics(row){
  const gainLabel=rank.endsWith('weekly')?'Gain this week':rank.endsWith('monthly')?'Gain this month':
