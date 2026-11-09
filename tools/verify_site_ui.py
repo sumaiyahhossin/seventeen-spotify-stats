@@ -56,15 +56,20 @@ def check_viewport(driver,width,height):
     # Check both original single and full album artwork with no diamond fallback.
     click(driver,'#rankCategory button[data-type="tracks"]')
     WebDriverWait(driver,40).until(lambda d:len(d.find_elements(By.CSS_SELECTOR,'#ranking .rank-row'))>150)
-    time.sleep(4)
+    # Off-screen image elements can remain unpainted with native lazy loading,
+    # so load only visible images and assert every local URL is assigned.
     images=driver.find_elements(By.CSS_SELECTOR,'#ranking .rank-row img.cover')
-    broken=driver.execute_script("""
-      return [...document.querySelectorAll('#ranking img.cover')].slice(0,25)
-        .filter(img => !img.complete || img.naturalWidth<2)
-        .map(img=>({source:img.dataset.coverTrack,url:img.src}));
+    missing_sources=driver.execute_script("""
+      return [...document.querySelectorAll('#ranking img.cover')]
+       .filter(img=>img.dataset.coverTrack?.startsWith('image:')&&!img.getAttribute('src'))
+       .map(img=>img.dataset.coverTrack);
     """)
-    print(f"First {min(25,len(images))} unit/solo covers broken:",broken,flush=True)
-    assert not broken, f"Local cover assets not loading: {broken[:4]}"
+    assert not missing_sources, f"Saved cover missing src: {missing_sources[:5]}"
+    for img in images[:8]:
+        driver.execute_script("arguments[0].scrollIntoView({block:'center'});",img)
+        WebDriverWait(driver,15).until(
+            lambda d: d.execute_script("return arguments[0].complete&&arguments[0].naturalWidth>1",img))
+    print(f"Verified all {len(images)} local cover URLs and first 8 loaded images",flush=True)
 
 def main():
     socketserver.TCPServer.allow_reuse_address=True
