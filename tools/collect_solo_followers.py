@@ -1,7 +1,8 @@
 """Collect exact Spotify followers for all solo/unit profiles, independently of streams.
 
 Never backfill these into old dated stream snapshots: a follower count observed
-now is not the follower count on November 7. Scheduled verification is daily.
+now is not the follower count on November 7. Missing readings retry hourly;
+verified readings refresh daily.
 """
 import base64
 import datetime as dt
@@ -53,8 +54,11 @@ print(f'solo/unit followers: {len(saved)}/{len(ids)} already recorded, {len(pend
 if not pending:
     sys.exit(0)
 
-# Use the official API for every due profile. Restrict only the expensive
-# browser fallback to one unresolved profile per invocation.
+# Rotate across overdue profiles rather than retrying the first few each hour.
+# Small bounded batches prevent competing stream jobs from timing out.
+rotation=(int(TODAY.timestamp()//3600)*3)%len(pending)
+pending=(pending[rotation:]+pending[:rotation])[:3]
+print('Hourly follower batch: '+', '.join(pending),flush=True)
 print('API verification for '+str(len(pending))+' profiles',flush=True)
 
 found={}
@@ -93,8 +97,7 @@ if missing:
     if not classpath:
         print('Missing COLLECTOR_CLASSPATH: cannot run fallback artist collector',file=sys.stderr)
     else:
-        # Attempt every unresolved profile; limiting to the first three
-        # repeatedly starved later artists of any browser verification.
+        # Probe only this hour's rotating batch; preserve every exact result.
         print('Browser fallback for '+str(len(missing))+' unresolved profiles',flush=True)
         subprocess.run([sys.executable,str(ROOT/'tools/instrument.py'),'solo'],check=True)
         subprocess.run(['javac','-cp',classpath,'-d',str(ROOT/'build'),
@@ -104,7 +107,7 @@ if missing:
         env['SVT_FOLLOWERS_ONLY']=','.join(missing)
         result=subprocess.run(['java','-cp',str(ROOT/'build')+os.pathsep+classpath,
                                'Stream_Stats_Units_Duos'],capture_output=True,text=True,
-                              timeout=3300,env=env)
+                              timeout=1200,env=env)
         for line in result.stdout.splitlines():
             match=re.fullmatch(r'STAT_FOLLOWERS\|([a-zA-Z0-9]{22})\|(\d+)',line.strip())
             if match and match.group(1) in missing:
