@@ -752,7 +752,7 @@ public class Stream_Stats_Units_Duos {
             // convert abbreviated labels such as 1.2M into invented numbers.
             String pageText = getBodyText(driver).replace((char)160, ' ');
             Matcher exactPageFollowers = Pattern.compile(
-                "(?<![\\\\d.])([0-9]{1,3}(?:[, ]+[0-9]{3})+|[0-9]{4,11})\\\\s+followers?\\\\b",
+                "(?<![\\d.])([0-9]{1,3}(?:[, ]+[0-9]{3})+|[0-9]{4,11})\\s+followers?\\b",
                 Pattern.CASE_INSENSITIVE).matcher(pageText);
             if (exactPageFollowers.find()) {
                 long count = Long.parseLong(exactPageFollowers.group(1).replaceAll("[^0-9]", ""));
