@@ -1771,7 +1771,18 @@ function fillArtwork(){
  };
  if(!('IntersectionObserver' in window)){imgs.forEach(resolve);return}
  const observer=new IntersectionObserver(entries=>{for(const entry of entries){if(!entry.isIntersecting)continue;observer.unobserve(entry.target);resolve(entry.target)}},{rootMargin:'240px'});
- imgs.forEach(img=>observer.observe(img));
+ imgs.forEach(img=>{
+  // Local album/track images are already verified in the repository. Set
+  // their URLs immediately; native loading="lazy" still avoids downloading
+  // offscreen covers. This prevents empty src elements when the observer
+  // misses a mobile scroll/resize and keeps the cover alongside each title.
+  const source=img.dataset.coverTrack||'';
+  if(source.startsWith('image:')){
+   setImage(img,source.slice(6));
+   return;
+  }
+  observer.observe(img);
+ });
 }
 const soloArtists=[["Jeonghan","6KDLlQYeeqUe5OQ2JrdNzF"],["Joshua","74AwWFYdjQ3ER5vHO4H7b0"],["Jun","38Gn0ZVC8TQwuaMxBK1yRV"],["Hoshi","6nWKAdMv1BDq1zHfZzkdbR"],["Wonwoo","3rHcBT06Vb1XGVUWhDALZt"],["Woozi","4TdiASPlU3QdZvGQBothcQ"],["Dokyeom","7G1kUsPtQCdolV6CPwHmh2"],["Mingyu","5gUpo0BRmo6EOTbyU3z5Ay"],["The8","4DqFd6XE3dX4LWXHJVVpLk"],["Seungkwan","0Vb2DjojEYsasFpc3aTZb6"],["Vernon","2Y34b9AOK30zXgL7cAH4NG"],["Dino","5YaeXxzvqGNBCguELlKo6G"],["BSS","1uAT5bTSp6dWbNmixIUP5t"],["JxW","7GvlsjcgBrsE578yghOq7D"],["HxW","1EReYiseDwE51FzGm7EK9n"],["CxM","7kjuLdYbtTkWBToMu2ebZN"],["DxS","4wBjmEkWhY4T22q00CiF5V"],["V8",null],["Picheolin","3V2EC4dPYLgtbi0TtrB1RA"],["JxJ",null]];
 const artistPhotoCache=new Map();
