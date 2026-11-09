@@ -123,7 +123,7 @@ if missing:
                 continue
             verified=False
             for line in result.stdout.splitlines():
-                match=re.fullmatch(r'STAT_FOLLOWERS\\|([a-zA-Z0-9]{22})\\|(\\d+)',line.strip())
+                match=re.fullmatch(r'STAT_FOLLOWERS\|([a-zA-Z0-9]{22})\|(\d+)',line.strip())
                 if match and match.group(1)==artist_id:
                     value=int(match.group(2))
                     if 0<value<=1000000000:
