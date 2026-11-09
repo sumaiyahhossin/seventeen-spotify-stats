@@ -235,10 +235,10 @@
    if(!snap)return null;
    try{return metricValue(snap,metric,ref,scope,owner)}catch(error){console.warn('History value unavailable',error);return null}
   };
-  const renderRow=(label,total,increase,change,partial=false)=>{
+  const renderRow=(label,total,increase,change,partial=false,changePartial=false)=>{
    const tr=document.createElement('tr');
    const showNumber=(n,signed=false)=>n==null?'—':(signed?(n>=0?'+':'−'):'')+fmt(Math.abs(n));
-   const cells=[label,showNumber(total),showNumber(increase,true)+(partial&&increase!=null?'*':''),showNumber(change,true)];
+   const cells=[label,showNumber(total),showNumber(increase,true)+(partial&&increase!=null?'*':''),showNumber(change,true)+(changePartial&&change!=null?'*':'')];
    for(let k=0;k<cells.length;k++){
     const td=document.createElement('td');td.textContent=cells[k];
     if(k>1&&((k===2?increase:change)!=null))td.className=(k===2?increase:change)>=0?'positive':'negative';
@@ -349,7 +349,8 @@
     }
     const change=row.gain!=null&&comparison!=null?row.gain-comparison:null;
     renderRow(row.label,row.total,row.gain,change,
-     row.partial||row.visibleEnd<endOf(row.first)||comparisonPartial);
+     row.partial||row.visibleEnd<endOf(row.first),
+     row.partial||comparisonPartial||row.visibleEnd<endOf(row.first));
    }
    $('#svtHistoryNote').textContent+=' · * Partial observed dates or an in-progress period; changes compare matching elapsed calendar days.';
 
