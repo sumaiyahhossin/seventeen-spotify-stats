@@ -100,6 +100,9 @@ def main():
             check_viewport(driver,390,850)
             driver.get(f'http://127.0.0.1:{PORT}/milestones.html?type=solo')
             WebDriverWait(driver,40).until(lambda d:'UNITS & SOLO' in d.find_element(By.CSS_SELECTOR,'.eyebrow').text)
+            # Selenium .text is empty inside the hidden Upcoming panel unless
+            # the tab is selected. Test what a user actually clicks and sees.
+            click(driver,'#tabUpcoming')
             # Check the actual content, not just the page heading: 'Like you'
             # is below 1M on Nov 6 and must be an upcoming UNIT milestone.
             latest=json.loads((ROOT/'data/solo.json').read_text(encoding='utf-8'))
@@ -132,6 +135,7 @@ def main():
             assert expected_date in driver.find_element(By.ID,'upcomingStatus').text, 'Wrong solo milestone source date'
             print('Separate Unit/Solo milestones verified:',len(milestone_names),
                   'actual unit/solo tracks, source:',expected_date,flush=True)
+            click(driver,'#tabReached')
             # Reached milestones are 100M+ in BOTH views. Verify the two
             # known unit records with their exact/upper-bound historical dates.
             WebDriverWait(driver,45).until(
