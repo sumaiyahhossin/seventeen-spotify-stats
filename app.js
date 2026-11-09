@@ -526,7 +526,7 @@ function discographyRows(s,p,pp,baseline){
    if(!snapshot||!isHistorical(snapshot))return snapshot;
    const lookup=new Map();
    const creditKey=name=>normTrackName(String(name||'')
-    .replace(/\s*\((?:prod\.?\s*by|feat\.?|ft\.?)\s+[^)]*\)/gi,'')
+    .replace(/\s*\((?:prod\.?(?:\s*by)?|feat\.?|ft\.?)\s+[^)]*\)/gi,'')
     .replace(/\s*\b(?:feat\.?|ft\.?)\s+.*$/i,''));
    const creditLookup=new Map();
    for(const [id,value] of Object.entries(snapshot.tracks||{})){
@@ -580,6 +580,16 @@ function discographyRows(s,p,pp,baseline){
      }
     }
     if(match){tracks[id]=match.value;names[id]=name;}
+   }
+   // Verified duplicate Spotify IDs in the live collector reference the
+   // same recording. Copy their historic value ONLY if the primary was
+   // matched and the two modern IDs still have identical recorded totals.
+   // This avoids confusing original _WORLD with the Anne-Marie edition.
+   for(const [primary,alias] of groupStreamAliases){
+    if(tracks[alias]!=null||tracks[primary]==null)continue;
+    if(canonical.tracks?.[primary]!==canonical.tracks?.[alias])continue;
+    tracks[alias]=tracks[primary];
+    names[alias]=canonical.names?.[alias]||canonical.names?.[primary]||'';
    }
    return {...snapshot,tracks,names};
   };
