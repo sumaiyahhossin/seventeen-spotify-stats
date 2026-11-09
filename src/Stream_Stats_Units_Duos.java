@@ -672,7 +672,21 @@ public class Stream_Stats_Units_Duos {
             if (!headings.isEmpty()) artistName = headings.get(0).getText().trim();
             boolean aboutClicked = false;
             String clickMethod = "none";
-            for (int attempt = 0; attempt < 5; attempt++) {
+            // Match OT13's successful exact artist-named button method first.
+            // The img itself is the fallback for artist pages using clickable artwork.
+            for (int attempt = 0; attempt < 10; attempt++) {
+                if (!aboutClicked && !artistName.isBlank()) {
+                    for (WebElement artistButton : driver.findElements(By.cssSelector("button[aria-label]"))) {
+                        try {
+                            if (!artistButton.isDisplayed()) continue;
+                            if (!artistName.equalsIgnoreCase(artistButton.getAttribute("aria-label"))) continue;
+                            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", artistButton);
+                            aboutClicked = true;
+                            clickMethod = "artist-named-button";
+                            break;
+                        } catch (Exception ignored) {}
+                    }
+                }
                 // Spotify's profile artwork opens the artist About dialog.
                 // Prefer the actual artist image (alt="JEONGHAN", etc.)
                 // instead of relying on the old artist-named button.
@@ -765,8 +779,9 @@ public class Stream_Stats_Units_Duos {
                 }
                 if (aboutClicked) {
                     Thread.sleep(1300);
+                } else {
+                    Thread.sleep(1200);
                 }
-                Thread.sleep(900);
                 // Read the exact integer in the SAME compact Spotify
                 // Followers container supplied by the current About markup:
                 // <div><div>118,017</div><div>Followers</div></div>.
