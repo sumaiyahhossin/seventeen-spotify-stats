@@ -1,59 +1,76 @@
 name: Spotify stream snapshots
-# Start daily at 2:00 PM New York time; retry hourly until fresh stream data is saved
+# Both collectors start at 2 PM America/New_York and retry independently.
+# UTC 18:00–04:00 spans 2–11 PM Eastern through both daylight-saving seasons.
 on:
   schedule:
-    - cron: '0 * * * *' # Hourly on the hour; gate starts at 14:00 America/New_York
+    - cron: '0 18-23,0-4 * * *'
   workflow_dispatch:
+
 permissions:
   contents: write
+
+# Prevent different scheduled runs from overlapping, while the two
+# independent collectors in one run can operate at the same time.
 concurrency:
   group: spotify-stats
   cancel-in-progress: false
+
 jobs:
-  update:
+  collect:
+    name: Collect ${{ matrix.kind }} streams
     runs-on: ubuntu-24.04
-    timeout-minutes: 120
+    timeout-minutes: 330
+    strategy:
+      fail-fast: false
+      matrix:
+        kind: [group, solo]
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: true
-      - name: Check daily schedule and pending state
+          fetch-depth: 1
+      - name: Check independent 2 PM schedule
         id: gate
         run: python tools/gate.py >> "$GITHUB_OUTPUT"
       - uses: actions/setup-java@v5
-        if: steps.gate.outputs.run == 'true'
+        if: steps.gate.outputs[matrix.kind] == 'true'
         with:
           distribution: temurin
           java-version: '17'
           cache: maven
       - uses: actions/setup-python@v6
-        if: steps.gate.outputs.run == 'true'
+        if: steps.gate.outputs[matrix.kind] == 'true'
         with:
           python-version: '3.12'
       - uses: browser-actions/setup-chrome@v2
-        if: steps.gate.outputs.run == 'true'
+        if: steps.gate.outputs[matrix.kind] == 'true'
       - name: Install dependencies
-        if: steps.gate.outputs.run == 'true'
+        if: steps.gate.outputs[matrix.kind] == 'true'
         run: mvn -q dependency:build-classpath -Dmdep.outputFile=classpath.txt
-      - name: Remove follower values before November 6, 2026
-        run: python tools/clean_followers_history.py
-      - name: Collect Group streams
-        if: steps.gate.outputs.run == 'true'
+      - name: Generate track catalog and prepare collector
+        if: steps.gate.outputs[matrix.kind] == 'true'
+        run: python tools/catalog.py
+      - name: Collect changed streams only
+        if: steps.gate.outputs[matrix.kind] == 'true'
         env:
+          DATASET: ${{ matrix.kind }}
           FORCE_COLLECT: ${{ github.event_name == 'workflow_dispatch' }}
           SPOTIFY_CLIENT_ID: ${{ secrets.SPOTIFY_CLIENT_ID }}
           SPOTIFY_CLIENT_SECRET: ${{ secrets.SPOTIFY_CLIENT_SECRET }}
         run: |
           export COLLECTOR_CLASSPATH="$(cat classpath.txt)"
-          python tools/catalog.py
-          python tools/pipeline.py group
-      - name: Validate song snapshot integrity
-        run: python tools/validate_song_data.py
-      - name: Commit updated snapshots
+          python tools/pipeline.py "$DATASET"
+      - name: Validate saved snapshots
+        if: steps.gate.outputs[matrix.kind] == 'true'
+        env:
+          DATASET: ${{ matrix.kind }}
+        run: python tools/validate_song_data.py "$DATASET"
+      - name: Publish changed JSON safely
+        if: steps.gate.outputs[matrix.kind] == 'true'
+        env:
+          DATASET: ${{ matrix.kind }}
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/
-          # The job can run for hours while main gets edited. Rebase produces
-          # JSON merge conflicts, so apply only newly collected data to fresh main.
           python tools/publish_snapshots.py
