@@ -20,4 +20,16 @@ def build(kind):
     return entries
 
 if __name__=='__main__':
-    (ROOT/'data'/'catalog.json').write_text(json.dumps({'group':build('group'),'solo':build('solo')},ensure_ascii=False,indent=2))
+    target = ROOT / 'data' / 'catalog.json'
+    previous = json.loads(target.read_text(encoding='utf-8')) if target.exists() else {}
+    updated = {'group': build('group'), 'solo': build('solo')}
+    # Preserve curated original-release metadata during daily catalog regeneration.
+    # Album dates cannot override a track's earlier pre-release date.
+    for kind in ('group', 'solo'):
+        existing = {entry['key']: entry for entry in previous.get(kind, [])}
+        for entry in updated[kind]:
+            saved = existing.get(entry['key'], {})
+            for field in ('release_date', 'track_release_dates'):
+                if field in saved:
+                    entry[field] = saved[field]
+    target.write_text(json.dumps(updated, ensure_ascii=False, indent=2) + '\n', encoding='utf-8')
