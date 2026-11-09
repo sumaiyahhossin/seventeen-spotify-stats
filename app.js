@@ -1,6 +1,6 @@
 const $=s=>document.querySelector(s),fmt=n=>n==null?'—':Number(n).toLocaleString('en-US');
 let selectedSoloArtist=null;
-let soloAlbums=[],soloMedia={tracks:{},albums:{}},soloLegacyLinks={byIndex:{}};
+let soloAlbums=[],soloMedia={tracks:{},albums:{}},soloLegacyLinks={byIndex:{}},soloHistoryReference=null;
 let artworkMap={tracks:{},albums:{}};let sortOrder='most';let tab='group',rank='tracks-daily',rankType='tracks',catalog={},current={},history={},dates=[],groupDates=[],soloDates=[],soloHistoricalDates=new Set(),selection='latest',period='week';
 // To keep the selected view after refresh.
 const viewStateKey='svt-dashboard-view-v2';
@@ -805,8 +805,11 @@ function canonicalArchiveRow(row){
 }
 function originalReleaseDate(row){
  row=canonicalArchiveRow(row);
+ if(tab==='solo'&&/^legacy:/.test(String(row.id||''))&&row.releaseDate)return row.releaseDate;
  if(tab==='solo'&&row.kind!=='album'){
-  const archive=/^legacy:/.test(String(row.id||''))?soloLegacyLinks.byIndex?.[Number(String(row.id).split(':').at(-1))]:null;
+  const archive=/^legacy:/.test(String(row.id||''))&&
+   (!row.sourceDate||row.sourceDate==='2026-11-06')
+   ?soloLegacyLinks.byIndex?.[Number(String(row.id).split(':').at(-1))]:null;
   if(archive?.releaseDate)return archive.releaseDate;
   if(rank.startsWith('discography')&&row.artworkRelease){
    const item=(catalog.solo||[]).find(x=>x.key===row.artworkRelease);
@@ -1878,6 +1881,42 @@ function soloLegacySections(s){
  soloLegacyCache.set(s,groups);
  return groups;
 }
+/* Historical Excel sheets insert songs over time. Index positions in an
+   earlier sheet cannot be interpreted using November 6's row numbers. */
+const soloHistoricalNameKey=name=>String(name||'').normalize('NFKC').toLocaleLowerCase('en')
+ .replace(/[^\p{L}\p{N}]+/gu,'');
+function matchedSoloReferenceIndex(snapshot,owner,source,expectedKind=null){
+ if(!soloHistoryReference)return snapshot?.date==='2026-11-06'?source.index:null;
+ if(snapshot?.date===soloHistoryReference.date)return source.index;
+ const name=soloHistoricalNameKey(source.name);
+ const targetKind=expectedKind||historicalKind(snapshot,source.id);
+ const section=soloLegacySections(snapshot)?.[owner]||[];
+ const reference=soloLegacySections(soloHistoryReference)?.[owner]||[];
+ const previous=section.find(row=>row.index===source.index-1);
+ const unnamedTotal=targetKind==='album'&&previous&&
+  soloHistoricalNameKey(previous.name)===name&&previous.value===source.value;
+ const refName=unnamedTotal?name+'total':name;
+ const options=reference.filter(row=>soloHistoricalNameKey(row.name)===refName&&
+  historicalKind(soloHistoryReference,row.id)===targetKind);
+ const priorSame=section.filter(row=>row.index<=source.index&&
+  soloHistoricalNameKey(row.name)===name&&
+  (historicalKind(snapshot,row.id)===targetKind||row.index===source.index));
+ return options[unnamedTotal?0:priorSame.length-1]?.index??null;
+}
+function soloSnapshotAlbumRow(snapshot,owner,canonicalIndex){
+ if(!snapshot||!canonicalIndex||!soloHistoryReference)return null;
+ const reference=soloLegacySections(soloHistoryReference)?.[owner]||[];
+ const desired=reference.find(row=>row.index===canonicalIndex);
+ if(!desired)return null;
+ const title=soloHistoricalNameKey(desired.name);
+ const kind=historicalKind(soloHistoryReference,desired.id);
+ const alternatives=reference.filter(row=>soloHistoricalNameKey(row.name)===title&&
+  historicalKind(soloHistoryReference,row.id)===kind);
+ const nth=alternatives.findIndex(row=>row.index===canonicalIndex);
+ return (soloLegacySections(snapshot)?.[owner]||[])
+  .filter(row=>soloHistoricalNameKey(row.name)===title&&historicalKind(snapshot,row.id)===kind)[nth]||null;
+}
+
 function soloLegacyTrackIds(s,owner){
  const sections=soloLegacySections(s);if(!sections)return [];
  const chosen=owner?[owner]:[...soloLegacyOwners,'V8','Picheolin','Gilboard','JxJ'];
@@ -1962,13 +2001,21 @@ function soloLegacyRows(s,p,pp,baseline,view){
  const rows=[];const seen=new Set();
  for(const owner of owners)for(const source of sections[owner]||[]){
   const kind=historicalKind(s,source.id);
-  const album=kind==='album'||/\btota\s*;\s*:?$/i.test(source.name);
+  const sourceIndex=Number(String(source.id).split(':').at(-1));
+  const previousSource=(sections[owner]||[]).find(row=>row.index===sourceIndex-1);
+  // A November 2025 Good Day subtotal omitted the word "Total".
+  const missingTotalLabel=owner==='BSS'&&previousSource&&
+   soloHistoricalNameKey(previousSource.name)===soloHistoricalNameKey(source.name)&&
+   previousSource.value===source.value&&/good\s*day\s*2025/i.test(source.name);
+  const album=kind==='album'||/\btota\s*;\s*:?$/i.test(source.name)||!!missingTotalLabel;
   if(kind==='grand'||kind==='audience')continue;
   if(view==='albums'&&!album)continue;
   if(view==='tracks'&&album)continue;
-  const legacyIndex=Number(String(source.id).split(':').at(-1));
-  const workbookTrack=soloLegacyLinks.byIndex?.[legacyIndex];
-  const fullAlbum=soloAlbums.find(a=>Object.values(a.legacyTotalIndices||{}).includes(legacyIndex));
+  const legacyIndex=sourceIndex;
+  const resolvedIndex=matchedSoloReferenceIndex(s,owner,source,album?'album':kind);
+  const workbookTrack=resolvedIndex!=null?soloLegacyLinks.byIndex?.[resolvedIndex]:null;
+  const fullAlbum=resolvedIndex!=null?soloAlbums.find(a=>
+   Object.values(a.legacyTotalIndices||{}).includes(resolvedIndex)):null;
   // Each artist subtotal is meaningful in Discography. Only Albums
   // collapses DREAMSCAPE and V8 into one complete canonical release.
   if(!album){
@@ -1987,7 +2034,7 @@ function soloLegacyRows(s,p,pp,baseline,view){
   const row={id:source.id,name,streams:source.value,
    gain:periodic?periodGain(s,baseline,source.id):safeGain(s,p,source.id),
    change:periodic?periodChange(s,baseline,source.id):dailyChange(s,p,pp,source.id),
-   kind:album?'album':'track',soloOwner:owner,releaseOrder:rows.length,
+   kind:album?'album':'track',soloOwner:owner,sourceDate:s.date,releaseOrder:rows.length,
    spotifyTrackId:!album?workbookTrack?.id||null:null,
    artworkRelease:!album?workbookTrack?.releaseKey||null:fullAlbum?.key||workbookTrack?.releaseKey||null,
    edition:!album&&['Picheolin','Gilboard'].includes(owner)&&
@@ -1996,7 +2043,7 @@ function soloLegacyRows(s,p,pp,baseline,view){
   // the recording; never borrow another member's similarly named song date.
   if(album&&fullAlbum){
    const credit=Object.entries(fullAlbum.legacyTotalIndices||{})
-    .filter(([owner,index])=>owner!=='all'&&index===legacyIndex)[0]?.[0]||owner;
+    .filter(([label,index])=>label!=='all'&&index===resolvedIndex)[0]?.[0]||owner;
    const size=fullAlbum.tracks?.length||0;
    const creditCounts={
     jxj_dreamscape:{Jeonghan:6,Joshua:6,JxJ:7},
@@ -2005,7 +2052,7 @@ function soloLegacyRows(s,p,pp,baseline,view){
    };
    const fullUnit=(fullAlbum.key==='jxj_dreamscape'&&credit==='JxJ')||
     (fullAlbum.key==='v8'&&credit==='V8')||
-    (fullAlbum.key==='gilboard'&&legacyIndex===fullAlbum.legacyTotalIndices.all);
+    (fullAlbum.key==='gilboard'&&resolvedIndex===fullAlbum.legacyTotalIndices.all);
    const count=creditCounts[fullAlbum.key]?.[credit]||(fullUnit?size:null);
    const suffix=count?(fullUnit?' — Full '+size+'-Track Album Total':
     ' — '+credit+' '+count+'-Track Total'):' — Album Total';
@@ -2015,13 +2062,16 @@ function soloLegacyRows(s,p,pp,baseline,view){
   }else if(album){
    // Original workbook release totals sit immediately after their tracks.
    // Identify their exact catalog release before assigning the original date.
-   const preceding=soloLegacyLinks.byIndex?.[legacyIndex-1];
+   const preceding=previousSource?
+    soloLegacyLinks.byIndex?.[matchedSoloReferenceIndex(s,owner,previousSource)]:null;
    const release=(catalog.solo||[]).find(item=>item.key===preceding?.releaseKey);
    if(release){
     row.artworkRelease=release.key;
     row.releaseDate=release.release_date||null;
     row.albumIdentity=release.key+':'+owner;
-    if(/^total$/i.test(row.name))row.name=properReleaseName(release)+' — Total';
+    if(/^total$/i.test(row.name)||missingTotalLabel||
+       !soloHistoricalNameKey(row.name).includes(soloHistoricalNameKey(properReleaseName(release))))
+     row.name=properReleaseName(release)+' — Total';
    }
   }
   if(!album&&workbookTrack){
@@ -2029,7 +2079,8 @@ function soloLegacyRows(s,p,pp,baseline,view){
    const official=soloMedia.tracks?.[workbookTrack.id]?.title;
    if(official)row.name=official;
   }
-  row.releaseDate=row.releaseDate||originalReleaseDate(row)||null;
+  row.releaseDate=row.releaseDate||
+    (s.date==='2026-11-06'?originalReleaseDate(row):null);
   rows.push(row);
  }
  if(view==='discography'){
@@ -2765,10 +2816,10 @@ $('#archiveDate').addEventListener('change',e=>{
    $('#rankCategory').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.type===rankType));
   }
  }catch{}
- [catalog,artworkMap,soloAlbums,soloMedia,soloLegacyLinks]=await Promise.all([
+ [catalog,artworkMap,soloAlbums,soloMedia,soloLegacyLinks,soloHistoryReference]=await Promise.all([
  load('data/catalog.json'),load('data/artwork-map.json'),
  load('data/solo-albums.json'),load('data/solo-media.json'),
- load('data/solo-legacy-track-links.json')]);
+ load('data/solo-legacy-track-links.json'),load('solo-2026-11-06.json')]);
  catalog=catalog||{};soloAlbums=soloAlbums||[];
  soloMedia=soloMedia||{tracks:{},albums:{}};
  soloLegacyLinks=soloLegacyLinks||{byIndex:{}};
