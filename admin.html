@@ -1,0 +1,114 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SEVENTEEN Spotify Stats · Admin</title>
+<meta name="robots" content="noindex,nofollow">
+<style>
+:root{color-scheme:dark;font-family:system-ui,-apple-system,sans-serif;background:#0c0d1b;color:#f8f6ff}
+*{box-sizing:border-box}body{margin:0;min-height:100vh;background:radial-gradient(circle at 15% 0%,#40305e 0%,transparent 45%),#0c0d1b}
+main{max-width:760px;margin:0 auto;padding:50px 18px 80px}h1{font-size:clamp(25px,5vw,40px);letter-spacing:-.04em;margin:9px 0}p{color:#b9b7d2;line-height:1.55}
+.card{border:1px solid #51486c;background:#1a1a31;border-radius:22px;padding:25px;margin-top:24px;box-shadow:0 14px 40px #07051155}
+.eyebrow{color:#d2adee;letter-spacing:.18em;text-transform:uppercase;font-size:11px;font-weight:800}
+label{display:block;margin:16px 0 8px;font-size:13px;font-weight:700;color:#e8e0fa}
+input,select,button{font:inherit}input,select{width:100%;padding:13px 14px;border-radius:11px;background:#25263d;border:1px solid #696483;color:#fff;min-height:46px}input:focus,select:focus{outline:2px solid #b78bec}
+button{border:0;background:#cda8ee;color:#161020;font-weight:800;border-radius:12px;padding:13px 17px;cursor:pointer}button:disabled{opacity:.55;cursor:not-allowed}
+button.secondary{background:#363650;color:#fff;border:1px solid #686280}button.danger{background:#60384c;color:#fff}
+.row{display:flex;gap:10px;align-items:center;flex-wrap:wrap}.row>*{flex:1} .row button{flex:0 0 auto}
+.track{border:1px solid #5b5573;border-radius:12px;padding:14px;margin:12px 0}
+.note{font-size:12px;color:#b5b0ce}.error{color:#ffbabd}.success{color:#c8facf}
+#message{min-height:22px;padding-top:12px;white-space:pre-wrap}section[hidden],div[hidden]{display:none!important}
+a{color:#e9c8ff}.muted{opacity:.75}
+</style></head><body><main>
+<div class="eyebrow">✦ Private editor</div><h1>SEVENTEEN Spotify Stats <span style="color:#cda8ee">Admin</span></h1>
+<p>Add Spotify releases without editing your collector code. All additions follow the existing member order and unit debut order.</p>
+<div class="card" id="setup" hidden><h2>Setup required</h2><p>The secure email-login service has not been connected yet. Your regular website and Spotify collector are unaffected.</p></div>
+<section class="card" id="login" hidden>
+<h2>Verify administrator access</h2><p>A one-time six-digit code will be sent to the authorized administrator's inbox. The address is not shown here.</p>
+<button id="request">Email me a login code</button>
+<div id="challenge" hidden><label for="code">Verification code</label><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code">
+<button id="verify" style="margin-top:12px">Unlock dashboard</button><p class="note">Codes expire after 10 minutes and work only once.</p></div>
+</section>
+<section class="card" id="editor" hidden>
+<div class="row"><h2 style="margin:0">Add a release</h2><button class="secondary" id="logout">Log out</button></div>
+<form id="releaseForm">
+<label for="scope">Release category</label><select id="scope"><option value="group">OT13 · Group</option><option value="solo">Unit or solo</option></select>
+<div id="artistFields" hidden>
+<label for="artistMode">Artist or unit</label><select id="artistMode"><option value="existing">Existing member / unit</option><option value="new">New artist or unit</option></select>
+<div id="existingArtistWrap"><label for="artist">Existing profile</label><select id="artist"></select></div>
+<div id="newArtistWrap" hidden><label for="newArtist">Name</label><input id="newArtist" maxlength="60"><label for="artistKind">Type</label><select id="artistKind"><option value="unit">New unit</option><option value="solo">Solo member</option></select><label for="debutDate">Debut date (sets permanent unit ordering)</label><input id="debutDate" type="date"></div>
+</div>
+<label for="releaseType">Release type</label><select id="releaseType"><option value="album">Album / EP / mini album / single album (include in Albums)</option><option value="single">Digital single / OST / standalone (exclude from Albums)</option></select>
+<label for="releaseTitle">Release title</label><input id="releaseTitle" required maxlength="120" placeholder="Official release title">
+<label for="releaseDate">Release date</label><input id="releaseDate" required type="date">
+<h3>Spotify recordings</h3><p class="note">Add as many versions as needed (up to 40). Each recording needs its own Spotify track URL and title.</p>
+<div id="trackList"></div><button class="secondary" type="button" id="addTrack">+ Add another recording</button>
+<p class="note">Albums appear under Albums and Discography. Singles appear under Tracks and Discography, never Albums. Every section stays with its artist.</p>
+<button type="submit" id="publish" style="width:100%;margin-top:14px">Publish release to GitHub</button>
+</form>
+</section><div id="message" role="status" aria-live="polite"></div>
+<p class="note"><a href="index.html">← Back to SEVENTEEN Spotify Stats</a></p>
+</main><script>
+'use strict';
+const $=id=>document.getElementById(id);
+const SOLO=['S.Coups','Jeonghan','Joshua','Jun','Hoshi','Wonwoo','Woozi','Dokyeom','Mingyu','The8','Seungkwan','Vernon','Dino'];
+const UNITS=['BSS','JxW','HxW','CxM','DxS','V8','Picheolin','JxJ'];
+let api='',challenge='',token='';
+function message(text,error=false){$('message').className=error?'error':'success';$('message').textContent=text}
+async function send(path,data,auth=false){
+ const response=await fetch(api+path,{method:'POST',headers:{'content-type':'application/json',...(auth?{'authorization':'Bearer '+token}:{})},body:JSON.stringify(data)});
+ const obj=await response.json();if(!response.ok)throw Error(obj.error||'Request failed');return obj;
+}
+function refresh(){
+ $('artistFields').hidden=$('scope').value==='group';
+ $('existingArtistWrap').hidden=$('artistMode').value==='new';
+ $('newArtistWrap').hidden=$('artistMode').value!=='new';
+}
+function addTrack(){
+ const div=document.createElement('div');div.className='track';
+ const title=document.createElement('input');title.placeholder='Track title (e.g. Korean Ver.)';title.maxLength=140;title.required=true;
+ const url=document.createElement('input');url.placeholder='https://open.spotify.com/track/...';url.required=true;url.style.marginTop='8px';
+ const remove=document.createElement('button');remove.type='button';remove.className='danger';remove.textContent='Remove';remove.style.marginTop='10px';
+ remove.addEventListener('click',()=>{if($('trackList').children.length>1)div.remove()});
+ div.append(title,url,remove);$('trackList').append(div);
+}
+$('scope').addEventListener('change',refresh);$('artistMode').addEventListener('change',refresh);
+$('addTrack').addEventListener('click',()=>{if($('trackList').children.length<40)addTrack()});
+$('request').addEventListener('click',async()=>{
+ $('request').disabled=true;message('Sending code…');
+ try{const data=await send('/api/request-code',{});challenge=data.challenge;$('challenge').hidden=false;message('Check your email for the six-digit code.')}
+ catch(error){message(error.message,true)}finally{$('request').disabled=false}
+});
+$('verify').addEventListener('click',async()=>{
+ try{const response=await send('/api/verify',{challenge,code:$('code').value.trim()});token=response.token;
+ $('login').hidden=true;$('editor').hidden=false;message('Signed in successfully.');}
+ catch(error){message(error.message,true)}
+});
+$('logout').addEventListener('click',()=>{token='';$('editor').hidden=true;$('login').hidden=false;message('Signed out.')});
+$('releaseForm').addEventListener('submit',async event=>{
+ event.preventDefault();const button=$('publish');button.disabled=true;message('Publishing release…');
+ const scope=$('scope').value,adding=scope==='solo'&&$('artistMode').value==='new';
+ const tracks=[...document.querySelectorAll('#trackList .track')].map(div=>({title:div.querySelectorAll('input')[0].value,url:div.querySelectorAll('input')[1].value}));
+ const data={scope,artist:scope==='group'?'SEVENTEEN':adding?$('newArtist').value:$('artist').value,
+    artist_kind:adding?$('artistKind').value:null,debut_date:adding?$('debutDate').value:null,
+    release_type:$('releaseType').value,title:$('releaseTitle').value,release_date:$('releaseDate').value,tracks};
+ try{const result=await send('/api/publish',data,true);
+   message('Release saved in GitHub! Your public Spotify workflow will include it in its next collection.');
+   $('releaseForm').reset();$('trackList').replaceChildren();addTrack();refresh();
+ }catch(error){message(error.message,true)}finally{button.disabled=false}
+});
+async function init(){
+ addTrack();refresh();
+ try{
+  const cfg=await fetch('data/admin-config.json',{cache:'no-store'}).then(r=>r.json());
+  if(!/^https:\/\/[a-z0-9.-]+(?:\/[a-z0-9-]*)?$/i.test(cfg.api_url||''))throw Error('Not configured');
+  api=cfg.api_url.replace(/\/$/,'');$('login').hidden=false;
+  const [catalog,admin]=await Promise.all([
+   fetch('data/catalog.json',{cache:'no-store'}).then(r=>r.json()),
+   fetch('data/admin-releases.json',{cache:'no-store'}).then(r=>r.json())]);
+  const listed=[...new Set([...SOLO,...UNITS,...(admin.artists||[]).map(x=>x.name),...(catalog.solo||[]).map(x=>x.artist)])];
+  const option=document.createDocumentFragment();for(const name of listed){
+   if(!name)continue;const el=document.createElement('option');el.value=name;el.textContent=name;option.append(el);
+  }$('artist').replaceChildren(option);
+ }catch(error){$('setup').hidden=false;message('Secure login is awaiting deployment.',true)}
+}
+init();
+</script></body></html>
