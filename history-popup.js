@@ -101,6 +101,21 @@
    return value;
   }
   if(metric.kind==='album'){
+   // Multi-part group releases (notably the 33-track 17 IS RIGHT HERE)
+   // must use the same full album as the dashboard, NOT g49's 4-track
+   // original subtotal. Historical workbooks already save the full subtotal.
+   if(scope==='group'&&metric.releases?.length){
+    const keys=metric.releases,primary=typeof canonicalGroupAlbumKey==='function'
+      ?canonicalGroupAlbumKey(keys):keys[0];
+    if(isHistorical(snapshot)&&typeof historicalAlbumAggregate==='function'){
+     const archived=historicalAlbumAggregate(snapshot,primary,'full');
+     if(archived&&numberOrNull(snapshot.tracks[archived])!=null)
+      return numberOrNull(snapshot.tracks[archived]);
+    }
+    const ids=[...new Set(keys.flatMap(key=>
+     (catalog.group||[]).find(item=>item.key===key)?.tracks||[]))];
+    return ids.length?exactIds(snapshot,ids,reference):null;
+   }
    // A legacy subtotal ID must be rematched by member/title each month;
    // the same row number can mean a different album in an older workbook.
    if(scope==='solo'&&String(metric.id).startsWith('legacy:')&&
@@ -146,13 +161,14 @@
   modal.hidden=false;document.body.style.overflow='hidden';
   const tbody=$('#svtHistoryRows');tbody.innerHTML='<tr><td colspan="4">Loading saved snapshots…</td></tr>';
   $('#svtHistoryTitle').textContent=metric.title||'Track streams';
-  $('#svtHistoryNote').textContent='Loading the last ten dated snapshots…';
+  $('#svtHistoryNote').textContent='Loading saved streaming history…';
   let ref;
   try{ref=await selectedSnapshot()||await latest(scope)}
   catch(error){tbody.innerHTML='<tr><td colspan="4">Unable to load selected archive. Try selecting a date and reopening.</td></tr>';return}
   if(id!==opening)return;
   if(!ref?.date){tbody.innerHTML='<tr><td colspan="4">No saved streaming snapshot is available for this view.</td></tr>';return}
   const mode=rank.endsWith('monthly')?'monthly':rank.endsWith('weekly')?'weekly':'daily';
+  const periodCount=mode==='monthly'?12:10;
   const titleLabel=mode==='monthly'?'month':mode==='weekly'?'week':'day';
   $('#svtHistoryNote').textContent='Last 10 '+titleLabel+'s through '+dateText(ref.date)+' · '+(scope==='group'?'OT13':owner||'Units & Solo')+' · oldest first. Total is cumulative; increase requires verified comparable snapshots.';
   const lookup=async date=>{
@@ -206,7 +222,7 @@
    const endOf=start=>{const next=move(start,1);return previousDate(next)};
    const dateList=[...new Set([...((scope==='solo'?soloDates:groupDates)||[]),ref.date])].filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d<=ref.date).sort();
    const start=periodStart(ref.date);
-   const periods=Array.from({length:11},(_,i)=>move(start,i-10));
+   const periods=Array.from({length:periodCount+1},(_,i)=>move(start,i-periodCount));
    const periodData=await Promise.all(periods.map(async first=>{
     const last=endOf(first),visibleEnd=last<ref.date?last:ref.date;
     const observed=dateList.filter(d=>d>=first&&d<=visibleEnd);
@@ -252,8 +268,9 @@
   if(!row)return;
   const title=row.querySelector('.track-name')?.textContent?.trim()||'Release';
   const release=row.dataset.historyRelease||'';
+  const releases=(row.dataset.historyReleases||'').split(',').filter(Boolean);
   const id=row.dataset.historyId||'';
-  show({kind:row.classList.contains('album-total-row')?'album':'track',release,id,title}).catch(console.error);
+  show({kind:row.classList.contains('album-total-row')?'album':'track',release,releases,id,title}).catch(console.error);
  });
  ranking?.addEventListener('keydown',event=>{
   if(event.key!=='Enter'&&event.key!==' ')return;
