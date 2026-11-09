@@ -1898,6 +1898,12 @@ function matchedSoloReferenceIndex(snapshot,owner,source,expectedKind=null){
  const section=soloLegacySections(snapshot)?.[owner]||[];
  const reference=soloLegacySections(soloHistoryReference)?.[owner]||[];
  const previous=section.find(row=>row.index===source.index-1);
+ // The November 2025/January 2026 workbook mislabeled Spider's own
+ // 54M+ subtotal as "SHINGIRU Total"; the adjacent real Spider row and
+ // identical number establish that it belongs to Spider, not SHINGIRU.
+ if(owner==='Hoshi'&&targetKind==='album'&&name==='shingirutotal'&&
+    soloHistoricalNameKey(previous?.name)==='spider'&&previous?.value===source.value)
+   return null; // Resolve via the preceding Spider recording, never SHINGIRU.
  const unnamedTotal=targetKind==='album'&&previous&&
   soloHistoricalNameKey(previous.name)===name&&previous.value===source.value;
  const refName=unnamedTotal?name+'total':name;
