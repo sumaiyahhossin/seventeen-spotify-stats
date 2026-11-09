@@ -112,6 +112,11 @@ if kind=='solo' and os.getenv('SPOTIFY_CLIENT_ID') and os.getenv('SPOTIFY_CLIENT
 cat=json.loads((DATA/'catalog.json').read_text())[kind]
 expected={id for item in cat for id in item['tracks']}
 missing=expected-set(tracks)
+if missing:
+    by_id={tid:(item.get('key'),item.get('title')) for item in cat for tid in item['tracks']}
+    print(f'{kind}: unavailable song IDs from initial scan:',flush=True)
+    for tid in sorted(missing):
+        print(f'  {tid}: {by_id.get(tid)}',flush=True)
 # Retry only the IDs missing from the first Selenium scan. Never fill
 # missing counts with zeros, rounded estimates, or older history.
 if kind=='solo' and missing and result.returncode==0:
@@ -123,10 +128,16 @@ if kind=='solo' and missing and result.returncode==0:
         retry_result=subprocess.run(
             ['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],classname],
             capture_output=True,text=True,timeout=2400,env=retry_env)
+        print(f'solo: retry {attempt}: exit={retry_result.returncode}, '
+              f'lines={len(retry_result.stdout.splitlines())}, '
+              f'stderr={retry_result.stderr[-1200:]!r}',flush=True)
         for line in retry_result.stdout.splitlines():
             match=re.match(r'STAT_TRACK\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|(\d+)',line)
             if match and int(match.group(2))>0:tracks[match.group(1)]=int(match.group(2))
+            if line.startswith('STAT_TRACK_UNAVAILABLE|'):
+                print('solo:',line,flush=True)
         missing=expected-set(tracks)
+        if missing:print('solo: still unavailable: '+', '.join(sorted(missing)),flush=True)
         if not missing:break
 
 if result.returncode or missing or any(tracks[t]<=0 for t in expected):
