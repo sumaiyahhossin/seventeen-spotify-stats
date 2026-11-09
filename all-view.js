@@ -41,6 +41,10 @@ function buildRows(){
    const releaseDate=scope==='group'?(groupOriginalReleaseDates[release.key]||groupStandaloneReleaseDates[release.key]||release.release_date):release.release_date;
    (release.tracks||[]).forEach((id,index)=>{
     if(!validId(id))return;
+    // Exclude known legacy aliases from the group catalog. The current
+    // collector's canonical IDs are the authoritative recording population.
+    if(scope==='group'&&Array.isArray(snapshot.canonical_track_ids)&&
+       !snapshot.canonical_track_ids.includes(id))return;
     let row=byId.get(id);
     if(!row){row={id,scope,owners:new Set(),releaseNames:new Set(),date:null,title:null,streams:null};byId.set(id,row)}
     if(artist)row.owners.add(artist);
