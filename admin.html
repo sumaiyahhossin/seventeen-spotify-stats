@@ -25,6 +25,7 @@ a{color:#e9c8ff}.muted{opacity:.75}
 <section class="card" id="login" hidden>
 <h2>Verify administrator access</h2><p>A one-time six-digit code will be sent to the authorized administrator's inbox. The address is not shown here.</p>
 <button id="request">Email me a login code</button>
+<p id="deliveryHelp" class="note error" hidden role="alert">Email delivery is blocked by the current Resend test-mode restrictions. The authorized admin inbox differs from the provider's permitted test recipient. To enable codes for this inbox, <a href="https://resend.com/domains" target="_blank" rel="noopener noreferrer">verify a sending domain in Resend</a> and update the Worker's RESEND_FROM secret to use it. Alternatively, deliberately change the authorized ADMIN_EMAIL to the Resend account's permitted test inbox. No email destination has been changed.</p>
 <div id="challenge" hidden><label for="code">Verification code</label><input id="code" inputmode="numeric" autocomplete="one-time-code" maxlength="6" placeholder="6-digit code">
 <button id="verify" style="margin-top:12px">Unlock dashboard</button><p class="note">Codes expire after 10 minutes and work only once.</p></div>
 </section>
@@ -84,8 +85,15 @@ $('scope').addEventListener('change',refresh);$('artistMode').addEventListener('
 $('addTrack').addEventListener('click',()=>{if($('trackList').children.length<40)addTrack()});
 $('request').addEventListener('click',async()=>{
  $('request').disabled=true;message('Sending code…');
- try{const data=await send('/api/request-code',{});challenge=data.challenge;$('challenge').hidden=false;message('Check your email for the six-digit code.')}
- catch(error){message(error.message==='Too many requests. Try later.'?'Too many email-code requests. For security, please try again in up to one hour. Do not keep clicking the button.':error.message,true)}finally{$('request').disabled=false}
+ try{const data=await send('/api/request-code',{});challenge=data.challenge;$('deliveryHelp').hidden=true;$('challenge').hidden=false;message('Check your email for the six-digit code.')}
+ catch(error){
+  const deliveryBlocked=error.message==='Unable to send email right now';
+  $('deliveryHelp').hidden=!deliveryBlocked;
+  message(error.message==='Too many requests. Try later.'?
+   'Too many email-code requests. For security, please try again in up to one hour. Do not keep clicking the button.':
+   deliveryBlocked?'Resend rejected the email. See the delivery setup instructions below the login button.':
+   error.message,true);
+ }finally{$('request').disabled=false}
 });
 $('verify').addEventListener('click',async()=>{
  try{const response=await send('/api/verify',{challenge,code:$('code').value.trim()});token=response.token;
