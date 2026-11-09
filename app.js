@@ -683,11 +683,25 @@ function discographyRows(s,p,pp,baseline){
   the8_g4:3,the8_g3:4
  };
  const duplicateAlbumSections=new Set(['jeonghan_g2','joshua_g8','the8_g12','vernon_g9','dino_g4','picheolin_g3']);
- const releasesForDiscography=tab==='solo'?[...(catalog.solo||[])].filter(x=>!duplicateAlbumSections.has(x.key)).sort((a,b)=>{
+ const releasesForDiscography=tab==='solo'?[...(catalog.solo||[])].filter(x=>
+  !duplicateAlbumSections.has(x.key)||
+  // Member-specific discographies must include their credited songs from
+  // the unit releases; only the unfiltered combined view omits duplicate
+  // representations of the same album.
+  (selectedSoloArtist&&String(x.artist).toLowerCase()===selectedSoloArtist.toLowerCase())
+ ).sort((a,b)=>{
   const ai=soloSheetArtistOrder.findIndex(n=>n.toLowerCase()===String(a.artist).toLowerCase());
   const bi=soloSheetArtistOrder.findIndex(n=>n.toLowerCase()===String(b.artist).toLowerCase());
+  // Each member's release chronology must follow verified calendar dates,
+  // not Java collector groups (which can put newer singles before old songs).
   if(ai!==bi)return (ai<0?999:ai)-(bi<0?999:bi);
-  const order=(item)=>soloSheetReleaseOverrides[item.key]??(catalog.solo||[]).filter(x=>x.artist===item.artist).findIndex(x=>x.key===item.key)+1;
+  const aDate=String(a.release_date||''),bDate=String(b.release_date||'');
+  if(aDate!==bDate){
+   if(!/^20\\d{2}-\\d{2}-\\d{2}$/.test(aDate))return 1;
+   if(!/^20\\d{2}-\\d{2}-\\d{2}$/.test(bDate))return -1;
+   return aDate.localeCompare(bDate);
+  }
+  const order=item=>soloSheetReleaseOverrides[item.key]??(catalog.solo||[]).filter(x=>x.artist===item.artist).findIndex(x=>x.key===item.key)+1;
   return order(a)-order(b);
  }):catalog[tab]||[];
  for(const item of releasesForDiscography){
@@ -696,7 +710,7 @@ function discographyRows(s,p,pp,baseline){
   const combo=tab==='group'?combined[item.key]:null;
   const ids=[...new Set((combo?combo.keys.flatMap(k=>releasesByKey.get(k)?.tracks||[]):item.tracks)||[])];
   if(!ids.length)continue;
-  const streams=ids.every(id=>s.tracks?.[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
+  const streams=ids.every(id=>Number.isFinite(s.tracks?.[id])&&s.tracks[id]>0)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
   const observedGains=periodic?ids.map(id=>periodGain(s,baseline,id)).filter(v=>v!=null):[];
   const partialGain=periodic&&observedGains.length>0&&observedGains.length<ids.length;
   const gain=periodic?(observedGains.length?observedGains.reduce((a,b)=>a+b,0):null):sumDaily(s,p,ids);
@@ -2142,7 +2156,15 @@ function soloLegacyRows(s,p,pp,baseline,view){
   rows.push(row);
  }
  if(view==='discography'){
-   if(sortOrder==='newest'||sortOrder==='oldest')rows.sort((a,b)=>{const x=originalReleaseDate(a),y=originalReleaseDate(b);if(!x||!y)return x?-1:y?1:(a.releaseOrder??0)-(b.releaseOrder??0);return sortOrder==='newest'?y.localeCompare(x):x.localeCompare(y)});
+   // Keep album subtotal directly after the tracks from its release.
+   // Oldest-first is the default for member discographies regardless of
+   // global Most Streamed sorting selected elsewhere.
+   rows.sort((a,b)=>{
+    const x=originalReleaseDate(a),y=originalReleaseDate(b);
+    if(!x||!y)return x?-1:y?1:(a.releaseOrder??0)-(b.releaseOrder??0);
+    const cmp=x.localeCompare(y);
+    return (sortOrder==='newest'?-cmp:cmp)||(a.releaseOrder??0)-(b.releaseOrder??0);
+   });
    return rows;
   }
  rows.sort((a,b)=>{
