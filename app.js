@@ -610,8 +610,9 @@ function archivedAlbumMetrics(s,p,pp,baseline,id){
  const periodic=['weekly','monthly','yearly'].some(part=>rank.endsWith(part));
  return {streams:s.tracks[id],
   gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),
+  gainPartial:periodic&&incompleteObservedPeriod(s,baseline,id),
   change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),
-  changePartial:false};
+  changePartial:periodic&&incompletePeriodComparison(s,baseline,id)};
 }
 
 function discographyRows(s,p,pp,baseline){
@@ -808,7 +809,9 @@ function discographyRows(s,p,pp,baseline){
   const savedAlbum=archivedAlbumMetrics(s,p,pp,baseline,sourceKey);
   const canonicalAlbum=tab==='solo'?soloAlbums.find(a=>a.key===item.key):null;
   const albumTotalRow={name:canonicalAlbum?.displayName||combo?.name||catalogReleaseLabel(item),artworkRelease:item.key,releaseDate:tab==='group'?(groupOriginalReleaseDates[item.key]||groupStandaloneReleaseDates[item.key]||null):(item.release_date||null),
-   streams:savedAlbum?.streams??streams,gain:savedAlbum?savedAlbum.gain:gain,estimatedGain:!savedAlbum&&partialGain,
+   streams:savedAlbum?.streams??streams,gain:savedAlbum?savedAlbum.gain:gain,
+   gainPartial:savedAlbum?!!savedAlbum.gainPartial:(periodic&&ids.some(id=>incompleteObservedPeriod(s,baseline,id))),
+   estimatedGain:!savedAlbum&&partialGain,
    change:savedAlbum?savedAlbum.change:(periodic?sumPeriodChange(s,baseline,ids):dayChange),
    changePartial:savedAlbum?savedAlbum.changePartial:(periodic?periodComparison(s,baseline,ids).partial:dailyComparison(s,p,pp,ids).partial),
    kind:'album',releaseOrder:rows.length};
@@ -845,7 +848,9 @@ function discographyRows(s,p,pp,baseline){
     const archivedId=historicalAlbumAggregate(s,'g49','full');
     const saved=archivedAlbumMetrics(s,p,pp,baseline,archivedId);
     rows.push({name:'17 IS RIGHT HERE — All Tracks',artworkRelease:'g49',
-     streams:saved?.streams??allStreams,gain:saved?saved.gain:allGain,estimatedGain:!saved&&allPartial,
+     streams:saved?.streams??allStreams,gain:saved?saved.gain:allGain,
+     gainPartial:saved?!!saved.gainPartial:(periodic&&allIds.some(id=>incompleteObservedPeriod(s,baseline,id))),
+     estimatedGain:!saved&&allPartial,
      change:saved?saved.change:(periodic?sumPeriodChange(s,baseline,allIds):dayChange),
      changePartial:saved?saved.changePartial:(periodic?periodComparison(s,baseline,allIds).partial:dailyComparison(s,p,pp,allIds).partial),
      kind:'album',releaseOrder:rows.length});
@@ -2146,10 +2151,11 @@ function canonicalSoloAlbumRows(s,p,pp,baseline){
    if(!key)return null;
    streams=s.tracks[key];
    if(periodic){
-    gain=baseline?.start?delta(s,baseline.start,index,sourceOwner,false):null;
-    const previous=baseline?.prevStart&&baseline?.prevEnd
-     ?delta(baseline.prevEnd,baseline.prevStart,index,sourceOwner,false):null;
-    change=gain!=null&&previous!=null?gain-previous:null;
+    // Use the same verified workbook-row matching and sparse-day fallback
+    // as individual tracks. Requiring an exact start snapshot made many
+    // historical solo/unit album gains disappear.
+    gain=periodGain(s,baseline,key);
+    change=periodChange(s,baseline,key);
    }else{
     gain=delta(s,p,index,sourceOwner,true);
     const yesterday=delta(p,pp,index,sourceOwner,true);
@@ -2665,7 +2671,8 @@ function periodComparison(s,context,ids){
  const values=ids.map(id=>periodChange(s,context,id));
  const valid=values.filter(v=>v!=null);
  return {value:valid.length?valid.reduce((a,b)=>a+b,0):null,
-  partial:valid.length<ids.length,matched:valid.length,total:ids.length};
+  partial:valid.length<ids.length||ids.some(id=>incompletePeriodComparison(s,context,id)),
+  matched:valid.length,total:ids.length};
 }
 function sumPeriodChange(s,context,ids){return periodComparison(s,context,ids).value}
 async function updateYear2026Streams(){
