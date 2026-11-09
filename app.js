@@ -2745,7 +2745,7 @@ function renderRankMetrics(row,selectedDate=''){
   rank.endsWith('yearly')?'last year':'yesterday';
  // Solo/unit charts show the selected gain and change until Overall is chosen.
  // The history inspector still exposes the verified cumulative stream count.
- const showStreams=rank.endsWith('overall')||(tab==='group'&&!rank.endsWith('daily'));
+ const showStreams=rank.startsWith('discography')||rank.endsWith('overall')||(tab==='group'&&!rank.endsWith('daily'));
  return (showStreams?rankMetricHtml(row.streams,'streams','Total streams'):'')+
   rankMetricHtml(row.gain,'gain',row.gainPartial?gainLabel+' (verified observed dates only)':gainLabel,{signed:true,estimated:row.estimatedGain,partial:row.gainPartial})+
   rankMetricHtml(row.change,'change','Change vs '+compareWith,{signed:true,partial:row.changePartial});
@@ -2807,7 +2807,7 @@ async function render(){const token=++renderToken;
  useDatesForTab();renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;if(tab==='group')updateYear2026Streams();syncCalendar();restoreGroupNames(s,p);
  document.body.classList.toggle('svt-overall-four-cols',rank.endsWith('overall'));
  document.body.classList.toggle('svt-daily-ranking',rank.endsWith('daily')&&tab==='group');
- document.body.classList.toggle('svt-solo-period-only',tab==='solo'&&!rank.endsWith('overall'));
+ document.body.classList.toggle('svt-solo-period-only',tab==='solo'&&!rank.endsWith('overall')&&!rank.startsWith('discography'));
  document.body.classList.toggle('svt-solo-daily',tab==='solo'&&rank.endsWith('daily'));
  document.body.classList.toggle('svt-discography-table',rank.startsWith('discography'));
  const isPeriod=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
