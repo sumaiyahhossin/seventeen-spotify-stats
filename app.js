@@ -755,7 +755,7 @@ function discographyRows(s,p,pp,baseline){
    const totals=limboIds.map(id=>s.tracks?.[id]);
    const gains=limboIds.map(id=>periodic?periodGain(s,baseline,id):safeGain(s,p,id));
    const changes=limboIds.map(id=>periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id));
-   rows.push({name:'LIMBO — Chinese + Korean Versions Total',artworkRelease:item.key,
+   rows.push({name:'LIMBO',artworkRelease:item.key,
     historyReleases:['jun_g4Chinese','jun_g4Korean'],releaseDate:item.release_date,
     streams:totals.length===2&&totals.every(n=>Number.isFinite(n)&&n>0)?totals.reduce((a,b)=>a+b,0):null,
     gain:gains.length===2&&gains.every(n=>n!=null)?gains.reduce((a,b)=>a+b,0):null,
