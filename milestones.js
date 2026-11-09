@@ -269,8 +269,42 @@ function renderUpcoming(){
    responsiveValue('<span class="days-value">'+(r.estimate==null?'—':r.estimate.toLocaleString()+' days')+'</span>'+(r.expected?'<div class="song-release">'+format(r.expected)+'</div>':''),r.expected?mobileDate(r.expected):(r.estimate==null?'—':r.estimate+'d'))+'</td></tr>';
  }).join(''):'<tr><td colspan="5">No tracks waiting for this milestone.</td></tr>';
  $('upcomingStatus').textContent=rows.length+' songs · Sorted by '+($('upcomingSort').selectedOptions[0]?.textContent||'Next milestone')+' · Latest snapshot: '+format(currentSnapshot.date)+(deltaDays!==1?' · Daily growth unavailable until two consecutive snapshots exist':' · Estimates use the latest one-day gain');
- loadMilestoneCovers();
+ loadMilestoneCovers();scheduleMilestoneNameFit();
 }
+
+// The compact milestone tables share one-row song labels. Shrink only titles
+// that overflow their own column, so every screen width gets an appropriate
+// font size without shrinking all titles unnecessarily.
+let milestoneNameFitFrame=0;
+function fitMilestoneNamesOnMobile(){
+ const names=[...document.querySelectorAll('#reachedView .song-title, #upcomingView .song-title')];
+ if(!window.matchMedia('(max-width:650px)').matches){
+  for(const el of names)el.style.removeProperty('font-size');
+  return;
+ }
+ const visible=names.filter(el=>el.getClientRects().length>0);
+ for(const el of visible)el.style.removeProperty('font-size');
+ const sizes=visible.map(el=>{
+  const computed=getComputedStyle(el);
+  return {el,size:parseFloat(computed.fontSize)||9,width:el.clientWidth,content:el.scrollWidth};
+ });
+ for(const {el,size,width,content} of sizes){
+  if(width<1||content<=width+1)continue;
+  el.style.setProperty('font-size',Math.max(6,Math.floor(size*(width-2)/content*10)/10)+'px','important');
+  el.title=el.title||el.textContent.trim();
+ }
+}
+function scheduleMilestoneNameFit(){
+ if(milestoneNameFitFrame)cancelAnimationFrame(milestoneNameFitFrame);
+ milestoneNameFitFrame=requestAnimationFrame(()=>{
+  milestoneNameFitFrame=0;
+  fitMilestoneNamesOnMobile();
+ });
+}
+window.addEventListener('resize',scheduleMilestoneNameFit,{passive:true});
+window.addEventListener('orientationchange',scheduleMilestoneNameFit,{passive:true});
+document.fonts?.ready.then(scheduleMilestoneNameFit).catch(()=>{});
+
 function setMilestoneView(view){
  const upcoming=view==='upcoming';
  $('reachedView').hidden=upcoming;
@@ -279,6 +313,7 @@ function setMilestoneView(view){
  $('tabUpcoming').setAttribute('aria-selected',String(upcoming));
  try{sessionStorage.setItem('svt-milestone-view',view)}catch{}
  if(upcoming)renderUpcoming();
+ scheduleMilestoneNameFit();
 }
 $('tabReached').addEventListener('click',()=>setMilestoneView('reached'));
 $('tabUpcoming').addEventListener('click',()=>setMilestoneView('upcoming'));
@@ -330,7 +365,7 @@ function build(){
    '<td data-label="MILESTONE REACHED" title="'+esc(reached)+'"><span class="reached-value">'+responsiveValue(esc(reached),r.date?mobileDate(r.date):r.range?mobileDate(r.range.date):'—')+'</span></td>'+
    '<td data-label="TIME FROM RELEASE" title="'+(r.duration==null?'Unavailable':r.duration.toLocaleString()+' days')+'"><span class="days-value">'+responsiveValue(elapsed,r.duration==null?'—':r.duration.toLocaleString()+'d')+'</span></td></tr>';
  }).join(''):'<tr><td colspan="3">No songs with a recorded milestone at this level.</td></tr>';
- loadMilestoneCovers();
+ loadMilestoneCovers();scheduleMilestoneNameFit();
 
  const verified=rows.filter(x=>x.date).length;
  $('status').textContent=ready?rows.length+' songs reached '+(threshold/1000000)+'M · '+verified+' dated milestones backed by archive or cited external records · '+(rows.length-verified)+' dates not exact':'Loading…';
