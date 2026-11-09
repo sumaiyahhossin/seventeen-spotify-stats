@@ -526,8 +526,8 @@ function discographyRows(s,p,pp,baseline){
    if(!snapshot||!isHistorical(snapshot))return snapshot;
    const lookup=new Map();
    const creditKey=name=>normTrackName(String(name||'')
-    .replace(/\\s*\\((?:prod\\.?\\s*by|feat\\.?|ft\\.?)\\s+[^)]*\\)/gi,'')
-    .replace(/\\s*\\b(?:feat\\.?|ft\\.?)\\s+.*$/i,''));
+    .replace(/\s*\((?:prod\.?\s*by|feat\.?|ft\.?)\s+[^)]*\)/gi,'')
+    .replace(/\s*\b(?:feat\.?|ft\.?)\s+.*$/i,''));
    const creditLookup=new Map();
    for(const [id,value] of Object.entries(snapshot.tracks||{})){
     if(historicalKind(snapshot,id)!=='track'||!Number.isFinite(Number(value)))continue;
@@ -553,15 +553,29 @@ function discographyRows(s,p,pp,baseline){
     }
     const exact=lookup.get(normTrackName(name))||[];
     const credited=creditLookup.get(creditKey(name))||[];
-    // Never merge different recordings or duplicate titles just to fill a gap.
-    let match=exact.length===1?exact[0]:null;
-    if(!match&&exact.length===0&&credited.length===1)match=credited[0];
+    // The spreadsheet repeats certain identical recordings in album and
+    // anthology sections. Reuse a title only when EVERY duplicate has the
+    // exact same saved total; different totals remain different recordings.
+    const uniqueRecording=entries=>entries.length&&
+     new Set(entries.map(row=>row.value)).size===1?entries[0]:null;
+    let match=uniqueRecording(exact);
+    if(!match&&exact.length===0)match=uniqueRecording(credited);
     if(!match){
      const legacyId=baselineIds[id];
      if(legacyId&&snapshot.tracks[legacyId]!=null&&historicalKind(snapshot,legacyId)==='track'){
       const oldName=snapshot.names?.[legacyId];
+      const verifiedAlias={
+       '2kDrUAONMhG6CbDGBkhdrY':'worldfeatannemarrie',
+       '6KfYVOicblNB8CaDZwbxiT':'dirtydancingfearjoshuadkdino',
+       '0xZ4WU5UfctiSeETi6pMEo':'golm',
+       '2B0l8kFr4PzxH6gqX3NIoi':'badinfluence',
+       '3ESkEsiPkaXl0CCRUMGkIk':'damagehoshisolo'
+      };
+      const legacyName=normTrackName(oldName);
+      const aliasMatches=verifiedAlias[id]&&legacyName.startsWith(verifiedAlias[id]);
       if(normTrackName(oldName)===normTrackName(name)||
-         (creditKey(oldName).length>=5&&creditKey(oldName)===creditKey(name)))
+         (creditKey(oldName).length>=5&&creditKey(oldName)===creditKey(name))||
+         aliasMatches)
        match={id:legacyId,value:snapshot.tracks[legacyId]};
      }
     }
