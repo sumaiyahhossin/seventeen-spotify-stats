@@ -7,7 +7,7 @@
  const dateText=d=>new Date(d+'T12:00:00Z').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'});
  const previousDate=d=>{const day=new Date(d+'T12:00:00Z');day.setUTCDate(day.getUTCDate()-1);return day.toISOString().slice(0,10)};
  const css=`
- .svt-history-open{cursor:pointer!important}
+ .svt-history-open{cursor:pointer!important;pointer-events:auto!important}
  .svt-history-open:focus-visible{outline:2px solid #d4a8ed;outline-offset:3px}
  .svt-history-open:hover .metric-value,.svt-history-open:hover strong{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:4px}
  .svt-history-dialog[hidden]{display:none!important;visibility:hidden!important;pointer-events:none!important}
@@ -106,19 +106,21 @@
  async function show(metric){
   const id=++opening;
   const scope=tab,owner=selectedSoloArtist;
-  const ref=await selectedSnapshot();
-  if(id!==opening)return;
-  if(!ref?.date)return;
   modal.hidden=false;document.body.style.overflow='hidden';
-  const title=metric.title||'Track streams';
-  $('#svtHistoryTitle').textContent=title;
-  $('#svtHistoryNote').textContent='Last 10 calendar dates ending '+dateText(ref.date)+' · '+(scope==='group'?'OT13':owner||'Units & Solo')+' · '+(rank.split('-').at(-1)||'daily')+' view. Total is cumulative; Increase is day-over-day.';
   const tbody=$('#svtHistoryRows');tbody.innerHTML='<tr><td colspan="4">Loading saved snapshots…</td></tr>';
+  $('#svtHistoryTitle').textContent=metric.title||'Track streams';
+  $('#svtHistoryNote').textContent='Loading the last ten dated snapshots…';
+  let ref;
+  try{ref=await selectedSnapshot()||await latest(scope)}
+  catch(error){tbody.innerHTML='<tr><td colspan="4">Unable to load selected archive. Try selecting a date and reopening.</td></tr>';return}
+  if(id!==opening)return;
+  if(!ref?.date){tbody.innerHTML='<tr><td colspan="4">No saved streaming snapshot is available for this view.</td></tr>';return}
+  $('#svtHistoryNote').textContent='Last 10 calendar dates ending '+dateText(ref.date)+' · '+(scope==='group'?'OT13':owner||'Units & Solo')+' · '+(rank.split('-').at(-1)||'daily')+' view. Total is cumulative; Increase is day-over-day.';
   const days=[];let date=ref.date;
   for(let i=0;i<12;i++){days.push(date);date=previousDate(date)}
   const values=await Promise.all(days.map(async date=>{
    try{const snap=date===ref.date?ref:await getDate(scope,date);
-    return {date,value:metricValue(snap,metric,ref,scope,owner),snapshot:!!snap}
+    let value=null;try{value=metricValue(snap,metric,ref,scope,owner)}catch(error){console.warn('History metric unavailable',error)}return {date,value,snapshot:!!snap}
    }catch{return {date,value:null,snapshot:false}}
   }));
   if(id!==opening)return;
