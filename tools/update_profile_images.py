@@ -52,7 +52,49 @@ def fetch_image(item):
         print(f"{name}: photo lookup unavailable: {type(exc).__name__}: {exc}")
     return artist_id, None, name
 
+# The duo units have no Spotify artist page. Preserve their selected concept
+# photographs as same-site files to avoid broken third-party hotlinks.
+DUOS = {
+    "V8": [
+        "https://books.r10s.jp/fan/images/oshiraku-images/v8_conceptphoto1_25f8875b2d.jpg",
+        "https://img.tenasia.co.kr/photo/202606/BF.44712139.1.jpg",
+    ],
+    "JxJ": [
+        "https://www.allkpop.com/upload/2026/09/content/281130/web_data/allkpop_1790609592_htt9wk4biaabw8m.jpg",
+        "https://www.allkpop.com/upload/2026/09/content/271151/1790524315-hto0kr6ayaaq1-n.jpeg",
+    ],
+}
+
+def cache_unit_concepts():
+    folder = ROOT / "assets" / "profile-photos"
+    folder.mkdir(parents=True, exist_ok=True)
+    for name, urls in DUOS.items():
+        file = folder / (name.lower() + ".jpg")
+        if file.exists() and file.stat().st_size > 1000:
+            print(f"{name}: existing complete concept photo retained")
+            continue
+        for url in urls:
+            try:
+                request = urllib.request.Request(url, headers={
+                    "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 Chrome/126.0",
+                    "Accept": "image/avif,image/webp,image/jpeg,image/png,*/*",
+                })
+                with urllib.request.urlopen(request, timeout=15) as response:
+                    mime = response.headers.get("Content-Type", "").lower()
+                    photo = response.read(4_000_001)
+                if len(photo) > 4_000_000 or len(photo) < 1000:
+                    continue
+                if not (photo.startswith(b"\\xff\\xd8\\xff") or photo.startswith(b"\\x89PNG") or photo.startswith(b"RIFF")):
+                    continue
+                # Same path regardless of source: the browser discovers format from bytes.
+                file.write_bytes(photo)
+                print(f"{name}: same-site concept photo saved ({len(photo)} bytes; {mime})")
+                break
+            except Exception as exc:
+                print(f"{name}: alternate concept image check failed: {type(exc).__name__}")
+
 def main():
+    cache_unit_concepts()
     existing = json.loads(TARGET.read_text()) if TARGET.exists() else {}
     updated = dict(existing)
     with concurrent.futures.ThreadPoolExecutor(max_workers=5) as pool:
