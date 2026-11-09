@@ -1,0 +1,53 @@
+name: Verify dashboard and profile assets
+
+on:
+  push:
+    paths:
+      - 'app.js'
+      - 'index.html'
+      - 'style.css'
+      - 'data/catalog.json'
+      - 'data/profile-images.json'
+      - 'assets/profile-photos/**'
+      - 'tools/catalog.py'
+      - '.github/workflows/site-check.yml'
+  workflow_dispatch:
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify JavaScript syntax
+        run: |
+          node --check app.js
+          node --check milestones.js
+      - name: Verify dated songs and profile images
+        run: |
+          python - <<'PY'
+          import json, pathlib, re
+          root=pathlib.Path('.')
+          cat=json.loads((root/'data/catalog.json').read_text(encoding='utf-8'))
+          solo=[x for x in cat['solo'] if x['key']!='sharedTracks']
+          assert len(solo)==109, f'Unexpected number of solo releases: {len(solo)}'
+          assert all(re.fullmatch(r'\d{4}-\d{2}-\d{2}', x.get('release_date','')) for x in solo)
+          tracks={}
+          for item in solo:
+              for id in item['tracks']:
+                  date=item.get('track_release_dates',{}).get(id) or item['release_date']
+                  assert re.fullmatch(r'\d{4}-\d{2}-\d{2}', date), (id, item['key'])
+                  tracks.setdefault(id, []).append(date)
+          assert len(tracks)>=183, f'Only {len(tracks)} dated solo tracks'
+          photos=json.loads((root/'data/profile-images.json').read_text(encoding='utf-8'))
+          assert len(photos)==18 and all(url.startswith('https://') for url in photos.values())
+          for name in ['v8','jxj']:
+              photo=root/'assets/profile-photos'/f'{name}.jpg'
+              assert photo.is_file() and photo.stat().st_size>10000, photo
+          code=(root/'app.js').read_text(encoding='utf-8')
+          profiles=code.split('function renderArtistProfiles()',1)[1].split('// Artist ownership',1)[0]
+          assert '💎' not in profiles
+          print(f'Passed: {len(solo)} solo releases, {len(tracks)} dated solo tracks, 18 Spotify artist images and 2 duo photos, no diamond placeholders')
+          PY
