@@ -1,3 +1,4 @@
+(()=>{
 'use strict';
 const groupStandaloneReleaseDates={
  g3:'2015-12-04',g4:'2016-02-12',g14:'2018-08-13',g15:'2018-08-28',
@@ -7,7 +8,7 @@ const groupStandaloneReleaseDates={
  g42:'2023-08-16',g45:'2023-09-01',g47:'2023-12-26',g48:'2024-02-16',g55:'2024-05-03',g57:'2024-10-18',g60:'2025-06-30',g61:'2025-07-14',g62:'2025-07-25',g63:'2025-10-10',g64:'2026-02-27'
 };
 const groupOriginalReleaseDates={"g7":"2016-07-04","g23":"2020-06-22","g24":"2020-08-24","g37":"2022-07-18","g44":"2023-08-23","g50":"2024-04-29","g51":"2024-04-29","g52":"2024-04-29","g53":"2024-04-29","g54":"2024-04-29","g1":"2015-05-29","g2":"2015-09-10","g5":"2016-04-25","g6":"2016-07-04","g8":"2016-12-05","g9":"2017-05-22","g10":"2017-11-06","g11":"2018-02-05","g12":"2018-05-30","g13":"2018-07-16","g16":"2019-01-21","g18":"2019-05-29","g20":"2019-09-16","g22":"2020-04-01","g23":"2020-06-22","g25":"2020-09-09","g27":"2020-10-19","g28":"2021-04-21","g29":"2021-06-18","g32":"2021-10-22","g33":"2021-12-08","g35":"2022-05-27","g36":"2022-07-18","g39":"2022-11-09","g41":"2023-04-24","g43":"2023-08-23","g46":"2023-10-23","g49":"2024-04-29","g56":"2024-10-14","g58":"2024-11-27","g59":"2025-05-26"};
-const $=id=>document.getElementById(id);
+const $=id=>document.getElementById('all-'+id);
 const fmt=n=>Number.isFinite(n)?Math.round(n).toLocaleString('en-US'):'—';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dayBefore=date=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-1);return d.toISOString().slice(0,10)};
@@ -17,7 +18,7 @@ const unique=arr=>[...new Set(arr)];
 const artistIds=[['SEVENTEEN','7nqOGRxlXj7N2JYbgNEjYH'],['S.Coups',null],['Jeonghan','6KDLlQYeeqUe5OQ2JrdNzF'],['Joshua','74AwWFYdjQ3ER5vHO4H7b0'],['Jun','38Gn0ZVC8TQwuaMxBK1yRV'],['Hoshi','6nWKAdMv1BDq1zHfZzkdbR'],['Wonwoo','3rHcBT06Vb1XGVUWhDALZt'],['Woozi','4TdiASPlU3QdZvGQBothcQ'],['Dokyeom','7G1kUsPtQCdolV6CPwHmh2'],['Mingyu','5gUpo0BRmo6EOTbyU3z5Ay'],['The8','4DqFd6XE3dX4LWXHJVVpLk'],['Seungkwan','0Vb2DjojEYsasFpc3aTZb6'],['Vernon','2Y34b9AOK30zXgL7cAH4NG'],['Dino','5YaeXxzvqGNBCguELlKo6G'],['BSS','1uAT5bTSp6dWbNmixIUP5t'],['JxW','7GvlsjcgBrsE578yghOq7D'],['HxW','1EReYiseDwE51FzGm7EK9n'],['CxM','7kjuLdYbtTkWBToMu2ebZN'],['DxS','4wBjmEkWhY4T22q00CiF5V'],['V8',null],['Picheolin','3V2EC4dPYLgtbi0TtrB1RA'],['JxJ',null]];
 const members=new Set(artistIds.slice(1,14).map(x=>x[0]));
 const units=new Set(artistIds.slice(14).map(x=>x[0]));
-const state={catalog:null,group:null,solo:null,media:null,followers:{},manifest:null,rows:[],snapshots:new Map(),page:0,limit:80,period:'overall'};
+const state={catalog:null,group:null,solo:null,media:null,followers:{},manifest:null,rows:[],albums:[],albumSpecs:[],snapshots:new Map(),page:0,limit:50,period:'overall'};
 async function read(path){const r=await fetch(path,{cache:'no-cache'});if(!r.ok)throw new Error(path+' returned '+r.status);return r.json()}
 function nameFromRelease(release,id,index){
  const official=release.track_titles?.[id];
@@ -51,7 +52,7 @@ function buildRows(){
     if(scope==='group'&&Array.isArray(snapshot.canonical_track_ids)&&
        !snapshot.canonical_track_ids.includes(id))return;
     let row=byId.get(id);
-    if(!row){row={id,scope,owners:new Set(),releaseNames:new Set(),date:null,title:null,streams:null};byId.set(id,row)}
+    if(!row){row={id,scope,owners:new Set(),releaseNames:new Set(),date:null,title:null,streams:null,releaseKey:release.key};byId.set(id,row)}
     if(artist)row.owners.add(artist);
     // The Gilboard-only "Like It" recording is Dino's solo, not Picheolin's.
     if(release.key==='gilboard'&&index===6){row.owners.delete('Picheolin');row.owners.add('Dino')}
@@ -101,6 +102,34 @@ function buildRows(){
  // Avoid assigning Joshua's separate solo recording to Jeonghan.
  state.rows=[...byId.values()].map(r=>({...r,owners:[...r.owners],releaseNames:[...r.releaseNames]}));
 }
+function buildAlbums(){
+ const byKey=new Map((state.catalog.group||[]).map(item=>[item.key,item]));
+ const result=[];
+ // Reuse the original dashboard's canonical album definitions.
+ const groupSpecs=typeof requestedGroupAlbums!=='undefined'?requestedGroupAlbums:[];
+ for(const spec of groupSpecs){
+  const releases=spec.keys.map(key=>byKey.get(key)).filter(Boolean);
+  const ids=unique(releases.flatMap(item=>item.tracks||[])).filter(validId);
+  if(!ids.length)continue;
+  const streams=ids.every(id=>Number.isFinite(state.group.tracks?.[id]))
+   ?ids.reduce((sum,id)=>sum+state.group.tracks[id],0):null;
+  const key=spec.keys[0];
+  result.push({title:spec.name,kind:'album',scope:'group',releaseKey:key,
+   owners:['SEVENTEEN'],releaseNames:[spec.name],ids,
+   date:groupOriginalReleaseDates[key]||groupStandaloneReleaseDates[key]||releases[0]?.release_date||null,streams});
+ }
+ for(const spec of state.albumSpecs){
+  const ids=unique(spec.tracks||[]).filter(validId);
+  if(!ids.length)continue;
+  const owners=spec.owners?.length?spec.owners:[spec.artist||'Unassigned solo/unit'];
+  const streams=ids.every(id=>Number.isFinite(state.solo.tracks?.[id]))
+   ?ids.reduce((sum,id)=>sum+state.solo.tracks[id],0):null;
+  result.push({title:spec.displayName||spec.title||spec.key,scope:'solo',kind:'album',
+   releaseKey:spec.key,owners,ids,releaseNames:[spec.displayName||spec.title||spec.key],
+   date:spec.releaseDate||spec.release_date||null,streams});
+ }
+ state.albums=result;
+}
 async function snapshot(scope,date){
  const key=scope+'-'+date;
  if(state.snapshots.has(key))return state.snapshots.get(key);
@@ -121,14 +150,17 @@ function boundaryDate(scope,period){
  return null;
 }
 async function applyPeriod(){
- const period=state.period;
- if(period==='overall'){state.rows.forEach(row=>row.gain=null);return}
+ const rows=[...state.rows,...state.albums],period=state.period;
+ if(period==='overall'){rows.forEach(row=>row.gain=null);return}
  const boundaries=await Promise.all(['group','solo'].map(async scope=>snapshot(scope,boundaryDate(scope,period))));
  const baselines={group:boundaries[0],solo:boundaries[1]};
- for(const row of state.rows){
-  const now=state[row.scope].tracks?.[row.id];
-  const before=baselines[row.scope]?.tracks?.[row.id];
-  row.gain=Number.isFinite(now)&&Number.isFinite(before)&&now>=before?now-before:null;
+ for(const row of rows){
+  const ids=row.ids||[row.id],now=state[row.scope].tracks,previous=baselines[row.scope]?.tracks;
+  const deltas=ids.map(id=>{
+   const a=now?.[id],b=previous?.[id];
+   return Number.isFinite(a)&&Number.isFinite(b)&&a>=b?a-b:null;
+  });
+  row.gain=deltas.length&&deltas.every(Number.isFinite)?deltas.reduce((a,b)=>a+b,0):null;
  }
 }
 function artistStats(){
@@ -169,14 +201,18 @@ function renderTracks(){
 }
 async function init(){
  try{
-  const [catalog,group,solo,media,followers,manifest,admin]=await Promise.all([
+  const [catalog,group,solo,media,followers,manifest,admin,soloAlbumSpecs]=await Promise.all([
    read('data/catalog.json'),read('data/group.json'),read('data/solo.json'),
    read('data/solo-media.json'),read('data/solo-followers.json').catch(()=>({followers:{}})),
-   read('data/manifest.json'),read('data/admin-releases.json').catch(()=>({releases:[]}))
+   read('data/manifest.json'),read('data/admin-releases.json').catch(()=>({releases:[]})),
+   read('data/solo-albums.json')
   ]);
-  state.catalog=catalog;state.group=group;state.solo=solo;state.media=media;state.followers=followers.followers||{};state.manifest=manifest;
+  state.catalog=catalog;state.group=group;state.solo=solo;state.media=media;state.followers=followers.followers||{};state.manifest=manifest;state.albumSpecs=soloAlbumSpecs;
   for(const release of admin.releases||[]){const list=catalog[release.scope];if(list&&!list.some(r=>r.key===release.key))list.push(release)}
   buildRows();
+  for(const extra of admin.releases||[])if(extra.scope==='solo'&&extra.release_type==='album')
+   state.albumSpecs.push({key:extra.key,displayName:extra.title,releaseDate:extra.release_date,owners:[extra.artist],tracks:extra.tracks});
+  buildAlbums();
   const names=unique(state.rows.flatMap(r=>r.owners)).filter(x=>x!=='Unassigned solo/unit').sort((a,b)=>a.localeCompare(b));
   $('owner').innerHTML='<option value="all">All recordings</option>'+names.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('');
   await applyPeriod();renderArtists();renderTracks();
@@ -188,8 +224,12 @@ async function init(){
  }
 }
 for(const id of ['artistMetric','artistScope'])$(id).addEventListener('change',renderArtists);
-for(const id of ['search','owner','sort'])$(id).addEventListener(id==='search'?'input':'change',()=>{state.page=0;renderTracks()});
+for(const id of ['search','owner','sort','viewType'])$(id).addEventListener(id==='search'?'input':'change',()=>{state.page=0;renderTracks()});
+window.svtAllShown=()=>{if(state.rows.length){renderArtists();renderTracks()}};
+window.addEventListener('svt-media-ready',()=>{if(state.rows.length){renderArtists();renderTracks()}});
 $('period').addEventListener('change',async()=>{state.period=$('period').value;state.page=0;$('coverage').textContent='Checking saved calendar boundaries…';await applyPeriod();renderTracks()});
 $('prev').addEventListener('click',()=>{state.page--;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
 $('next').addEventListener('click',()=>{state.page++;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
 init();
+
+})();
