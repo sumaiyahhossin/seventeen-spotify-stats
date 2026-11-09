@@ -152,7 +152,7 @@ def check_viewport(driver,width,height):
         """)
     daily_tracks=metric_snapshot()
     assert daily_tracks['rows']==daily_tracks['ids']==181, daily_tracks
-    assert daily_tracks['totals']==0 and daily_tracks['changes']==183, daily_tracks
+    assert daily_tracks['totals']==0 and daily_tracks['changes']==181, daily_tracks
     assert daily_tracks['hiddenHeader'],daily_tracks
     gains=[g for g in daily_tracks['gains'] if g is not None]
     assert gains==sorted(gains,reverse=True), f'Daily solo tracks not ranked by gain: {gains[:12]}'
@@ -332,6 +332,24 @@ def main():
         try:
             check_viewport(driver,1300,900)
             check_viewport(driver,390,850)
+            # The All view has its own ranking module: ensure it never
+            # counts Picheolin's two reissued singles as distinct recordings.
+            driver.get(f'http://127.0.0.1:{PORT}/all.html')
+            WebDriverWait(driver,40).until(lambda d:
+                len(d.find_elements(By.CSS_SELECTOR,'#artists tr'))>=15)
+            picheolin=driver.execute_script("""
+              return [...document.querySelectorAll('#artists tr')]
+               .filter(row=>/\\bPicheolin\\b/i.test(row.querySelector('.song')?.textContent||''))
+               .map(row=>row.querySelectorAll('td')[1]?.textContent.trim());
+            """)
+            assert picheolin==['12,745,528'],f'All Artists doubles Picheolin streams: {picheolin}'
+            driver.execute_script("""
+              const el=document.getElementById('owner');
+              el.value='Picheolin';el.dispatchEvent(new Event('change',{bubbles:true}));
+            """)
+            WebDriverWait(driver,15).until(lambda d:
+                d.find_element(By.ID,'recordCount').text.startswith('6 recordings'))
+            print('All Artists Picheolin: 12,745,528 streams across 6 tracks',flush=True)
             driver.get(f'http://127.0.0.1:{PORT}/milestones.html?type=solo')
             WebDriverWait(driver,40).until(lambda d:'UNITS & SOLO' in d.find_element(By.CSS_SELECTOR,'.eyebrow').text)
             # Selenium .text is empty inside the hidden Upcoming panel unless
