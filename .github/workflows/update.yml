@@ -1,11 +1,10 @@
 name: Spotify stream snapshots
-# Both collectors start at 2 PM America/New_York and retry independently.
-# Start at 2 PM America/New_York (18 UTC in daylight time, 19 UTC in standard time).
-# The local-time gate prevents earlier UTC slots from collecting, and retries hourly
-# until each dataset is complete. Nov 8 backfill targets Spotify's Nov 7 reporting date.
+# At 2 PM New York, a new reporting date becomes eligible. If Spotify is late,
+# recheck the oldest unsaved reporting date hourly, including after midnight.
+# The local-time gate prevents collection of dates that are not yet eligible.
 on:
   schedule:
-    - cron: '0 18-23,0-4 * * *'
+    - cron: '0 * * * *'
   workflow_dispatch:
   # Run the collector once when this workflow is explicitly updated.
   push:
