@@ -81,7 +81,9 @@ jobs:
           python tools/publish_snapshots.py
 
   followers:
-    name: Retry exact solo and unit follower counts
+    name: Diagnose solo and unit follower counts (manual only)
+    # Do not repeatedly scan all profiles while Spotify's About parser is broken.
+    if: github.event_name == 'workflow_dispatch'
     runs-on: ubuntu-24.04
     timeout-minutes: 90
     steps:
