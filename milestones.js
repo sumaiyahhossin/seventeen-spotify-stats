@@ -321,7 +321,7 @@ function renderUpcoming(){
  });
  $('upcomingRows').innerHTML=rows.length?rows.map((r,i)=>{
   const img='<img class="song-cover" data-song-name="'+esc(r.name)+'" data-spotify-id="'+esc(r.id||'')+'" alt="" loading="lazy">';
-  return '<tr><td><div class="song-cell"><span class="song-rank">'+String(i+1).padStart(2,'0')+'</span>'+img+'<div class="song-meta"><span class="song-title">'+esc(r.name)+'</span><span class="song-release">'+r.value.toLocaleString()+' streams</span></div></div></td>'+
+  return '<tr><td><div class="song-cell"><span class="song-rank">'+String(i+1).padStart(2,'0')+'</span>'+img+'<div class="song-meta"><span class="song-title">'+esc(r.name)+'</span><span class="song-release">'+r.value.toLocaleString()+' streams'+(releases.get(r.id)?' · Released '+esc(format(releases.get(r.id))):'')+'</span></div></div></td>'+
   '<td data-label="NEXT MILESTONE"><span class="reached-value">'+shortStreams(r.target)+'</span></td>'+
   '<td data-label="STREAMS LEFT" title="'+r.remaining.toLocaleString()+' streams">'+responsiveValue(r.remaining.toLocaleString(),mobileCount(r.remaining))+'</td>'+
   '<td data-label="DAILY GAIN" title="'+(r.gain==null?'Unavailable':r.gain.toLocaleString()+' streams')+'">'+responsiveValue(r.gain==null?'—':'+'+r.gain.toLocaleString(),r.gain==null?'—':'+'+mobileCount(r.gain))+'</td>'+
