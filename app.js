@@ -3460,6 +3460,8 @@ $('#archiveDate').addEventListener('change',e=>{
  soloHistoricalDates=new Set(manifest.solo_legacy_dates||manifest.solo_dates||[]);
  soloDates=[...new Set([...(manifest.solo_dates||[]),current.solo?.date].filter(Boolean))].sort().reverse();
  useDatesForTab();syncCalendar();await render();
+ // Make the originals' exact album-cover and profile lookups available to All.
+ window.dispatchEvent(new Event('svt-media-ready'));
  if(new URLSearchParams(location.search).get('view')==='all')selectDashboardMode('all');
  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,savedScroll)));
  // Refresh only while the page is visible, and never interrupt a historical view.
