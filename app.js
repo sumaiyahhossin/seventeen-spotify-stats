@@ -1958,7 +1958,10 @@ function ownedSoloIds(artist){
  const ids=new Set(releases.filter(item=>String(item.artist||'').toLowerCase()===artist.toLowerCase() && !(artist==='Jeonghan' && ['jxj_dreamscape','jxw_g1'].includes(item.key))).flatMap(item=>item.tracks||[]));
  const get=key=>releases.find(item=>item.key===key)?.tracks||[];
  const add=(key,indices)=>indices.forEach(i=>{if(get(key)[i])ids.add(get(key)[i])});
- // Jeonghan is credited on the six DREAMSCAPE tracks in jeonghan_g2, excluding Joshua's Not personal.
+ // The sharedTracks catalog is the seven-track JxJ DREAMSCAPE album,
+ // despite the imported release's generic Gilboard ownership label.
+ // Member credits remain the six-track Jeonghan/Joshua lists above.
+ if(artist==='JxJ')add('sharedTracks',[0,1,2,3,4,5,6]);
  if(artist==='Wonwoo')add('jxw_g1',[0,2]);
  if(artist==='Dino')add('picheolin_g3',[0]);
  return ids;
