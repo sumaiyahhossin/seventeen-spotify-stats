@@ -80,7 +80,61 @@ def check_viewport(driver,width,height):
     click(driver,'#allSoloArtists')
     WebDriverWait(driver,30).until(lambda d:
         d.find_element(By.ID,'total').text.strip()==f'{expected:,}')
+
+    # The 2026-11-05 workbook wrote Jun's track "9" as "9.0".
+    # Both dates have saved counts: don't silently omit it from daily growth.
+    history_check=driver.execute_async_script("""
+      const done=arguments[arguments.length-1];
+      Promise.all([getDate('solo','2026-11-06'),getDate('solo','2026-11-05')])
+       .then(([now,previous])=>{
+        const ids=soloLegacyTrackIds(now,null);
+        const gains=ids.map(id=>safeGain(now,previous,id));
+        const jun=ids.find(id=>now.names[id]==='9');
+        done({total:ids.length,matched:gains.filter(v=>v!=null).length,
+          gain:gains.filter(v=>v!=null).reduce((a,b)=>a+b,0),
+          junGain:jun?safeGain(now,previous,jun):null});
+       }).catch(e=>done({error:String(e)}));
+    """)
+    print('Verified historical solo gains:',history_check,flush=True)
+    assert history_check=={'total':183,'matched':183,'gain':998787,'junGain':12925}, history_check
+
+    # Daily tracks must rank by daily gain, not by cumulative streams.
+    driver.execute_script("""
+      const order=document.getElementById('order');
+      order.value='most';order.dispatchEvent(new Event('change',{bubbles:true}));
+      const period=document.getElementById('rankPeriod');
+      period.value='daily';period.dispatchEvent(new Event('change',{bubbles:true}));
+    """)
+    WebDriverWait(driver,40).until(lambda d:
+        len(d.find_elements(By.CSS_SELECTOR,'#ranking .rank-row'))==183
+        and d.execute_script("return document.body.classList.contains('svt-solo-period-only')"))
+    def metric_snapshot():
+        return driver.execute_script("""
+          const rows=[...document.querySelectorAll('#ranking .rank-row')];
+          const parse=r=>{const v=r.querySelector('.rank-metric-gain .metric-value')?.textContent||'';
+            return v.includes('—')?null:Number(v.replace(/[+,*\\s]/g,''));};
+          return {rows:rows.length,ids:[...new Set(rows.map(r=>r.dataset.historyId))].length,
+            totals:rows.filter(r=>r.querySelector('.rank-metric-streams')).length,
+            gains:rows.map(parse),
+            changes:rows.filter(r=>r.querySelector('.rank-metric-change')).length,
+            hiddenHeader:getComputedStyle(document.querySelector('.svt-total-heading')).display==='none'};
+        """)
+    daily_tracks=metric_snapshot()
+    assert daily_tracks['rows']==daily_tracks['ids']==183, daily_tracks
+    assert daily_tracks['totals']==0 and daily_tracks['changes']==183, daily_tracks
+    assert daily_tracks['hiddenHeader'],daily_tracks
+    gains=[g for g in daily_tracks['gains'] if g is not None]
+    assert gains==sorted(gains,reverse=True), f'Daily solo tracks not ranked by gain: {gains[:12]}'
+    print('Daily solo tracks: 183 unique recordings, sorted by verified gain',flush=True)
+
     click(driver,'#rankCategory button[data-type="albums"]')
+    WebDriverWait(driver,40).until(lambda d:
+        len(d.find_elements(By.CSS_SELECTOR,'#ranking .rank-row'))==11)
+    daily_albums=metric_snapshot()
+    assert daily_albums['totals']==0 and daily_albums['changes']==11,daily_albums
+    album_gains=[g for g in daily_albums['gains'] if g is not None]
+    assert album_gains==sorted(album_gains,reverse=True),f'Daily albums not ranked by gain: {album_gains}'
+    print('Daily solo albums sorted by daily gain',flush=True)
     # The daily tab sorts by daily gain; verify Most/Least STREAMED
     # using the cumulative Overall tab rather than confusing the two.
     driver.execute_script("""
