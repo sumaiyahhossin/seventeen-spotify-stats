@@ -20,11 +20,23 @@ except (OSError, ValueError):
 
 manual = os.environ.get("GITHUB_EVENT_NAME") == "workflow_dispatch"
 in_window = now.hour >= 14
+target_date = (now.date() - datetime.timedelta(days=1 if in_window else 2)).isoformat()
 for kind in ("group", "solo"):
-    already_done = state.get(kind, {}).get("checked_date") == today
+    saved = root / "data" / f"{kind}.json"
+    try:
+        snapshot = json.loads(saved.read_text(encoding="utf-8")) if saved.exists() else {}
+    except (OSError, ValueError):
+        snapshot = {}
+    # Check the actual published reporting date. This also handles legacy
+    # workflow state created before the 2 PM timezone cutoff fix.
+    already_done = snapshot.get("date") == target_date
     enabled = manual or (in_window and not already_done)
     print(f"{kind}={str(enabled).lower()}")
     print(f"{kind}: {'collect' if enabled else 'skip'} "
           f"(manual={manual}, local={now:%Y-%m-%d %H:%M}, "
-          f"completed_today={already_done})", file=__import__("sys").stderr)
-print(f"run={str(manual or (in_window and any(state.get(k, {}).get('checked_date') != today for k in ('group', 'solo')))).lower()}")
+          f"reporting_date={target_date}, completed={already_done})", file=__import__("sys").stderr)
+run = manual or (in_window and any(
+    (not (root / "data" / f"{kind}.json").exists()) or
+    json.loads((root / "data" / f"{kind}.json").read_text(encoding="utf-8")).get("date") != target_date
+    for kind in ("group", "solo")))
+print(f"run={str(run).lower()}")
