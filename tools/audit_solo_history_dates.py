@@ -56,6 +56,9 @@ def matching_index(group_rows,owner,row,row_kind,prev):
             and prev and norm(prev['name'])=='spider' and prev['value']==row['value']:
         return None
     label=norm(row['name'])
+    # Spreadsheet numeric coercion stores Jun's official song "9" as "9.0".
+    # Do not generalize this alias to other artists or titles.
+    if owner=='Jun' and row_kind=='track' and str(row['name']).strip()=='9.0':label='9'
     unnamed=row_kind=='album' and prev and norm(prev['name'])==label and prev['value']==row['value']
     referencelabel=label+'total' if unnamed else label
     ref=[x for x in reference_groups.get(owner,[])
@@ -115,7 +118,7 @@ for path in all_files:
                 entry=reference_indices.get(reference_index)
                 if entry:
                     item=catalog.get(entry['releaseKey'],{})
-                    found=item.get('track_release_dates',{}).get(entry['id']) or item.get('release_date')
+                    found=item.get('track_release_dates',{}).get(entry['id']) or item.get('release_date') or entry.get('releaseDate')
             if found and found>date:
                 skipped_future+=1
                 continue
