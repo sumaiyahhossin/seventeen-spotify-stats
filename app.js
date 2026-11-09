@@ -1952,7 +1952,10 @@ function soloLegacyRows(s,p,pp,baseline,view){
   if(view==='discography'&&!selectedSoloArtist&&album&&
       ([11,40,206,276,293,387].includes(legacyIndex)))continue;
   if(!album){
-   const fingerprint=normTrackName(source.name)+'|'+source.value;
+   // Use the exact Spotify recording ID when available. A shared track
+   // should appear once in combined totals, but separate recordings with the
+   // same title must never erase each other.
+   const fingerprint=workbookTrack?.id||normTrackName(source.name)+'|'+source.value;
    // Keep identical stream totals as distinct release editions in discography,
    // not as duplicate entries in the overall track tally.
    const editionCopy=view==='discography'&&['Picheolin','Gilboard'].includes(owner)&&
