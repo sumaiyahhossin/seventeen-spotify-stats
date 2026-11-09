@@ -110,6 +110,23 @@ if kind=='solo' and os.getenv('SPOTIFY_CLIENT_ID') and os.getenv('SPOTIFY_CLIENT
     except Exception as error:
         print(f'solo: Spotify artist API follower request failed ({type(error).__name__}); retaining only verified dialog counts')
 cat=json.loads((DATA/'catalog.json').read_text())[kind]
+# Additional releases are not hardcoded into the legacy Selenium Java source.
+# Scan those recordings separately with the same authenticated GitHub runner.
+admin_ids=sorted({tid for item in cat if item.get('admin_added')
+                  for tid in item.get('tracks',[])})
+if admin_ids:
+    admin_source=ROOT/'src'/'Admin_Track_Collector.java'
+    subprocess.run(['javac','-cp',os.environ['COLLECTOR_CLASSPATH'],'-d',str(ROOT/'build'),str(admin_source)],check=True)
+    admin_result=subprocess.run(
+        ['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],
+         'Admin_Track_Collector',*admin_ids],
+        capture_output=True,text=True,timeout=3600)
+    for line in admin_result.stdout.splitlines():
+        m=re.match(r'STAT_TRACK\\|https://open\\.spotify\\.com/track/([A-Za-z0-9]+)\\|(\\d+)',line)
+        if m: tracks[m.group(1)]=int(m.group(2))
+    if admin_result.returncode:
+        raise SystemExit('Admin-added track scan failed; retry later instead of publishing incomplete data')
+    print(f'{kind}: scanned {len(admin_ids)} admin-added recordings',flush=True)
 expected={tid for item in cat for tid in item['tracks']}
 by_id={tid:(item.get('artist'),item.get('title')) for item in cat for tid in item['tracks']}
 # A zero from Spotify is a failed lookup, not a successful number. The initial
@@ -133,6 +150,22 @@ for attempt in (2,3):
     retry_env.pop('SVT_FIRST_TRACK_PREVIOUS',None)
     retry_env['SVT_ONLY_TRACKS']=','.join(sorted(unresolved))
     print(f'{kind}: scan {attempt} of 3 for {len(unresolved)} zero/missing tracks',flush=True)
+    retry_admin_ids=sorted(unresolved.intersection(admin_ids))
+    if retry_admin_ids:
+        retry_admin=subprocess.run(
+            ['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],
+             'Admin_Track_Collector',*retry_admin_ids],
+            capture_output=True,text=True,timeout=3600)
+        for line in retry_admin.stdout.splitlines():
+            m=re.match(r'STAT_TRACK\\|https://open\\.spotify\\.com/track/([A-Za-z0-9]+)\\|(\\d+)',line)
+            if m and int(m.group(2))>0: tracks[m.group(1)]=int(m.group(2))
+        if retry_admin.returncode:
+            raise SystemExit('Admin track retry crashed; not accepting missing results')
+    legacy_unresolved=unresolved.difference(admin_ids)
+    if not legacy_unresolved:
+        unresolved={tid for tid in expected if tracks.get(tid,0)<=0}
+        continue
+    retry_env['SVT_ONLY_TRACKS']=','.join(sorted(legacy_unresolved))
     retry_result=subprocess.run(
         ['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],classname],
         capture_output=True,text=True,timeout=2400,env=retry_env)
