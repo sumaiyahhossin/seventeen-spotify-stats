@@ -174,8 +174,8 @@
    // not only the artwork release. Historical spreadsheets use different row
    // identifiers, so resolve each recording by its verified workbook mapping.
    if(scope==='solo'&&metric.releases?.length){
-    const ids=[...new Set(metric.releases.flatMap(key=>
-     (catalog.solo||[]).find(item=>item.key===key)?.tracks||[]))];
+    const ids=uniqueSoloSpotifyIds([...new Set(metric.releases.flatMap(key=>
+     (catalog.solo||[]).find(item=>item.key===key)?.tracks||[]))],snapshot);
     if(!ids.length)return null;
     if(isHistorical(snapshot)){
      if(typeof verifiedSoloLegacyValue!=='function')return null;
@@ -194,8 +194,9 @@
     return numberOrNull(snapshot.tracks[metric.id]);
    const item=(catalog[scope]||[]).find(x=>x.key===metric.release);
    if(!item)return null;
-   const ids=[...new Set(item.tracks||[])].filter(id=>scope!=='solo'||!owner||
+   const releaseIds=[...new Set(item.tracks||[])].filter(id=>scope!=='solo'||!owner||
      ownedSoloIds(owner).has(id));
+   const ids=scope==='solo'?uniqueSoloSpotifyIds(releaseIds,snapshot):releaseIds;
    return ids.length?exactIds(snapshot,ids,reference):null;
   }
   if(scope==='group'){
@@ -216,7 +217,7 @@
     const ids=soloLegacyTrackIds(snapshot,owner);
     return ids.length?exactIds(snapshot,ids,reference):null;
    }
-   const ids=[...ownedSoloIds(owner)];
+   const ids=uniqueSoloSpotifyIds([...ownedSoloIds(owner)],snapshot);
    return ids.length?exactIds(snapshot,ids,reference):null;
   }
   if(isHistorical(snapshot)){
@@ -225,7 +226,7 @@
    const ids=soloLegacyTrackIds(snapshot,null);
    return ids.length?exactIds(snapshot,ids,reference):null;
   }
-  const ids=[...new Set((catalog.solo||[]).flatMap(item=>item.tracks||[]))];
+  const ids=uniqueSoloSpotifyIds([...new Set((catalog.solo||[]).flatMap(item=>item.tracks||[]))],snapshot);
   return ids.length?exactIds(snapshot,ids,reference):null;
  }
  let opening=0;
