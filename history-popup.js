@@ -278,31 +278,81 @@
    const dateList=[...new Set([...((scope==='solo'?soloDates:groupDates)||[]),ref.date])].filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d<=ref.date).sort();
    const start=periodStart(ref.date);
    const periods=Array.from({length:periodCount+1},(_,i)=>move(start,i-periodCount));
-   const periodData=await Promise.all(periods.map(async first=>{
+   // Compute full calendar periods from exact boundary snapshots.
+   // For incomplete weeks/months, compare the same number of elapsed
+   // calendar days in the previous period, never a full month against a
+   // seven-day month-to-date total.
+   const previousEnd=first=>previousDate(first);
+   const elapsedDays=(start,end)=>Math.round((Date.parse(end)-Date.parse(start))/86400000)+1;
+   const cache=new Map();
+   const cachedValue=async date=>{
+    if(!cache.has(date))cache.set(date,valueOf(date));
+    return cache.get(date);
+   };
+   const currentPeriod=async first=>{
     const last=endOf(first),visibleEnd=last<ref.date?last:ref.date;
-    const observed=dateList.filter(d=>d>=first&&d<=visibleEnd);
-    const lastObserved=observed.at(-1)||null;
-    const priorBoundary=previousDate(first);
-    const startAvailable=dateList.includes(priorBoundary);
-    const hasFullEnd=!!lastObserved&&lastObserved===visibleEnd;
-    const [lastValue,firstValue]=await Promise.all([
-      lastObserved?valueOf(lastObserved):Promise.resolve(null),
-      startAvailable?valueOf(priorBoundary):Promise.resolve(null)
-    ]);
-    const gain=hasFullEnd&&firstValue!=null&&lastValue!=null&&(canDecrease||lastValue>=firstValue)
-       ?lastValue-firstValue:null;
+    const boundary=previousDate(first);
+    const total=await cachedValue(visibleEnd);
+    const before=await cachedValue(boundary);
+    const complete=total!=null&&before!=null&&(canDecrease||total>=before);
+    if(complete)return {total,gain:total-before,partial:false,days:elapsedDays(first,visibleEnd)};
+    // Missing boundaries: add only real consecutive daily differences.
+    // Flag the incomplete result with *, never classify it as a whole period.
+    const days=elapsedDays(first,visibleEnd);
+    let subtotal=0,observed=0;
+    for(let d=first;d<=visibleEnd;d=nextDay(d)){
+     const previous=previousDate(d);
+     const [nowValue,prevValue]=await Promise.all([cachedValue(d),cachedValue(previous)]);
+     if(nowValue!=null&&prevValue!=null&&(canDecrease||nowValue>=prevValue)){
+      subtotal+=nowValue-prevValue;observed++;
+     }
+    }
+    return {total,gain:observed?subtotal:null,partial:true,days,observed};
+   };
+   const nextDay=date=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+1);return d.toISOString().slice(0,10)};
+   const nextDayOffset=(date,days)=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+days);return d.toISOString().slice(0,10)};
+   const currentPeriodPartial=async(first,visibleEnd)=>{
+    let gain=0,observed=0;
+    for(let d=first;d<=visibleEnd;d=nextDay(d)){
+     const [a,b]=await Promise.all([cachedValue(d),cachedValue(previousDate(d))]);
+     if(a!=null&&b!=null&&(canDecrease||a>=b)){gain+=a-b;observed++}
+    }
+    return {gain:observed?gain:null,partial:true};
+   };
+   const periodData=await Promise.all(periods.map(async first=>{
+    const end=endOf(first),visibleEnd=end<ref.date?end:ref.date;
+    const details=await currentPeriod(first);
     const label=mode==='monthly'
-       ?new Date(first+'T12:00:00Z').toLocaleDateString('en-US',{month:'short',year:'numeric',timeZone:'UTC'})
-       :dateText(first)+' – '+dateText(last);
-    return {label,total:lastValue,gain,partial:visibleEnd!==last||!hasFullEnd};
+      ?new Date(first+'T12:00:00Z').toLocaleDateString('en-US',{month:'short',year:'numeric',timeZone:'UTC'})
+      :dateText(first)+' – '+dateText(end);
+    return {first,label,...details,visibleEnd};
    }));
    if(id!==opening)return;
    for(let i=1;i<periodData.length;i++){
     const row=periodData[i],prior=periodData[i-1];
-    const change=row.gain!=null&&prior.gain!=null&&!row.partial&&!prior.partial?row.gain-prior.gain:null;
-    renderRow(row.label,row.total,row.gain,change,row.partial);
+    let comparison=prior.gain,comparisonPartial=prior.partial;
+    // A partial current calendar week/month must compare like-for-like days.
+    if(row.visibleEnd<endOf(row.first)){
+      const previousStart=prior.first;
+      const sameDayEnd=nextDayOffset(previousStart,row.days-1);
+      const priorRangeEnd=sameDayEnd<endOf(previousStart)?sameDayEnd:endOf(previousStart);
+      // Reuse exact previous boundary and same elapsed-day end if present.
+      const [begin,endValue]=await Promise.all([
+       cachedValue(previousDate(previousStart)),cachedValue(priorRangeEnd)
+      ]);
+      if(begin!=null&&endValue!=null&&(canDecrease||endValue>=begin)){
+       comparison=endValue-begin;comparisonPartial=false;
+      }else{
+       const aligned=await currentPeriodPartial(previousStart,priorRangeEnd);
+       comparison=aligned.gain;comparisonPartial=aligned.partial;
+      }
+    }
+    const change=row.gain!=null&&comparison!=null?row.gain-comparison:null;
+    renderRow(row.label,row.total,row.gain,change,
+     row.partial||row.visibleEnd<endOf(row.first)||comparisonPartial);
    }
-   $('#svtHistoryNote').textContent+=' · * In-progress period; missing boundaries are shown as —.';
+   $('#svtHistoryNote').textContent+=' · * Partial observed dates or an in-progress period; changes compare matching elapsed calendar days.';
+
   }
   modal.querySelector('.svt-history-close').focus();
  }
