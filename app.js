@@ -528,6 +528,8 @@ function trackIds(s){
  if(tab==='group'&&Array.isArray(s?.canonical_track_ids))
   return s.canonical_track_ids.filter(id=>s.tracks?.[id]!=null);
  const ids=Object.keys(s?.tracks||{}).filter(id=>(!isHistorical(s)||historicalKind(s,id)==='track')&&!/^\s*picheolin\s+streams\s*$/i.test(s.names?.[id]||id));
+ // Distinct Spotify IDs are distinct solo/unit recordings, even when titles match.
+ if(tab==='solo'&&!isHistorical(s))return ids;
  const seen=new Set();
  const redundant=new Set();
  if(!isHistorical(s))for(const [primary,alias] of groupStreamAliases){
@@ -779,7 +781,7 @@ function discographyRows(s,p,pp,baseline){
    for(const id of limboIds){
     rows.push({id,name:soloMedia.tracks?.[id]?.title||displayTrackName(s.names?.[id]||idName[id]||id),
      artworkRelease:item.key,releaseDate:item.release_date,
-     streams:Number.isFinite(s.tracks?.[id])&&s.tracks[id]>0?s.tracks[id]:null,
+     streams:Number.isFinite(s.tracks?.[id])&&s.tracks[id]>=0?s.tracks[id]:null,
      gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),
      change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),
      kind:'track',releaseOrder:rows.length});
@@ -800,7 +802,7 @@ function discographyRows(s,p,pp,baseline){
   const combo=tab==='group'?combined[item.key]:null;
   const ids=[...new Set((combo?combo.keys.flatMap(k=>releasesByKey.get(k)?.tracks||[]):item.tracks)||[])];
   if(!ids.length)continue;
-  const streams=ids.every(id=>Number.isFinite(s.tracks?.[id])&&s.tracks[id]>0)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
+  const streams=ids.every(id=>Number.isFinite(s.tracks?.[id])&&s.tracks[id]>=0)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
   const observedGains=periodic?ids.map(id=>periodGain(s,baseline,id)).filter(v=>v!=null):[];
   const partialGain=periodic&&observedGains.length>0&&observedGains.length<ids.length;
   const gain=periodic?(observedGains.length?observedGains.reduce((a,b)=>a+b,0):null):sumDaily(s,p,ids);
@@ -1140,14 +1142,14 @@ function buildRows(s,p,pp,baseline){
      if(!(item.admin_added&&item.release_type==='album')&&!isAlbumTitle(item.title)&&!['dino_g4','jxj_dreamscape','jeonghan_g2','joshua_g8','picheolin_g3'].includes(item.key))continue;
      if(['gilboard','sharedTracks'].includes(item.key))continue;
      const ids=[...new Set(item.tracks)];
-     const streams=ids.every(id=>Number.isFinite(s.tracks[id])&&s.tracks[id]>0)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
+     const streams=ids.every(id=>Number.isFinite(s.tracks[id])&&(tab==='solo'?s.tracks[id]>=0:s.tracks[id]>0))?ids.reduce((a,id)=>a+s.tracks[id],0):null;
      const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids),dayChange=sumDailyChange(s,p,pp,ids);
      rows.push({name:catalogReleaseLabel(item),artworkRelease:item.key,kind:'album',streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):dayChange,changePartial:periodic?periodComparison(s,baseline,ids).partial:dailyComparison(s,p,pp,ids).partial});
    }
  }else{
    rows=trackIds(s).map(id=>({
      id,name:tab==='solo'?(soloMedia.tracks?.[id]?.title||displayTrackName(s.names?.[id]||idName[id]||id)):displayTrackName((s.names?.[id]||idName[id]||id)==='247.0'?'247':s.names?.[id]||idName[id]||id),
-     streams:Number.isFinite(s.tracks[id])&&s.tracks[id]>0?s.tracks[id]:null,gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),
+     streams:Number.isFinite(s.tracks[id])&&(tab==='solo'?s.tracks[id]>=0:s.tracks[id]>0)?s.tracks[id]:null,gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),
      gainPartial:periodic&&incompleteObservedPeriod(s,baseline,id),
      changePartial:periodic&&incompletePeriodComparison(s,baseline,id)
    }));
@@ -2110,7 +2112,9 @@ function soloLegacyTrackIds(s,owner){
   if(/\btota\s*;\s*:?$/i.test(row.name))continue;
   // The original sheet repeats a recording under individual and unit albums.
   // Only collapse truly identical named rows with identical saved totals.
-  const signature=normTrackName(row.name)+'|'+row.value;
+  const mapped=matchedSoloReferenceIndex(s,key,row,'track');
+   const recording=mapped!=null?soloLegacyLinks.byIndex?.[mapped]?.id:null;
+   const signature=recording||normTrackName(row.name)+'|'+row.value;
   if(seen.has(signature))continue;
   seen.add(signature);ids.push(row.id);
  }
@@ -2169,7 +2173,7 @@ function canonicalSoloAlbumRows(s,p,pp,baseline){
    }
   }else{
    const vals=ids.map(id=>s.tracks?.[id]);
-   if(vals.every(v=>Number.isFinite(v)&&v>0))streams=vals.reduce((sum,value)=>sum+value,0);
+   if(vals.every(v=>Number.isFinite(v)&&v>=0))streams=vals.reduce((sum,value)=>sum+value,0);
    const gains=ids.map(id=>periodic?periodGain(s,baseline,id):safeGain(s,p,id));
    if(gains.every(v=>v!=null))gain=gains.reduce((sum,value)=>sum+value,0);
    const cmp=periodic?periodComparison(s,baseline,ids):dailyComparison(s,p,pp,ids);
@@ -2878,14 +2882,20 @@ async function render(){const token=++renderToken;
 
  const grandId=tab==='group'&&s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;
  const totalIds=tab==='solo'&&selectedSoloArtist?memberIds:ids;
- const totalMissing=totalIds.filter(id=>!Number.isFinite(s?.tracks?.[id])||s.tracks[id]<=0);
+ // A recorded zero is an observed count, not a missing recording.
+ const totalMissing=totalIds.filter(id=>!Number.isFinite(s?.tracks?.[id])||s.tracks[id]<0);
+ const recordedZeroes=totalIds.filter(id=>s?.tracks?.[id]===0).length;
  const calculatedTotal=s&&totalIds.length&&!totalMissing.length
   ?totalIds.reduce((sum,id)=>sum+s.tracks[id],0):null;
  const verifiedWorkbookGrand=grandId&&Number.isFinite(s?.tracks?.[grandId])?s.tracks[grandId]:null;
- $('#total').textContent=s?fmt(verifiedWorkbookGrand??calculatedTotal):'—';
+ const soloWorkbookGrand=tab==='solo'&&selectedSoloArtist&&isHistorical(s)
+  ?(soloLegacySections(s)?.[selectedSoloArtist]||[]).find(row=>historicalKind(s,row.id)==='grand')?.value:null;
+ $('#total').textContent=s?fmt(verifiedWorkbookGrand??soloWorkbookGrand??calculatedTotal):'—';
  $('#total').closest('.stat').querySelector('span').textContent=totalMissing.length?
-  totalMissing.length+' recording(s) awaiting verified Spotify counts · total unavailable':
-  'Total Spotify track streams';
+  totalMissing.length+' recording(s) without saved counts · complete total unavailable':
+  tab==='solo'?'Total recorded Spotify streams · '+totalIds.length+' unique recordings'+
+   (recordedZeroes?' ('+recordedZeroes+' recorded as 0)':''):
+   'Total Spotify track streams';
  const gainNote=$('#gain').nextElementSibling;
  const comparisonCard=$('#periodComparisonCard');
  const comparisonValue=$('#periodComparisonValue');
