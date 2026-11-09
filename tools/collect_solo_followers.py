@@ -20,7 +20,8 @@ ROOT=pathlib.Path(__file__).resolve().parents[1]
 DATA=ROOT/'data'
 OUTPUT=DATA/'solo-followers.json'
 TODAY=dt.datetime.now(ZoneInfo('America/New_York'))
-MAX_AGE=dt.timedelta(hours=23)
+# Match the 2 PM New York reporting-day gate used by solo_followers_due.py.
+REPORT_DATE=TODAY.date() if TODAY.hour>=14 else TODAY.date()-dt.timedelta(days=1)
 
 def load(path, default):
     try:
@@ -45,12 +46,12 @@ for artist_id in sorted(ids):
     count=entry.get('count') if isinstance(entry,dict) else None
     try:
         observed=dt.datetime.fromisoformat(entry['captured_at'])
-        fresh=TODAY-observed<MAX_AGE and observed<=TODAY
+        fresh=(observed.astimezone(ZoneInfo('America/New_York')).date()>=REPORT_DATE and observed<=TODAY)
     except (KeyError,ValueError,TypeError):
         fresh=False
     if not (isinstance(count,int) and count>=0 and fresh):
         pending.append(artist_id)
-print(f'solo/unit followers: {len(saved)}/{len(ids)} already recorded, {len(pending)} need exact verification',flush=True)
+print(f'solo/unit followers: {len(saved)}/{len(ids)} already recorded; {len(pending)} due for {REPORT_DATE}',flush=True)
 if not pending:
     sys.exit(0)
 
@@ -124,9 +125,16 @@ if missing:
 
 if found:
     now=TODAY.isoformat()
+    history=data.get('history',{})
+    if not isinstance(history,dict): history={}
+    # Keep real observation dates; do NOT assign Nov 7 or any older day
+    # to counts that were actually captured on Nov 9 or later.
+    observed_day=TODAY.date().isoformat()
+    observations=history.setdefault(observed_day,{})
     for artist_id,count in found.items():
         saved[artist_id]={'count':count,'captured_at':now,'source':'spotify-exact-followers'}
-    data={'updated_at':now,'followers':saved}
+        observations[artist_id]={'count':count,'captured_at':now,'source':'spotify-exact-followers'}
+    data={'updated_at':now,'followers':saved,'history':history}
     OUTPUT.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 remaining=sorted(id for id in ids if id not in saved or not isinstance(saved[id].get('count'),int))
 print(f'Solo/unit follower archive: {len(ids)-len(remaining)}/{len(ids)} verified. '
