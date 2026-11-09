@@ -2836,7 +2836,16 @@ async function render(){const token=++renderToken;
  const groupTrackCount=s&&tab==='group'&&isHistorical(s)?(Object.values(s.names||{}).some(n=>/^tiny light$/i.test(String(n).trim()))?227:226):ids.length;
  
  const periodStart=isPeriod?baseline?.start:p;
- const periodStartDate=periodStart?.date||'';
+ // Gains use the prior day as their numeric baseline, but calendar-month
+ // labels start on day 1. Never describe Oct 31 as part of November.
+ const periodStartDate=isPeriod?(baseline?.range?.first||s?.date||''):(periodStart?.date||'');
+ const monthEndDate=s&&rank.endsWith('monthly')
+  ?new Date(Date.UTC(Number(s.date.slice(0,4)),Number(s.date.slice(5,7)),0)).toISOString().slice(0,10)
+  :null;
+ const periodWindowLabel=rank.endsWith('monthly')&&s
+  ?periodStartDate+' through '+(s.date===monthEndDate?monthEndDate:s.date+
+    ' (month to date; full month ends '+monthEndDate+')')
+  :periodStartDate+' through '+(s?.date||'');
  const audiencePeriod=isPeriod?periodName.toLowerCase()+' period':rank.endsWith('overall')?'selected date':'day';
  const setAudience=(kind,valueId,changeId)=>{
   const getter=x=>tab==='solo'&&selectedSoloArtist
@@ -2963,7 +2972,7 @@ async function render(){const token=++renderToken;
    if(gainNote)gainNote.textContent=!baseline?.start
     ?'Unavailable: the required '+(baseline?.range?.start||'previous period-end')+' baseline snapshot is missing from the archive. No streams have been estimated.'
     :!valid.length?'No comparable saved track counts for this '+periodName.toLowerCase()+' period.'
-    :(valid.length<memberIds.length?'* Partial '+periodName.toLowerCase()+' gain ('+valid.length+' of '+memberIds.length+' tracks).':'Matched '+periodName.toLowerCase()+' gain')+' from '+periodStartDate+' through '+s.date;
+    :(valid.length<memberIds.length?'* Partial '+periodName.toLowerCase()+' gain ('+valid.length+' of '+memberIds.length+' tracks).':'Matched '+periodName.toLowerCase()+' gain')+' for '+periodWindowLabel;
   }
  }else{
   const gains=s?memberIds.map(id=>safeGain(s,p,id)).filter(n=>n!=null):[];
