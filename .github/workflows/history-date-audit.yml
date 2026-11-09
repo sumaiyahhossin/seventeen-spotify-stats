@@ -1,0 +1,25 @@
+name: Audit all unit and solo release dates
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/audit_solo_history_dates.py'
+      - '.github/workflows/history-date-audit.yml'
+      - 'data/solo-legacy-track-links.json'
+      - 'data/catalog.json'
+      - 'data/solo-albums.json'
+      - 'solo-20*.json'
+      - 'data/history/solo-20*.json'
+jobs:
+  audit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Check all historical original-release dates
+        run: |
+          python -m py_compile tools/audit_solo_history_dates.py
+          python tools/audit_solo_history_dates.py
