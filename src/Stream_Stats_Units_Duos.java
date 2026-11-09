@@ -677,22 +677,46 @@ public class Stream_Stats_Units_Duos {
                 // Prefer the actual artist image (alt="JEONGHAN", etc.)
                 // instead of relying on the old artist-named button.
                 if (!aboutClicked) {
-                    for (WebElement picture : driver.findElements(By.cssSelector("img[alt][src]"))) {
+                    // The artist image may have a different alt spelling from
+                    // the H1, so prefer matching alt, then the primary profile
+                    // image in the artist header. Ignore album/track artwork.
+                    List<WebElement> pictures = driver.findElements(By.cssSelector(
+                        "img[alt][src*='ab676161'], img[alt][src*='scdn.co/image/']"));
+                    WebElement chosen = null;
+                    for (WebElement picture : pictures) {
                         try {
                             if (!picture.isDisplayed()) continue;
                             String alt = picture.getAttribute("alt");
-                            String src = picture.getAttribute("src");
-                            if (artistName.isBlank() || alt == null || !alt.trim().equalsIgnoreCase(artistName)
-                                || src == null || !(src.contains("scdn.co/image/") || src.contains("spotifycdn.com/image/"))) continue;
-                            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", picture);
+                            if (alt != null && !artistName.isBlank() &&
+                                alt.trim().equalsIgnoreCase(artistName)) { chosen = picture; break; }
+                        } catch (Exception ignored) {}
+                    }
+                    if (chosen == null) {
+                        for (WebElement picture : pictures) {
+                            try {
+                                if (!picture.isDisplayed()) continue;
+                                String src = picture.getAttribute("src");
+                                if (src != null && src.contains("ab676161")) {
+                                    chosen = picture;
+                                    break;
+                                }
+                            } catch (Exception ignored) {}
+                        }
+                    }
+                    if (chosen != null) {
+                        try {
+                            final WebElement picture = chosen;
+                            ((JavascriptExecutor) driver).executeScript(
+                                "arguments[0].scrollIntoView({block:'center'});arguments[0].click();",
+                                picture);
                             aboutClicked = true;
                             clickMethod = "artist-profile-image";
-                            break;
                         } catch (Exception ignored) {}
                     }
                 }
                 // Spotify has changed from an artist-named button to an
                 // About control in some layouts. Try visible controls first.
+                if (!aboutClicked) {
                 List<WebElement> buttons = driver.findElements(By.cssSelector(
                     "button, [role='button'], a[href$='/about']"));
                 for (WebElement button : buttons) {
@@ -711,6 +735,7 @@ public class Stream_Stats_Units_Duos {
                         clickMethod = "visible-control";
                         break;
                     } catch (Exception ignored) {}
+                }
                 }
                 if (!aboutClicked && !headings.isEmpty()) {
                     try {
@@ -811,9 +836,10 @@ public class Stream_Stats_Units_Duos {
                     try { return artistLabel.equalsIgnoreCase(button.getAttribute("aria-label")); }
                     catch (Exception ignored) { return false; }
                 }).count();
+            long profileImages = driver.findElements(By.cssSelector("img[alt][src*='ab676161']")).size();
             System.out.println("STAT_FOLLOWERS_DIAGNOSTIC|" + artistId +
                 "|artist-heading-present=" + !artistName.isBlank() +
-                "|matching-about-buttons=" + namedButtons +
+                "|profile-images=" + profileImages + "|matching-about-buttons=" + namedButtons +
                 "|clicked=" + aboutClicked + "|click-method=" + clickMethod +
                 "|visible-dialogs=" + displayedDialogs);
             System.out.println("STAT_FOLLOWERS_UNAVAILABLE|" + artistId + "|exact-about-number-not-found");
