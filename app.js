@@ -1000,6 +1000,8 @@ function buildRows(s,p,pp,baseline){
       change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id)
      };
    });
+ }else if(albums&&tab==='solo'){
+   rows=canonicalSoloAlbumRows(s,p,pp,baseline);
  }else if(albums&&tab==='group'){
    // Match the album sum expressions printed by Stream_Stats.java.
    // In particular, repackage totals combine their base and added arrays.
@@ -1900,7 +1902,7 @@ function canonicalSoloAlbumRows(s,p,pp,baseline){
  const historical=isHistorical(s);
  const idAt=(snapshot,index)=>index&&snapshot?
   Object.keys(snapshot.tracks||{}).find(id=>Number(String(id).split(':').at(-1))===index):null;
- return (soloAlbums||[]).filter(a=>!selectedSoloArtist||
+ const result=(soloAlbums||[]).filter(a=>!selectedSoloArtist||
   a.owners?.some(owner=>owner.toLowerCase()===selectedSoloArtist.toLowerCase())
  ).map(a=>{
   let ids=[...new Set(a.tracks||[])];
@@ -1932,6 +1934,24 @@ function canonicalSoloAlbumRows(s,p,pp,baseline){
   return {name:a.displayName,artworkRelease:a.key,albumIdentity:a.key,
     releaseDate:a.releaseDate,kind:'album',streams,gain,change};
  }).filter(Boolean);
+ // Most/least STREAMED albums sort on cumulative album streams even if
+ // the viewer is looking at daily, weekly or monthly growth columns.
+ // Never sort album totals by a member's partial release or album-list order.
+ if(sortOrder==='az'||sortOrder==='za')result.sort((a,b)=>{
+  const cmp=a.name.localeCompare(b.name,'en',{numeric:true,sensitivity:'base'});
+  return sortOrder==='az'?cmp:-cmp;
+ });
+ else if(sortOrder==='newest'||sortOrder==='oldest')result.sort((a,b)=>{
+  const cmp=String(a.releaseDate||'').localeCompare(String(b.releaseDate||''));
+  return sortOrder==='newest'?-cmp:cmp;
+ });
+ else result.sort((a,b)=>{
+  const x=a.streams,y=b.streams;
+  if(x==null)return y==null?0:1;
+  if(y==null)return -1;
+  return sortOrder==='least'?x-y:y-x;
+ });
+ return result;
 }
 
 function soloLegacyRows(s,p,pp,baseline,view){
@@ -1949,8 +1969,8 @@ function soloLegacyRows(s,p,pp,baseline,view){
   const legacyIndex=Number(String(source.id).split(':').at(-1));
   const workbookTrack=soloLegacyLinks.byIndex?.[legacyIndex];
   const fullAlbum=soloAlbums.find(a=>Object.values(a.legacyTotalIndices||{}).includes(legacyIndex));
-  if(view==='discography'&&!selectedSoloArtist&&album&&
-      ([11,40,206,276,293,387].includes(legacyIndex)))continue;
+  // Each artist subtotal is meaningful in Discography. Only Albums
+  // collapses DREAMSCAPE and V8 into one complete canonical release.
   if(!album){
    // Use the exact Spotify recording ID when available. A shared track
    // should appear once in combined totals, but separate recordings with the
@@ -1975,11 +1995,34 @@ function soloLegacyRows(s,p,pp,baseline,view){
   // Include dates only where the catalog or a verified release map identifies
   // the recording; never borrow another member's similarly named song date.
   if(album&&fullAlbum){
-   row.name=fullAlbum.displayName;
+   const credit=Object.entries(fullAlbum.legacyTotalIndices||{})
+    .filter(([owner,index])=>owner!=='all'&&index===legacyIndex)[0]?.[0]||owner;
+   const size=fullAlbum.tracks?.length||0;
+   const creditCounts={
+    jxj_dreamscape:{Jeonghan:6,Joshua:6,JxJ:7},
+    v8:{The8:7,Vernon:7,V8:8},
+    gilboard:{Picheolin:6,Dino:2}
+   };
+   const fullUnit=(fullAlbum.key==='jxj_dreamscape'&&credit==='JxJ')||
+    (fullAlbum.key==='v8'&&credit==='V8')||
+    (fullAlbum.key==='gilboard'&&legacyIndex===fullAlbum.legacyTotalIndices.all);
+   const count=creditCounts[fullAlbum.key]?.[credit]||(fullUnit?size:null);
+   const suffix=count?(fullUnit?' — Full '+size+'-Track Album Total':
+    ' — '+credit+' '+count+'-Track Total'):' — Album Total';
+   row.name=fullAlbum.displayName+suffix;
    row.releaseDate=fullAlbum.releaseDate;
-   row.albumIdentity=fullAlbum.key;
-  }else if(album&&workbookTrack){
-   row.releaseDate=workbookTrack.releaseDate||null;
+   row.albumIdentity=fullAlbum.key+':'+(fullUnit?'full':credit);
+  }else if(album){
+   // Original workbook release totals sit immediately after their tracks.
+   // Identify their exact catalog release before assigning the original date.
+   const preceding=soloLegacyLinks.byIndex?.[legacyIndex-1];
+   const release=(catalog.solo||[]).find(item=>item.key===preceding?.releaseKey);
+   if(release){
+    row.artworkRelease=release.key;
+    row.releaseDate=release.release_date||null;
+    row.albumIdentity=release.key+':'+owner;
+    if(/^total$/i.test(row.name))row.name=properReleaseName(release)+' — Total';
+   }
   }
   if(!album&&workbookTrack){
    row.releaseDate=workbookTrack.releaseDate||null;
