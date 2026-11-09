@@ -1,5 +1,6 @@
 const $=s=>document.querySelector(s),fmt=n=>n==null?'—':Number(n).toLocaleString('en-US');
 let selectedSoloArtist=null;
+let addedUnitArtistOrder=[];
 let soloAlbums=[],soloMedia={tracks:{},albums:{}},soloLegacyLinks={byIndex:{}},soloHistoryReference=null;
 let artworkMap={tracks:{},albums:{}};let sortOrder='most';let tab='group',rank='tracks-daily',rankType='tracks',catalog={},current={},history={},dates=[],groupDates=[],soloDates=[],soloHistoricalDates=new Set(),selection='latest',period='week';
 // To keep the selected view after refresh.
@@ -676,7 +677,7 @@ function discographyRows(s,p,pp,baseline){
  // Keep Units & Solo discography in the same member/release sequence as
  // the latest 11/26 tab of the uploaded Unit & Solo Spotify Streams workbook.
  // Newer catalog releases stay after their member's spreadsheet entries.
- const soloSheetArtistOrder=['S.Coups','Jeonghan','Joshua','Jun','Hoshi','Wonwoo','Woozi','Dokyeom','Mingyu','The8','Seungkwan','Vernon','Dino','Bss','Jxw','Hxw','Cxm','Dxs','V8','Picheolin','JxJ'];
+ const soloSheetArtistOrder=['S.Coups','Jeonghan','Joshua','Jun','Hoshi','Wonwoo','Woozi','Dokyeom','Mingyu','The8','Seungkwan','Vernon','Dino','Bss','Jxw','Hxw','Cxm','Dxs','V8','Picheolin','JxJ',...addedUnitArtistOrder];
  const soloSheetReleaseOverrides={
   the8_g4:3,the8_g3:4
  };
@@ -2913,7 +2914,8 @@ $('#archiveDate').addEventListener('change',e=>{
  }
  const unitDebutOrder=['BSS','JxW','HxW','CxM','DxS','V8','Picheolin','JxJ'];
  const newUnits=(adminReleases.artists||[]).filter(x=>x.kind==='unit')
-  .sort((a,b)=>String(a.debut_date).localeCompare(String(b.debut_date)));
+  .sort((a,b)=>String(a.debut_date).localeCompare(String(b.debut_date))||String(a.name).localeCompare(String(b.name)));
+ addedUnitArtistOrder=newUnits.map(x=>x.name);
  for(const profile of newUnits){
   if(!soloArtists.some(([name])=>name.toLowerCase()===profile.name.toLowerCase()))
    soloArtists.push([profile.name,null]);
