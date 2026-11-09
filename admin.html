@@ -37,6 +37,7 @@ a{color:#e9c8ff}.muted{opacity:.75}
 <div id="existingArtistWrap"><label for="artist">Existing profile</label><select id="artist"></select></div>
 <div id="newArtistWrap" hidden><label for="newArtist">Name</label><input id="newArtist" maxlength="60"><label for="artistKind">Type</label><select id="artistKind"><option value="unit">New unit</option><option value="solo">Solo member</option></select><label for="debutDate">Debut date (sets permanent unit ordering)</label><input id="debutDate" type="date"></div>
 </div>
+<div id="spotifyProfileWrap" hidden><label for="spotifyProfileUrl">Official Spotify artist profile URL (optional)</label><input id="spotifyProfileUrl" type="url" placeholder="https://open.spotify.com/artist/..." autocomplete="url"><p class="note">For a new solo or unit profile, this allows its Spotify artist portrait to replace the temporary image on the website and hover preview. JxJ and V8 keep their unit photos unless you provide an official artist URL.</p></div>
 <label for="releaseType">Release type</label><select id="releaseType"><option value="album">Album / EP / mini album / single album (include in Albums)</option><option value="single">Digital single / OST / standalone (exclude from Albums)</option></select>
 <label for="releaseTitle">Release title</label><input id="releaseTitle" required maxlength="120" placeholder="Official release title">
 <label for="releaseDate">Release date</label><input id="releaseDate" required type="date">
@@ -67,6 +68,7 @@ async function send(path,data,auth=false){
 }
 function refresh(){
  $('artistFields').hidden=$('scope').value==='group';
+ $('spotifyProfileWrap').hidden=$('scope').value!=='solo';
  $('existingArtistWrap').hidden=$('artistMode').value==='new';
  $('newArtistWrap').hidden=$('artistMode').value!=='new';
 }
@@ -97,7 +99,7 @@ $('releaseForm').addEventListener('submit',async event=>{
  const tracks=[...document.querySelectorAll('#trackList .track')].map(div=>({title:div.querySelectorAll('input')[0].value,url:div.querySelectorAll('input')[1].value}));
  const data={scope,artist:scope==='group'?'SEVENTEEN':adding?$('newArtist').value:$('artist').value,
     artist_kind:adding?$('artistKind').value:null,debut_date:adding?$('debutDate').value:null,
-    release_type:$('releaseType').value,title:$('releaseTitle').value,release_date:$('releaseDate').value,tracks};
+    release_type:$('releaseType').value,title:$('releaseTitle').value,release_date:$('releaseDate').value,spotify_artist_url:scope==='solo'?$('spotifyProfileUrl').value.trim():'',tracks};
  try{const result=await send('/api/publish',data,true);
    message('Release saved in GitHub! Your public Spotify workflow will include it in its next collection.');
    $('releaseForm').reset();$('trackList').replaceChildren();addTrack();refresh();
