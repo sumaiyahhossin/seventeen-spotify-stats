@@ -1945,6 +1945,12 @@ function showArtistPhoto(img,urls){
  img.onerror=()=>{img.classList.remove('loaded');if(++index<candidates.length){img.src=candidates[index]}else{img.style.display='none'}};
  if(candidates.length)img.src=candidates[0];
 }
+
+const sharedSoloProfilePhotos={
+  'S.Coups':['https://koreanindo.net/wp-content/uploads/2025/09/seventeen-scoups-mingyu-cxm-scoups-5-scaled.jpeg'],
+  V8:['assets/profile-photos/v8.jpg','https://books.r10s.jp/fan/images/oshiraku-images/v8_conceptphoto1_25f8875b2d.jpg'],
+  JxJ:['assets/profile-photos/jxj.jpg','https://www.allkpop.com/upload/2026/09/content/281130/web_data/allkpop_1790609592_htt9wk4biaabw8m.jpg']
+ };
 function renderArtistProfiles(){
  const area=$('#artistProfiles');
  if(!area)return;
@@ -1956,12 +1962,7 @@ function renderArtistProfiles(){
  }).join('')+'</div>';
  area.querySelector('#allSoloArtists')?.addEventListener('click',()=>{selectedSoloArtist=null;saveView();render()});
  area.querySelectorAll('[data-solo-artist]').forEach(button=>button.addEventListener('click',()=>{selectedSoloArtist=button.dataset.soloArtist;saveView();render()}));
- const unitPhotos={
-  'S.Coups':['https://koreanindo.net/wp-content/uploads/2025/09/seventeen-scoups-mingyu-cxm-scoups-5-scaled.jpeg'],
-  V8:['assets/profile-photos/v8.jpg','https://books.r10s.jp/fan/images/oshiraku-images/v8_conceptphoto1_25f8875b2d.jpg'],
-  JxJ:['assets/profile-photos/jxj.jpg','https://www.allkpop.com/upload/2026/09/content/281130/web_data/allkpop_1790609592_htt9wk4biaabw8m.jpg']
- };
- area.querySelectorAll('img[data-unit-photo]').forEach(img=>showArtistPhoto(img,unitPhotos[img.dataset.unitPhoto]));
+ area.querySelectorAll('img[data-unit-photo]').forEach(img=>showArtistPhoto(img,sharedSoloProfilePhotos[img.dataset.unitPhoto]));
  area.querySelectorAll('img[data-artist-photo]').forEach(img=>{
   const id=img.dataset.artistPhoto;
   if(!artistPhotoCache.has(id)){
@@ -1974,6 +1975,34 @@ function renderArtistProfiles(){
   artistPhotoCache.get(id).then(url=>{if(img.isConnected&&url)showArtistPhoto(img,url)});
  });
 }
+// The All tab calls the same image resolver as the original artist and ranking views.
+window.svtSharedMedia={
+ artistImage(img,name){
+  if(!img)return;
+  const originals=sharedSoloProfilePhotos[name];
+  if(originals){showArtistPhoto(img,originals);return}
+  const id=name==='SEVENTEEN'?'7nqOGRxlXj7N2JYbgNEjYH':
+   soloArtists.find(([artist])=>artist===name)?.[1];
+  if(!id)return;
+  if(!artistPhotoCache.has(id)){
+   artistPhotoCache.set(id,artistImageManifest.then(map=>
+    map[id]||fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/artist/'+id))
+     .then(r=>r.ok?r.json():null).then(data=>data?.thumbnail_url||null).catch(()=>null)));
+  }
+  artistPhotoCache.get(id).then(url=>{if(img.isConnected&&url)showArtistPhoto(img,url)});
+ },
+ coverFor(row){
+  const previousTab=tab,previousRank=rank;
+  try{
+   tab=row.scope==='solo'?'solo':'group';
+   rank=(row.kind==='album'?'albums':'tracks')+'-overall';
+   return artworkTrack({id:row.id||null,name:row.title||row.name||'',kind:row.kind||'track',
+    artworkRelease:row.releaseKey||row.artworkRelease||null,releaseDate:row.date||null})||
+    (/^[a-zA-Z0-9]{22}$/.test(row.id||'')?'track:'+row.id:null);
+  }finally{tab=previousTab;rank=previousRank}
+ },
+ fillArtwork
+};
 // Artist ownership is based on the Unit & Solo workbook. Track IDs, not
 // matching titles, distinguish DREAMSCAPE "Coloring" from V8 "coloring".
 function ownedSoloIds(artist){
@@ -3233,7 +3262,32 @@ async function render(){const token=++renderToken;
   }
  }
  $('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}" data-history-id="${escapeHtml(r.id||'')}" data-history-release="${escapeHtml(r.artworkRelease||r.releaseKey||r.key||r.albumKey||'')}" data-history-releases="${escapeHtml((r.historyReleases||((r.kind==='album'&&/17 IS RIGHT HERE/i.test(r.name||''))?['g49','g50','g51','g52','g53','g54']:[])).join(','))}"><div class="track"><span class="rank-position"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${!discography?`<span class="rank-trend ${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'rank-up':rankMovements.get(positionKeyForDisplay(r))<0?'rank-down':'rank-same':'rank-unknown'}" title="${rankMovements.has(positionKeyForDisplay(r))?'Streaming rank change versus previous '+(daily?'day':rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'period'):'Previous streaming rank unavailable'}">${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'↑ '+rankMovements.get(positionKeyForDisplay(r)):rankMovements.get(positionKeyForDisplay(r))<0?'↓ '+Math.abs(rankMovements.get(positionKeyForDisplay(r))):'=':'—'}</span>`:''}</span>${`<span class="cover-slot">${true?`<img class="cover" data-cover-track="${artworkTrack(r)||'missing'}" data-cover-name="${escapeHtml(r.name)}" data-cover-kind="${r.kind==='album'?'album':'track'}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden></span>`:`<span class="cover-placeholder"></span>`}</span>`}<span class="track-copy">${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}${(rankType==="albums"||rankType==="tracks"||discography||r.kind==="album")&&originalReleaseDate(r)?`<span class="release-date">Released ${formatOriginalRelease(originalReleaseDate(r))}</span>`:""}</span></div>${renderRankMetrics(r,s?.date||'')}</div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork();scheduleMobileRankingNameFit()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
-$('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
+function selectDashboardMode(view){
+ const isAll=view==='all';
+ const main=$('#svtPrimaryStats'),all=$('#svtAllView');
+ if(main)main.hidden=isAll;
+ if(all)all.hidden=!isAll;
+ document.body.classList.toggle('svt-all-view',isAll);
+ $('#tabs').querySelectorAll('button').forEach(button=>{
+  const active=button.dataset.tab===(isAll?'all':tab);
+  button.classList.toggle('active',active);
+  button.setAttribute('aria-selected',String(active));
+ });
+ try{
+  const url=new URL(location.href);
+  if(isAll)url.searchParams.set('view','all');
+  else if(url.searchParams.get('view')==='all')url.searchParams.delete('view');
+  history.replaceState(null,'',url.pathname+url.search+url.hash);
+ }catch{}
+ if(isAll)window.svtAllShown?.();
+}
+$('#tabs').addEventListener('click',e=>{
+ const button=e.target.closest('button[data-tab]');if(!button)return;
+ if(button.dataset.tab==='all'){selectDashboardMode('all');return}
+ tab=button.dataset.tab;
+ selectDashboardMode('dashboard');
+ saveView();render();
+});
 function syncRank(){rank=rankType+'-'+$('#rankPeriod').value;syncPeriodPicker();saveView();render()}
 $('#rankCategory').addEventListener('click',e=>{const button=e.target.closest('button[data-type]');if(!button)return;rankType=button.dataset.type;$('#rankCategory').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));syncRank()});
 $('#rankPeriod').addEventListener('change',()=>{
@@ -3406,6 +3460,7 @@ $('#archiveDate').addEventListener('change',e=>{
  soloHistoricalDates=new Set(manifest.solo_legacy_dates||manifest.solo_dates||[]);
  soloDates=[...new Set([...(manifest.solo_dates||[]),current.solo?.date].filter(Boolean))].sort().reverse();
  useDatesForTab();syncCalendar();await render();
+ if(new URLSearchParams(location.search).get('view')==='all')selectDashboardMode('all');
  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,savedScroll)));
  // Refresh only while the page is visible, and never interrupt a historical view.
  // Daily snapshots update far less often than every five minutes.
