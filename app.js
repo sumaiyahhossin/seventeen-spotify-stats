@@ -821,6 +821,7 @@ function discographyRows(s,p,pp,baseline){
     edition:gilboardEdition?'Gilboard album version':null,
     streams:s.tracks?.[id]??null,gain:g,change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),
     gainPartial:periodic&&g!=null&&incompleteObservedPeriod(s,baseline,id),
+    changePartial:periodic&&incompletePeriodComparison(s,baseline,id),
     kind:'track',releaseOrder:rows.length});
   }
   if(item.key==='g6'||item.key==='g36'){
@@ -1136,7 +1137,8 @@ function buildRows(s,p,pp,baseline){
    rows=trackIds(s).map(id=>({
      id,name:tab==='solo'?(soloMedia.tracks?.[id]?.title||displayTrackName(s.names?.[id]||idName[id]||id)):displayTrackName((s.names?.[id]||idName[id]||id)==='247.0'?'247':s.names?.[id]||idName[id]||id),
      streams:Number.isFinite(s.tracks[id])&&s.tracks[id]>0?s.tracks[id]:null,gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),
-     gainPartial:periodic&&incompleteObservedPeriod(s,baseline,id)
+     gainPartial:periodic&&incompleteObservedPeriod(s,baseline,id),
+     changePartial:periodic&&incompletePeriodComparison(s,baseline,id)
    }));
  }
  if(albums)rows.forEach(row=>{row.name=cleanAlbumLabel(row.name)});
@@ -2225,6 +2227,8 @@ function soloLegacyRows(s,p,pp,baseline,view){
   const row={id:source.id,name,streams:source.value,
    gain:periodic?periodGain(s,baseline,source.id):safeGain(s,p,source.id),
    change:periodic?periodChange(s,baseline,source.id):dailyChange(s,p,pp,source.id),
+   gainPartial:periodic&&incompleteObservedPeriod(s,baseline,source.id),
+   changePartial:periodic&&incompletePeriodComparison(s,baseline,source.id),
    kind:album?'album':'track',soloOwner:owner,sourceDate:s.date,releaseOrder:rows.length,
    spotifyTrackId:!album?workbookTrack?.id||null:null,
    artworkRelease:!album?workbookTrack?.releaseKey||null:fullAlbum?.key||workbookTrack?.releaseKey||null,
@@ -2577,10 +2581,12 @@ function snapshotDelta(now,old,id){
 // A single anomalous day inside a period invalidates the full-boundary
 // difference for that recording, even if both month-end values look valid.
 function incompleteObservedPeriod(s,context,id){
- if(!context?.fallbackPairs||!context.range?.first)return false;
+ if(!context?.range?.first)return false;
  const expected=Math.round((Date.parse(s.date)-Date.parse(context.range.first))/86400000)+1;
- return context.fallbackPairs.length!==expected||
-  context.fallbackPairs.some(([now,prev])=>snapshotDelta(now,prev,id)==null);
+ const pairs=context.observedPairs||context.fallbackPairs;
+ if(!pairs)return false;
+ return pairs.length!==expected||
+  pairs.some(([now,prev])=>snapshotDelta(now,prev,id)==null);
 }
 function periodGain(s,context,id){
  if(context?.observedPairs){
@@ -2594,58 +2600,53 @@ function periodGain(s,context,id){
  return valid.length?valid.reduce((a,b)=>a+b,0):null;
 }
 function periodChange(s,context,id){
- if(context?.observedPairs){
-  if(!context.previousObservedPairs?.length)return null;
-  // Compare only equal observed days and do not fill missing track
-  // recordings with zero, which would distort week/month changes.
-  if(context.partialPeriod||context.partialWeek){
-   const prev=new Set(context.previousObservedPairs.map(([now])=>now.date));
-   if(context.observedPairs.length!==context.previousObservedPairs.length||
-      context.observedPairs.some(([now])=>!prev.has(
-       rank.endsWith('weekly')?shifted(now.date,-7):shiftedMonth(now.date,-1)
-      )))return null;
-  }
-  const sum=pairs=>{
-   const values=pairs.map(([now,previous])=>snapshotDelta(now,previous,id));
-   return values.length&&values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null;
-  };
-  const current=sum(context.observedPairs),previous=sum(context.previousObservedPairs);
-  return current!=null&&previous!=null?current-previous:null;
+ if(!context)return null;
+ // Both regular and sparse archives use real, dated consecutive-day pairs.
+ // Match days across periods before subtracting. An invalid track observation
+ // in one week/month cannot be compared against a different set of days.
+ const current=context.observedPairs||context.fallbackPairs||[];
+ const previous=context.previousObservedPairs||context.previousFallbackPairs||[];
+ const priorMap=new Map(previous.map(pair=>[pair[0].date,pair]));
+ const offset=date=>rank.endsWith('weekly')?shifted(date,-7):shiftedMonth(date,-1);
+ const differences=[];
+ for(const pair of current){
+  const old=priorMap.get(offset(pair[0].date));
+  if(!old)continue;
+  const gain=snapshotDelta(pair[0],pair[1],id);
+  const previousGain=snapshotDelta(old[0],old[1],id);
+  if(gain!=null&&previousGain!=null)differences.push(gain-previousGain);
  }
- const fallbackChange=()=>{
-  if(!context?.fallbackPairs?.length||!context.previousFallbackPairs?.length)return null;
-  const previous=new Map(context.previousFallbackPairs.map(([now,prev])=>[now.date,[now,prev]]));
-  const offset=date=>rank.endsWith('weekly')?shifted(date,-7):shiftedMonth(date,-1);
-  const matched=[];
-  for(const pair of context.fallbackPairs){
-   const old=previous.get(offset(pair[0].date));
-   if(!old)continue;
-   const today=snapshotDelta(pair[0],pair[1],id);
-   const before=snapshotDelta(old[0],old[1],id);
-   if(today!=null&&before!=null)matched.push(today-before);
-  }
-  return matched.length?matched.reduce((sum,v)=>sum+v,0):null;
- };
- if(incompleteObservedPeriod(s,context,id))return fallbackChange();
- if(!context?.start||!context.prevStart||!context.prevEnd)return fallbackChange();
+ const partialComparison=differences.length?differences.reduce((a,b)=>a+b,0):null;
+ if(context.observedPairs)return partialComparison;
+ // When all exact boundaries are present and every intervening observation
+ // is valid, use complete period totals. Otherwise use the matched-day
+ // partial comparison above, marked with * by the row renderer.
+ if(incompleteObservedPeriod(s,context,id))return partialComparison;
+ if(!context.start||!context.prevStart||!context.prevEnd)return partialComparison;
  const now=snapshotDelta(s,context.start,id);
- // Follow the identity already resolved at the start of this period,
- // which is more reliable for imported spreadsheets with legacy IDs.
  const startMatch=comparablePrevious(s,context.start,id);
  const prevEndMatch=comparablePrevious(s,context.prevEnd,id);
- const matched=prevEndMatch||(
-  startMatch&&context.prevEnd.tracks?.[startMatch.id]!=null
-   ?{id:startMatch.id,value:context.prevEnd.tracks[startMatch.id]}:null);
- if(!matched)return fallbackChange();
+ const matched=prevEndMatch||(startMatch&&context.prevEnd.tracks?.[startMatch.id]!=null
+  ?{id:startMatch.id,value:context.prevEnd.tracks[startMatch.id]}:null);
+ if(!matched)return partialComparison;
  const before=snapshotDelta(context.prevEnd,context.prevStart,matched.id);
- if(now==null||before==null)return fallbackChange();
- // To compare the same elapsed number of days.
+ if(now==null||before==null)return partialComparison;
  const elapsed=(Date.parse(s.date)-Date.parse(context.start.date))/86400000;
  const previousElapsed=(Date.parse(context.prevEnd.date)-Date.parse(context.prevStart.date))/86400000;
- // Weekly and year-to-date comparisons require equal observed durations.
- // Completed calendar months may legitimately contain different day counts:
- // compare full monthly totals, rather than incorrectly hiding their change.
- return rank.endsWith('monthly')||elapsed===previousElapsed?now-before:fallbackChange();
+ return rank.endsWith('monthly')||elapsed===previousElapsed?now-before:partialComparison;
+}
+function incompletePeriodComparison(s,context,id){
+ if(!context||!(rank.endsWith('weekly')||rank.endsWith('monthly')))return false;
+ const pairs=context.observedPairs||context.fallbackPairs||[];
+ const previous=context.previousObservedPairs||context.previousFallbackPairs||[];
+ const expected=Math.round((Date.parse(s.date)-Date.parse(context.range?.first))/86400000)+1;
+ const priorMap=new Map(previous.map(pair=>[pair[0].date,pair]));
+ const offset=date=>rank.endsWith('weekly')?shifted(date,-7):shiftedMonth(date,-1);
+ const valid=pairs.filter(pair=>{
+  const old=priorMap.get(offset(pair[0].date));
+  return old&&snapshotDelta(pair[0],pair[1],id)!=null&&snapshotDelta(old[0],old[1],id)!=null;
+ });
+ return valid.length!==expected||incompleteObservedPeriod(s,context,id);
 }
 // To keep album and track comparisons aligned to the same dates.
 function sumPeriod(s,context,ids){
