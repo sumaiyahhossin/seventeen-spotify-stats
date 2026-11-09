@@ -680,7 +680,8 @@ function discographyRows(s,p,pp,baseline){
  const soloSheetReleaseOverrides={
   the8_g4:3,the8_g3:4
  };
- const releasesForDiscography=tab==='solo'?[...(catalog.solo||[])].sort((a,b)=>{
+ const duplicateAlbumSections=new Set(['jeonghan_g2','joshua_g8','the8_g12','vernon_g9','dino_g4','picheolin_g3']);
+ const releasesForDiscography=tab==='solo'?[...(catalog.solo||[])].filter(x=>!duplicateAlbumSections.has(x.key)).sort((a,b)=>{
   const ai=soloSheetArtistOrder.findIndex(n=>n.toLowerCase()===String(a.artist).toLowerCase());
   const bi=soloSheetArtistOrder.findIndex(n=>n.toLowerCase()===String(b.artist).toLowerCase());
   if(ai!==bi)return (ai<0?999:ai)-(bi<0?999:bi);
@@ -689,7 +690,7 @@ function discographyRows(s,p,pp,baseline){
  }):catalog[tab]||[];
  for(const item of releasesForDiscography){
   // Gilboard's duplicate catalog entries belong to Picheolin's discography.
-  if(tab==='solo'&&(item.key==='gilboard'||item.key==='sharedTracks'))continue;
+  if(tab==='solo'&&item.key==='sharedTracks')continue;
   const combo=tab==='group'?combined[item.key]:null;
   const ids=[...new Set((combo?combo.keys.flatMap(k=>releasesByKey.get(k)?.tracks||[]):item.tracks)||[])];
   if(!ids.length)continue;
@@ -706,7 +707,8 @@ function discographyRows(s,p,pp,baseline){
    ?historicalAlbumAggregate(s,item.key==='g6'?'g7':item.key==='g36'?'g37':historicalAlbumReleaseKey(item.title)||item.key,historicalMode)
    :null;
   const savedAlbum=archivedAlbumMetrics(s,p,pp,baseline,sourceKey);
-  const albumTotalRow={name:combo?.name||catalogReleaseLabel(item),artworkRelease:item.key,releaseDate:tab==='group'?(groupOriginalReleaseDates[item.key]||groupStandaloneReleaseDates[item.key]||null):(item.release_date||null),
+  const canonicalAlbum=tab==='solo'?soloAlbums.find(a=>a.key===item.key):null;
+  const albumTotalRow={name:canonicalAlbum?.displayName||combo?.name||catalogReleaseLabel(item),artworkRelease:item.key,releaseDate:tab==='group'?(groupOriginalReleaseDates[item.key]||groupStandaloneReleaseDates[item.key]||null):(item.release_date||null),
    streams:savedAlbum?.streams??streams,gain:savedAlbum?savedAlbum.gain:gain,estimatedGain:!savedAlbum&&partialGain,
    change:savedAlbum?savedAlbum.change:(periodic?sumPeriodChange(s,baseline,ids):dayChange),
    changePartial:savedAlbum?savedAlbum.changePartial:(periodic?periodComparison(s,baseline,ids).partial:dailyComparison(s,p,pp,ids).partial),
@@ -716,7 +718,7 @@ function discographyRows(s,p,pp,baseline){
    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
    const gilboardEdition=tab==='solo'&&item.key==='picheolin_g3'&&
       ['34wTGQ1yV5XtrSMR5dMLWY','5W1bn5PzFgKok4GAZ1JUAw'].includes(id);
-   rows.push({id,name:displayTrackName(s.names?.[id]||idName[id]||id),artworkRelease:item.key,
+   rows.push({id,name:tab==='solo'?(soloMedia.tracks?.[id]?.title||displayTrackName(s.names?.[id]||idName[id]||id)):displayTrackName(s.names?.[id]||idName[id]||id),artworkRelease:item.key,
     edition:gilboardEdition?'Gilboard album version':null,
     streams:s.tracks?.[id]??null,gain:g,change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),
     kind:'track',releaseOrder:rows.length});
@@ -1021,7 +1023,7 @@ function buildRows(s,p,pp,baseline){
    }
  }else{
    rows=trackIds(s).map(id=>({
-     id,name:displayTrackName((s.names?.[id]||idName[id]||id)==='247.0'?'247':s.names?.[id]||idName[id]||id),
+     id,name:tab==='solo'?(soloMedia.tracks?.[id]?.title||displayTrackName(s.names?.[id]||idName[id]||id)):displayTrackName((s.names?.[id]||idName[id]||id)==='247.0'?'247':s.names?.[id]||idName[id]||id),
      streams:s.tracks[id],gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id)
    }));
  }
@@ -1918,13 +1920,18 @@ function soloLegacyRows(s,p,pp,baseline,view){
   if(kind==='grand'||kind==='audience')continue;
   if(view==='albums'&&!album)continue;
   if(view==='tracks'&&album)continue;
+  const legacyIndex=Number(String(source.id).split(':').at(-1));
+  const workbookTrack=soloLegacyLinks.byIndex?.[legacyIndex];
+  const fullAlbum=soloAlbums.find(a=>Object.values(a.legacyTotalIndices||{}).includes(legacyIndex));
+  if(view==='discography'&&!selectedSoloArtist&&album&&
+      ([11,40,206,276,293,387].includes(legacyIndex)))continue;
   if(!album){
    const fingerprint=normTrackName(source.name)+'|'+source.value;
    // Keep identical stream totals as distinct release editions in discography,
    // not as duplicate entries in the overall track tally.
    const editionCopy=view==='discography'&&['Picheolin','Gilboard'].includes(owner)&&
     [384,385,395,396].includes(Number(source.id.split(':').at(-1)));
-   if(seen.has(fingerprint)&&!editionCopy)continue;
+   if(view!=='discography'&&seen.has(fingerprint)&&!editionCopy)continue;
    seen.add(fingerprint);
   }
   const name=album?source.name.replace(/\s*(?:Total|Tota;)\s*:?$/i,'').trim():displayTrackName(source.name);
@@ -1932,11 +1939,25 @@ function soloLegacyRows(s,p,pp,baseline,view){
    gain:periodic?periodGain(s,baseline,source.id):safeGain(s,p,source.id),
    change:periodic?periodChange(s,baseline,source.id):dailyChange(s,p,pp,source.id),
    kind:album?'album':'track',soloOwner:owner,releaseOrder:rows.length,
+   spotifyTrackId:!album?workbookTrack?.id||null:null,
+   artworkRelease:!album?workbookTrack?.releaseKey||null:fullAlbum?.key||workbookTrack?.releaseKey||null,
    edition:!album&&['Picheolin','Gilboard'].includes(owner)&&
       [384,385,395,396].includes(Number(source.id.split(':').at(-1)))?'Gilboard album version':null};
   // Include dates only where the catalog or a verified release map identifies
   // the recording; never borrow another member's similarly named song date.
-  row.releaseDate=originalReleaseDate(row)||null;
+  if(album&&fullAlbum){
+   row.name=fullAlbum.displayName;
+   row.releaseDate=fullAlbum.releaseDate;
+   row.albumIdentity=fullAlbum.key;
+  }else if(album&&workbookTrack){
+   row.releaseDate=workbookTrack.releaseDate||null;
+  }
+  if(!album&&workbookTrack){
+   row.releaseDate=workbookTrack.releaseDate||null;
+   const official=soloMedia.tracks?.[workbookTrack.id]?.title;
+   if(official)row.name=official;
+  }
+  row.releaseDate=row.releaseDate||originalReleaseDate(row)||null;
   rows.push(row);
  }
  if(view==='discography'){
