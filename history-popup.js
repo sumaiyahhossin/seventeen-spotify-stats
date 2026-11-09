@@ -291,7 +291,12 @@
     return d.toISOString().slice(0,10);
    })();
    const endOf=start=>{const next=move(start,1);return previousDate(next)};
-   const dateList=[...new Set([...((scope==='solo'?soloDates:groupDates)||[]),ref.date])].filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d<=ref.date).sort();
+   // Followers have their own dated collection archive. Stream snapshot
+   // dates must not be mistaken for follower observations.
+   const sourceDates=followerData&&profileId
+    ?Object.keys(followerData.history||{}).filter(d=>followerData.history[d]?.[profileId]?.count!=null)
+    :((scope==='solo'?soloDates:groupDates)||[]);
+   const dateList=[...new Set([...sourceDates,ref.date])].filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d<=ref.date).sort();
    const start=periodStart(ref.date);
    const periods=Array.from({length:periodCount+1},(_,i)=>move(start,i-periodCount));
    // Compute full calendar periods from exact boundary snapshots.
@@ -356,8 +361,23 @@
     return {first,label,...details,visibleEnd};
    }));
    if(id!==opening)return;
+   let hiddenMonths=0;
    for(let i=1;i<periodData.length;i++){
     const row=periodData[i],prior=periodData[i-1];
+    // Older solo/unit workbook totals before May 2026 can be isolated
+    // or duplicated snapshots. Their apparent zero growth is not a
+    // verified month of activity, so omit those rows entirely.
+    // Otherwise omit months without a verified cumulative total or
+    // observed increase. A follower month only needs an actual dated
+    // observation: earlier follower measurements were never collected.
+    if(mode==='monthly'&&(
+      (scope==='solo'&&!followerData&&row.first<'2026-05-01')||
+      row.total==null||
+      (!followerData&&row.gain==null)
+    )){
+     hiddenMonths++;
+     continue;
+    }
     let comparison=prior.gain,comparisonPartial=prior.partial;
     // A partial current calendar week/month must compare like-for-like days.
     if(row.visibleEnd<endOf(row.first)){
@@ -379,6 +399,16 @@
     renderRow(row.label,row.total,row.gain,change,
      row.partial||row.visibleEnd<endOf(row.first),
      row.partial||comparisonPartial||row.visibleEnd<endOf(row.first));
+   }
+   if(mode==='monthly'){
+    if(!tbody.children.length){
+     const tr=document.createElement('tr'),td=document.createElement('td');
+     td.colSpan=4;
+     td.textContent='No verified monthly observations available in this 12-month window.';
+     tr.append(td);tbody.append(tr);
+    }
+    if(hiddenMonths)
+     $('#svtHistoryNote').textContent+=' · '+hiddenMonths+' unavailable or unreliable month'+(hiddenMonths===1?'':'s')+' omitted.';
    }
    $('#svtHistoryNote').textContent+=' · * Partial observed dates or an in-progress period; changes compare matching elapsed calendar days.';
 
