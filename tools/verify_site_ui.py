@@ -1,6 +1,8 @@
 """Smoke-test the real dashboard DOM at desktop and mobile widths."""
 from __future__ import annotations
 import contextlib
+import json
+import datetime
 import http.server
 import pathlib
 import socketserver
@@ -100,8 +102,11 @@ def main():
             WebDriverWait(driver,40).until(lambda d:'UNITS & SOLO' in d.find_element(By.CSS_SELECTOR,'.eyebrow').text)
             # Check the actual content, not just the page heading: 'Like you'
             # is below 1M on Nov 6 and must be an upcoming UNIT milestone.
+            latest=json.loads((ROOT/'data/solo.json').read_text(encoding='utf-8'))
+            day=datetime.date.fromisoformat(latest['date'])
+            expected_date=f"{day.strftime('%b')} {day.day}, {day.year}"
             WebDriverWait(driver,45).until(
-                lambda d:'183 songs' in d.find_element(By.ID,'upcomingStatus').text
+                lambda d:expected_date in d.find_element(By.ID,'upcomingStatus').text
                   and any(el.text.strip().lower()=='like you' for el in
                     d.find_elements(By.CSS_SELECTOR,'#upcomingRows .song-title')))
             milestone_names=[el.text.strip() for el in driver.find_elements(
@@ -114,9 +119,9 @@ def main():
             print('Solo milestone diagnostic:',details,flush=True)
             assert any(name.lower()=='like you' for name in milestone_names), 'Unit/single milestone missing Like you'
             assert not any(name.lower()=='maestro' for name in milestone_names), 'OT13 milestone leaked into Units & Solo'
-            assert 'Nov 6, 2026' in driver.find_element(By.ID,'upcomingStatus').text, 'Wrong solo milestone source date'
+            assert expected_date in driver.find_element(By.ID,'upcomingStatus').text, 'Wrong solo milestone source date'
             print('Separate Unit/Solo milestones verified:',len(milestone_names),
-                  'actual unit/solo tracks, November 6 source',flush=True)
+                  'actual unit/solo tracks, source:',expected_date,flush=True)
             print('Website smoke checks passed',flush=True)
         finally:
             driver.quit()
