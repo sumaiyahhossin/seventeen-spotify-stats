@@ -1783,7 +1783,9 @@ function renderRankMetrics(row){
   rank.endsWith('yearly')?'Gain this year':'Gain vs yesterday';
  const compareWith=rank.endsWith('weekly')?'last week':rank.endsWith('monthly')?'last month':
   rank.endsWith('yearly')?'last year':'yesterday';
- return rankMetricHtml(row.streams,'streams','Total streams')+
+ // Daily ranks by daily growth only; Overall adds cumulative stream totals.
+ // Weekly/monthly/yearly retain their full saved history and comparison values.
+ return (rank.endsWith('daily')?'':rankMetricHtml(row.streams,'streams','Total streams'))+
   rankMetricHtml(row.gain,'gain',gainLabel,{signed:true,estimated:row.estimatedGain})+
   rankMetricHtml(row.change,'change','Change vs '+compareWith,{signed:true,partial:row.changePartial});
 }
@@ -1791,6 +1793,7 @@ async function render(){const token=++renderToken;
  document.body.classList.toggle('svt-units-solo',tab==='solo');
  $('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';try{renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;if(tab==='group')updateYear2026Streams();syncCalendar();restoreGroupNames(s,p);
  document.body.classList.toggle('svt-overall-four-cols',rank.endsWith('overall'));
+ document.body.classList.toggle('svt-daily-ranking',rank.endsWith('daily'));
  document.body.classList.toggle('svt-discography-table',rank.startsWith('discography'));
  const isPeriod=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
  const periodName=rank.endsWith('weekly')?'Weekly':rank.endsWith('monthly')?'Monthly':rank.endsWith('yearly')?'Yearly':'Daily';
@@ -1975,8 +1978,8 @@ async function render(){const token=++renderToken;
  const periodLabel=rank.endsWith('weekly')?'WEEKLY':rank.endsWith('monthly')?'MONTHLY':'YEARLY';
  const headers=document.querySelectorAll('.table-head span');
  headers[0].textContent='NAME';
- headers[1].textContent='TOTAL STREAMS';
- headers[2].textContent=rank.endsWith('weekly')?'GAIN THIS WEEK':rank.endsWith('monthly')?'GAIN THIS MONTH':rank.endsWith('yearly')?'GAIN THIS YEAR':'GAIN VS YESTERDAY';
+ headers[1].textContent=rank.endsWith('overall')?'OVERALL STREAMS':'TOTAL STREAMS';
+ headers[2].textContent=rank.endsWith('weekly')?'GAIN THIS WEEK':rank.endsWith('monthly')?'GAIN THIS MONTH':rank.endsWith('yearly')?'GAIN THIS YEAR':'DAILY INCREASE';
  headers[3].textContent='CHANGE';
  headers[3].title='Current gain minus the previous '+(rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'day')+' gain';
  document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=soloArtistRows(buildRows(s,p,pp,baseline),s,p,baseline,pp).filter(x=>{
