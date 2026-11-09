@@ -5,6 +5,10 @@ on:
   schedule:
     - cron: '0 18-23,0-4 * * *'
   workflow_dispatch:
+  # Run the collector once when this workflow is explicitly updated.
+  push:
+    paths:
+      - '.github/workflows/update.yml'
 
 permissions:
   contents: write
