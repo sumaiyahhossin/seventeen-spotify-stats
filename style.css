@@ -1720,11 +1720,11 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  .rank-row .rank-metric .metric-value{font-size:11px!important}
 }
 
-/* v125 — classic slim Discography rows on phones, not stacked cards. */
+/* v126 — classic slim one-line rows for Tracks, Albums, and Discography on phones. */
 .rank-row .metric-compact{display:none!important}
 @media(max-width:900px){
- body.svt-discography-table .table-head,
- body.svt-discography-table .rank-row{
+ body.svt-compact-ranking-table .table-head,
+ body.svt-compact-ranking-table .rank-row{
   display:grid!important;
   grid-template-columns:minmax(0,1fr) minmax(0,53px) minmax(0,49px) minmax(0,49px)!important;
   grid-template-rows:auto!important;
@@ -1733,41 +1733,41 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
   width:100%!important;min-width:0!important;
   box-sizing:border-box!important;
  }
- body.svt-discography-table .table-head{
+ body.svt-compact-ranking-table .table-head{
   padding:10px 6px!important;
   margin-bottom:8px!important;
   font-size:8px!important;line-height:1.25!important;
   border-radius:10px!important;
  }
- body.svt-discography-table .table-head span{
+ body.svt-compact-ranking-table .table-head span{
   min-width:0!important;white-space:nowrap!important;
   overflow:hidden!important;text-overflow:clip!important;
   font-size:0!important;letter-spacing:0!important;
  }
- body.svt-discography-table .table-head span::after{
+ body.svt-compact-ranking-table .table-head span::after{
   display:inline!important;font-size:8px!important;font-weight:800!important;
  }
- body.svt-discography-table .table-head span:nth-child(1)::after{content:"NAME"}
- body.svt-discography-table .table-head span:nth-child(2)::after{content:"TOTAL"}
- body.svt-discography-table .table-head span:nth-child(3)::after{content:"GAIN"}
- body.svt-discography-table .table-head span:nth-child(4)::after{content:"CHANGE"}
- body.svt-discography-table .table-head span:not(:first-child){text-align:right!important}
- body.svt-discography-table #ranking{
+ body.svt-compact-ranking-table .table-head span:nth-child(1)::after{content:"NAME"}
+ body.svt-compact-ranking-table .table-head span:nth-child(2)::after{content:"TOTAL"}
+ body.svt-compact-ranking-table .table-head span:nth-child(3)::after{content:"GAIN"}
+ body.svt-compact-ranking-table .table-head span:nth-child(4)::after{content:"CHANGE"}
+ body.svt-compact-ranking-table .table-head span:not(:first-child){text-align:right!important}
+ body.svt-compact-ranking-table #ranking{
   overflow:hidden!important;background:rgba(17,22,48,.44)!important;
   border-radius:12px!important;
  }
- body.svt-discography-table #ranking .rank-row{
+ body.svt-compact-ranking-table #ranking .rank-row{
   margin:0!important;padding:9px 6px!important;
   min-height:50px!important;border:0!important;
   border-bottom:1px solid rgba(194,183,242,.16)!important;
   border-radius:0!important;box-shadow:none!important;
   background:transparent!important;transform:none!important;
  }
- body.svt-discography-table #ranking .rank-row.album-total-row{
+ body.svt-compact-ranking-table #ranking .rank-row.album-total-row{
   background:rgba(119,73,132,.22)!important;
   border-left:2px solid rgba(247,178,229,.65)!important;
  }
- body.svt-discography-table .rank-row>.track{
+ body.svt-compact-ranking-table .rank-row>.track{
   grid-column:1!important;grid-row:1!important;
   width:100%!important;min-width:0!important;
   display:grid!important;grid-template-columns:26px minmax(0,1fr)!important;
@@ -1775,28 +1775,28 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
   padding:0!important;margin:0!important;border:0!important;
   align-items:center!important;
  }
- body.svt-discography-table .rank-row .track>.rank-position{display:none!important}
- body.svt-discography-table .rank-row .track>.cover-slot{
+ body.svt-compact-ranking-table .rank-row .track>.rank-position{display:none!important}
+ body.svt-compact-ranking-table .rank-row .track>.cover-slot{
   grid-column:1!important;grid-row:1!important;
   width:26px!important;height:26px!important;min-width:26px!important;
  }
- body.svt-discography-table .rank-row .track>.cover-slot .cover{
+ body.svt-compact-ranking-table .rank-row .track>.cover-slot .cover{
   width:26px!important;height:26px!important;border-radius:5px!important;
  }
- body.svt-discography-table .rank-row .track>.track-copy{
+ body.svt-compact-ranking-table .rank-row .track>.track-copy{
   grid-column:2!important;grid-row:1!important;
   width:100%!important;min-width:0!important;
   display:block!important;overflow:hidden!important;
   white-space:nowrap!important;
  }
- body.svt-discography-table .rank-row .track .track-copy .track-name{
+ body.svt-compact-ranking-table .rank-row .track .track-copy .track-name{
   display:block!important;
   font-size:10px!important;line-height:1.25!important;
   white-space:nowrap!important;word-break:normal!important;
   overflow:hidden!important;text-overflow:ellipsis!important;
  }
- body.svt-discography-table .rank-row .track .track-copy .release-date{display:none!important}
- body.svt-discography-table .rank-row>.rank-metric{
+ body.svt-compact-ranking-table .rank-row .track .track-copy .release-date{display:none!important}
+ body.svt-compact-ranking-table .rank-row>.rank-metric{
   display:flex!important;grid-row:1!important;
   justify-content:center!important;align-items:flex-end!important;
   flex-direction:column!important;
@@ -1805,12 +1805,12 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
   background:transparent!important;
   text-align:right!important;overflow:hidden!important;
  }
- body.svt-discography-table .rank-row>.rank-metric-streams{grid-column:2!important}
- body.svt-discography-table .rank-row>.rank-metric-gain{grid-column:3!important}
- body.svt-discography-table .rank-row>.rank-metric-change{grid-column:4!important}
- body.svt-discography-table .rank-row .rank-metric .metric-label,
- body.svt-discography-table .rank-row .rank-metric .metric-value{display:none!important}
- body.svt-discography-table .rank-row .rank-metric .metric-compact{
+ body.svt-compact-ranking-table .rank-row>.rank-metric-streams{grid-column:2!important}
+ body.svt-compact-ranking-table .rank-row>.rank-metric-gain{grid-column:3!important}
+ body.svt-compact-ranking-table .rank-row>.rank-metric-change{grid-column:4!important}
+ body.svt-compact-ranking-table .rank-row .rank-metric .metric-label,
+ body.svt-compact-ranking-table .rank-row .rank-metric .metric-value{display:none!important}
+ body.svt-compact-ranking-table .rank-row .rank-metric .metric-compact{
   display:block!important;font-size:10px!important;font-weight:750!important;
   line-height:1.25!important;letter-spacing:-.04em!important;
   white-space:nowrap!important;overflow:visible!important;
@@ -1818,14 +1818,27 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  }
 }
 @media(max-width:370px){
- body.svt-discography-table .table-head,
- body.svt-discography-table .rank-row{
+ body.svt-compact-ranking-table .table-head,
+ body.svt-compact-ranking-table .rank-row{
   grid-template-columns:minmax(0,1fr) 48px 45px 45px!important;column-gap:3px!important
  }
- body.svt-discography-table #ranking .rank-row{padding:8px 4px!important}
- body.svt-discography-table .rank-row>.track{grid-template-columns:22px minmax(0,1fr)!important;column-gap:4px!important}
- body.svt-discography-table .rank-row .track>.cover-slot,
- body.svt-discography-table .rank-row .track>.cover-slot .cover{width:22px!important;height:22px!important;min-width:22px!important}
- body.svt-discography-table .rank-row .rank-metric .metric-compact{font-size:9px!important}
- body.svt-discography-table .rank-row .track .track-copy .track-name{font-size:9px!important}
+ body.svt-compact-ranking-table #ranking .rank-row{padding:8px 4px!important}
+ body.svt-compact-ranking-table .rank-row>.track{grid-template-columns:22px minmax(0,1fr)!important;column-gap:4px!important}
+ body.svt-compact-ranking-table .rank-row .track>.cover-slot,
+ body.svt-compact-ranking-table .rank-row .track>.cover-slot .cover{width:22px!important;height:22px!important;min-width:22px!important}
+ body.svt-compact-ranking-table .rank-row .rank-metric .metric-compact{font-size:9px!important}
+ body.svt-compact-ranking-table .rank-row .track .track-copy .track-name{font-size:9px!important}
 }
+
+/* v126: display the entire source cover inside the smaller square, never crop/zoom. */
+#ranking .rank-row .track .cover-slot{background:rgba(27,29,61,.55)!important}
+#ranking .rank-row .track .cover-slot img.cover{
+ object-fit:contain!important;
+ object-position:center center!important;
+ transform:none!important;
+ max-width:100%!important;
+ max-height:100%!important;
+}
+/* OT13 historical yearly totals belong to the group tab, not Units & Solo. */
+body.svt-units-solo #yearlyStreamsHistory,
+body.svt-units-solo .svt-yearly-jump{display:none!important}
