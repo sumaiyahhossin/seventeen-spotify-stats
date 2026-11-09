@@ -307,11 +307,13 @@ function renderUpcoming(){
   const target=nextTarget(item.value);
   if(!target||(filter&&target!==filter))continue;
   const old=prev.get(key);
-  const gain=old&&deltaDays===1&&item.value>=old.value?item.value-old.value:null;
+  // Missing calendar days cannot be converted into a one-day gain.
+  const observed=old&&deltaDays>0&&item.value>=old.value?item.value-old.value:null;
+  const gain=deltaDays===1?observed:null;
   const remaining=target-item.value;
   const estimate=gain>0?Math.ceil(remaining/gain):null;
   const expected=estimate!=null&&estimate<=365000?new Date(Date.parse(currentSnapshot.date+'T12:00:00Z')+estimate*86400000).toISOString().slice(0,10):null;
-  rows.push({...item,target,gain,remaining,estimate,expected});
+  rows.push({...item,target,gain,observed,deltaDays,remaining,estimate,expected});
  }
  rows.sort((a,b)=>{
   if(sort==='closest')return a.remaining-b.remaining||a.name.localeCompare(b.name);
@@ -320,16 +322,19 @@ function renderUpcoming(){
   if(sort==='name')return a.name.trim().localeCompare(b.name.trim(),'en',{numeric:true,sensitivity:'base'});
   return a.target-b.target||b.value-a.value;
  });
+ const hasGap=Boolean(previousSnapshot&&deltaDays>1);
+ const gainHeader=document.querySelector('#upcomingView thead th:nth-child(4)');
+ if(gainHeader)gainHeader.textContent=hasGap?'GAIN SINCE LAST SNAPSHOT':'DAILY GAIN';
  $('upcomingRows').innerHTML=rows.length?rows.map((r,i)=>{
   const img='<img class="song-cover" data-song-name="'+esc(r.name)+'" data-spotify-id="'+esc(r.id||'')+'" alt="" loading="lazy">';
   return '<tr><td><div class="song-cell"><span class="song-rank">'+String(i+1).padStart(2,'0')+'</span>'+img+'<div class="song-meta"><span class="song-title">'+esc(r.name)+'</span><span class="song-release">'+r.value.toLocaleString()+' streams'+(releases.get(r.id)?' · Released '+esc(format(releases.get(r.id))):'')+'</span></div></div></td>'+
   '<td data-label="NEXT MILESTONE"><span class="reached-value">'+shortStreams(r.target)+'</span></td>'+
   '<td data-label="STREAMS LEFT" title="'+r.remaining.toLocaleString()+' streams">'+responsiveValue(r.remaining.toLocaleString(),mobileCount(r.remaining))+'</td>'+
-  '<td data-label="DAILY GAIN" title="'+(r.gain==null?'Unavailable':r.gain.toLocaleString()+' streams')+'">'+responsiveValue(r.gain==null?'—':'+'+r.gain.toLocaleString(),r.gain==null?'—':'+'+mobileCount(r.gain))+'</td>'+
+  '<td data-label="'+(hasGap?'OBSERVED GAIN':'DAILY GAIN')+'" title="'+(r.observed==null?'Unavailable':r.observed.toLocaleString()+' streams over '+r.deltaDays+' day'+(r.deltaDays===1?'':'s'))+'">'+responsiveValue(r.observed==null?'—':'+'+r.observed.toLocaleString()+(hasGap?' ('+r.deltaDays+' days)':''),r.observed==null?'—':'+'+mobileCount(r.observed)+(hasGap?' / '+r.deltaDays+'d':''))+'</td>'+
   '<td data-label="ESTIMATED ARRIVAL" title="'+(r.expected?format(r.expected):'Unavailable')+'">'+
    responsiveValue('<span class="days-value">'+(r.estimate==null?'—':r.estimate.toLocaleString()+' days')+'</span>'+(r.expected?'<div class="song-release">'+format(r.expected)+'</div>':''),r.expected?mobileDate(r.expected):(r.estimate==null?'—':r.estimate+'d'))+'</td></tr>';
  }).join(''):'<tr><td colspan="5">No tracks waiting for this milestone.</td></tr>';
- $('upcomingStatus').textContent=rows.length+' songs · Sorted by '+($('upcomingSort').selectedOptions[0]?.textContent||'Next milestone')+' · Latest snapshot: '+format(currentSnapshot.date)+(deltaDays!==1?' · Daily growth unavailable until two consecutive snapshots exist':' · Estimates use the latest one-day gain');
+ $('upcomingStatus').textContent=rows.length+' songs · Sorted by '+($('upcomingSort').selectedOptions[0]?.textContent||'Next milestone')+' · Latest snapshot: '+format(currentSnapshot.date)+(hasGap?' · Showing actual '+deltaDays+'-day change since '+format(previousSnapshot.date)+'; daily estimates require consecutive dates':deltaDays!==1?' · Daily growth unavailable until two consecutive snapshots exist':' · Estimates use the latest one-day gain');
  loadMilestoneCovers();scheduleMilestoneNameFit();
 }
 
@@ -468,8 +473,31 @@ async function start(){
   ready=true;build();renderUpcoming();
   // Only one previous daily snapshot is used to calculate the current growth rate.
   // Upcoming milestones never wait for the historical milestone scan.
-  (async()=>{try{const previousDate=new Date(Date.parse(group.date+'T12:00:00Z')-86400000).toISOString().slice(0,10);previousSnapshot=await jsonWithTimeout(inSoloMilestones?
-       'solo-'+previousDate+'.json':'data/history/group-'+previousDate+'.json',10000);renderUpcoming()}catch{renderUpcoming()}})();
+  (async()=>{
+   try{
+    const previousDate=new Date(Date.parse(group.date+'T12:00:00Z')-86400000).toISOString().slice(0,10);
+    const candidates=[previousDate];
+    if(inSoloMilestones){
+     // New solo archives live under data/history. Older workbook snapshots
+     // can also be at the repository root; scan actual saved dates only.
+     const manifest=await jsonWithTimeout('data/manifest.json',10000).catch(()=>({}));
+     const available=(manifest.solo_dates||[]).filter(d=>d<group.date).sort().reverse();
+     for(const d of available.slice(0,7))if(!candidates.includes(d))candidates.push(d);
+    }
+    for(const date of candidates){
+     const paths=inSoloMilestones?['data/history/solo-'+date+'.json','solo-'+date+'.json']:
+      ['data/history/group-'+date+'.json'];
+     for(const file of paths){
+      try{
+       const snapshot=await jsonWithTimeout(file,6000);
+       if(snapshot?.date===date){previousSnapshot=snapshot;break}
+      }catch{}
+     }
+     if(previousSnapshot)break;
+    }
+   }catch(error){console.warn('Previous milestone snapshot unavailable',error)}
+   renderUpcoming();
+  })();
   $('status').textContent+=' · Checking historical dates in background…';
  }catch(error){
   $('status').textContent='Could not load the current song snapshot. Please refresh the page.';
