@@ -82,7 +82,7 @@ jobs:
 
   followers:
     name: Collect verified solo and unit followers
-    # Full verification scan requested after Spotify image-wrapper pointer click fix.
+    # Run full exact follower verification with Spotify value-label selector and updated click fallback.
     # At 2 PM New York time, verify a new reporting-day follower reading.
     # Retry missing profiles hourly until all eligible profiles are complete;
     # then pause until the next local 2 PM cutoff (handles EDT/EST).
