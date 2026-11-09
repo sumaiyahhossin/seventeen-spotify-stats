@@ -58,6 +58,23 @@ def check_viewport(driver,width,height):
     undated=[row.find_element(By.CSS_SELECTOR,'.track-copy').text for row in entries
             if 'Released ' not in row.find_element(By.CSS_SELECTOR,'.track-copy').text]
     assert not undated, f"Official albums without release dates: {undated}"
+    # The Most/Least streamed options must sort FULL album totals,
+    # not remain in the source catalog's fixed release sequence.
+    assert 'SECOND WIND' in titles[0], f'Incorrect top-streamed album: {titles[0]}'
+    driver.execute_script("""
+      const el=document.getElementById('order');
+      el.value='least';el.dispatchEvent(new Event('change',{bubbles:true}));
+    """)
+    WebDriverWait(driver,20).until(lambda d:
+        '9' in d.find_element(By.CSS_SELECTOR,'#ranking .rank-row .track-name').text
+        and 'SECOND WIND' in d.find_elements(By.CSS_SELECTOR,'#ranking .rank-row .track-name')[-1].text)
+    smallest=[x.text for x in driver.find_elements(By.CSS_SELECTOR,'#ranking .track-name')]
+    print('Album least-streamed order:',smallest,flush=True)
+    assert smallest[0].endswith(' - 9'),f"Incorrect least-streamed album: {smallest[0]}"
+    driver.execute_script("""
+      const el=document.getElementById('order');
+      el.value='most';el.dispatchEvent(new Event('change',{bubbles:true}));
+    """)
     read_layout(driver,f'Units & Solo albums {width}px')
     # Check both original single and full album artwork with no diamond fallback.
     click(driver,'#rankCategory button[data-type="tracks"]')
@@ -84,6 +101,27 @@ def check_viewport(driver,width,height):
         WebDriverWait(driver,15).until(
             lambda d: d.execute_script("return arguments[0].complete&&arguments[0].naturalWidth>1",img))
     print(f"Verified all {len(images)} local cover URLs and first 8 loaded images",flush=True)
+    # The November 6 workbook repeats each complete unit album in the
+    # two member sections. Both member SUBTOTALS must remain immediately
+    # after their own tracks; the Albums tab still displays only one album.
+    click(driver,'#rankCategory button[data-type="discography"]')
+    WebDriverWait(driver,40).until(
+       lambda d:len(d.find_elements(By.CSS_SELECTOR,'#ranking .album-total-row'))>=90)
+    sections=driver.execute_script("""
+      return [...document.querySelectorAll('#ranking .album-total-row')].map(row=>({
+        title:row.querySelector('.track-name')?.textContent||'',
+        dated:!!row.querySelector('.release-date'),
+        total:row.querySelector('.rank-metric-streams .metric-value')?.textContent||''
+      }));
+    """)
+    for key in ('Jeonghan 6-Track Total','Joshua 6-Track Total',
+                'Full 7-Track Album Total','The8 7-Track Total',
+                'Vernon 7-Track Total','Full 8-Track Album Total'):
+        assert any(key in row['title'] for row in sections),f'Missing album section subtotal: {key}'
+    missing_dates=[row['title'] for row in sections if not row['dated']]
+    print(f'Discography: {len(sections)} release-total rows, missing dates:',missing_dates,flush=True)
+    assert not missing_dates,f'Undated solo release totals: {missing_dates[:20]}'
+
 
 def main():
     socketserver.TCPServer.allow_reuse_address=True
@@ -157,8 +195,8 @@ def main():
             bittersweet=next((x for x in results['rows'] if 'Bittersweet' in x['name']),None)
             assert fighting and 'Jun 28, 2024' in fighting['reached'], (
                 'Missing verified June 28 2024 Fighting 100M milestone')
-            assert bittersweet and 'By Nov 16, 2025' in bittersweet['reached'], (
-                'Bittersweet 100M must indicate latest confirmed date, not a fabricated exact day')
+            assert bittersweet and 'Sep 11, 2025' in bittersweet['reached'], (
+                'Bittersweet 100M must show the user-confirmed Sep 11, 2025 milestone date')
             print('Website smoke checks passed',flush=True)
         finally:
             driver.quit()
