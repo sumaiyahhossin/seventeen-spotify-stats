@@ -122,6 +122,29 @@ def main():
             assert expected_date in driver.find_element(By.ID,'upcomingStatus').text, 'Wrong solo milestone source date'
             print('Separate Unit/Solo milestones verified:',len(milestone_names),
                   'actual unit/solo tracks, source:',expected_date,flush=True)
+            # Reached milestones are 100M+ in BOTH views. Verify the two
+            # known unit records with their exact/upper-bound historical dates.
+            WebDriverWait(driver,45).until(
+                lambda d:any('Fighting' in t.text for t in
+                    d.find_elements(By.CSS_SELECTOR,'#rows .song-title')))
+            results=driver.execute_script("""
+              return {
+                thresholds:[...document.querySelectorAll('#threshold option')].map(o=>Number(o.value)),
+                rows:[...document.querySelectorAll('#rows tr')].map(row=>({
+                   name:row.querySelector('.song-title')?.textContent||'',
+                   reached:row.querySelector('[data-label="MILESTONE REACHED"]')?.textContent||''
+                }))
+              };
+            """)
+            print('Reached 100M+ unit records:',results,flush=True)
+            assert results['thresholds'] and min(results['thresholds'])>=100_000_000, (
+                'Reached milestones unexpectedly include thresholds below 100M')
+            fighting=next((x for x in results['rows'] if 'Fighting' in x['name']),None)
+            bittersweet=next((x for x in results['rows'] if 'Bittersweet' in x['name']),None)
+            assert fighting and 'Jun 28, 2024' in fighting['reached'], (
+                'Missing verified June 28 2024 Fighting 100M milestone')
+            assert bittersweet and 'By Nov 16, 2025' in bittersweet['reached'], (
+                'Bittersweet 100M must indicate latest confirmed date, not a fabricated exact day')
             print('Website smoke checks passed',flush=True)
         finally:
             driver.quit()
