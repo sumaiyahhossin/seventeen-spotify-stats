@@ -361,22 +361,12 @@
     return {first,label,...details,visibleEnd};
    }));
    if(id!==opening)return;
-   let hiddenMonths=0;
+   // Keep all 12 calendar-month rows visible. Unknown or unreliable
+   // observations are shown as unavailable rather than silently omitted.
    for(let i=1;i<periodData.length;i++){
     const row=periodData[i],prior=periodData[i-1];
-    // Older solo/unit workbook totals before May 2026 can be isolated
-    // or duplicated snapshots. Their apparent zero growth is not a
-    // verified month of activity, so omit those rows entirely.
-    // Otherwise omit months without a verified cumulative total or
-    // observed increase. A follower month only needs an actual dated
-    // observation: earlier follower measurements were never collected.
-    if(mode==='monthly'&&(
-      (scope==='solo'&&!followerData&&row.first<'2026-05-01')||
-      row.total==null||
-      (!followerData&&row.gain==null)
-    )){
-     hiddenMonths++;
-     continue;
+    if(mode==='monthly'&&scope==='solo'&&!followerData&&row.first<'2026-05-01'){
+     row.total=null;row.gain=null;row.partial=true;
     }
     let comparison=prior.gain,comparisonPartial=prior.partial;
     // A partial current calendar week/month must compare like-for-like days.
@@ -407,8 +397,6 @@
      td.textContent='No verified monthly observations available in this 12-month window.';
      tr.append(td);tbody.append(tr);
     }
-    if(hiddenMonths)
-     $('#svtHistoryNote').textContent+=' · '+hiddenMonths+' unavailable or unreliable month'+(hiddenMonths===1?'':'s')+' omitted.';
    }
    $('#svtHistoryNote').textContent+=' · * Partial observed dates or an in-progress period; changes compare matching elapsed calendar days.';
 
