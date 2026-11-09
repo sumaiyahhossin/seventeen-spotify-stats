@@ -2698,8 +2698,30 @@ async function render(){const token=++renderToken;
  headers[2].textContent=rank.endsWith('weekly')?'GAIN THIS WEEK':rank.endsWith('monthly')?'GAIN THIS MONTH':rank.endsWith('yearly')?'GAIN THIS YEAR':'DAILY INCREASE';
  headers[3].textContent='CHANGE';
  headers[3].title='Current gain minus the previous '+(rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'day')+' gain';
- document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');const rows=soloArtistRows(buildRows(s,p,pp,baseline),s,p,baseline,pp).filter(x=>{
-  if(!discography&&!x.name.toLowerCase().includes(q))return false;
+ document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');
+ const allRankingRows=soloArtistRows(buildRows(s,p,pp,baseline),s,p,baseline,pp);
+ // Discography search must work across both song names and release names.
+ // Keep a matching album's tracks together; when a song alone matches,
+ // retain its album-total row so the result still has context.
+ const matchingDiscographyAlbums=new Set();
+ const matchingDiscographyTracks=new Set();
+ if(discography&&q.trim()){
+  for(const item of allRankingRows){
+   if(!String(item.name||'').toLowerCase().includes(q.trim()))continue;
+   if(item.kind==='album'&&item.artworkRelease)matchingDiscographyAlbums.add(item.artworkRelease);
+   if(item.kind==='track'&&item.artworkRelease)matchingDiscographyTracks.add(item.artworkRelease);
+  }
+ }
+ const rows=allRankingRows.filter(x=>{
+  if(q.trim()){
+   const titleMatch=String(x.name||'').toLowerCase().includes(q.trim());
+   if(!discography&&!titleMatch)return false;
+   if(discography&&!titleMatch){
+    const albumMatch=matchingDiscographyAlbums.has(x.artworkRelease);
+    const trackAlbumTotal=x.kind==='album'&&matchingDiscographyTracks.has(x.artworkRelease);
+    if(!albumMatch&&!trackAlbumTotal)return false;
+   }
+  }
   // The archive is a historical view: a future recording or album must
   // never appear before its first release, even as a blank placeholder.
   if(!s?.date)return true;
