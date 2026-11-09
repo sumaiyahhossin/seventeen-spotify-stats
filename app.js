@@ -1818,7 +1818,7 @@ function renderArtistProfiles(){
  area.querySelector('#allSoloArtists')?.addEventListener('click',()=>{selectedSoloArtist=null;saveView();render()});
  area.querySelectorAll('[data-solo-artist]').forEach(button=>button.addEventListener('click',()=>{selectedSoloArtist=button.dataset.soloArtist;saveView();render()}));
  const unitPhotos={
-  'S.Coups':['https://phinf.wevpstatic.net/MjAyNTA3MjVfMjgx/MDAxNzUzNDI1NTMzNDIx.mPjSKpU0QNocmPRt5gcnA4ZM0uh-Q7fTQXyJf9rfayEg.rQGw7A4vM2sUo0Gn9DFLLxint8wzxdSxfrviWyE4gxcg.JPEG/image.jpg?type=w670'],
+  'S.Coups':['https://phinf.wevpstatic.net/MjAyNTA5MDJfMTg5/MDAxNzU2ODI1MTMxNjE3.3E7nGs_h2Y6o79mQGv1D4d2xph0xOd7Oq7CTPHP4oZEg.OaJYDBgB1yjF69sPzC621s7jT9t5ObmwYIVKVTCyVEgg.JPEG/image.jpg?type=w1414'],
   V8:['assets/profile-photos/v8.jpg','https://books.r10s.jp/fan/images/oshiraku-images/v8_conceptphoto1_25f8875b2d.jpg'],
   JxJ:['assets/profile-photos/jxj.jpg','https://www.allkpop.com/upload/2026/09/content/281130/web_data/allkpop_1790609592_htt9wk4biaabw8m.jpg']
  };
