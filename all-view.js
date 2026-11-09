@@ -20,7 +20,7 @@ const unique=arr=>[...new Set(arr)];
 const artistIds=[['SEVENTEEN','7nqOGRxlXj7N2JYbgNEjYH'],['S.Coups',null],['Jeonghan','6KDLlQYeeqUe5OQ2JrdNzF'],['Joshua','74AwWFYdjQ3ER5vHO4H7b0'],['Jun','38Gn0ZVC8TQwuaMxBK1yRV'],['Hoshi','6nWKAdMv1BDq1zHfZzkdbR'],['Wonwoo','3rHcBT06Vb1XGVUWhDALZt'],['Woozi','4TdiASPlU3QdZvGQBothcQ'],['Dokyeom','7G1kUsPtQCdolV6CPwHmh2'],['Mingyu','5gUpo0BRmo6EOTbyU3z5Ay'],['The8','4DqFd6XE3dX4LWXHJVVpLk'],['Seungkwan','0Vb2DjojEYsasFpc3aTZb6'],['Vernon','2Y34b9AOK30zXgL7cAH4NG'],['Dino','5YaeXxzvqGNBCguELlKo6G'],['BSS','1uAT5bTSp6dWbNmixIUP5t'],['JxW','7GvlsjcgBrsE578yghOq7D'],['HxW','1EReYiseDwE51FzGm7EK9n'],['CxM','7kjuLdYbtTkWBToMu2ebZN'],['DxS','4wBjmEkWhY4T22q00CiF5V'],['V8',null],['Picheolin','3V2EC4dPYLgtbi0TtrB1RA'],['JxJ',null]];
 const members=new Set(artistIds.slice(1,14).map(x=>x[0]));
 const units=new Set(artistIds.slice(14).map(x=>x[0]));
-const state={catalog:null,group:null,solo:null,media:null,followers:{},manifest:null,rows:[],albums:[],albumSpecs:[],legacyLinks:null,snapshots:new Map(),page:0,limit:50,period:'overall'};
+const state={catalog:null,group:null,solo:null,media:null,followers:{},manifest:null,rows:[],albums:[],albumSpecs:[],legacyLinks:null,milestoneEvidence:{byName:{},byTrack:{}},milestonePrevious:{},milestoneMode:'reached',milestonePage:0,snapshots:new Map(),page:0,limit:50,period:'overall'};
 async function read(path){const r=await fetch(path,{cache:'no-cache'});if(!r.ok)throw new Error(path+' returned '+r.status);return r.json()}
 function nameFromRelease(release,id,index){
  const official=release.track_titles?.[id];
@@ -320,6 +320,127 @@ function renderTracks(){
  }).join('')||'<tr><td colspan="2" class="svt-all-status">No matching '+(isAlbum?'albums':'recordings')+'.</td></tr>';
  $('pageInfo').textContent=(state.page+1)+' / '+totalPages;
  $('prev').disabled=state.page===0;$('next').disabled=state.page+1>=totalPages;
+ window.svtSharedMedia?.fillArtwork();
+}
+// Milestone evidence is the same dated 100M+ history used by the existing
+// OT13 and Unit/Solo milestone pages. Never invent a historical crossing date.
+const milestoneValues=[100000000,200000000,300000000,400000000,500000000,
+ 600000000,700000000,800000000,900000000,1000000000];
+const milestoneNameKey=name=>'name:'+String(name||'').toLowerCase().normalize('NFKC').replace(/[^a-z0-9]/g,'');
+const milestoneShort=n=>n>=1000000000?'1B':Math.round(n/1000000)+'M';
+const milestoneDays=(date1,date2)=>/^20\d\d-\d\d-\d\d$/.test(date1||'')&&
+ /^20\d\d-\d\d-\d\d$/.test(date2||'')?
+ Math.round((Date.parse(date2)-Date.parse(date1))/86400000):null;
+function milestoneEvidence(row,target){
+ const evidence=state.milestoneEvidence;
+ return (row.scope==='solo'?evidence.byTrack?.['track:'+row.id]:
+  evidence.byName?.[milestoneNameKey(row.title)])?.[target]||null;
+}
+function milestoneDailyGain(row){
+ const previous=state.milestonePrevious[row.scope];
+ if(!previous||milestoneDays(previous.date,state[row.scope].date)!==1)return null;
+ const baseline=verifiedBaselineValue(row.scope,row.id,previous);
+ return Number.isFinite(baseline)&&Number.isFinite(row.streams)&&row.streams>=baseline?
+  row.streams-baseline:null;
+}
+function setupMilestoneOptions(){
+ const mode=state.milestoneMode,selected=$('milestoneThreshold').value;
+ $('milestoneThreshold').innerHTML='<option value="0">'+
+  (mode==='reached'?'All reached milestones':'All next milestones')+'</option>'+
+  milestoneValues.map(v=>'<option value="'+v+'">'+milestoneShort(v)+'</option>').join('');
+ if([...$('milestoneThreshold').options].some(o=>o.value===selected))
+  $('milestoneThreshold').value=selected;
+ else $('milestoneThreshold').value=mode==='reached'?'100000000':'0';
+ const sort=$('milestoneSort');
+ for(const option of sort.options){
+  const specificReached=['recent','fastest'].includes(option.value);
+  const specificUpcoming=['closest','soonest'].includes(option.value);
+  option.hidden=(mode==='reached'&&specificUpcoming)||(mode==='upcoming'&&specificReached);
+  option.disabled=option.hidden;
+ }
+ if(sort.selectedOptions[0]?.disabled)sort.value=mode==='reached'?'streams':'soonest';
+ $('milestoneReached').classList.toggle('selected',mode==='reached');
+ $('milestoneUpcoming').classList.toggle('selected',mode==='upcoming');
+ $('milestoneReached').setAttribute('aria-selected',String(mode==='reached'));
+ $('milestoneUpcoming').setAttribute('aria-selected',String(mode==='upcoming'));
+ $('milestoneValueHeading').textContent=mode==='reached'?'MILESTONE REACHED':'NEXT MILESTONE';
+ $('milestoneDateHeading').textContent=mode==='reached'?'DATE REACHED':'STREAMS LEFT / ETA';
+}
+function renderMilestones(){
+ if(!state.rows.length)return;
+ const mode=state.milestoneMode,threshold=Number($('milestoneThreshold').value);
+ const query=$('milestoneSearch').value.trim().toLowerCase(),sort=$('milestoneSort').value;
+ const rows=[];
+ for(const row of state.rows){
+  if(!Number.isFinite(row.streams)||row.streams<0||!row.title)continue;
+  if(query&&![row.title,...row.owners,...row.releaseNames].join(' ').toLowerCase().includes(query))continue;
+  let reached=null,target=null,date=null,left=null,gain=null,eta=null,elapsed=null;
+  if(mode==='reached'){
+   const options=milestoneValues.filter(value=>row.streams>=value);
+   if(!options.length)continue;
+   reached=threshold?threshold:options.at(-1);
+   if(row.streams<reached)continue;
+   date=milestoneEvidence(row,reached)?.date||null;
+   elapsed=date?milestoneDays(row.date,date):null;
+   if(elapsed!=null&&elapsed<0)elapsed=null;
+  }else{
+   target=milestoneValues.find(value=>row.streams<value);
+   if(!target||(threshold&&target!==threshold))continue;
+   left=target-row.streams;
+   gain=milestoneDailyGain(row);
+   if(gain>0){
+    const daysToNext=Math.ceil(left/gain);
+    if(daysToNext<=36500)eta=new Date(Date.parse(state[row.scope].date+'T12:00:00Z')+
+     daysToNext*86400000).toISOString().slice(0,10);
+   }
+  }
+  rows.push({...row,reached,target,date,left,gain,eta,elapsed});
+ }
+ rows.sort((a,b)=>{
+  if(sort==='title')return a.title.localeCompare(b.title);
+  if(sort==='recent'&&mode==='reached')return (b.date||'').localeCompare(a.date||'')||b.streams-a.streams;
+  if(sort==='fastest'&&mode==='reached')return (a.elapsed??Infinity)-(b.elapsed??Infinity)||b.streams-a.streams;
+  if(sort==='closest'&&mode==='upcoming')return a.left-b.left||b.streams-a.streams;
+  if(sort==='soonest'&&mode==='upcoming'){
+   const ax=a.eta?milestoneDays(state[a.scope].date,a.eta):Infinity,
+    bx=b.eta?milestoneDays(state[b.scope].date,b.eta):Infinity;
+   return ax-bx||a.left-b.left;
+  }
+  return b.streams-a.streams||a.title.localeCompare(b.title);
+ });
+ const pageSize=40,totalPages=Math.max(1,Math.ceil(rows.length/pageSize));
+ state.milestonePage=Math.max(0,Math.min(state.milestonePage,totalPages-1));
+ const visible=rows.slice(state.milestonePage*pageSize,(state.milestonePage+1)*pageSize);
+ $('milestoneRows').innerHTML=visible.map((row,i)=>{
+  const name=esc(row.title),artwork=esc(artworkFor(row));
+  const link='<a class="svt-all-song" target="_blank" rel="noopener noreferrer" href="https://open.spotify.com/track/'+
+   encodeURIComponent(row.id)+'">'+name+'</a>';
+  const score=mode==='reached'?milestoneShort(row.reached):milestoneShort(row.target);
+  const detail=mode==='reached'?(row.date?esc(row.date):'Date not verified'):
+   '<strong>'+fmt(row.left)+'</strong> left'+
+   '<div class="svt-all-sub">'+(row.gain!=null?'+'+fmt(row.gain)+'/day':'Daily gain unavailable')+
+   (row.eta?' · Est. '+esc(row.eta):' · ETA unavailable')+'</div>';
+  const daysDetail=mode==='reached'&&Number.isFinite(row.elapsed)?
+   ' · '+row.elapsed.toLocaleString()+' days from release':'';
+  return '<tr><td><div class="svt-all-record">'+
+   '<span class="svt-all-rank">'+String(state.milestonePage*pageSize+i+1).padStart(2,'0')+'</span>'+
+   '<span class="svt-all-art-holder"><img class="svt-all-cover cover" data-cover-track="'+artwork+
+   '" data-cover-name="'+name+'" data-cover-kind="track" alt="'+name+' cover" loading="lazy">'+
+   '<span class="cover-placeholder" hidden></span></span>'+
+   '<div class="svt-all-record-copy">'+link+'<div class="svt-all-sub">'+
+   esc(row.owners.join(' · '))+(row.date?' · Released '+esc(row.date):'')+daysDetail+
+   '</div></div></div></td><td class="svt-all-num">'+score+'</td>'+
+   '<td class="svt-all-num">'+detail+'</td></tr>';
+ }).join('')||'<tr><td colspan="3" class="svt-all-status">No verified recordings match this milestone.</td></tr>';
+ const withDates=rows.filter(r=>r.date).length;
+ $('milestoneStatus').textContent=mode==='reached'?
+  rows.length+' recordings reached '+(threshold?milestoneShort(threshold):'100M or higher')+
+  ' · '+withDates+' have a documented milestone date. Missing dates are shown honestly as unavailable.':
+  rows.length+' recordings with an upcoming milestone'+
+   ' · estimates use the latest consecutive verified daily snapshots when available.';
+ $('milestonePageInfo').textContent=(state.milestonePage+1)+' / '+totalPages;
+ $('milestonePrev').disabled=state.milestonePage===0;
+ $('milestoneNext').disabled=state.milestonePage+1>=totalPages;
  window.svtSharedMedia?.fillArtwork();
 }
 async function init(){
