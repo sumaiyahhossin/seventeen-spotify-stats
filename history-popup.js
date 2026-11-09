@@ -10,6 +10,7 @@
  .svt-history-open{cursor:pointer!important}
  .svt-history-open:focus-visible{outline:2px solid #d4a8ed;outline-offset:3px}
  .svt-history-open:hover .metric-value,.svt-history-open:hover strong{text-decoration:underline;text-decoration-style:dotted;text-underline-offset:4px}
+ .svt-history-dialog[hidden]{display:none!important;visibility:hidden!important;pointer-events:none!important}
  .svt-history-dialog{position:fixed;inset:0;z-index:99990;background:rgba(4,5,16,.82);display:flex;align-items:center;justify-content:center;padding:14px;backdrop-filter:blur(7px)}
  .svt-history-window{width:min(740px,100%);max-height:min(790px,92dvh);overflow:auto;border:1px solid #8d71b8;border-radius:19px;background:#181a35;color:#f8f3ff;padding:20px;box-shadow:0 20px 70px #040313}
  .svt-history-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
