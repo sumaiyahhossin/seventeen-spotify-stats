@@ -60,17 +60,31 @@ def check_viewport(driver,width,height):
     assert not undated, f"Official albums without release dates: {undated}"
     # The Most/Least streamed options must sort FULL album totals,
     # not remain in the source catalog's fixed release sequence.
-    assert 'SECOND WIND' in titles[0], f'Incorrect top-streamed album: {titles[0]}'
+    # Album stream leaders change as real Spotify snapshots update.
+    # Check that the UI is sorted by displayed cumulative totals rather than
+    # assuming a particular release must permanently lead the chart.
+    totals=driver.execute_script("""
+      return [...document.querySelectorAll('#ranking .rank-row')].map(row=>{
+        const value=row.querySelector('.rank-metric-total .metric-value')?.textContent||'';
+        return Number(value.replace(/[^0-9]/g,''))||0;
+      });
+    """)
+    assert totals==sorted(totals,reverse=True), f'Album totals not sorted from highest: {totals}'
     driver.execute_script("""
       const el=document.getElementById('order');
       el.value='least';el.dispatchEvent(new Event('change',{bubbles:true}));
     """)
     WebDriverWait(driver,20).until(lambda d:
-        '9' in d.find_element(By.CSS_SELECTOR,'#ranking .rank-row .track-name').text
-        and 'SECOND WIND' in d.find_elements(By.CSS_SELECTOR,'#ranking .rank-row .track-name')[-1].text)
+        '9' in d.find_element(By.CSS_SELECTOR,'#ranking .rank-row .track-name').text)
     smallest=[x.text for x in driver.find_elements(By.CSS_SELECTOR,'#ranking .track-name')]
     print('Album least-streamed order:',smallest,flush=True)
-    assert smallest[0].endswith(' - 9'),f"Incorrect least-streamed album: {smallest[0]}"
+    least_totals=driver.execute_script("""
+      return [...document.querySelectorAll('#ranking .rank-row')].map(row=>{
+        const value=row.querySelector('.rank-metric-total .metric-value')?.textContent||'';
+        return Number(value.replace(/[^0-9]/g,''))||0;
+      });
+    """)
+    assert least_totals==sorted(least_totals),f"Album totals not sorted from lowest: {least_totals}"
     driver.execute_script("""
       const el=document.getElementById('order');
       el.value='most';el.dispatchEvent(new Event('change',{bubbles:true}));
