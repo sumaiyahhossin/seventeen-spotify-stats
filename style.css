@@ -1974,3 +1974,19 @@ body.svt-daily-ranking .rank-row{
   grid-template-columns:minmax(0,1fr) 64px 61px!important;column-gap:3px!important
  }
 }
+
+/* v130 — softer Spotify CTA, integrated with the lavender theme. */
+.hero .spotify-artist-link,
+.hero .spotify-artist-link:visited{
+ color:#d9c8eb!important;
+ background:rgba(116,88,160,.16)!important;
+ border-color:rgba(192,164,225,.35)!important;
+ text-shadow:none!important;
+ box-shadow:0 5px 18px rgba(64,43,108,.12)!important;
+}
+.hero .spotify-artist-link:hover,
+.hero .spotify-artist-link:focus-visible{
+ color:#eee0f8!important;
+ background:rgba(139,107,178,.27)!important;
+ border-color:rgba(207,172,238,.52)!important;
+}
