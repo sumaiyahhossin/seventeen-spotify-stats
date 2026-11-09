@@ -25,8 +25,8 @@
  .svt-history-table tr:last-child td{border-bottom:0}
  .svt-history-table tr:first-child td{font-weight:800}
  .svt-history-table .unavailable{color:#a9a6c1}
- .svt-history-table .negative{color:#ff9ac9;font-weight:700}
- .svt-history-table .positive{color:#78b8ff;font-weight:700}
+ .svt-history-table .negative{color:#ffb0d5;font-weight:700}
+ .svt-history-table .positive{color:#a9caff;font-weight:700}
  @media(max-width:600px){
   .svt-history-dialog{padding:4px;box-sizing:border-box}
   .svt-history-window{box-sizing:border-box;width:100%;max-width:100%;min-width:0;padding:12px 5px;border-radius:12px}
