@@ -1921,11 +1921,7 @@ function renderArtistProfiles(){
  if(tab!=='solo')return;
  area.innerHTML='<div class="artist-profiles-heading">SOLOS & UNITS <span>✦</span></div>'+(selectedSoloArtist?'<div class="artist-selection-heading"><button type="button" id="allSoloArtists">← All units & solos</button><strong>'+escapeHtml(selectedSoloArtist)+' · STREAMING STATS</strong></div>':'')+'<div class="artist-profile-grid">'+soloArtists.map(([name,id])=>{
   const photo=name==='V8'||name==='JxJ'||name==='S.Coups'?'<img class="artist-profile-photo" data-unit-photo="'+name+'" alt="'+name+' full unit concept photo" loading="lazy">':id?'<img class="artist-profile-photo" data-artist-photo="'+id+'" alt="'+name+' artist photo" loading="lazy">':'';
-  const observed=id?verifiedSoloFollowers[id]:null;
-  const hasExact=observed&&Number.isFinite(observed.count)&&observed.count>=0;
-  const followerLabel=id?(hasExact?fmt(observed.count)+' followers':'Followers pending'):'';
-  const followerInfo=id?'<span class="artist-profile-followers'+(hasExact?' verified':'')+'">'+escapeHtml(followerLabel)+'</span>':'';
-  return '<button type="button" class="artist-profile'+(selectedSoloArtist===name?' selected':'')+'" data-solo-artist="'+escapeHtml(name)+'" aria-pressed="'+(selectedSoloArtist===name)+'" title="View '+escapeHtml(name)+' statistics">'+photo+'<span class="artist-profile-name">'+escapeHtml(name)+'</span>'+followerInfo+'</button>';
+  return '<button type="button" class="artist-profile'+(selectedSoloArtist===name?' selected':'')+'" data-solo-artist="'+escapeHtml(name)+'" aria-pressed="'+(selectedSoloArtist===name)+'" title="View '+escapeHtml(name)+' statistics">'+photo+'<span class="artist-profile-name">'+escapeHtml(name)+'</span></button>';
  }).join('')+'</div>';
  area.querySelector('#allSoloArtists')?.addEventListener('click',()=>{selectedSoloArtist=null;saveView();render()});
  area.querySelectorAll('[data-solo-artist]').forEach(button=>button.addEventListener('click',()=>{selectedSoloArtist=button.dataset.soloArtist;saveView();render()}));
