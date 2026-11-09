@@ -54,11 +54,9 @@ print(f'solo/unit followers: {len(saved)}/{len(ids)} already recorded, {len(pend
 if not pending:
     sys.exit(0)
 
-# Diagnostic mode: only the first still-unverified artist is fetched,
-# including when official Spotify API credentials are available.
-# The caller will deliberately stop after a single attempt.
-pending=pending[:1]
-print('One-profile verification: '+pending[0],flush=True)
+# Use the official API for every due profile. Restrict only the expensive
+# browser fallback to one unresolved profile per invocation.
+print('API verification for '+str(len(pending))+' profiles',flush=True)
 
 found={}
 client_id=os.getenv('SPOTIFY_CLIENT_ID')
@@ -92,6 +90,8 @@ if missing:
     if not classpath:
         print('Missing COLLECTOR_CLASSPATH: cannot run fallback artist collector',file=sys.stderr)
     else:
+        missing=missing[:1]
+        print('One-profile browser fallback: '+missing[0],flush=True)
         subprocess.run([sys.executable,str(ROOT/'tools/instrument.py'),'solo'],check=True)
         subprocess.run(['javac','-cp',classpath,'-d',str(ROOT/'build'),
                         str(ROOT/'build'/'Stream_Stats_Units_Duos.java')],check=True)
@@ -108,11 +108,12 @@ if missing:
             elif line.startswith('STAT_FOLLOWERS_UNAVAILABLE|'):
                 print(line,flush=True)
         if result.returncode:
-            raise SystemExit(f'One-profile follower probe failed (Java exit {result.returncode}): {result.stderr[-500:]}')
+            print(f'Browser follower probe failed (Java exit {result.returncode}): {result.stderr[-500:]}',file=sys.stderr)
         if missing[0] not in found:
             diagnostics=[line for line in result.stdout.splitlines() if line.startswith(('STAT_FOLLOWERS_UNAVAILABLE|','STAT_FOLLOWERS_DIAGNOSTIC|'))]
-            raise SystemExit('STOPPED after first unsuccessful artist. Spotify About markup or follower precision needs investigation. '+ ' ; '.join(diagnostics[-4:]))
-        print('First follower probe verified one artist. No other artist was scanned in diagnostic mode.',flush=True)
+            print('Exact follower total still unavailable; retaining the profile as unverified. '+ ' ; '.join(diagnostics[-4:]),flush=True)
+        else:
+            print('Browser fallback verified one additional artist.',flush=True)
 
 if found:
     now=TODAY.isoformat()
@@ -122,4 +123,4 @@ if found:
     OUTPUT.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 remaining=sorted(id for id in ids if id not in saved or not isinstance(saved[id].get('count'),int))
 print(f'Solo/unit follower archive: {len(ids)-len(remaining)}/{len(ids)} verified. '
-      f'Unverified artist profiles: {len(remaining)}; automatic retries paused pending diagnostic review.',flush=True)
+      f'Unverified artist profiles: {len(remaining)}; unverified values remain blank.',flush=True)
