@@ -1921,7 +1921,11 @@ function renderArtistProfiles(){
  if(tab!=='solo')return;
  area.innerHTML='<div class="artist-profiles-heading">SOLOS & UNITS <span>✦</span></div>'+(selectedSoloArtist?'<div class="artist-selection-heading"><button type="button" id="allSoloArtists">← All units & solos</button><strong>'+escapeHtml(selectedSoloArtist)+' · STREAMING STATS</strong></div>':'')+'<div class="artist-profile-grid">'+soloArtists.map(([name,id])=>{
   const photo=name==='V8'||name==='JxJ'||name==='S.Coups'?'<img class="artist-profile-photo" data-unit-photo="'+name+'" alt="'+name+' full unit concept photo" loading="lazy">':id?'<img class="artist-profile-photo" data-artist-photo="'+id+'" alt="'+name+' artist photo" loading="lazy">':'';
-  return '<button type="button" class="artist-profile'+(selectedSoloArtist===name?' selected':'')+'" data-solo-artist="'+escapeHtml(name)+'" aria-pressed="'+(selectedSoloArtist===name)+'" title="View '+escapeHtml(name)+' statistics">'+photo+'<span class="artist-profile-name">'+escapeHtml(name)+'</span></button>';
+  const observed=id?verifiedSoloFollowers[id]:null;
+  const hasExact=observed&&Number.isFinite(observed.count)&&observed.count>=0;
+  const followerLabel=id?(hasExact?fmt(observed.count)+' followers':'Followers pending'):'';
+  const followerInfo=id?'<span class="artist-profile-followers'+(hasExact?' verified':'')+'">'+escapeHtml(followerLabel)+'</span>':'';
+  return '<button type="button" class="artist-profile'+(selectedSoloArtist===name?' selected':'')+'" data-solo-artist="'+escapeHtml(name)+'" aria-pressed="'+(selectedSoloArtist===name)+'" title="View '+escapeHtml(name)+' statistics">'+photo+'<span class="artist-profile-name">'+escapeHtml(name)+'</span>'+followerInfo+'</button>';
  }).join('')+'</div>';
  area.querySelector('#allSoloArtists')?.addEventListener('click',()=>{selectedSoloArtist=null;saveView();render()});
  area.querySelectorAll('[data-solo-artist]').forEach(button=>button.addEventListener('click',()=>{selectedSoloArtist=button.dataset.soloArtist;saveView();render()}));
@@ -2780,7 +2784,18 @@ async function render(){const token=++renderToken;
  document.body.classList.toggle('svt-units-solo',tab==='solo');
  document.body.classList.toggle('svt-solo-all',tab==='solo'&&!selectedSoloArtist);
  document.body.classList.toggle('svt-solo-without-audience',tab==='solo'&&['JxJ','V8'].includes(selectedSoloArtist));
- $('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';try{useDatesForTab();renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;if(tab==='group')updateYear2026Streams();syncCalendar();restoreGroupNames(s,p);
+ $('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';try{
+ if(tab==='solo'){
+  try{
+   const response=await fetch('data/solo-followers.json',{cache:'no-store'});
+   if(response.ok){
+    const body=await response.json();
+    if(body&&body.followers)verifiedSoloFollowers=body.followers;
+   }
+  }catch(error){console.warn('Follower data refresh unavailable; keeping last verified readings',error)}
+ }
+ if(token!==renderToken)return;
+ useDatesForTab();renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;if(tab==='group')updateYear2026Streams();syncCalendar();restoreGroupNames(s,p);
  document.body.classList.toggle('svt-overall-four-cols',rank.endsWith('overall'));
  document.body.classList.toggle('svt-daily-ranking',rank.endsWith('daily')&&tab==='group');
  document.body.classList.toggle('svt-discography-table',rank.startsWith('discography'));
