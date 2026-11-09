@@ -713,7 +713,12 @@ function discographyRows(s,p,pp,baseline){
   for(const id of [...new Set(item.tracks||[])]){
    // Show the complete catalog even when a historical snapshot has no matching Spotify ID.
    const g=periodic?periodGain(s,baseline,id):safeGain(s,p,id);
-   rows.push({id,name:displayTrackName(s.names?.[id]||idName[id]||id),artworkRelease:item.key,streams:s.tracks?.[id]??null,gain:g,change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),kind:'track',releaseOrder:rows.length});
+   const gilboardEdition=tab==='solo'&&item.key==='picheolin_g3'&&
+      ['34wTGQ1yV5XtrSMR5dMLWY','5W1bn5PzFgKok4GAZ1JUAw'].includes(id);
+   rows.push({id,name:displayTrackName(s.names?.[id]||idName[id]||id),artworkRelease:item.key,
+    edition:gilboardEdition?'Gilboard album version':null,
+    streams:s.tracks?.[id]??null,gain:g,change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),
+    kind:'track',releaseOrder:rows.length});
   }
   if(item.key==='g6'||item.key==='g36'){
    rows.push({...albumTotalRow,
@@ -797,6 +802,15 @@ function canonicalArchiveRow(row){
 }
 function originalReleaseDate(row){
  row=canonicalArchiveRow(row);
+ // The historical workbook lists the original singles and separate later
+ // Gilboard album copies. Use their particular edition's release date.
+ if(tab==='solo'&&/^legacy:/.test(String(row.id||''))&&
+    ['Picheolin','Gilboard'].includes(row.soloOwner)){
+  const index=Number(String(row.id).split(':').at(-1));
+  if(index===377||index===378)return '2026-07-15';
+  if(index===379||index===380)return '2026-07-22';
+  if(index>=381&&index<=399)return '2026-08-03';
+ }
  // Original song releases are authoritative even on later anthology/album pages.
  // A standalone Picheolin single keeps its July date inside August's Gilboard.
  if(tab==='solo'&&row.id&&row.kind!=='album'&&row.kind!=='grand'){
@@ -1190,6 +1204,24 @@ const verifiedOriginalCovers={
 // Historical spreadsheet rows have legacy IDs rather than Spotify IDs.
 // Resolve artwork through the same current catalog used by the latest date.
 function historicalArtworkId(row){
+ // Map legacy Picheolin row positions to their correct original single or
+ // August album artwork, rather than matching ambiguous titles.
+ if(tab==='solo'&&/^legacy:/.test(String(row.id||''))&&
+    ['Picheolin','Gilboard'].includes(row.soloOwner)){
+  const index=Number(String(row.id).split(':').at(-1));
+  const release=(index===377||index===378)?'picheolin_g1':
+     (index===379||index===380)?'picheolin_g2':
+     (index>=381&&index<=387)?'picheolin_g3':
+     (index>=392&&index<=399)?'gilboard':null;
+  if(release){
+   const item=(catalog.solo||[]).find(x=>x.key===release);
+   if(row.kind==='album')return {artworkRelease:release};
+   const position=index>=392?index-392:index>=381?index-381:0;
+   const id=item?.tracks?.[position];
+   if(id)return {id};
+   return {artworkRelease:release};
+  }
+ }
  const key=coverKey(row.name||'');
  const items=catalog[tab]||[];
  if(row.kind==='album'||rank.startsWith('albums')){
@@ -1802,14 +1834,20 @@ function soloLegacyRows(s,p,pp,baseline,view){
   if(view==='tracks'&&album)continue;
   if(!album){
    const fingerprint=normTrackName(source.name)+'|'+source.value;
-   if(seen.has(fingerprint))continue;
+   // Keep identical stream totals as distinct release editions in discography,
+   // not as duplicate entries in the overall track tally.
+   const editionCopy=view==='discography'&&['Picheolin','Gilboard'].includes(owner)&&
+    [384,385,395,396].includes(Number(source.id.split(':').at(-1)));
+   if(seen.has(fingerprint)&&!editionCopy)continue;
    seen.add(fingerprint);
   }
   const name=album?source.name.replace(/\s*(?:Total|Tota;)\s*:?$/i,'').trim():displayTrackName(source.name);
   const row={id:source.id,name,streams:source.value,
    gain:periodic?periodGain(s,baseline,source.id):safeGain(s,p,source.id),
    change:periodic?periodChange(s,baseline,source.id):dailyChange(s,p,pp,source.id),
-   kind:album?'album':'track',soloOwner:owner,releaseOrder:rows.length};
+   kind:album?'album':'track',soloOwner:owner,releaseOrder:rows.length,
+   edition:!album&&['Picheolin','Gilboard'].includes(owner)&&
+      [384,385,395,396].includes(Number(source.id.split(':').at(-1)))?'Gilboard album version':null};
   // Include dates only where the catalog or a verified release map identifies
   // the recording; never borrow another member's similarly named song date.
   row.releaseDate=originalReleaseDate(row)||null;
@@ -2438,7 +2476,7 @@ async function render(){const token=++renderToken;
    });
   }
  }
- $('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="rank-position"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${!discography?`<span class="rank-trend ${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'rank-up':rankMovements.get(positionKeyForDisplay(r))<0?'rank-down':'rank-same':'rank-unknown'}" title="${rankMovements.has(positionKeyForDisplay(r))?'Streaming rank change versus previous '+(daily?'day':rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'period'):'Previous streaming rank unavailable'}">${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'↑ '+rankMovements.get(positionKeyForDisplay(r)):rankMovements.get(positionKeyForDisplay(r))<0?'↓ '+Math.abs(rankMovements.get(positionKeyForDisplay(r))):'=':'—'}</span>`:''}</span>${`<span class="cover-slot">${true?`<img class="cover" data-cover-track="${artworkTrack(r)||'missing'}" data-cover-name="${escapeHtml(r.name)}" data-cover-kind="${r.kind==='album'?'album':'track'}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden>💎</span>`:`<span class="cover-placeholder">💎</span>`}</span>`}<span class="track-copy">${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}${(rankType==="albums"||rankType==="tracks"||discography||r.kind==="album")&&originalReleaseDate(r)?`<span class="release-date">Released ${formatOriginalRelease(originalReleaseDate(r))}</span>`:""}</span></div>${renderRankMetrics(r)}</div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork();scheduleMobileRankingNameFit()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
+ $('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}"><div class="track"><span class="rank-position"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${!discography?`<span class="rank-trend ${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'rank-up':rankMovements.get(positionKeyForDisplay(r))<0?'rank-down':'rank-same':'rank-unknown'}" title="${rankMovements.has(positionKeyForDisplay(r))?'Streaming rank change versus previous '+(daily?'day':rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'period'):'Previous streaming rank unavailable'}">${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'↑ '+rankMovements.get(positionKeyForDisplay(r)):rankMovements.get(positionKeyForDisplay(r))<0?'↓ '+Math.abs(rankMovements.get(positionKeyForDisplay(r))):'=':'—'}</span>`:''}</span>${`<span class="cover-slot">${true?`<img class="cover" data-cover-track="${artworkTrack(r)||'missing'}" data-cover-name="${escapeHtml(r.name)}" data-cover-kind="${r.kind==='album'?'album':'track'}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden>💎</span>`:`<span class="cover-placeholder">💎</span>`}</span>`}<span class="track-copy">${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}${(rankType==="albums"||rankType==="tracks"||discography||r.kind==="album")&&originalReleaseDate(r)?`<span class="release-date">Released ${formatOriginalRelease(originalReleaseDate(r))}</span>`:""}${r.edition?`<span class="release-edition">${escapeHtml(r.edition)}</span>`:""}</span></div>${renderRankMetrics(r)}</div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork();scheduleMobileRankingNameFit()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
 $('#tabs').addEventListener('click',e=>{const b=e.target.closest('button');if(!b)return;tab=b.dataset.tab;$('#tabs').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===b));render()});
 function syncRank(){rank=rankType+'-'+$('#rankPeriod').value;syncPeriodPicker();saveView();render()}
 $('#rankCategory').addEventListener('click',e=>{const button=e.target.closest('button[data-type]');if(!button)return;rankType=button.dataset.type;$('#rankCategory').querySelectorAll('button').forEach(x=>x.classList.toggle('active',x===button));syncRank()});
