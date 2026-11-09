@@ -54,6 +54,26 @@
   }
   return vals.reduce((a,b)=>a+b,0);
  };
+ // Historical Excel row IDs change whenever a song is inserted. Find
+ // the same member/recording by title + occurrence, not by stale row index.
+ const matchedLegacyValue=(snapshot,reference,legacyId,owner,kind)=>{
+  if(!isHistorical(snapshot)||!isHistorical(reference))return null;
+  const sourceSections=soloLegacySections(reference)||{};
+  const destSections=soloLegacySections(snapshot)||{};
+  const sourceOwner=owner&&sourceSections[owner]?.some(row=>row.id===legacyId)
+    ?owner:Object.keys(sourceSections).find(k=>sourceSections[k]?.some(row=>row.id===legacyId));
+  if(!sourceOwner)return null;
+  const source=(sourceSections[sourceOwner]||[]).find(row=>row.id===legacyId);
+  const key=soloHistoricalNameKey(source?.name);
+  if(!key)return null;
+  const sourceMatches=(sourceSections[sourceOwner]||[]).filter(row=>
+   historicalKind(reference,row.id)===kind&&soloHistoricalNameKey(row.name)===key);
+  const destMatches=(destSections[sourceOwner]||[]).filter(row=>
+   historicalKind(snapshot,row.id)===kind&&soloHistoricalNameKey(row.name)===key);
+  if(!destMatches.length||destMatches.length!==sourceMatches.length)return null;
+  const occurrence=sourceMatches.findIndex(row=>row.id===legacyId);
+  return numberOrNull(destMatches[occurrence]?.value);
+ };
  function metricValue(snapshot,metric,reference,scope,owner){
   if(!snapshot)return null;
   if(metric.kind==='audience'){
@@ -61,17 +81,31 @@
     numberOrNull(audienceValue(snapshot,metric.value));
   }
   if(metric.kind==='track'){
+   if(scope==='solo'&&isHistorical(snapshot)){
+    if(isHistorical(reference)&&String(metric.id).startsWith('legacy:'))
+     return matchedLegacyValue(snapshot,reference,metric.id,owner,'track');
+    if(typeof verifiedSoloLegacyValue==='function'){
+     const resolved=verifiedSoloLegacyValue(snapshot,metric.id);
+     return resolved?numberOrNull(resolved.value):null;
+    }
+    return null;
+   }
+   // Never use a numeric legacy ID in a live Spotify snapshot.
+   if(String(metric.id).startsWith('legacy:'))return null;
    let value=numberOrNull(snapshot.tracks?.[metric.id]);
-   if(value==null&&reference&&snapshot.date<reference.date){
-    const found=(scope==='solo'&&isHistorical(snapshot)&&typeof verifiedSoloLegacyValue==='function'
-      ?verifiedSoloLegacyValue(snapshot,metric.id):null)||comparablePrevious(reference,snapshot,metric.id);
+   if(value==null&&reference&&snapshot.date<reference.date&&
+      !isHistorical(reference)){
+    const found=comparablePrevious(reference,snapshot,metric.id);
     value=found?numberOrNull(found.value):null;
    }
    return value;
   }
   if(metric.kind==='album'){
-   // A legacy workbook subtotal has its own ID. Otherwise calculate from
-   // all unique recordings in the catalog; never count a track twice.
+   // A legacy subtotal ID must be rematched by member/title each month;
+   // the same row number can mean a different album in an older workbook.
+   if(scope==='solo'&&String(metric.id).startsWith('legacy:')&&
+      isHistorical(snapshot)&&isHistorical(reference))
+    return matchedLegacyValue(snapshot,reference,metric.id,owner,'album');
    if(metric.id&&snapshot.tracks?.[metric.id]!=null)
     return numberOrNull(snapshot.tracks[metric.id]);
    const item=(catalog[scope]||[]).find(x=>x.key===metric.release);
