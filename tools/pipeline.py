@@ -3,23 +3,33 @@ ROOT=pathlib.Path(__file__).resolve().parents[1]
 DATA=ROOT/'data'; TZ=zoneinfo.ZoneInfo('America/New_York')
 now=datetime.datetime.now(TZ)
 today=now.date().isoformat()
-# Spotify's reporting day rolls over at 2 PM America/New_York.
-# Runs before the cutoff still belong to the preceding reporting cycle.
-report_date=(now.date()-datetime.timedelta(days=1 if now.hour>=14 else 2)).isoformat()
+# Each reporting date opens at 2 PM New York, but an unfinished date
+# remains pending across midnight (and across subsequent 2 PM cutoffs).
+# Never derive the target exclusively from today's calendar date.
+available_through=(now.date()-datetime.timedelta(days=1 if now.hour>=14 else 2)).isoformat()
 state_path=DATA/'state.json'
 state=json.loads(state_path.read_text()) if state_path.exists() else {'group':{},'solo':{}}
 kind=sys.argv[1]
 entry=state.setdefault(kind,{})
 current_path=DATA/f'{kind}.json'
 previous=json.loads(current_path.read_text()) if current_path.exists() else None
-if entry.get('reported_date')!=report_date:
-    entry['pending']=report_date
+if previous and previous.get('date'):
+    report_date=(datetime.date.fromisoformat(previous['date'])+datetime.timedelta(days=1)).isoformat()
+else:
+    report_date=entry.get('pending') or available_through
+# Explicit pending state takes priority when it represents an older missing
+# report than the date inferred from the newest snapshot.
+if entry.get('pending') and entry['pending']<report_date:
+    report_date=entry['pending']
+if report_date>available_through:
+    print(f'{kind}: no new reporting date is due (last saved: {previous.get("date") if previous else "none"}; available through: {available_through})')
+    sys.exit(0)
+entry['pending']=report_date
 force_collect = os.getenv('FORCE_COLLECT') == 'true'
-# Missing follower counts never restart an otherwise completed stream scan.
-if not entry.get('pending') and not force_collect:
-    print(kind,'already updated today');sys.exit(0)
 if force_collect:
-    print(kind,'forced collection requested; bypassing daily completion check')
+    print(f'{kind}: forced retry of pending reporting date {report_date}')
+else:
+    print(f'{kind}: collecting pending reporting date {report_date}; latest eligible {available_through}')
 if not os.getenv('COLLECTOR_CLASSPATH'):
     raise SystemExit('Set COLLECTOR_CLASSPATH to Selenium dependency classpath')
 subprocess.run([sys.executable,str(ROOT/'tools/instrument.py'),kind],check=True)
