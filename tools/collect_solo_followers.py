@@ -22,6 +22,7 @@ OUTPUT=DATA/'solo-followers.json'
 TODAY=dt.datetime.now(ZoneInfo('America/New_York'))
 # Match the 2 PM New York reporting-day gate used by solo_followers_due.py.
 REPORT_DATE=TODAY.date() if TODAY.hour>=14 else TODAY.date()-dt.timedelta(days=1)
+REPORT_CUTOFF=dt.datetime.combine(REPORT_DATE,dt.time(14,0),tzinfo=ZoneInfo('America/New_York'))
 
 def load(path, default):
     try:
@@ -46,7 +47,7 @@ for artist_id in sorted(ids):
     count=entry.get('count') if isinstance(entry,dict) else None
     try:
         observed=dt.datetime.fromisoformat(entry['captured_at'])
-        fresh=(observed.astimezone(ZoneInfo('America/New_York')).date()>=REPORT_DATE and observed<=TODAY)
+        fresh=(observed.astimezone(ZoneInfo('America/New_York'))>=REPORT_CUTOFF and observed<=TODAY)
     except (KeyError,ValueError,TypeError):
         fresh=False
     if not (isinstance(count,int) and count>=0 and fresh):
