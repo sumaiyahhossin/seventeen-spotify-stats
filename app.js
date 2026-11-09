@@ -21,6 +21,12 @@ try{
  }
  if('scrollRestoration' in window.history)window.history.scrollRestoration='manual';
 }catch(e){console.warn('Could not restore saved view',e)}
+// Explicit navigation from the combined All page takes precedence over
+// an earlier saved tab, while preserving the rest of the user's settings.
+try{
+ const requestedTab=new URLSearchParams(location.search).get('view');
+ if(requestedTab==='group'||requestedTab==='solo')tab=requestedTab;
+}catch{}
 let selectedPeriodKey=null;
 try{selectedPeriodKey=JSON.parse(sessionStorage.getItem(viewStateKey)||'{}').selectedPeriodKey||null}catch{}
 let savedScroll=0;
