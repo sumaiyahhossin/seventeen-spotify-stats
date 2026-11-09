@@ -34,7 +34,14 @@ public class Stream_Stats_Units_Duos {
         options.addArguments("--disable-blink-features=AutomationControlled");
         options.addArguments("--user-agent=Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/135.0.0.0 Safari/537.36");
 
+        if (System.getenv("SVT_FOLLOWERS_ONLY") != null) {
+            org.openqa.selenium.logging.LoggingPreferences logPrefs = new org.openqa.selenium.logging.LoggingPreferences();
+            logPrefs.enable("performance", java.util.logging.Level.ALL);
+            options.setCapability("goog:loggingPrefs", logPrefs);
+        }
         WebDriver driver = new ChromeDriver(options);
+        if (System.getenv("SVT_FOLLOWERS_ONLY") != null)
+            ((ChromeDriver) driver).executeCdpCommand("Network.enable", new HashMap<String, Object>());
 
         //artist: jeonghan
 
@@ -659,6 +666,60 @@ public class Stream_Stats_Units_Duos {
      * Never convert abbreviated public-facing K/M numbers into invented totals.
      * V8 and JxJ have no individual Spotify artist profiles.
      */
+    /** Read public artist statistics already delivered to the browser.
+     * The response must identify the exact requested Spotify artist URI.
+     */
+    private static Long fetchExactNetworkFollowers(WebDriver browser, String artistId) {
+        if (!(browser instanceof ChromeDriver)) return null;
+        ChromeDriver driver = (ChromeDriver) browser;
+        try {
+            org.openqa.selenium.json.Json json = new org.openqa.selenium.json.Json();
+            for (org.openqa.selenium.logging.LogEntry entry : driver.manage().logs().get("performance")) {
+                try {
+                    Map<?, ?> event = json.toType(entry.getMessage(), Map.class);
+                    Map<?, ?> message = event.get("message") instanceof Map
+                        ? (Map<?, ?>) event.get("message") : null;
+                    if (message == null || !"Network.responseReceived".equals(message.get("method"))) continue;
+                    Map<?, ?> params = message.get("params") instanceof Map
+                        ? (Map<?, ?>) message.get("params") : null;
+                    if (params == null) continue;
+                    Map<?, ?> response = params.get("response") instanceof Map
+                        ? (Map<?, ?>) params.get("response") : null;
+                    if (response == null ||
+                        !String.valueOf(response.get("url")).contains("api-partner.spotify.com/pathfinder")) continue;
+                    Object req = params.get("requestId");
+                    if (req == null) continue;
+                    Map<String, Object> cdp = driver.executeCdpCommand(
+                        "Network.getResponseBody", Map.of("requestId", String.valueOf(req)));
+                    Object body = cdp.get("body");
+                    if (!(body instanceof String)) continue;
+                    String payload = (String) body;
+                    if (Boolean.TRUE.equals(cdp.get("base64Encoded")))
+                        payload = new String(java.util.Base64.getDecoder().decode(payload),
+                            java.nio.charset.StandardCharsets.UTF_8);
+                    Map<?, ?> document = json.toType(payload, Map.class);
+                    if (document == null) continue;
+                    Map<?, ?> data = document.get("data") instanceof Map
+                        ? (Map<?, ?>) document.get("data") : null;
+                    Map<?, ?> artist = data != null && data.get("artistUnion") instanceof Map
+                        ? (Map<?, ?>) data.get("artistUnion") : null;
+                    if (artist == null || !("spotify:artist:" + artistId).equals(artist.get("uri"))) continue;
+                    Map<?, ?> stats = artist.get("stats") instanceof Map
+                        ? (Map<?, ?>) artist.get("stats") : null;
+                    Object followers = stats == null ? null : stats.get("followers");
+                    if (!(followers instanceof Number)) continue;
+                    long count = ((Number) followers).longValue();
+                    if (count > 0 && count <= 1000000000L) return count;
+                } catch (Exception ignored) {
+                    // Some network response bodies are no longer retained by Chrome.
+                }
+            }
+        } catch (Exception ignored) {
+            // Network logging is optional; use the existing DOM fallback.
+        }
+        return null;
+    }
+
     private static void fetchExactArtistFollowers(WebDriver driver, String artistUrl) {
         final String artistId;
         try {
@@ -667,6 +728,12 @@ public class Stream_Stats_Units_Duos {
             return;
         }
         try {
+            Long networkCount = fetchExactNetworkFollowers(driver, artistId);
+            if (networkCount != null) {
+                System.out.println("STAT_FOLLOWERS|" + artistId + "|" + networkCount);
+                System.out.println("STAT_FOLLOWERS_SOURCE|" + artistId + "|artist-page-network");
+                return;
+            }
             String artistName = "";
             List<WebElement> headings = driver.findElements(By.cssSelector("h1"));
             if (!headings.isEmpty()) artistName = headings.get(0).getText().trim();
