@@ -105,10 +105,10 @@ def main():
             latest=json.loads((ROOT/'data/solo.json').read_text(encoding='utf-8'))
             day=datetime.date.fromisoformat(latest['date'])
             expected_date=f"{day.strftime('%b')} {day.day}, {day.year}"
-            WebDriverWait(driver,45).until(
-                lambda d:expected_date in d.find_element(By.ID,'upcomingStatus').text
-                  and any(el.text.strip().lower()=='like you' for el in
-                    d.find_elements(By.CSS_SELECTOR,'#upcomingRows .song-title')))
+            WebDriverWait(driver,18).until(
+                lambda d: d.find_element(By.ID,'upcomingStatus').text.strip()
+                    not in ('','Loading latest Spotify snapshot…'))
+            time.sleep(2)
             milestone_names=[el.text.strip() for el in driver.find_elements(
                 By.CSS_SELECTOR,'#upcomingRows .song-title')]
             details=driver.execute_script("""
@@ -117,6 +117,10 @@ def main():
                 titles:[...document.querySelectorAll('#upcomingRows .song-title')].slice(0,60).map(x=>x.textContent)};
             """)
             print('Solo milestone diagnostic:',details,flush=True)
+            print('Solo page current status:',driver.find_element(By.ID,'status').text,flush=True)
+            print('Solo reached rows:',
+                  [t.text for t in driver.find_elements(By.CSS_SELECTOR,'#rows .song-title')][:15],
+                  flush=True)
             assert any(name.lower()=='like you' for name in milestone_names), 'Unit/single milestone missing Like you'
             assert not any(name.lower()=='maestro' for name in milestone_names), 'OT13 milestone leaked into Units & Solo'
             assert expected_date in driver.find_element(By.ID,'upcomingStatus').text, 'Wrong solo milestone source date'
