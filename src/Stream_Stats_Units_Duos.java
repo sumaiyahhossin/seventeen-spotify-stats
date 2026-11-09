@@ -670,19 +670,44 @@ public class Stream_Stats_Units_Duos {
             String artistName = "";
             List<WebElement> headings = driver.findElements(By.cssSelector("h1"));
             if (!headings.isEmpty()) artistName = headings.get(0).getText().trim();
+            boolean aboutClicked = false;
+            String clickMethod = "none";
             for (int attempt = 0; attempt < 5; attempt++) {
-                List<WebElement> buttons = driver.findElements(By.cssSelector("button[aria-label]"));
+                // Spotify has changed from an artist-named button to an
+                // About control in some layouts. Try visible controls first.
+                List<WebElement> buttons = driver.findElements(By.cssSelector(
+                    "button, [role='button'], a[href$='/about']"));
                 for (WebElement button : buttons) {
-                    if (!button.isDisplayed()) continue;
-                    String label = button.getAttribute("aria-label");
-                    if (label == null || label.isBlank()) continue;
-                    // Artist name button opens Spotify's About dialog.
-                    if (label.equalsIgnoreCase(artistName) && !artistName.isBlank()) {
-                        try {
-                            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", button);
-                            break;
-                        } catch (Exception ignored) {}
-                    }
+                    try {
+                        if (!button.isDisplayed()) continue;
+                        String label = String.valueOf(button.getAttribute("aria-label"));
+                        String title = String.valueOf(button.getAttribute("title"));
+                        String visible = button.getText().trim();
+                        String content = (label + " " + title + " " + visible).trim();
+                        boolean matches = (!artistName.isBlank() &&
+                            (visible.equalsIgnoreCase(artistName) || label.equalsIgnoreCase(artistName)))
+                            || content.matches("(?is).*\\babout(?: the artist)?\\b.*");
+                        if (!matches) continue;
+                        ((JavascriptExecutor) driver).executeScript("arguments[0].click();", button);
+                        aboutClicked = true;
+                        clickMethod = "visible-control";
+                        break;
+                    } catch (Exception ignored) {}
+                }
+                if (!aboutClicked && !headings.isEmpty()) {
+                    try {
+                        WebElement heading = headings.get(0);
+                        WebElement parent = heading.findElement(By.xpath(
+                            "./ancestor::*[self::button or @role='button'][1]"));
+                        if (parent.isDisplayed()) {
+                            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", parent);
+                            aboutClicked = true;
+                            clickMethod = "artist-heading-parent";
+                        }
+                    } catch (Exception ignored) {}
+                }
+                if (aboutClicked) {
+                    Thread.sleep(1300);
                 }
                 Thread.sleep(900);
                 List<WebElement> dialogs = driver.findElements(By.cssSelector(
@@ -723,6 +748,7 @@ public class Stream_Stats_Units_Duos {
             System.out.println("STAT_FOLLOWERS_DIAGNOSTIC|" + artistId +
                 "|artist-heading-present=" + !artistName.isBlank() +
                 "|matching-about-buttons=" + namedButtons +
+                "|clicked=" + aboutClicked + "|click-method=" + clickMethod +
                 "|visible-dialogs=" + displayedDialogs);
             System.out.println("STAT_FOLLOWERS_UNAVAILABLE|" + artistId + "|exact-about-number-not-found");
         } catch (Exception e) {
