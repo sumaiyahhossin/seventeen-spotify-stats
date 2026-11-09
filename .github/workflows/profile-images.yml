@@ -1,0 +1,40 @@
+name: Refresh solo and unit profile photos
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/update_profile_images.py'
+      - '.github/workflows/profile-images.yml'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: artist-profile-cache
+  cancel-in-progress: false
+
+jobs:
+  refresh:
+    name: Resolve artist photo URLs
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Fetch artist images from Spotify on the server
+        run: python tools/update_profile_images.py
+      - name: Save photo links to GitHub Pages
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/profile-images.json
+          if git diff --cached --quiet; then
+            echo "No photo changes"
+            exit 0
+          fi
+          git commit -m "Cache Spotify artist profile photos for all solos and units"
+          git pull --rebase -X theirs origin main
+          git push origin HEAD:main
