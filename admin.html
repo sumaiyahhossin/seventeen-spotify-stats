@@ -20,6 +20,7 @@ a{color:#e9c8ff}.muted{opacity:.75}
 </style></head><body><main>
 <div class="eyebrow">✦ Private editor</div><h1>SEVENTEEN Spotify Stats <span style="color:#cda8ee">Admin</span></h1>
 <p>Add Spotify releases without editing your collector code. All additions follow the existing member order and unit debut order.</p>
+<section class="card" id="entryGate"><h2>Admin Page</h2><p>Enter the four-digit access code to continue to email verification.</p><form id="entryForm"><label for="entryCode">Access code</label><input id="entryCode" type="password" inputmode="numeric" pattern="[0-9]{4}" maxlength="4" autocomplete="off" required placeholder="4-digit code"><button type="submit" style="margin-top:14px">Continue to email verification</button><p id="entryError" class="error" aria-live="polite"></p></form><p class="note">Email verification is still required before anything can be edited.</p></section>
 <div class="card" id="setup" hidden><h2>Setup required</h2><p>The secure email-login service has not been connected yet. Your regular website and Spotify collector are unaffected.</p></div>
 <section class="card" id="login" hidden>
 <h2>Verify administrator access</h2><p>A one-time six-digit code will be sent to the authorized administrator's inbox. The address is not shown here.</p>
@@ -51,7 +52,14 @@ a{color:#e9c8ff}.muted{opacity:.75}
 const $=id=>document.getElementById(id);
 const SOLO=['S.Coups','Jeonghan','Joshua','Jun','Hoshi','Wonwoo','Woozi','Dokyeom','Mingyu','The8','Seungkwan','Vernon','Dino'];
 const UNITS=['BSS','JxW','HxW','CxM','DxS','V8','Picheolin','JxJ'];
-let api='',challenge='',token='';
+let api='',challenge='',token='',gateUnlocked=false;
+$('entryForm').addEventListener('submit',event=>{
+ event.preventDefault();
+ if($('entryCode').value.trim()!=='9708'){$('entryError').textContent='Incorrect access code.';$('entryCode').value='';return;}
+ gateUnlocked=true;$('entryCode').value='';$('entryGate').hidden=true;$('entryError').textContent='';
+ if(api)$('login').hidden=false;
+ else $('setup').hidden=false;
+});
 function message(text,error=false){$('message').className=error?'error':'success';$('message').textContent=text}
 async function send(path,data,auth=false){
  const response=await fetch(api+path,{method:'POST',headers:{'content-type':'application/json',...(auth?{'authorization':'Bearer '+token}:{})},body:JSON.stringify(data)});
@@ -75,7 +83,7 @@ $('addTrack').addEventListener('click',()=>{if($('trackList').children.length<40
 $('request').addEventListener('click',async()=>{
  $('request').disabled=true;message('Sending code…');
  try{const data=await send('/api/request-code',{});challenge=data.challenge;$('challenge').hidden=false;message('Check your email for the six-digit code.')}
- catch(error){message(error.message,true)}finally{$('request').disabled=false}
+ catch(error){message(error.message==='Too many requests. Try later.'?'Too many email-code requests. For security, please try again in up to one hour. Do not keep clicking the button.':error.message,true)}finally{$('request').disabled=false}
 });
 $('verify').addEventListener('click',async()=>{
  try{const response=await send('/api/verify',{challenge,code:$('code').value.trim()});token=response.token;
@@ -100,7 +108,7 @@ async function init(){
  try{
   const cfg=await fetch('data/admin-config.json',{cache:'no-store'}).then(r=>r.json());
   if(!/^https:\/\/[a-z0-9.-]+(?:\/[a-z0-9-]*)?$/i.test(cfg.api_url||''))throw Error('Not configured');
-  api=cfg.api_url.replace(/\/$/,'');$('login').hidden=false;
+  api=cfg.api_url.replace(/\/$/,'');if(gateUnlocked)$('login').hidden=false;
   const [catalog,admin]=await Promise.all([
    fetch('data/catalog.json',{cache:'no-store'}).then(r=>r.json()),
    fetch('data/admin-releases.json',{cache:'no-store'}).then(r=>r.json())]);
@@ -108,7 +116,7 @@ async function init(){
   const option=document.createDocumentFragment();for(const name of listed){
    if(!name)continue;const el=document.createElement('option');el.value=name;el.textContent=name;option.append(el);
   }$('artist').replaceChildren(option);
- }catch(error){$('setup').hidden=false;message('Secure login is awaiting deployment.',true)}
+ }catch(error){if(gateUnlocked)$('setup').hidden=false;message('Secure login is awaiting deployment.',true)}
 }
 init();
 </script></body></html>
