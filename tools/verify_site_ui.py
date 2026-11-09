@@ -356,6 +356,31 @@ def main():
                      .map(row=>row.querySelectorAll('td')[1]?.textContent.trim());
                 """)
                 assert picheolin==['12,745,528'],f'All Artists doubled Picheolin streams: {picheolin}'
+                assert driver.execute_script("""
+                    return [...document.querySelectorAll('#all-artists tr')].every(row=>row.querySelectorAll('td').length===2);
+                """),'Across all artists must show only the currently selected metric'
+                for metric,label in [('followers','HIGHEST FOLLOWERS'),
+                                     ('listeners','HIGHEST MONTHLY LISTENERS'),
+                                     ('streams','HIGHEST STREAMS')]:
+                    driver.execute_script("""
+                        const el=document.getElementById('all-artistMetric');
+                        el.value=arguments[0];el.dispatchEvent(new Event('change',{bubbles:true}));
+                    """,metric)
+                    assert driver.find_element(By.ID,'all-artistMetricHeading').text==label
+                    scores=driver.execute_script("""
+                        return [...document.querySelectorAll('#all-artists tbody tr')]
+                          .map(r=>Number(r.querySelectorAll('td')[1]?.textContent.replace(/,/g,'')))
+                          .filter(Number.isFinite);
+                    """)
+                    assert scores==sorted(scores,reverse=True),(
+                        f'All artist {metric} ranking is not highest-first: {scores[:8]}')
+                    assert driver.execute_script("""
+                        return [...document.querySelectorAll('#all-artists tr')].every(r=>r.querySelectorAll('td').length===2);
+                    """),'Artist metric switch exposed irrelevant columns'
+                assert driver.execute_script("""
+                    const titles=[...document.querySelectorAll('#all-artists .svt-all-song')].map(x=>x.textContent);
+                    return titles.includes('Picheolin');
+                """),'Stream rankings lost a recorded profile'
                 driver.execute_script("""
                     const el=document.getElementById('all-owner');
                     el.value='Picheolin';el.dispatchEvent(new Event('change',{bubbles:true}));
@@ -382,6 +407,52 @@ def main():
                 """)
                 assert any('solo-album-covers/jxj_dreamscape.jpg' in x for x in album_sources),(
                     f'All Albums did not reuse JxJ album sleeve: {album_sources}')
+                # A legacy workbook reused Water's current Spotify ID for Candy;
+                # All must look up Water's actual archive recording by name.
+                driver.execute_script("""
+                    for(const [id,value] of [
+                        ['all-viewType','tracks'],['all-owner','SEVENTEEN'],
+                        ['all-period','weekly'],['all-sort','streams'],['all-search','Water']]){
+                        const el=document.getElementById(id);el.value=value;
+                        el.dispatchEvent(new Event(id==='all-search'?'input':'change',{bubbles:true}));
+                    }
+                """)
+                WebDriverWait(driver,30).until(lambda d:
+                    'Highest weekly gain' in d.find_element(By.ID,'all-sort').text)
+                WebDriverWait(driver,30).until(lambda d:
+                    d.find_element(By.ID,'all-recordings').text.find('Water')>=0)
+                water=driver.execute_script("""
+                    const row=[...document.querySelectorAll('#all-recordings tr')]
+                        .find(r=>r.querySelector('.svt-all-song')?.textContent==='Water');
+                    return {value:row?.querySelector('.svt-all-num')?.textContent?.trim()||'',
+                        rows:[...document.querySelectorAll('#all-recordings tr')]
+                            .map(r=>Number(r.querySelector('.svt-all-num')?.textContent.replace(/[^0-9]/g,'')))};
+                """)
+                if json.loads((ROOT/'data/group.json').read_text(encoding='utf-8'))['date']=='2026-11-08':
+                    assert water['value']=='+66,556',f'Water weekly gained an unrelated song: {water}'
+                else:
+                    assert water['value'] not in ('+9,749,826','—'),f'Water weekly archive identity error: {water}'
+                assert driver.find_element(By.ID,'all-gainTitle').text=='WEEKLY GAIN'
+                assert driver.execute_script("""
+                    return [...document.querySelectorAll('#all-recordings tr')].every(
+                        row=>row.querySelectorAll('td').length===2);
+                """),'Combined period ranking should display only the selected metric'
+                # All must include reached and upcoming milestones, using the
+                # same track covers and saved evidence as the original pages.
+                driver.execute_script("document.getElementById('all-milestoneSearch').value=''")
+                WebDriverWait(driver,25).until(lambda d:
+                    len(d.find_elements(By.CSS_SELECTOR,'#all-milestoneRows tr .svt-all-song'))>0)
+                assert '100M' in driver.find_element(By.ID,'all-milestoneStatus').text
+                assert driver.execute_script("""
+                    return [...document.querySelectorAll('#all-milestoneRows img')]
+                      .every(img=>img.dataset.coverTrack&&img.dataset.coverTrack!=='missing');
+                """),'All reached milestones lost source track artwork'
+                click(driver,'#all-milestoneUpcoming')
+                WebDriverWait(driver,25).until(lambda d:
+                    'upcoming milestone' in d.find_element(By.ID,'all-milestoneStatus').text)
+                assert len(driver.find_elements(By.CSS_SELECTOR,'#all-milestoneRows .svt-all-song'))>0
+                click(driver,'#all-milestoneReached')
+                assert 'MILESTONE REACHED'==driver.find_element(By.ID,'all-milestoneValueHeading').text
                 click(driver,'#tabs button[data-tab="group"]')
                 read_layout(driver,f'OT13 after All {width}px')
                 assert not driver.execute_script("return document.body.classList.contains('svt-all-view')")
