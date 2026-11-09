@@ -54,6 +54,12 @@ print(f'solo/unit followers: {len(saved)}/{len(ids)} already recorded, {len(pend
 if not pending:
     sys.exit(0)
 
+# Diagnostic mode: only the first still-unverified artist is fetched,
+# including when official Spotify API credentials are available.
+# The caller will deliberately stop after a single attempt.
+pending=pending[:1]
+print('One-profile verification: '+pending[0],flush=True)
+
 found={}
 client_id=os.getenv('SPOTIFY_CLIENT_ID')
 client_secret=os.getenv('SPOTIFY_CLIENT_SECRET')
