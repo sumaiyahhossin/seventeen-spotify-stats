@@ -737,6 +737,32 @@ function discographyRows(s,p,pp,baseline){
   return order(a)-order(b);
  }):catalog[tab]||[];
  for(const item of releasesForDiscography){
+  // LIMBO is one two-version release. Show its Chinese and Korean recordings
+  // together, then one combined total; never show two identical album cards.
+  if(tab==='solo'&&item.key==='jun_g4Korean')continue;
+  if(tab==='solo'&&item.key==='jun_g4Chinese'){
+   const versions=['jun_g4Chinese','jun_g4Korean']
+    .map(key=>(catalog.solo||[]).find(release=>release.key===key)).filter(Boolean);
+   const limboIds=[...new Set(versions.flatMap(release=>release.tracks||[]))];
+   for(const id of limboIds){
+    rows.push({id,name:soloMedia.tracks?.[id]?.title||displayTrackName(s.names?.[id]||idName[id]||id),
+     artworkRelease:item.key,releaseDate:item.release_date,
+     streams:Number.isFinite(s.tracks?.[id])&&s.tracks[id]>0?s.tracks[id]:null,
+     gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),
+     change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id),
+     kind:'track',releaseOrder:rows.length});
+   }
+   const totals=limboIds.map(id=>s.tracks?.[id]);
+   const gains=limboIds.map(id=>periodic?periodGain(s,baseline,id):safeGain(s,p,id));
+   const changes=limboIds.map(id=>periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id));
+   rows.push({name:'LIMBO — Chinese + Korean Versions Total',artworkRelease:item.key,
+    historyReleases:['jun_g4Chinese','jun_g4Korean'],releaseDate:item.release_date,
+    streams:totals.length===2&&totals.every(n=>Number.isFinite(n)&&n>0)?totals.reduce((a,b)=>a+b,0):null,
+    gain:gains.length===2&&gains.every(n=>n!=null)?gains.reduce((a,b)=>a+b,0):null,
+    change:changes.length===2&&changes.every(n=>n!=null)?changes.reduce((a,b)=>a+b,0):null,
+    kind:'album',releaseOrder:rows.length});
+   continue;
+  }
   // Gilboard's duplicate catalog entries belong to Picheolin's discography.
   if(tab==='solo'&&item.key==='sharedTracks')continue;
   const combo=tab==='group'?combined[item.key]:null;
