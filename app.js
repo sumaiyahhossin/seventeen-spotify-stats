@@ -397,7 +397,8 @@ function sheetRows(s,p,pp){
 }
 function isAlbumTitle(name){
  const n=String(name||'').toLowerCase();
- if(/remix|ost|digital single|\bsingle\b/.test(n))return false;
+ // A Japanese "Single Album" is an album release, not a standalone single.
+ if(/remix|ost|digital single/.test(n)||(/\bsingle\b/.test(n)&&!/\bsingle\s+album\b/.test(n)))return false;
  return /always yours|17 is right here|sector 17|love & letter repackage|director.s cut|\balbum\b|\brepackage\b|\bmini\b|\bep\b|\bheng\b|\bsemicolon\b|\bserenade\b|\bdreamscape\b|^9$|^v8$|\bthis man\b|\bbeam\b|\bsecond wind\b|\bteleparty\b|\bhype vibes\b|\bgilboard\b/.test(n);
 }
 function uniqueRows(rows){
@@ -768,16 +769,66 @@ function trackOriginalReleaseDates(){
  return {byId,byName,orderById,orderByName};
 }
 function formatOriginalRelease(date){return new Date(date+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric',year:'numeric'})}
+
+/* Historical spreadsheet album-total rows correspond to the same catalog
+   releases as live album sums. Use stable release keys across archive modes. */
+function historicalAlbumReleaseKey(name){
+ const n=String(name||'').toLowerCase();
+ const patterns=[
+  [/17 is right here/,'g49'],
+  [/always yours/,'g43'],
+  [/sector 17/,'g37'],
+  [/love\s*&\s*letter.*repackage/,'g7'],
+  [/love\s*&\s*letter/,'g5'],
+  [/face the sun/,'g35'],
+  [/an ode/,'g20'],
+  [/17 carat/,'g1'],
+  [/boys be/,'g2'],
+  [/going seventeen/,'g8'],
+  [/\bal1\b/,'g9'],
+  [/teen,?\s*age/,'g10'],
+  [/director.s cut/,'g11'],
+  [/we make you/,'g12'],
+  [/you make my day/,'g13'],
+  [/you made my dawn/,'g16'],
+  [/you make my dawn/,'g16'],
+  [/happy ending/,'g18'],
+  [/fallin.?\s*flower/,'g22'],
+  [/heng[:\s-]*gar/,'g23'],
+  [/\b24h\b/,'g25'],
+  [/semicolon/,'g27'],
+  [/hitorijanai/,'g28'],
+  [/your choice/,'g29'],
+  [/attacca/,'g32'],
+  [/power of love/,'g33'],
+  [/\bdream\b/,'g39'],
+  [/\bfml\b/,'g41'],
+  [/seventeenth heaven/,'g46'],
+  [/spill the feels/,'g56'],
+  [/shohikigen/,'g58'],
+  [/happy burstday/,'g59']
+ ];
+ return patterns.find(([re])=>re.test(n))?.[1]||null;
+}
+function canonicalGroupAlbumKey(keys){
+ return keys.includes('g7')?'g7':keys.includes('g37')?'g37':keys[0]||null;
+}
+
 function buildRows(s,p,pp,baseline){
  if(!s)return[];
  const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly'),albums=rank.startsWith('albums'),discography=rank.startsWith('discography');
  if(discography)return discographyRows(s,p,pp,baseline);
  let rows=[];
  if(albums&&isHistorical(s)&&tab==='group'){
-   rows=Object.entries(s.tracks).filter(([id])=>historicalKind(s,id)==='album'&&isAlbumTitle(s.names?.[id])&&!/\b(?:new|original)\s+tracks?\b/i.test(s.names?.[id]||'')).map(([id,streams])=>({
-     id,name:albumDisplayName((s.names[id]||id).replace(/\s*Total\s*:?$/i,'').trim()),streams,
-     gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id)
-   }));
+   rows=Object.entries(s.tracks).filter(([id])=>historicalKind(s,id)==='album'&&isAlbumTitle(s.names?.[id])&&!/\b(?:new|original)\s+tracks?\b/i.test(s.names?.[id]||'')).map(([id,streams])=>{
+     const albumIdentity=historicalAlbumReleaseKey(s.names[id]);
+     return {
+      id,name:albumDisplayName((s.names[id]||id).replace(/\s*Total\s*:?$/i,'').trim()),
+      artworkRelease:albumIdentity,albumIdentity,kind:'album',streams,
+      gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),
+      change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id)
+     };
+   });
  }else if(albums&&tab==='group'){
    // Match the album sum expressions printed by Stream_Stats.java.
    // In particular, repackage totals combine their base and added arrays.
@@ -787,7 +838,7 @@ function buildRows(s,p,pp,baseline){
      const streams=ids.length&&ids.every(id=>s.tracks[id]!=null)?ids.reduce((sum,id)=>sum+s.tracks[id],0):null;
      const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
      const dayChange=sumDailyChange(s,p,pp,ids);
-     rows.push({name:spec.name,artworkRelease:spec.name.includes('Repackage')?(spec.name.includes('SECTOR 17')?'g36':'g7'):spec.keys[0],streams,gain,
+     rows.push({name:spec.name,artworkRelease:canonicalGroupAlbumKey(spec.keys),albumIdentity:canonicalGroupAlbumKey(spec.keys),kind:'album',streams,gain,
        change:periodic?sumPeriodChange(s,baseline,ids):dayChange,changePartial:periodic?periodComparison(s,baseline,ids).partial:dailyComparison(s,p,pp,ids).partial});
    }
  }else if(albums){
@@ -2051,7 +2102,7 @@ async function render(){const token=++renderToken;
  }
  // Rank movement compares the same Tracks/Albums chart with the immediately
  // preceding calendar day, week, month, or year (not the previous saved date).
- const positionKeyForDisplay=r=>r.id&&String(r.id).startsWith('legacy:')?'name:'+normTrackName(r.name):r.id||'name:'+normTrackName(r.name);
+ const positionKeyForDisplay=r=>r.albumIdentity?'album:'+r.albumIdentity:r.id&&String(r.id).startsWith('legacy:')?'name:'+normTrackName(r.name):r.id||'name:'+normTrackName(r.name);
  const rankMovements=new Map();
  if(!discography&&s){
   const priorDate=(daily||rank.endsWith('overall'))?shifted(s.date,-1):periodic?baseline?.prevEnd?.date:null;
@@ -2062,7 +2113,7 @@ async function render(){const token=++renderToken;
    const previousBaseline=periodic?await periodBaseline(previousSnapshot):null;
    const priorRows=soloArtistRows(buildRows(previousSnapshot,previousPrior,previousPriorPrior,previousBaseline),previousSnapshot,previousPrior,previousBaseline,previousPriorPrior);
    // Rank changes belong to streaming positions, not the visible sort order.
-   const positionKey=r=>r.id&&String(r.id).startsWith('legacy:')?'name:'+normTrackName(r.name):r.id||'name:'+normTrackName(r.name);
+   const positionKey=r=>r.albumIdentity?'album:'+r.albumIdentity:r.id&&String(r.id).startsWith('legacy:')?'name:'+normTrackName(r.name):r.id||'name:'+normTrackName(r.name);
    const streamValue=r=>daily||periodic?r.gain:r.streams;
    const byStreams=list=>[...list].sort((a,b)=>{
     const x=streamValue(a),y=streamValue(b);
