@@ -3,6 +3,8 @@ on:
   push:
     paths:
       - 'src/Stream_Stats_Units_Duos.java'
+      - 'src/Admin_Track_Collector.java'
+      - 'tools/catalog.py'
       - 'tools/pipeline.py'
       - 'tools/instrument.py'
       - 'app.js'
@@ -36,7 +38,7 @@ jobs:
       - name: Verify unit and solo follower reader and retry collector compile
         run: |
           python tools/instrument.py solo
-          javac -cp "$(cat classpath.txt)" -d build build/Stream_Stats_Units_Duos.java
+          javac -cp "$(cat classpath.txt)" -d build build/Stream_Stats_Units_Duos.java src/Admin_Track_Collector.java
           echo "Selenium collector compiles and instrumentation succeeds"
       - name: Verify all exact cover/link mappings exist
         run: |
