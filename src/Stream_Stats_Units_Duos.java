@@ -690,7 +690,8 @@ public class Stream_Stats_Units_Duos {
                 // Spotify's profile artwork opens the artist About dialog.
                 // Prefer the actual artist image (alt="JEONGHAN", etc.)
                 // instead of relying on the old artist-named button.
-                if (!aboutClicked) {
+                // After an inert click, try the About heading/control instead.
+                if (!aboutClicked && attempt < 2) {
                     // The artist image may have a different alt spelling from
                     // the H1, so prefer matching alt, then the primary profile
                     // image in the artist header. Ignore album/track artwork.
