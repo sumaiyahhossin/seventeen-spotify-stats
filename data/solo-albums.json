@@ -1,0 +1,286 @@
+[
+  {
+    "key": "jxj_dreamscape",
+    "displayName": "1st Mini Album - DREAMSCAPE",
+    "releaseDate": "2026-10-19",
+    "releaseKeys": [
+      "jeonghan_g2",
+      "joshua_g8"
+    ],
+    "owners": [
+      "Jeonghan",
+      "Joshua",
+      "JxJ"
+    ],
+    "legacyTotalIndices": {
+      "Jeonghan": 11,
+      "Joshua": 40,
+      "JxJ": 409
+    },
+    "tracks": [
+      "5ZMx7DaPnVisUBLcrFcnCl",
+      "1dp1GI9YcKDoxrKBpp0u9F",
+      "4XBeSUSswrGhqYrwm3IS7A",
+      "1bGAA82A31CWflD6bqY5g6",
+      "2SWWDlOjKqgVvocnIfxId9",
+      "69umJ9yk5uay7PQmhBOKk8",
+      "2lDG4sMZwAC2TTlXNHMgA1"
+    ],
+    "coverTrack": "5ZMx7DaPnVisUBLcrFcnCl",
+    "albumId": null
+  },
+  {
+    "key": "v8",
+    "displayName": "1st Mini Album - V8",
+    "releaseDate": "2026-06-29",
+    "releaseKeys": [
+      "the8_g12",
+      "vernon_g9",
+      "v8"
+    ],
+    "owners": [
+      "The8",
+      "Vernon",
+      "V8"
+    ],
+    "legacyTotalIndices": {
+      "The8": 206,
+      "Vernon": 276,
+      "V8": 374
+    },
+    "tracks": [
+      "3Zha4O3O4pPyO332FhsgUD",
+      "5a6eOHprTOEtOCvgYYJ11c",
+      "1uDVTuH0e2XaMPsX3yox1T",
+      "1R0kXShLtjjIkZoET8vdb1",
+      "0Jnh3156FyIz7SHWgKHRmp",
+      "7qNXDUu4dkeOm67eF35qiL",
+      "3cHzq4HX4ijdisuJ0a8SEj",
+      "42m5wYT5EOnP1UoDF2pCxh"
+    ],
+    "coverTrack": "3Zha4O3O4pPyO332FhsgUD",
+    "albumId": "5HQrHtpGthJMePFhXT3jKS"
+  },
+  {
+    "key": "jxw_g1",
+    "displayName": "1st Single Album - THIS MAN",
+    "releaseDate": "2024-06-17",
+    "releaseKeys": [
+      "jxw_g1"
+    ],
+    "owners": [
+      "JxW",
+      "Jeonghan",
+      "Wonwoo"
+    ],
+    "legacyTotalIndices": {
+      "JxW": 322
+    },
+    "tracks": [
+      "0Qh8dlEJ3jVWk57Ql6XrdS",
+      "3Sd2E80Y6WGk82qrHoq7pa",
+      "1zHPzyKOs6AsnJcnWSjZhO"
+    ],
+    "coverTrack": "0Qh8dlEJ3jVWk57Ql6XrdS",
+    "albumId": null
+  },
+  {
+    "key": "jun_g10",
+    "displayName": "1st EP CHINA - 9",
+    "releaseDate": "2026-09-28",
+    "releaseKeys": [
+      "jun_g10"
+    ],
+    "owners": [
+      "Jun"
+    ],
+    "legacyTotalIndices": {
+      "Jun": 72
+    },
+    "tracks": [
+      "5aUs4Q7h1CGzrh9zx8QyzL",
+      "1OXgXacZCpVYDryihbfUCj",
+      "3UZPiRtK3e7UM3h2lOUpWh",
+      "5fKEfBrvtCM4CNnlSAskuD",
+      "1fP7HQ7MDoTXQEDG3tYp2Z",
+      "7m0VvxYpb8FhWtSKsjrGEW",
+      "0e0NzRp8SIGy4g801e5jj1"
+    ],
+    "coverTrack": "5aUs4Q7h1CGzrh9zx8QyzL",
+    "albumId": null
+  },
+  {
+    "key": "hxw_g1",
+    "displayName": "1st Single Album - BEAM",
+    "releaseDate": "2025-03-10",
+    "releaseKeys": [
+      "hxw_g1"
+    ],
+    "owners": [
+      "HxW",
+      "Hoshi",
+      "Woozi"
+    ],
+    "legacyTotalIndices": {
+      "HxW": 330
+    },
+    "tracks": [
+      "29GCuNZT4ihntQllYTPXQf",
+      "6AvxOYstG9cCD4RVQp4aJz",
+      "298BoO0FqEs3hfwO4K86fI"
+    ],
+    "coverTrack": "29GCuNZT4ihntQllYTPXQf",
+    "albumId": null
+  },
+  {
+    "key": "bss_g2",
+    "displayName": "1st Single Album - SECOND WIND",
+    "releaseDate": "2023-02-06",
+    "releaseKeys": [
+      "bss_g2"
+    ],
+    "owners": [
+      "BSS",
+      "Dokyeom",
+      "Hoshi",
+      "Seungkwan"
+    ],
+    "legacyTotalIndices": {
+      "BSS": 305
+    },
+    "tracks": [
+      "7eBpUuPnDTfbeP1P4P93CS",
+      "0MMIrw3mCssQj4uqJlBzdp",
+      "6tAPw1Rtt3SGEOm6ohYi8l"
+    ],
+    "coverTrack": "7eBpUuPnDTfbeP1P4P93CS",
+    "albumId": null
+  },
+  {
+    "key": "bss_g4",
+    "displayName": "2nd Single Album - TELEPARTY",
+    "releaseDate": "2025-01-08",
+    "releaseKeys": [
+      "bss_g4"
+    ],
+    "owners": [
+      "BSS",
+      "Dokyeom",
+      "Hoshi",
+      "Seungkwan"
+    ],
+    "legacyTotalIndices": {
+      "BSS": 312
+    },
+    "tracks": [
+      "0ofqcEBPdlyczRjUhjCiIS",
+      "5WzKTday2lCOKk4HjjyFZt",
+      "0jwreQKzqgsEKtp46d2Ita"
+    ],
+    "coverTrack": "0ofqcEBPdlyczRjUhjCiIS",
+    "albumId": null
+  },
+  {
+    "key": "cxm_g1",
+    "displayName": "1st Mini Album - HYPE VIBES",
+    "releaseDate": "2025-09-29",
+    "releaseKeys": [
+      "cxm_g1"
+    ],
+    "owners": [
+      "CxM",
+      "Mingyu",
+      "SCOUPS"
+    ],
+    "legacyTotalIndices": {
+      "CxM": 343
+    },
+    "tracks": [
+      "0ANyGUmVsiCjLQWhAuCl9Q",
+      "4eTDkRxOmm4llv4Yr1bteq",
+      "04f4d0aG5ckrLifRzlv93z",
+      "4Nwv6KF2jayQih4H2B7psX",
+      "7g7k7CezQFUEsPjVbNv7X8",
+      "7rutYN9WlI8WXrV6rHySEB"
+    ],
+    "coverTrack": "0ANyGUmVsiCjLQWhAuCl9Q",
+    "albumId": null
+  },
+  {
+    "key": "the8_g8",
+    "displayName": "1st EP CHINA - STARDUST",
+    "releaseDate": "2024-12-04",
+    "releaseKeys": [
+      "the8_g8"
+    ],
+    "owners": [
+      "The8"
+    ],
+    "legacyTotalIndices": {
+      "The8": 192
+    },
+    "tracks": [
+      "1PFP2Zrgg9P8OHNifYEuEK",
+      "6P22aoxidK8c7r3dRc8YQv",
+      "60CbzqNbxBx7uRanCFiVxx"
+    ],
+    "coverTrack": "1PFP2Zrgg9P8OHNifYEuEK",
+    "albumId": null
+  },
+  {
+    "key": "gilboard",
+    "displayName": "1st Mini Album - 吉BOARD (Gilboard)",
+    "releaseDate": "2026-08-03",
+    "releaseKeys": [
+      "picheolin_g3",
+      "gilboard",
+      "dino_g4"
+    ],
+    "owners": [
+      "Picheolin",
+      "Dino"
+    ],
+    "legacyTotalIndices": {
+      "Picheolin": 387,
+      "Dino": 293,
+      "all": 399
+    },
+    "tracks": [
+      "6lfWCCeGpsldAQi8JxKwpg",
+      "5wsPiyVi6oIHY0RAz8Ay0G",
+      "3iyw6fYasTWIRSYfyNUDt4",
+      "34wTGQ1yV5XtrSMR5dMLWY",
+      "5W1bn5PzFgKok4GAZ1JUAw",
+      "0zszdbIntzvgxPSe9U0QcT",
+      "5MZktJvCYmskdeY1PwuxL4"
+    ],
+    "coverTrack": "6lfWCCeGpsldAQi8JxKwpg",
+    "albumId": null
+  },
+  {
+    "key": "dxs_g1",
+    "displayName": "1st Mini Album - Serenade",
+    "releaseDate": "2026-01-12",
+    "releaseKeys": [
+      "dxs_g1"
+    ],
+    "owners": [
+      "DxS",
+      "Dokyeom",
+      "Seungkwan"
+    ],
+    "legacyTotalIndices": {
+      "DxS": 356
+    },
+    "tracks": [
+      "6pPy2mkcDeVu7SJaOGnCUv",
+      "7KOijaSUhe0dyiKNZLsl8X",
+      "0heGUlCMT03UZmVRxABlX3",
+      "1RwOJEuRRHBHlvbD9S7C1N",
+      "21nI1v1Fps5ARtJvaRqaC8",
+      "1jstmwO12KospQ2e5tPXre"
+    ],
+    "coverTrack": "6pPy2mkcDeVu7SJaOGnCUv",
+    "albumId": null
+  }
+]
