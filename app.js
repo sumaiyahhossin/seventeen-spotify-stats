@@ -705,7 +705,7 @@ function discographyRows(s,p,pp,baseline){
    ?historicalAlbumAggregate(s,item.key==='g6'?'g7':item.key==='g36'?'g37':historicalAlbumReleaseKey(item.title)||item.key,historicalMode)
    :null;
   const savedAlbum=archivedAlbumMetrics(s,p,pp,baseline,sourceKey);
-  const albumTotalRow={name:combo?.name||catalogReleaseLabel(item),artworkRelease:item.key,releaseDate:tab==='group'?(groupOriginalReleaseDates[item.key]||groupStandaloneReleaseDates[item.key]||null):null,
+  const albumTotalRow={name:combo?.name||catalogReleaseLabel(item),artworkRelease:item.key,releaseDate:tab==='group'?(groupOriginalReleaseDates[item.key]||groupStandaloneReleaseDates[item.key]||null):(item.release_date||null),
    streams:savedAlbum?.streams??streams,gain:savedAlbum?savedAlbum.gain:gain,estimatedGain:!savedAlbum&&partialGain,
    change:savedAlbum?savedAlbum.change:(periodic?sumPeriodChange(s,baseline,ids):dayChange),
    changePartial:savedAlbum?savedAlbum.changePartial:(periodic?periodComparison(s,baseline,ids).partial:dailyComparison(s,p,pp,ids).partial),
@@ -797,6 +797,12 @@ function canonicalArchiveRow(row){
 }
 function originalReleaseDate(row){
  row=canonicalArchiveRow(row);
+ // Original song releases are authoritative even on later anthology/album pages.
+ // A standalone Picheolin single keeps its July date inside August's Gilboard.
+ if(tab==='solo'&&row.id&&row.kind!=='album'&&row.kind!=='grand'){
+  const date=originalSoloSongDate(row.id);
+  if(date)return date;
+ }
  // Later remix singles have distinct dates in all track, album and history views.
  if(tab==='group'){
   const remixName=String(row.name||'').toLowerCase();
@@ -864,6 +870,21 @@ function originalReleaseDate(row){
   }
  }
  return null;
+}
+let cachedSoloSongDateMap=null;
+function originalSoloSongDate(id){
+ if(!cachedSoloSongDateMap){
+  cachedSoloSongDateMap=new Map();
+  for(const item of catalog.solo||[]){
+   for(const trackId of item.tracks||[]){
+    const date=item.track_release_dates?.[trackId]||item.release_date||null;
+    if(!/^20\d{2}-\d{2}-\d{2}$/.test(date||''))continue;
+    const prior=cachedSoloSongDateMap.get(trackId);
+    if(!prior||date<prior)cachedSoloSongDateMap.set(trackId,date);
+   }
+  }
+ }
+ return cachedSoloSongDateMap.get(id)||null;
 }
 // Track chronology comes from the original catalog release containing each song,
 // not from the track's alphabetical name or its cumulative streams.
@@ -1663,31 +1684,41 @@ function fillArtwork(){
 }
 const soloArtists=[["Jeonghan","6KDLlQYeeqUe5OQ2JrdNzF"],["Joshua","74AwWFYdjQ3ER5vHO4H7b0"],["Jun","38Gn0ZVC8TQwuaMxBK1yRV"],["Hoshi","6nWKAdMv1BDq1zHfZzkdbR"],["Wonwoo","3rHcBT06Vb1XGVUWhDALZt"],["Woozi","4TdiASPlU3QdZvGQBothcQ"],["Dokyeom","7G1kUsPtQCdolV6CPwHmh2"],["Mingyu","5gUpo0BRmo6EOTbyU3z5Ay"],["The8","4DqFd6XE3dX4LWXHJVVpLk"],["Seungkwan","0Vb2DjojEYsasFpc3aTZb6"],["Vernon","2Y34b9AOK30zXgL7cAH4NG"],["Dino","5YaeXxzvqGNBCguELlKo6G"],["BSS","1uAT5bTSp6dWbNmixIUP5t"],["JxW","7GvlsjcgBrsE578yghOq7D"],["HxW","1EReYiseDwE51FzGm7EK9n"],["CxM","7kjuLdYbtTkWBToMu2ebZN"],["DxS","4wBjmEkWhY4T22q00CiF5V"],["V8",null],["Picheolin","3V2EC4dPYLgtbi0TtrB1RA"],["JxJ",null]];
 const artistPhotoCache=new Map();
+const artistImageManifest=fetch('data/profile-images.json',{cache:'no-cache'})
+ .then(r=>r.ok?r.json():{}).catch(()=>({}));
+function showArtistPhoto(img,urls){
+ const candidates=[...new Set((Array.isArray(urls)?urls:[urls]).filter(Boolean))];
+ let index=0;
+ img.onload=()=>{if(img.isConnected){img.classList.add('loaded');img.style.display=''}};
+ img.onerror=()=>{img.classList.remove('loaded');if(++index<candidates.length){img.src=candidates[index]}else{img.style.display='none'}};
+ if(candidates.length)img.src=candidates[0];
+}
 function renderArtistProfiles(){
  const area=$('#artistProfiles');
  if(!area)return;
  area.hidden=tab!=='solo';
  if(tab!=='solo')return;
  area.innerHTML='<div class="artist-profiles-heading">SOLOS & UNITS <span>✦</span></div>'+(selectedSoloArtist?'<div class="artist-selection-heading"><button type="button" id="allSoloArtists">← All units & solos</button><strong>'+escapeHtml(selectedSoloArtist)+' · STREAMING STATS</strong></div>':'')+'<div class="artist-profile-grid">'+soloArtists.map(([name,id])=>{
-  const photo=name==='V8'||name==='JxJ'?'<img class="artist-profile-photo" data-unit-photo="'+name+'" alt="'+name+' unit concept photo" loading="lazy">':id?'<img class="artist-profile-photo" data-artist-photo="'+id+'" alt="" loading="lazy">':'<span class="artist-profile-placeholder">💎</span>';
-  const label='<span class="artist-profile-name">'+escapeHtml(name)+'</span>';
-  return '<button type="button" class="artist-profile'+(selectedSoloArtist===name?' selected':'')+'" data-solo-artist="'+escapeHtml(name)+'" aria-pressed="'+(selectedSoloArtist===name)+'" title="View '+escapeHtml(name)+' statistics">'+photo+label+'</button>';
+  const photo=name==='V8'||name==='JxJ'?'<img class="artist-profile-photo" data-unit-photo="'+name+'" alt="'+name+' full unit concept photo" loading="lazy">':id?'<img class="artist-profile-photo" data-artist-photo="'+id+'" alt="'+name+' artist photo" loading="lazy">':'';
+  return '<button type="button" class="artist-profile'+(selectedSoloArtist===name?' selected':'')+'" data-solo-artist="'+escapeHtml(name)+'" aria-pressed="'+(selectedSoloArtist===name)+'" title="View '+escapeHtml(name)+' statistics">'+photo+'<span class="artist-profile-name">'+escapeHtml(name)+'</span></button>';
  }).join('')+'</div>';
  area.querySelector('#allSoloArtists')?.addEventListener('click',()=>{selectedSoloArtist=null;saveView();render()});
  area.querySelectorAll('[data-solo-artist]').forEach(button=>button.addEventListener('click',()=>{selectedSoloArtist=button.dataset.soloArtist;saveView();render()}));
  const unitPhotos={
-  V8:'https://books.r10s.jp/fan/images/oshiraku-images/v8_conceptphoto1_25f8875b2d.jpg',
-  JxJ:'https://www.allkpop.com/upload/2026/09/content/281130/web_data/allkpop_1790609592_htt9wk4biaabw8m.jpg'
+  V8:['https://books.r10s.jp/fan/images/oshiraku-images/v8_conceptphoto1_25f8875b2d.jpg','https://img.tenasia.co.kr/photo/202606/BF.44712139.1.jpg'],
+  JxJ:['https://www.allkpop.com/upload/2026/09/content/281130/web_data/allkpop_1790609592_htt9wk4biaabw8m.jpg','https://www.allkpop.com/upload/2026/09/content/271151/1790524315-hto0kr6ayaaq1-n.jpeg']
  };
- area.querySelectorAll('img[data-unit-photo]').forEach(img=>{
-  img.src=unitPhotos[img.dataset.unitPhoto]||'';
-  img.classList.add('loaded');
- });
+ area.querySelectorAll('img[data-unit-photo]').forEach(img=>showArtistPhoto(img,unitPhotos[img.dataset.unitPhoto]));
  area.querySelectorAll('img[data-artist-photo]').forEach(img=>{
   const id=img.dataset.artistPhoto;
-  if(!artistPhotoCache.has(id))artistPhotoCache.set(id,fetch('https://open.spotify.com/oembed?url='+encodeURIComponent(id==='v8-debut'?'https://open.spotify.com/album/5HQrHtpGthJMePFhXT3jKS':'https://open.spotify.com/artist/'+id))
-    .then(r=>r.ok?r.json():null).then(d=>d?.thumbnail_url||null).catch(()=>null));
-  artistPhotoCache.get(id).then(url=>{if(url&&img.isConnected){img.onload=()=>{if(img.isConnected)img.classList.add('loaded')};img.onerror=()=>{if(img.isConnected){img.style.display='none';if(!img.nextElementSibling?.classList.contains('artist-profile-placeholder'))img.insertAdjacentHTML('afterend','<span class="artist-profile-placeholder" title="Photo temporarily unavailable">💎</span>')}};img.src=url}else if(img.isConnected){img.style.display='none';if(!img.nextElementSibling?.classList.contains('artist-profile-placeholder'))img.insertAdjacentHTML('afterend','<span class="artist-profile-placeholder">💎</span>')}})
+  if(!artistPhotoCache.has(id)){
+   artistPhotoCache.set(id,artistImageManifest.then(map=>{
+    if(map[id])return map[id];
+    return fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/artist/'+id))
+      .then(r=>r.ok?r.json():null).then(d=>d?.thumbnail_url||null).catch(()=>null);
+   }));
+  }
+  artistPhotoCache.get(id).then(url=>{if(img.isConnected&&url)showArtistPhoto(img,url)});
  });
 }
 // Artist ownership is based on the Unit & Solo workbook. Track IDs, not
@@ -1784,7 +1815,10 @@ function soloLegacyRows(s,p,pp,baseline,view){
   row.releaseDate=originalReleaseDate(row)||null;
   rows.push(row);
  }
- if(view==='discography')return rows;
+ if(view==='discography'){
+   if(sortOrder==='newest'||sortOrder==='oldest')rows.sort((a,b)=>{const x=originalReleaseDate(a),y=originalReleaseDate(b);if(!x||!y)return x?-1:y?1:(a.releaseOrder??0)-(b.releaseOrder??0);return sortOrder==='newest'?y.localeCompare(x):x.localeCompare(y)});
+   return rows;
+  }
  rows.sort((a,b)=>{
   if(sortOrder==='az'||sortOrder==='za'){
    const v=a.name.localeCompare(b.name,'en',{sensitivity:'base',numeric:true});
