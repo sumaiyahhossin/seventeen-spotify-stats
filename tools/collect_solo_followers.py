@@ -91,7 +91,7 @@ if missing:
                         str(ROOT/'build'/'Stream_Stats_Units_Duos.java')],check=True)
         env=os.environ.copy()
         env.pop('SVT_FIRST_TRACK_PREVIOUS',None)
-        env['SVT_FOLLOWERS_ONLY']=','.join(missing)
+        env['SVT_FOLLOWERS_ONLY']=missing[0]  # Diagnose ONE profile only, never scan all 18 on a failed parser.
         result=subprocess.run(['java','-cp',str(ROOT/'build')+os.pathsep+classpath,
                                'Stream_Stats_Units_Duos'],capture_output=True,text=True,
                               timeout=2400,env=env)
@@ -102,8 +102,11 @@ if missing:
             elif line.startswith('STAT_FOLLOWERS_UNAVAILABLE|'):
                 print(line,flush=True)
         if result.returncode:
-            print(f'Follower-only Java collector exited {result.returncode}: {result.stderr[-500:]}',flush=True)
-        print(f'Spotify About dialogs: verified {len(found)} total profiles in this pass',flush=True)
+            raise SystemExit(f'One-profile follower probe failed (Java exit {result.returncode}): {result.stderr[-500:]}')
+        if missing[0] not in found:
+            diagnostics=[line for line in result.stdout.splitlines() if line.startswith(('STAT_FOLLOWERS_UNAVAILABLE|','STAT_FOLLOWERS_DIAGNOSTIC|'))]
+            raise SystemExit('STOPPED after first unsuccessful artist. Spotify About markup or follower precision needs investigation. '+ ' ; '.join(diagnostics[-4:]))
+        print('First follower probe verified one artist. No other artist was scanned in diagnostic mode.',flush=True)
 
 if found:
     now=TODAY.isoformat()
@@ -113,4 +116,4 @@ if found:
     OUTPUT.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 remaining=sorted(id for id in ids if id not in saved or not isinstance(saved[id].get('count'),int))
 print(f'Solo/unit follower archive: {len(ids)-len(remaining)}/{len(ids)} verified. '
-      f'Unverified artist profiles: {len(remaining)}; scheduled hourly retries continue.',flush=True)
+      f'Unverified artist profiles: {len(remaining)}; automatic retries paused pending diagnostic review.',flush=True)
