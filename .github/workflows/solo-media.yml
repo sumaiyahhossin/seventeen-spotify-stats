@@ -1,0 +1,42 @@
+name: Verify and cache every unit and solo cover
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/cache_solo_media.py'
+      - '.github/workflows/solo-media.yml'
+permissions:
+  contents: write
+concurrency:
+  group: unit-solo-artwork
+  cancel-in-progress: false
+jobs:
+  cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - name: Fetch verified Spotify artwork for all tracks and albums
+        id: covers
+        continue-on-error: true
+        run: python tools/cache_solo_media.py
+      - name: Commit all validated images and metadata
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add assets/solo-track-covers assets/solo-album-covers data/solo-media.json
+          if git diff --cached --quiet; then
+            echo "No new covers to publish"
+            exit 0
+          fi
+          git commit -m "Archive actual album and recording artwork for unit and solo tracks"
+          git pull --rebase -X theirs origin main
+          git push origin HEAD:main
+      - name: Report incomplete sources
+        if: steps.covers.outcome == 'failure'
+        run: |
+          echo "Some Spotify covers were not available. Exact missing IDs are listed in data/solo-media.json."
+          exit 1
