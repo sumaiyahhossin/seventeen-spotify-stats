@@ -1774,7 +1774,7 @@ function rankMetricHtml(value,key,label,{signed=false,estimated=false,partial=fa
  const display=missing?'—':(estimated?'≈':signed?(number>=0?'+':'−'):'')+fmt(Math.abs(number))+(partial?'*':'');
  const compact=missing?'—':(estimated?'≈':signed?(number>=0?'+':'−'):'')+
   rankCompactFormatter.format(Math.abs(number))+(partial?'*':'');
- return '<div class="num rank-metric rank-metric-'+key+(missing?' missing-value':number<0?' negative':'')+'" title="'+label+': '+display+'">'+
+ return '<div class="num rank-metric rank-metric-'+key+(missing?' missing-value':number<0?' negative':number>0&&signed?' positive':number===0&&signed?' unchanged':'')+'" title="'+label+': '+display+'">'+
   '<span class="metric-label">'+label+'</span><span class="metric-value">'+display+'</span>'+
   '<span class="metric-compact" aria-hidden="true">'+compact+'</span></div>';
 }
@@ -2014,7 +2014,7 @@ async function render(){const token=++renderToken;
  const positionKeyForDisplay=r=>r.id&&String(r.id).startsWith('legacy:')?'name:'+normTrackName(r.name):r.id||'name:'+normTrackName(r.name);
  const rankMovements=new Map();
  if(!discography&&s){
-  const priorDate=daily?shifted(s.date,-1):periodic?baseline?.prevEnd?.date:null;
+  const priorDate=(daily||rank.endsWith('overall'))?shifted(s.date,-1):periodic?baseline?.prevEnd?.date:null;
   const previousSnapshot=priorDate?await getDate(tab,priorDate):null;
   if(previousSnapshot){
    const previousPrior=await prior(previousSnapshot);
