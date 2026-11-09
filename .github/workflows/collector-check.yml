@@ -1,0 +1,57 @@
+name: Verify artist follower collector and website code
+on:
+  push:
+    paths:
+      - 'src/Stream_Stats_Units_Duos.java'
+      - 'tools/pipeline.py'
+      - 'tools/instrument.py'
+      - 'app.js'
+      - 'milestones.js'
+      - '.github/workflows/collector-check.yml'
+  workflow_dispatch:
+jobs:
+  validation:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '17'
+          cache: maven
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check Python and JavaScript syntax
+        run: |
+          python -m py_compile tools/pipeline.py tools/instrument.py tools/gate.py tools/catalog.py
+          node --check app.js
+          node --check milestones.js
+      - name: Prepare Selenium Java dependencies
+        run: mvn -q dependency:build-classpath -Dmdep.outputFile=classpath.txt
+      - name: Verify unit and solo follower reader and retry collector compile
+        run: |
+          python tools/instrument.py solo
+          javac -cp "$(cat classpath.txt)" -d build build/Stream_Stats_Units_Duos.java
+          echo "Selenium collector compiles and instrumentation succeeds"
+      - name: Verify all exact cover/link mappings exist
+        run: |
+          python - <<'PY'
+          import json,pathlib
+          root=pathlib.Path('.')
+          cat=json.loads((root/'data/catalog.json').read_text())
+          media=json.loads((root/'data/solo-media.json').read_text())
+          links=json.loads((root/'data/solo-legacy-track-links.json').read_text())['byIndex']
+          albums=json.loads((root/'data/solo-albums.json').read_text())
+          track_ids={t for album in cat['solo'] for t in album['tracks']}
+          assert track_ids<=set(media['tracks']), f'Absent covers: {track_ids-set(media["tracks"])}'
+          assert all((root/x['local']).is_file() for x in media['tracks'].values())
+          assert len(media['albums'])==11 and all((root/x).is_file() for x in media['albums'].values())
+          assert all(x['id'] in track_ids for x in links.values())
+          assert all(a.get('releaseDate') for a in albums)
+          print('Verified',len(track_ids),'track covers,',len(media['albums']),'album covers,',len(links),'workbook links')
+          PY
