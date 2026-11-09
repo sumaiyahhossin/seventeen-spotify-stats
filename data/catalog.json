@@ -820,7 +820,11 @@
       "tracks": [
         "1beUALLSloBEvYre65QiW6",
         "2KG4bJIKnzH7ZOEBmKsevL"
-      ]
+      ],
+      "release_date": "2025-01-27",
+      "track_release_dates": {
+        "2KG4bJIKnzH7ZOEBmKsevL": "2025-01-29"
+      }
     },
     {
       "key": "jeonghan_g2",
@@ -834,7 +838,8 @@
         "1bGAA82A31CWflD6bqY5g6",
         "69umJ9yk5uay7PQmhBOKk8",
         "2lDG4sMZwAC2TTlXNHMgA1"
-      ]
+      ],
+      "release_date": "2026-10-19"
     },
     {
       "key": "joshua_g1",
@@ -844,7 +849,8 @@
       "tracks": [
         "4AJqFqxzozDSZC1iSZIi2S",
         "3s1ipXxVqZqn3qF8pIJXR2"
-      ]
+      ],
+      "release_date": "2023-07-21"
     },
     {
       "key": "joshua_g2",
@@ -854,7 +860,8 @@
       "tracks": [
         "6DVzKtEZUuYW38ac4sTL53",
         "3QrufE7sgsepVALV7lzFOT"
-      ]
+      ],
+      "release_date": "2023-07-28"
     },
     {
       "key": "joshua_g3",
@@ -864,7 +871,11 @@
       "tracks": [
         "4iIx4KfhlrkWBw1nTBo313",
         "0L3tD2Sc15kj9WQyUF7uTm"
-      ]
+      ],
+      "release_date": "2025-07-25",
+      "track_release_dates": {
+        "4iIx4KfhlrkWBw1nTBo313": "2025-08-15"
+      }
     },
     {
       "key": "joshua_g4",
@@ -873,7 +884,8 @@
       "artist": "Joshua",
       "tracks": [
         "7hDtClqgAMxBNlLosya834"
-      ]
+      ],
+      "release_date": "2025-12-08"
     },
     {
       "key": "joshua_g5",
@@ -882,7 +894,8 @@
       "artist": "Joshua",
       "tracks": [
         "3TXlqTa1baUv7YCe9yEJEH"
-      ]
+      ],
+      "release_date": "2026-05-29"
     },
     {
       "key": "joshua_g6",
@@ -891,7 +904,8 @@
       "artist": "Joshua",
       "tracks": [
         "3LO5YMHSmjgNr0TEs5u1uW"
-      ]
+      ],
+      "release_date": "2026-07-23"
     },
     {
       "key": "joshua_g7",
@@ -901,7 +915,8 @@
       "tracks": [
         "2dDvzJ48BUOOrP0Lm5KVnH",
         "5oJNUXG0wL3eKRdzNfBHDL"
-      ]
+      ],
+      "release_date": "2026-09-22"
     },
     {
       "key": "joshua_g8",
@@ -915,7 +930,8 @@
         "1bGAA82A31CWflD6bqY5g6",
         "2SWWDlOjKqgVvocnIfxId9",
         "2lDG4sMZwAC2TTlXNHMgA1"
-      ]
+      ],
+      "release_date": "2026-10-19"
     },
     {
       "key": "jun_g1",
@@ -924,7 +940,8 @@
       "artist": "Jun",
       "tracks": [
         "2FpI3GCkEQOT40yuAvMj7r"
-      ]
+      ],
+      "release_date": "2020-07-02"
     },
     {
       "key": "jun_g2",
@@ -933,7 +950,8 @@
       "artist": "Jun",
       "tracks": [
         "7fTc6aBevhBfM6vjSQuWHZ"
-      ]
+      ],
+      "release_date": "2021-02-05"
     },
     {
       "key": "jun_g3",
@@ -942,7 +960,11 @@
       "artist": "Jun",
       "tracks": [
         "0fSuP4hMUK1CqDAYV62BHF"
-      ]
+      ],
+      "release_date": "2021-02-14",
+      "track_release_dates": {
+        "undefined": "2021-02-05"
+      }
     },
     {
       "key": "jun_g4Chinese",
@@ -951,7 +973,8 @@
       "artist": "Jun",
       "tracks": [
         "1mRv9y4YompRDM1W9LFGwo"
-      ]
+      ],
+      "release_date": "2022-09-23"
     },
     {
       "key": "jun_g4Korean",
@@ -960,7 +983,8 @@
       "artist": "Jun",
       "tracks": [
         "54p6HYutzI4V4aXN0UiJ8n"
-      ]
+      ],
+      "release_date": "2022-09-23"
     },
     {
       "key": "jun_g5",
@@ -969,7 +993,8 @@
       "artist": "Jun",
       "tracks": [
         "41B92XjIUVxOqhNAwzlMpp"
-      ]
+      ],
+      "release_date": "2023-07-04"
     },
     {
       "key": "jun_g6",
@@ -978,7 +1003,8 @@
       "artist": "Jun",
       "tracks": [
         "7H82PsvBZMdW2oESx29hAs"
-      ]
+      ],
+      "release_date": "2024-06-05"
     },
     {
       "key": "jun_g7",
@@ -987,7 +1013,8 @@
       "artist": "Jun",
       "tracks": [
         "3AMK4O3ct2KmNjNoXdJVYa"
-      ]
+      ],
+      "release_date": "2025-01-13"
     },
     {
       "key": "jun_g8",
@@ -996,7 +1023,8 @@
       "artist": "Jun",
       "tracks": [
         "0LxoYfRVw4g0D6G6ZihIt2"
-      ]
+      ],
+      "release_date": "2023-07-26"
     },
     {
       "key": "jun_g9",
@@ -1006,7 +1034,8 @@
       "tracks": [
         "6RItztBk0wvXv81GRXvOXo",
         "2HfKxC4Qc4FCgqqzItyogk"
-      ]
+      ],
+      "release_date": "2025-12-16"
     },
     {
       "key": "jun_g10",
@@ -1021,7 +1050,8 @@
         "1fP7HQ7MDoTXQEDG3tYp2Z",
         "7m0VvxYpb8FhWtSKsjrGEW",
         "0e0NzRp8SIGy4g801e5jj1"
-      ]
+      ],
+      "release_date": "2026-09-28"
     },
     {
       "key": "hoshi_g1",
@@ -1030,7 +1060,8 @@
       "artist": "Hoshi",
       "tracks": [
         "2TwB7aK39tnZBQjBPgcbCj"
-      ]
+      ],
+      "release_date": "2021-04-02"
     },
     {
       "key": "hoshi_g2",
@@ -1040,7 +1071,8 @@
       "tracks": [
         "4AJqFqxzozDSZC1iSZIi2S",
         "3s1ipXxVqZqn3qF8pIJXR2"
-      ]
+      ],
+      "release_date": "2023-07-21"
     },
     {
       "key": "hoshi_g3",
@@ -1050,7 +1082,8 @@
       "tracks": [
         "6DVzKtEZUuYW38ac4sTL53",
         "3QrufE7sgsepVALV7lzFOT"
-      ]
+      ],
+      "release_date": "2023-07-28"
     },
     {
       "key": "hoshi_g4",
@@ -1060,7 +1093,8 @@
       "tracks": [
         "4yorFTfi9Tay8tG0NNK7vB",
         "5wGg3XXTgENKBTSc1M5TNR"
-      ]
+      ],
+      "release_date": "2023-11-01"
     },
     {
       "key": "hoshi_g5",
@@ -1069,7 +1103,8 @@
       "artist": "Hoshi",
       "tracks": [
         "1kMuSPY0CrZsrrUfbGTbnf"
-      ]
+      ],
+      "release_date": "2024-03-04"
     },
     {
       "key": "hoshi_g6",
@@ -1078,7 +1113,8 @@
       "artist": "Hoshi",
       "tracks": [
         "1JTPqGG7hHzLsBWK6caGQz"
-      ]
+      ],
+      "release_date": "2025-09-16"
     },
     {
       "key": "hoshi_g7",
@@ -1087,7 +1123,8 @@
       "artist": "Hoshi",
       "tracks": [
         "4cIL0R9GS1XEqZqEyDvxCn"
-      ]
+      ],
+      "release_date": "2025-11-11"
     },
     {
       "key": "hoshi_g8",
@@ -1096,7 +1133,8 @@
       "artist": "Hoshi",
       "tracks": [
         "1UeL63z2l6pAFTDsKdcNLz"
-      ]
+      ],
+      "release_date": "2026-03-14"
     },
     {
       "key": "hoshi_g9",
@@ -1105,7 +1143,8 @@
       "artist": "Hoshi",
       "tracks": [
         "3CVdqafJ9WtmiCGkR2d9rJ"
-      ]
+      ],
+      "release_date": "2026-06-15"
     },
     {
       "key": "hoshi_g10",
@@ -1114,7 +1153,8 @@
       "artist": "Hoshi",
       "tracks": [
         "0Yyh9XpPntsMhbJcC80VfH"
-      ]
+      ],
+      "release_date": "2026-10-10"
     },
     {
       "key": "wonwoo_g1",
@@ -1123,7 +1163,8 @@
       "artist": "Wonwoo",
       "tracks": [
         "347PJwH4XqRbeaKaIW9sX3"
-      ]
+      ],
+      "release_date": "2021-05-28"
     },
     {
       "key": "wonwoo_g2",
@@ -1132,7 +1173,8 @@
       "artist": "Wonwoo",
       "tracks": [
         "27HQm8e5nnVq5y7rHR3ROl"
-      ]
+      ],
+      "release_date": "2025-07-17"
     },
     {
       "key": "wonwoo_g3",
@@ -1142,7 +1184,8 @@
       "tracks": [
         "4KDr3ViGsomHd9cZJsgZDh",
         "4bZzDnXwhZ9vrQoW8A6Qyz"
-      ]
+      ],
+      "release_date": "2026-07-17"
     },
     {
       "key": "woozi_g1",
@@ -1151,7 +1194,8 @@
       "artist": "Woozi",
       "tracks": [
         "3euYNE8OgAMAy6caUKOUeL"
-      ]
+      ],
+      "release_date": "2016-09-06"
     },
     {
       "key": "woozi_g2",
@@ -1161,7 +1205,8 @@
       "tracks": [
         "0YLLRbbpq3Qte4rszcddMk",
         "6NgPTrPpxDfZ5lsIiSrH4P"
-      ]
+      ],
+      "release_date": "2019-10-15"
     },
     {
       "key": "woozi_g3",
@@ -1170,7 +1215,8 @@
       "artist": "Woozi",
       "tracks": [
         "5ljGBxXb9LthJK0rW61G6X"
-      ]
+      ],
+      "release_date": "2022-01-03"
     },
     {
       "key": "woozi_g4",
@@ -1179,7 +1225,8 @@
       "artist": "Woozi",
       "tracks": [
         "1DXomndYd10iSX9uZSPv6e"
-      ]
+      ],
+      "release_date": "2024-01-26"
     },
     {
       "key": "woozi_g5",
@@ -1188,7 +1235,8 @@
       "artist": "Woozi",
       "tracks": [
         "27mTIjFv2rSlcN89dS9YDF"
-      ]
+      ],
+      "release_date": "2026-03-18"
     },
     {
       "key": "dk_g1",
@@ -1198,7 +1246,8 @@
       "tracks": [
         "1aXSHBuFmpAtmdvOn5uu1T",
         "4TlvThZjOgBvswhK3Un7Qs"
-      ]
+      ],
+      "release_date": "2016-07-31"
     },
     {
       "key": "dk_g2",
@@ -1208,7 +1257,8 @@
       "tracks": [
         "4jAh51yhz3LUtbm1p7vOfY",
         "11MmuNZlo9KSmMniQPGXGl"
-      ]
+      ],
+      "release_date": "2018-04-10"
     },
     {
       "key": "dk_g3",
@@ -1217,7 +1267,8 @@
       "artist": "Dokyeom",
       "tracks": [
         "3rB5fYZr3nSD2tBAvfYPb2"
-      ]
+      ],
+      "release_date": "2017-08-09"
     },
     {
       "key": "dk_g4",
@@ -1227,7 +1278,8 @@
       "tracks": [
         "4hzeoIOERTL4jdTXAQ0FWr",
         "5Qna4lljRXUSkYDAcHQcR5"
-      ]
+      ],
+      "release_date": "2022-02-27"
     },
     {
       "key": "dk_g5",
@@ -1236,7 +1288,8 @@
       "artist": "Dokyeom",
       "tracks": [
         "7cpl3k7BKvYYq3vYcYf946"
-      ]
+      ],
+      "release_date": "2022-08-16"
     },
     {
       "key": "dk_g6",
@@ -1246,7 +1299,8 @@
       "tracks": [
         "4JCHRuXg9IRWBXtXtjgWxd",
         "7BErfsfMu9wUd13j7NT0oL"
-      ]
+      ],
+      "release_date": "2023-12-03"
     },
     {
       "key": "dk_g7",
@@ -1256,7 +1310,8 @@
       "tracks": [
         "2XtNYB72kf5QEhYDdPZdc7",
         "5p9PbCdXSqeqgn9jTQGWA5"
-      ]
+      ],
+      "release_date": "2025-05-03"
     },
     {
       "key": "dk_g8",
@@ -1266,7 +1321,8 @@
       "tracks": [
         "3b0Bxz2ZxN8aYUAnNCnXqT",
         "13cY5VPi1l0myceVdxouaa"
-      ]
+      ],
+      "release_date": "2026-02-23"
     },
     {
       "key": "dk_g9",
@@ -1276,7 +1332,8 @@
       "tracks": [
         "4pvUtXwvtZx0kl7vlv8gf9",
         "76ZxYJHOCJxvMEDUirZKv7"
-      ]
+      ],
+      "release_date": "2026-03-22"
     },
     {
       "key": "dk_g10",
@@ -1286,7 +1343,8 @@
       "tracks": [
         "21xVKf7NUrDgdTYOUzccLb",
         "6Qz7Fg8192Poj0yfb8A4JE"
-      ]
+      ],
+      "release_date": "2026-07-26"
     },
     {
       "key": "mingyu_g1",
@@ -1295,7 +1353,8 @@
       "artist": "Mingyu",
       "tracks": [
         "347PJwH4XqRbeaKaIW9sX3"
-      ]
+      ],
+      "release_date": "2021-05-28"
     },
     {
       "key": "the8_g1",
@@ -1304,7 +1363,8 @@
       "artist": "The8",
       "tracks": [
         "6lWicdbY0xMkeLxYeswFxL"
-      ]
+      ],
+      "release_date": "2020-06-30"
     },
     {
       "key": "the8_g2",
@@ -1314,7 +1374,8 @@
       "tracks": [
         "2Y6E1VaruSbPTNLTvyRKdF",
         "4FXKLGkXw4v5Kw3pEWCTYV"
-      ]
+      ],
+      "release_date": "2021-04-13"
     },
     {
       "key": "the8_g3",
@@ -1324,7 +1385,8 @@
       "tracks": [
         "13hGqGFyC0PSVJhzir7Vcj",
         "5vx4AWcMBMEEyvLxbefZ79"
-      ]
+      ],
+      "release_date": "2021-12-03"
     },
     {
       "key": "the8_g4",
@@ -1333,7 +1395,8 @@
       "artist": "The8",
       "tracks": [
         "3kBfE92drjZEgYffx22zbl"
-      ]
+      ],
+      "release_date": "2022-03-18"
     },
     {
       "key": "the8_g5",
@@ -1344,7 +1407,8 @@
         "2bSxLQkTVPmJHNgm0q35nl",
         "69rednReVMNsLC6dNbpdVw",
         "1ZV80AOcLQrBSsKDisDjNR"
-      ]
+      ],
+      "release_date": "2022-09-27"
     },
     {
       "key": "the8_g6",
@@ -1355,7 +1419,8 @@
         "5NAza02m7G3hPAaz3EWry8",
         "5sVj7d0R7o1bubCFHgKk2G",
         "5r6f2p9evm7f54RP63tAsR"
-      ]
+      ],
+      "release_date": "2024-01-18"
     },
     {
       "key": "the8_g7",
@@ -1365,7 +1430,8 @@
       "tracks": [
         "2qA2YPrXWbHlMuI6aVo1Bj",
         "4UGbzfz3623WOuypoGoTw8"
-      ]
+      ],
+      "release_date": "2024-07-27"
     },
     {
       "key": "the8_g8",
@@ -1376,7 +1442,8 @@
         "1PFP2Zrgg9P8OHNifYEuEK",
         "6P22aoxidK8c7r3dRc8YQv",
         "60CbzqNbxBx7uRanCFiVxx"
-      ]
+      ],
+      "release_date": "2024-12-04"
     },
     {
       "key": "the8_g9",
@@ -1385,7 +1452,8 @@
       "artist": "The8",
       "tracks": [
         "2qCiLobSDsNsxlNW3GJZ7W"
-      ]
+      ],
+      "release_date": "2025-08-29"
     },
     {
       "key": "the8_g10",
@@ -1394,7 +1462,8 @@
       "artist": "The8",
       "tracks": [
         "3vhA8aHNutDpXhLpZAg6CH"
-      ]
+      ],
+      "release_date": "2026-04-01"
     },
     {
       "key": "the8_g11",
@@ -1403,7 +1472,8 @@
       "artist": "The8",
       "tracks": [
         "6kkFC7qnkFNpd6zv31mVdU"
-      ]
+      ],
+      "release_date": "2026-05-01"
     },
     {
       "key": "the8_g12",
@@ -1418,7 +1488,8 @@
         "0Jnh3156FyIz7SHWgKHRmp",
         "7qNXDUu4dkeOm67eF35qiL",
         "3cHzq4HX4ijdisuJ0a8SEj"
-      ]
+      ],
+      "release_date": "2026-06-29"
     },
     {
       "key": "sk_g1",
@@ -1427,7 +1498,8 @@
       "artist": "Seungkwan",
       "tracks": [
         "25iqfryJdCYQazGeePgoIN"
-      ]
+      ],
+      "release_date": "2018-01-14"
     },
     {
       "key": "sk_g2",
@@ -1437,7 +1509,8 @@
       "tracks": [
         "5SqEWwdYt55W8Tz7j8WtwQ",
         "1rnnc85HFGnJj7ky4hZrja"
-      ]
+      ],
+      "release_date": "2018-03-15"
     },
     {
       "key": "sk_g3",
@@ -1447,7 +1520,8 @@
       "tracks": [
         "51W0tWQB56AvnLhIauJuSc",
         "5RcdGr06UALeho84O30JTc"
-      ]
+      ],
+      "release_date": "2020-09-07"
     },
     {
       "key": "sk_g4",
@@ -1457,7 +1531,8 @@
       "tracks": [
         "2q2M0JapDnsgIS0qtgMoZG",
         "07vYOaWMxVZXh1qTjs10I7"
-      ]
+      ],
+      "release_date": "2021-01-29"
     },
     {
       "key": "sk_g5",
@@ -1467,7 +1542,8 @@
       "tracks": [
         "5bmr4XB9X2QQPpnrY6PwwZ",
         "1SfK92mBfNFcedtVnEyLmF"
-      ]
+      ],
+      "release_date": "2022-06-28"
     },
     {
       "key": "sk_g6",
@@ -1476,7 +1552,8 @@
       "artist": "Seungkwan",
       "tracks": [
         "1lUNlmwyhsJy6kXmmrO11t"
-      ]
+      ],
+      "release_date": "2022-09-30"
     },
     {
       "key": "sk_g7",
@@ -1486,7 +1563,8 @@
       "tracks": [
         "6pKyakfga6xnwP7xgQr5vo",
         "6T9pGYi0IozXdw3pFAIOtP"
-      ]
+      ],
+      "release_date": "2023-05-19"
     },
     {
       "key": "sk_g8",
@@ -1496,7 +1574,8 @@
       "tracks": [
         "74jC2OHiPnRCCCSdBGXHVo",
         "2D4HVYoP9wTcl6PDp3rKOv"
-      ]
+      ],
+      "release_date": "2023-12-19"
     },
     {
       "key": "sk_g9",
@@ -1505,7 +1584,8 @@
       "artist": "Seungkwan",
       "tracks": [
         "6Gxl4O8CQIHsYPlCMnimG7"
-      ]
+      ],
+      "release_date": "2024-02-26"
     },
     {
       "key": "sk_g10",
@@ -1516,7 +1596,8 @@
         "5EIMmyT519rdZzdeSGEj0m",
         "2B5UI74yd7FpWv6A5zqmQd",
         "4AwbPqatpbXscfxZfBqj7j"
-      ]
+      ],
+      "release_date": "2024-03-20"
     },
     {
       "key": "sk_g11",
@@ -1526,7 +1607,8 @@
       "tracks": [
         "4oAp3etVXydrLaVBcXHvDZ",
         "0NEXpWus0oFDefTzmUNH7b"
-      ]
+      ],
+      "release_date": "2025-02-01"
     },
     {
       "key": "sk_g12",
@@ -1535,7 +1617,8 @@
       "artist": "Seungkwan",
       "tracks": [
         "67YLguFMT7wbJl2dSXeNGE"
-      ]
+      ],
+      "release_date": "2026-04-24"
     },
     {
       "key": "vernon_g1",
@@ -1544,7 +1627,8 @@
       "artist": "Vernon",
       "tracks": [
         "1Jg92FCIcH6fcAl30QZfZi"
-      ]
+      ],
+      "release_date": "2015-07-11"
     },
     {
       "key": "vernon_g1_older",
@@ -1554,7 +1638,8 @@
       "tracks": [
         "5uflZOj1mUcIkgjNT3yrH3",
         "2lHFNxA0W3rUg3C9vZXVey"
-      ]
+      ],
+      "release_date": "2015-07-30"
     },
     {
       "key": "vernon_g2",
@@ -1563,7 +1648,8 @@
       "artist": "Vernon",
       "tracks": [
         "1xy1i731FugTcS1e9RFX1d"
-      ]
+      ],
+      "release_date": "2016-03-23"
     },
     {
       "key": "vernon_g2_remix",
@@ -1572,7 +1658,8 @@
       "artist": "Vernon",
       "tracks": [
         "66OyXBzznixSkifQMx2AW3"
-      ]
+      ],
+      "release_date": "2018-11-14"
     },
     {
       "key": "vernon_g3",
@@ -1581,7 +1668,8 @@
       "artist": "Vernon",
       "tracks": [
         "5InZzHAvyMPSMEXT4AeDQ3"
-      ]
+      ],
+      "release_date": "2019-08-02"
     },
     {
       "key": "vernon_g4",
@@ -1590,7 +1678,8 @@
       "artist": "Vernon",
       "tracks": [
         "3teT4GffWtZUYQVmUwL14d"
-      ]
+      ],
+      "release_date": "2022-02-25"
     },
     {
       "key": "vernon_g5",
@@ -1599,7 +1688,8 @@
       "artist": "Vernon",
       "tracks": [
         "3vn5FDDhTZaFbGpm9Xixio"
-      ]
+      ],
+      "release_date": "2022-05-17"
     },
     {
       "key": "vernon_g6",
@@ -1608,7 +1698,8 @@
       "artist": "Vernon",
       "tracks": [
         "0aW2wxU16UTuwohjldJ5v0"
-      ]
+      ],
+      "release_date": "2022-12-23"
     },
     {
       "key": "vernon_g7",
@@ -1617,7 +1708,8 @@
       "artist": "Vernon",
       "tracks": [
         "6MrNcToqeejjpYcstmKBHi"
-      ]
+      ],
+      "release_date": "2023-07-19"
     },
     {
       "key": "vernon_g8",
@@ -1626,7 +1718,8 @@
       "artist": "Vernon",
       "tracks": [
         "1PFP2Zrgg9P8OHNifYEuEK"
-      ]
+      ],
+      "release_date": "2024-12-04"
     },
     {
       "key": "vernon_g9",
@@ -1641,7 +1734,8 @@
         "1R0kXShLtjjIkZoET8vdb1",
         "0Jnh3156FyIz7SHWgKHRmp",
         "3cHzq4HX4ijdisuJ0a8SEj"
-      ]
+      ],
+      "release_date": "2026-06-29"
     },
     {
       "key": "vernon_g10",
@@ -1650,7 +1744,8 @@
       "artist": "Vernon",
       "tracks": [
         "1hs4eGCcvX3wz5Z6nNqcxl"
-      ]
+      ],
+      "release_date": "2026-08-20"
     },
     {
       "key": "dino_g1",
@@ -1660,7 +1755,8 @@
       "tracks": [
         "6F3JheiZtQnzGfjbAocreQ",
         "47DASVFyegev3sT21EbV9c"
-      ]
+      ],
+      "release_date": "2023-11-04"
     },
     {
       "key": "dino_g2",
@@ -1669,7 +1765,8 @@
       "artist": "Dino",
       "tracks": [
         "1KkC3Nzxv3OZorm5m1843p"
-      ]
+      ],
+      "release_date": "2023-11-27"
     },
     {
       "key": "dino_g3",
@@ -1679,7 +1776,8 @@
       "tracks": [
         "7i6UHwUwuNvH63uQMBpXvr",
         "6PzNZQN9zhIKvbNbbY5Fis"
-      ]
+      ],
+      "release_date": "2026-07-13"
     },
     {
       "key": "dino_g4",
@@ -1689,7 +1787,8 @@
       "tracks": [
         "6lfWCCeGpsldAQi8JxKwpg",
         "5MZktJvCYmskdeY1PwuxL4"
-      ]
+      ],
+      "release_date": "2026-08-03"
     },
     {
       "key": "dino_g5",
@@ -1698,7 +1797,8 @@
       "artist": "Dino",
       "tracks": [
         "1juuiRXGTR6SFQFv7vVCRL"
-      ]
+      ],
+      "release_date": "2026-11-03"
     },
     {
       "key": "bss_g1",
@@ -1707,7 +1807,8 @@
       "artist": "Bss",
       "tracks": [
         "57ITlzpnOMkSE6oHGbvTqi"
-      ]
+      ],
+      "release_date": "2018-03-21"
     },
     {
       "key": "bss_g2",
@@ -1718,7 +1819,8 @@
         "7eBpUuPnDTfbeP1P4P93CS",
         "0MMIrw3mCssQj4uqJlBzdp",
         "6tAPw1Rtt3SGEOm6ohYi8l"
-      ]
+      ],
+      "release_date": "2023-02-06"
     },
     {
       "key": "bss_g3",
@@ -1728,7 +1830,8 @@
       "tracks": [
         "1amowbJ9HHFFSFdg2ubM7G",
         "4QSkY17gPTuGfb7RZFTGXD"
-      ]
+      ],
+      "release_date": "2024-03-10"
     },
     {
       "key": "bss_g4",
@@ -1739,7 +1842,8 @@
         "0ofqcEBPdlyczRjUhjCiIS",
         "5WzKTday2lCOKk4HjjyFZt",
         "0jwreQKzqgsEKtp46d2Ita"
-      ]
+      ],
+      "release_date": "2025-01-08"
     },
     {
       "key": "bss_g5",
@@ -1748,7 +1852,8 @@
       "artist": "Bss",
       "tracks": [
         "4SinziOMDPR58wWHakWP9v"
-      ]
+      ],
+      "release_date": "2025-04-24"
     },
     {
       "key": "jxw_g1",
@@ -1759,7 +1864,8 @@
         "0Qh8dlEJ3jVWk57Ql6XrdS",
         "3Sd2E80Y6WGk82qrHoq7pa",
         "1zHPzyKOs6AsnJcnWSjZhO"
-      ]
+      ],
+      "release_date": "2024-06-17"
     },
     {
       "key": "hxw_g1",
@@ -1770,7 +1876,8 @@
         "29GCuNZT4ihntQllYTPXQf",
         "6AvxOYstG9cCD4RVQp4aJz",
         "298BoO0FqEs3hfwO4K86fI"
-      ]
+      ],
+      "release_date": "2025-03-10"
     },
     {
       "key": "hxw_g2",
@@ -1779,7 +1886,8 @@
       "artist": "Hxw",
       "tracks": [
         "2ZmjUVTEA6UjJmqyiRGBBd"
-      ]
+      ],
+      "release_date": "2025-06-10"
     },
     {
       "key": "cxm_g1",
@@ -1793,7 +1901,8 @@
         "4Nwv6KF2jayQih4H2B7psX",
         "7g7k7CezQFUEsPjVbNv7X8",
         "7rutYN9WlI8WXrV6rHySEB"
-      ]
+      ],
+      "release_date": "2025-09-29"
     },
     {
       "key": "cxm_g2",
@@ -1802,7 +1911,8 @@
       "artist": "Cxm",
       "tracks": [
         "5mhfitGY8xcWNbqVVpwk8o"
-      ]
+      ],
+      "release_date": "2025-11-07"
     },
     {
       "key": "dxs_g1",
@@ -1816,7 +1926,8 @@
         "1RwOJEuRRHBHlvbD9S7C1N",
         "21nI1v1Fps5ARtJvaRqaC8",
         "1jstmwO12KospQ2e5tPXre"
-      ]
+      ],
+      "release_date": "2026-01-12"
     },
     {
       "key": "dxs_g2",
@@ -1826,7 +1937,8 @@
       "tracks": [
         "2psEOi0dDz19G9BljUiL2v",
         "7N0ONXAgsGFk9Hm4Nf8LLE"
-      ]
+      ],
+      "release_date": "2026-04-13"
     },
     {
       "key": "dxs_g3",
@@ -1835,7 +1947,8 @@
       "artist": "Dxs",
       "tracks": [
         "6xOoHI8ap5SFkDiBLb3ucf"
-      ]
+      ],
+      "release_date": "2026-08-10"
     },
     {
       "key": "v8",
@@ -1851,7 +1964,8 @@
         "0Jnh3156FyIz7SHWgKHRmp",
         "7qNXDUu4dkeOm67eF35qiL",
         "3cHzq4HX4ijdisuJ0a8SEj"
-      ]
+      ],
+      "release_date": "2026-06-29"
     },
     {
       "key": "picheolin_g1",
@@ -1860,7 +1974,8 @@
       "artist": "Picheolin",
       "tracks": [
         "3Y0ZwgYVHuwbW0JGjsYodR"
-      ]
+      ],
+      "release_date": "2026-07-15"
     },
     {
       "key": "picheolin_g2",
@@ -1869,7 +1984,8 @@
       "artist": "Picheolin",
       "tracks": [
         "594CTGIIVVTitwRhQJcWgM"
-      ]
+      ],
+      "release_date": "2026-07-22"
     },
     {
       "key": "picheolin_g3",
@@ -1883,7 +1999,12 @@
         "34wTGQ1yV5XtrSMR5dMLWY",
         "5W1bn5PzFgKok4GAZ1JUAw",
         "0zszdbIntzvgxPSe9U0QcT"
-      ]
+      ],
+      "release_date": "2026-08-03",
+      "track_release_dates": {
+        "34wTGQ1yV5XtrSMR5dMLWY": "2026-07-22",
+        "5W1bn5PzFgKok4GAZ1JUAw": "2026-07-15"
+      }
     },
     {
       "key": "gilboard",
@@ -1898,7 +2019,12 @@
         "5W1bn5PzFgKok4GAZ1JUAw",
         "0zszdbIntzvgxPSe9U0QcT",
         "5MZktJvCYmskdeY1PwuxL4"
-      ]
+      ],
+      "release_date": "2026-08-03",
+      "track_release_dates": {
+        "34wTGQ1yV5XtrSMR5dMLWY": "2026-07-22",
+        "5W1bn5PzFgKok4GAZ1JUAw": "2026-07-15"
+      }
     },
     {
       "key": "sharedTracks",
