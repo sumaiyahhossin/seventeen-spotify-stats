@@ -238,19 +238,31 @@ function paintArtists(){
 }
 function renderArtists(){
  const metric=$('artistMetric').value,scope=$('artistScope').value;
- const rows=artistStats().filter(a=>scope==='all'||(scope==='members'?members.has(a.name):units.has(a.name)));
- rows.sort((a,b)=>(b[metric]??-1)-(a[metric]??-1)||a.name.localeCompare(b.name));
- $('artistNote').textContent='Monthly listeners and streams: '+state.group.date+' (group), '+state.solo.date+' (solo/unit). Followers: separately verified. JxJ and V8 have no independent Spotify profile. Shared recordings may be credited to multiple profiles, but count once in the combined catalog.';
+ const labels={streams:'HIGHEST STREAMS',followers:'HIGHEST FOLLOWERS',
+  listeners:'HIGHEST MONTHLY LISTENERS'};
+ $('artistMetricHeading').textContent=labels[metric]||labels.streams;
+ // One selected metric, one descending ranking. A profile without a verified
+ // value for the selected metric is excluded, not ranked as 0.
+ const rows=artistStats()
+  .filter(a=>(scope==='all'||(scope==='members'?members.has(a.name):units.has(a.name)))&&
+   Number.isFinite(a[metric]))
+  .sort((a,b)=>b[metric]-a[metric]||a.name.localeCompare(b.name));
+ const source=metric==='streams'?'recording totals':metric==='listeners'?
+  'monthly listener observations':'verified follower snapshots';
+ $('artistNote').textContent=rows.length+' profiles with saved '+source+
+  ' · ranked from highest to lowest · profiles with unavailable values are hidden. '+
+  'Group: '+state.group.date+' · Solo/Unit: '+state.solo.date+'. '+
+  'Streams on member and unit profiles may overlap; the combined track catalog counts distinct recordings once.';
  $('artists').innerHTML=rows.map((a,i)=>
- '<tr><td><div class="svt-all-person">'+
- '<img class="svt-all-avatar artist-profile-photo" data-all-artist-photo="'+esc(a.name)+'" alt="'+esc(a.name)+' profile photo" loading="lazy">'+
- '<div class="svt-all-person-copy"><span class="svt-all-song">'+(a[metric]==null?'—':i+1)+'. '+esc(a.name)+'</span>'+
- '<div class="svt-all-sub">'+(a.name==='SEVENTEEN'?'Group':members.has(a.name)?'Member':'Unit')+
- ' · '+(a.recordings.size||0)+' recordings<span class="svt-all-mobile-selected"> · '+
- (metric==='listeners'?'Listeners':metric==='followers'?'Followers':'Streams')+': '+fmt(a[metric])+
- '</span></div></div></div></td><td class="svt-all-num">'+fmt(a.streams)+
- '</td><td class="svt-all-num">'+fmt(a.listeners)+'</td><td class="svt-all-num">'+fmt(a.followers)+'</td></tr>'
- ).join('')||'<tr><td colspan="4" class="svt-all-status">No artists found.</td></tr>';
+  '<tr><td><div class="svt-all-person">'+
+  '<span class="svt-all-rank">'+String(i+1).padStart(2,'0')+'</span>'+
+  '<img class="svt-all-avatar artist-profile-photo" data-all-artist-photo="'+esc(a.name)+'" alt="'+esc(a.name)+' profile photo" loading="lazy">'+
+  '<div class="svt-all-person-copy"><span class="svt-all-song">'+esc(a.name)+'</span>'+
+  '<div class="svt-all-sub">'+(a.name==='SEVENTEEN'?'Group':members.has(a.name)?'Member':'Unit')+
+  ' · '+(a.recordings.size||0)+' recordings</div></div></div></td>'+
+  '<td class="svt-all-num">'+fmt(a[metric])+'</td></tr>'
+ ).join('')||'<tr><td colspan="2" class="svt-all-status">No verified '+labels[metric].toLowerCase()+
+ ' are available for these profiles.</td></tr>';
  paintArtists();
 }
 function renderTracks(){
