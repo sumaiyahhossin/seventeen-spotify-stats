@@ -364,7 +364,7 @@ function build(){
  };
  const normalized=norm(item.name);
  const lookup='name:'+(aliases[normalized]||normalized);
- const evidence=externalEvidence[key]?.[threshold]||externalEvidence[lookup]?.[threshold];
+ const evidence=inSoloMilestones?null:(externalEvidence[key]?.[threshold]||externalEvidence[lookup]?.[threshold]);
   // A crossing is not sufficient: the latest available track-level total
   // must independently confirm the threshold. Never count album aggregates.
   const currentValue=latestValues.get(key);
@@ -432,7 +432,8 @@ async function start(){
   ready=true;build();renderUpcoming();
   // Only one previous daily snapshot is used to calculate the current growth rate.
   // Upcoming milestones never wait for the historical milestone scan.
-  (async()=>{try{const previousDate=new Date(Date.parse(group.date+'T12:00:00Z')-86400000).toISOString().slice(0,10);previousSnapshot=await jsonWithTimeout('data/history/'+milestoneMode+'-'+previousDate+'.json',10000);renderUpcoming()}catch{renderUpcoming()}})();
+  (async()=>{try{const previousDate=new Date(Date.parse(group.date+'T12:00:00Z')-86400000).toISOString().slice(0,10);previousSnapshot=await jsonWithTimeout(inSoloMilestones?
+       'solo-'+previousDate+'.json':'data/history/group-'+previousDate+'.json',10000);renderUpcoming()}catch{renderUpcoming()}})();
   $('status').textContent+=' · Checking historical dates in background…';
  }catch(error){
   $('status').textContent='Could not load the current song snapshot. Please refresh the page.';
@@ -443,6 +444,11 @@ async function start(){
  try{
   const manifest=await jsonWithTimeout('data/manifest.json',12000);
   const dates=[...new Set((inSoloMilestones?manifest.solo_dates:manifest.dates)||[])].filter(date=>date<=latest.date).sort();
+  const soloLegacyDates=new Set(inSoloMilestones?manifest.solo_legacy_dates||[]:[]);
+  // Older unit/solo workbook files live at the repository root, while newer
+  // automated collector snapshots live under data/history/.
+  const historicalPath=date=>inSoloMilestones&&soloLegacyDates.has(date)
+   ?'solo-'+date+'.json':'data/history/'+milestoneMode+'-'+date+'.json';
   // Cap historical requests per session; this page must not wait an hour
   // for hundreds of simultaneous archive downloads.
   const selected=dates.slice(-120);
@@ -451,7 +457,7 @@ async function start(){
   async function worker(){
    while(cursor<selected.length){
     const index=cursor++,date=selected[index];
-    try{snapshots[index]=await jsonWithTimeout('data/history/'+milestoneMode+'-'+date+'.json',7000)}catch{}
+    try{snapshots[index]=await jsonWithTimeout(historicalPath(date),7000)}catch{}
    }
   }
   await Promise.all(Array.from({length:6},worker));
