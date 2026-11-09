@@ -537,7 +537,8 @@ function discographyRows(s,p,pp,baseline){
      lookup.get(name).push({id,value});
     }
     const credit=creditKey(snapshot.names?.[id]);
-    if(credit.length>=5){
+    // "SOS (Prod. Marshmello)" is an explicitly verified short-title match.
+    if(credit.length>=5||credit==='sos'){
      if(!creditLookup.has(credit))creditLookup.set(credit,[]);
      creditLookup.get(credit).push({id,value});
     }
