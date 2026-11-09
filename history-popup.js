@@ -230,7 +230,12 @@
   const canDecrease=metric.kind==='audience';
   const periodCount=mode==='monthly'?12:10;
   const titleLabel=mode==='monthly'?'month':mode==='weekly'?'week':'day';
-  $('#svtHistoryNote').textContent='Last '+periodCount+' '+titleLabel+'s through '+dateText(ref.date)+' · '+(scope==='group'?'OT13':owner||'Units & Solo')+' · oldest first. Total is cumulative; increase requires verified comparable snapshots.';
+  const historyMeasureNote=metric.value==='listeners'
+   ?'Monthly listeners are a rolling audience measure and may rise or fall.'
+   :metric.value==='followers'
+   ?'Follower totals are observed counts; daily changes require two dated readings.'
+   :'Stream totals are cumulative; increases require comparable recordings.';
+  $('#svtHistoryNote').textContent='Last '+periodCount+' '+titleLabel+'s through '+dateText(ref.date)+' · '+(scope==='group'?'OT13':owner||'Units & Solo')+' · oldest first. '+historyMeasureNote;
   if(followerData&&profileId)
    $('#svtHistoryNote').textContent+=' · Followers are dated when collected; no November 7 count is fabricated.';
   const lookup=async date=>{
