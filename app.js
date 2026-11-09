@@ -1,6 +1,6 @@
 const $=s=>document.querySelector(s),fmt=n=>n==null?'—':Number(n).toLocaleString('en-US');
 let selectedSoloArtist=null;
-let soloAlbums=[],soloMedia={tracks:{},albums:{}},soloLegacyLinks={byIndex:{}},soloDiscographyTemplate={rows:[]};
+let soloAlbums=[],soloMedia={tracks:{},albums:{}},soloLegacyLinks={byIndex:{}};
 let artworkMap={tracks:{},albums:{}};let sortOrder='most';let tab='group',rank='tracks-daily',rankType='tracks',catalog={},current={},history={},dates=[],groupDates=[],soloDates=[],soloHistoricalDates=new Set(),selection='latest',period='week';
 // To keep the selected view after refresh.
 const viewStateKey='svt-dashboard-view-v2';
@@ -2719,14 +2719,13 @@ $('#archiveDate').addEventListener('change',e=>{
    $('#rankCategory').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.type===rankType));
   }
  }catch{}
- [catalog,artworkMap,soloAlbums,soloMedia,soloLegacyLinks,soloDiscographyTemplate]=await Promise.all([
+ [catalog,artworkMap,soloAlbums,soloMedia,soloLegacyLinks]=await Promise.all([
  load('data/catalog.json'),load('data/artwork-map.json'),
  load('data/solo-albums.json'),load('data/solo-media.json'),
- load('data/solo-legacy-track-links.json'),load('data/solo-discography-template.json')]);
+ load('data/solo-legacy-track-links.json')]);
  catalog=catalog||{};soloAlbums=soloAlbums||[];
  soloMedia=soloMedia||{tracks:{},albums:{}};
  soloLegacyLinks=soloLegacyLinks||{byIndex:{}};
- soloDiscographyTemplate=soloDiscographyTemplate||{rows:[]};
  // DREAMSCAPE is credited to Jeonghan × Joshua; reuse their seven existing
  // Spotify IDs instead of inventing a second set of stream counts.
  const jxjTracks=['5ZMx7DaPnVisUBLcrFcnCl','1dp1GI9YcKDoxrKBpp0u9F','4XBeSUSswrGhqYrwm3IS7A','1bGAA82A31CWflD6bqY5g6','2SWWDlOjKqgVvocnIfxId9','69umJ9yk5uay7PQmhBOKk8','2lDG4sMZwAC2TTlXNHMgA1'];
