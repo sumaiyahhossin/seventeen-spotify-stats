@@ -2745,7 +2745,7 @@ function renderRankMetrics(row,selectedDate=''){
   rank.endsWith('yearly')?'last year':'yesterday';
  // Solo/unit charts show the selected gain and change until Overall is chosen.
  // The history inspector still exposes the verified cumulative stream count.
- const showStreams=rank.startsWith('discography')||rank.endsWith('overall')||(tab==='group'&&!rank.endsWith('daily'));
+ const showStreams=rank.endsWith('overall')||(tab==='group'&&!rank.endsWith('daily'))||(tab==='solo'&&rank.startsWith('discography'));
  return (showStreams?rankMetricHtml(row.streams,'streams','Total streams'):'')+
   rankMetricHtml(row.gain,'gain',row.gainPartial?gainLabel+' (verified observed dates only)':gainLabel,{signed:true,estimated:row.estimatedGain,partial:row.gainPartial})+
   rankMetricHtml(row.change,'change','Change vs '+compareWith,{signed:true,partial:row.changePartial});
