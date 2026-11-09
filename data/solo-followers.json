@@ -1,9 +1,94 @@
 {
-  "updated_at": "2026-11-09T04:32:25.287053-05:00",
+  "updated_at": "2026-11-09T05:49:23.304855-05:00",
   "followers": {
     "1uAT5bTSp6dWbNmixIUP5t": {
       "count": 1293340,
       "captured_at": "2026-11-09T04:32:25.287053-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "0Vb2DjojEYsasFpc3aTZb6": {
+      "count": 572333,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "1EReYiseDwE51FzGm7EK9n": {
+      "count": 208229,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "2Y34b9AOK30zXgL7cAH4NG": {
+      "count": 544706,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "38Gn0ZVC8TQwuaMxBK1yRV": {
+      "count": 576337,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "3V2EC4dPYLgtbi0TtrB1RA": {
+      "count": 70650,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "3rHcBT06Vb1XGVUWhDALZt": {
+      "count": 632807,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "4DqFd6XE3dX4LWXHJVVpLk": {
+      "count": 706361,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "4TdiASPlU3QdZvGQBothcQ": {
+      "count": 684527,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "4wBjmEkWhY4T22q00CiF5V": {
+      "count": 108094,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "5YaeXxzvqGNBCguELlKo6G": {
+      "count": 415826,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "5gUpo0BRmo6EOTbyU3z5Ay": {
+      "count": 420242,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "6KDLlQYeeqUe5OQ2JrdNzF": {
+      "count": 118017,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "6nWKAdMv1BDq1zHfZzkdbR": {
+      "count": 786938,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "74AwWFYdjQ3ER5vHO4H7b0": {
+      "count": 216564,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "7G1kUsPtQCdolV6CPwHmh2": {
+      "count": 566527,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "7GvlsjcgBrsE578yghOq7D": {
+      "count": 299315,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
+      "source": "spotify-exact-followers"
+    },
+    "7kjuLdYbtTkWBToMu2ebZN": {
+      "count": 178547,
+      "captured_at": "2026-11-09T05:49:23.304855-05:00",
       "source": "spotify-exact-followers"
     }
   },
@@ -12,6 +97,91 @@
       "1uAT5bTSp6dWbNmixIUP5t": {
         "count": 1293340,
         "captured_at": "2026-11-09T04:32:25.287053-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "0Vb2DjojEYsasFpc3aTZb6": {
+        "count": 572333,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "1EReYiseDwE51FzGm7EK9n": {
+        "count": 208229,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "2Y34b9AOK30zXgL7cAH4NG": {
+        "count": 544706,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "38Gn0ZVC8TQwuaMxBK1yRV": {
+        "count": 576337,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "3V2EC4dPYLgtbi0TtrB1RA": {
+        "count": 70650,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "3rHcBT06Vb1XGVUWhDALZt": {
+        "count": 632807,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "4DqFd6XE3dX4LWXHJVVpLk": {
+        "count": 706361,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "4TdiASPlU3QdZvGQBothcQ": {
+        "count": 684527,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "4wBjmEkWhY4T22q00CiF5V": {
+        "count": 108094,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "5YaeXxzvqGNBCguELlKo6G": {
+        "count": 415826,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "5gUpo0BRmo6EOTbyU3z5Ay": {
+        "count": 420242,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "6KDLlQYeeqUe5OQ2JrdNzF": {
+        "count": 118017,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "6nWKAdMv1BDq1zHfZzkdbR": {
+        "count": 786938,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "74AwWFYdjQ3ER5vHO4H7b0": {
+        "count": 216564,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "7G1kUsPtQCdolV6CPwHmh2": {
+        "count": 566527,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "7GvlsjcgBrsE578yghOq7D": {
+        "count": 299315,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
+        "source": "spotify-exact-followers"
+      },
+      "7kjuLdYbtTkWBToMu2ebZN": {
+        "count": 178547,
+        "captured_at": "2026-11-09T05:49:23.304855-05:00",
         "source": "spotify-exact-followers"
       }
     }
