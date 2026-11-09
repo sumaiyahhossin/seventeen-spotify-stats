@@ -295,8 +295,11 @@
    // seven-day month-to-date total.
    const previousEnd=first=>previousDate(first);
    const elapsedDays=(start,end)=>Math.round((Date.parse(end)-Date.parse(start))/86400000)+1;
-   const cache=new Map();
+   const cache=new Map(),knownDates=new Set(dateList);
    const cachedValue=async date=>{
+    // Avoid issuing hundreds of guaranteed 404 requests for dates absent
+    // from early solo/unit archives (especially the 12-month inspector).
+    if(!knownDates.has(date))return null;
     if(!cache.has(date))cache.set(date,valueOf(date));
     return cache.get(date);
    };
@@ -306,8 +309,12 @@
     // The end-of-period snapshot may be missing while earlier dated totals
     // exist. Show the most recent actual observation, but NEVER call it a
     // completed-period gain or silently use it as the exact period end.
-    const lastObserved=dateList.filter(d=>d>=first&&d<=visibleEnd).at(-1)||null;
-    const total=lastObserved?await cachedValue(lastObserved):null;
+    const candidates=dateList.filter(d=>d>=first&&d<=visibleEnd);
+    let lastObserved=null,total=null;
+    for(let i=candidates.length-1;i>=0;i--){
+     const value=await cachedValue(candidates[i]);
+     if(value!=null){lastObserved=candidates[i];total=value;break}
+    }
     const before=await cachedValue(boundary);
     const complete=lastObserved===visibleEnd&&total!=null&&before!=null&&
       (canDecrease||total>=before);
