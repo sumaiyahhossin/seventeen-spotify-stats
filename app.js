@@ -2099,9 +2099,10 @@ function soloLegacyRows(s,p,pp,baseline,view){
     row.artworkRelease=release.key;
     row.releaseDate=release.release_date||null;
     row.albumIdentity=release.key+':'+owner;
+    const officialReleaseTitle=properReleaseName(release)||catalogReleaseLabel(release)||release.title;
     if(/^total$/i.test(row.name)||missingTotalLabel||
-       !soloHistoricalNameKey(row.name).includes(soloHistoricalNameKey(properReleaseName(release))))
-     row.name=properReleaseName(release)+' — Total';
+       !soloHistoricalNameKey(row.name).includes(soloHistoricalNameKey(officialReleaseTitle)))
+     row.name=officialReleaseTitle+' — Total';
    }
   }
   if(!album&&workbookTrack){
