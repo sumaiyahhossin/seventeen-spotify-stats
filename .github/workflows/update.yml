@@ -82,9 +82,10 @@ jobs:
 
   followers:
     name: Collect verified solo and unit followers
-    # Retry a rotating batch of missing exact follower counts hourly (OT13-style selector update).
-    # When fully verified, refresh each profile once its observation is stale.
-    # No rounded estimates or invented historical follower observations.
+    # At 2 PM New York time, verify a new reporting-day follower reading.
+    # Retry missing profiles hourly until all eligible profiles are complete;
+    # then pause until the next local 2 PM cutoff (handles EDT/EST).
+    # Historical counts must use actual observation dates, never backdating.
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'push' && github.event.head_commit.message == 'Run one-profile Spotify follower diagnostic')
     runs-on: ubuntu-24.04
     timeout-minutes: 40
