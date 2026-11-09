@@ -524,12 +524,35 @@ function uniqueRows(rows){
 // same recording's cumulative stream count. Only collapse a pair while its
 // saved values agree; never infer duplicates from matching numbers alone.
 const groupStreamAliases=[["2kDrUAONMhG6CbDGBkhdrY","2TLzrymJ9lpH2wXp1ub5Aj"],["6I2tqFhk8tq69iursYxuxd","3g9z9amouOxjEZve1SpSTE"],["1Rrj7KyS2R6SP9CQMDJW1w","3nAUdBQxle8l1EeOxW3m0R"],["6LnEoRQKMcaFTR5UvaKuBy","4CAK2Dmo5YVGDQxs789pbx"],["1117juaaAkSIUsQxTmmcKM","2mFCN72V3rTq1BT4WWddIF"],["2UE9XGbAzicJIyo4bB6sqM","743yOACnWcrrijTnWdT5YN"],["4MTNimMDRyFZv37Thcktwa","6KNp9wSUGYhtbE33su6xZv"],["3I5W8iA8iZAyO62UVceK3F","2r3aqjJhVFc5JjQAaFKNdR"],["63jDEQCIg1YJLYeiqKJxFg","0C49m3uL232ZGOwrEZucxS"]];
+// These two original singles were reissued unchanged on Gilboard.
+// Their distinct Spotify IDs have the SAME observed per-day stream counts,
+// so counting both copies inflates Picheolin and combined solo/unit totals.
+// Keep the source snapshots and both discography release entries intact.
+const soloReissueAliases=new Map([
+ ['3Y0ZwgYVHuwbW0JGjsYodR','5W1bn5PzFgKok4GAZ1JUAw'], // Love Sick
+ ['594CTGIIVVTitwRhQJcWgM','34wTGQ1yV5XtrSMR5dMLWY'] // Mi-cheo Mi-cheo
+]);
+const canonicalSoloRecordingId=id=>soloReissueAliases.get(id)||id;
+function uniqueSoloSpotifyIds(ids,s){
+ const listed=new Set(ids),seen=new Set();
+ return ids.filter(id=>{
+  const canonical=canonicalSoloRecordingId(id);
+  // Only collapse two live Spotify IDs where the SAVED counts agree.
+  // For Excel snapshots, verified workbook-to-Spotify links provide identity.
+  const verifiedSame=isHistorical(s)||!s||
+   (Number.isFinite(s.tracks?.[id])&&s.tracks[id]===s.tracks?.[canonical]);
+  if(canonical!==id&&listed.has(canonical)&&verifiedSame)return false;
+  const key=verifiedSame?canonical:id;
+  if(seen.has(key))return false;
+  seen.add(key);return true;
+ });
+}
 function trackIds(s){
  if(tab==='group'&&Array.isArray(s?.canonical_track_ids))
   return s.canonical_track_ids.filter(id=>s.tracks?.[id]!=null);
  const ids=Object.keys(s?.tracks||{}).filter(id=>(!isHistorical(s)||historicalKind(s,id)==='track')&&!/^\s*picheolin\s+streams\s*$/i.test(s.names?.[id]||id));
  // Distinct Spotify IDs are distinct solo/unit recordings, even when titles match.
- if(tab==='solo'&&!isHistorical(s))return ids;
+ if(tab==='solo'&&!isHistorical(s))return uniqueSoloSpotifyIds(ids,s);
  const seen=new Set();
  const redundant=new Set();
  if(!isHistorical(s))for(const [primary,alias] of groupStreamAliases){
@@ -2118,7 +2141,7 @@ function soloLegacyTrackIds(s,owner){
   // Only collapse truly identical named rows with identical saved totals.
   const mapped=matchedSoloReferenceIndex(s,key,row,'track');
    const recording=mapped!=null?soloLegacyLinks.byIndex?.[mapped]?.id:null;
-   const signature=recording||normTrackName(row.name)+'|'+row.value;
+   const signature=recording?canonicalSoloRecordingId(recording):normTrackName(row.name)+'|'+row.value;
   if(seen.has(signature))continue;
   seen.add(signature);ids.push(row.id);
  }
@@ -2235,7 +2258,7 @@ function soloLegacyRows(s,p,pp,baseline,view){
    // Use the exact Spotify recording ID when available. A shared track
    // should appear once in combined totals, but separate recordings with the
    // same title must never erase each other.
-   const fingerprint=workbookTrack?.id||normTrackName(source.name)+'|'+source.value;
+   const fingerprint=workbookTrack?.id?canonicalSoloRecordingId(workbookTrack.id):normTrackName(source.name)+'|'+source.value;
    // Keep identical stream totals as distinct release editions in discography,
    // not as duplicate entries in the overall track tally.
    const editionCopy=view==='discography'&&['Picheolin','Gilboard'].includes(owner)&&
