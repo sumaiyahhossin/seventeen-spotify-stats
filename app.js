@@ -2110,7 +2110,8 @@ function soloLegacyRows(s,p,pp,baseline,view){
    const count=creditCounts[fullAlbum.key]?.[credit]||(fullUnit?size:null);
    const suffix=count?(fullUnit?' — Full '+size+'-Track Album Total':
     ' — '+credit+' '+count+'-Track Total'):' — Album Total';
-   row.name=fullAlbum.displayName+suffix;
+   // The full release already has an album row; show its original clean title.
+   row.name=fullUnit?fullAlbum.displayName:fullAlbum.displayName+suffix;
    row.releaseDate=fullAlbum.releaseDate;
    row.albumIdentity=fullAlbum.key+':'+(fullUnit?'full':credit);
   }else if(album){
