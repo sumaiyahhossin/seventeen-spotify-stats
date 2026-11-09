@@ -125,7 +125,9 @@
   }));
   if(id!==opening)return;
   tbody.replaceChildren();
-  for(let i=0;i<10;i++){
+  // Display the ten saved calendar dates oldest first, while calculating
+  // each gain against its actual preceding day (not the preceding table row).
+  for(let i=9;i>=0;i--){
    const day=values[i],prev=values[i+1],before=values[i+2];
    const gain=day.value!=null&&prev.value!=null&&day.value>=prev.value?day.value-prev.value:null;
    const previousGain=prev.value!=null&&before.value!=null&&prev.value>=before.value?prev.value-before.value:null;
