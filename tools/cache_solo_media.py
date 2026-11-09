@@ -52,15 +52,30 @@ def cache_image(dest_stem, spotify_url):
 def fetch_track(tid):
     previous=existing.get('tracks',{}).get(tid,{})
     old=previous.get('local') if isinstance(previous,dict) else None
-    if old and (ROOT/old).is_file():return tid,{'local':old,'spotify_url':previous.get('spotify_url','')},None
+    stored=(ROOT/old).is_file() if old else False
     for attempt in range(3):
         try:
-            photo=oembed('track',tid)
-            local=cache_image(TRACK_FOLDER/tid,photo)
-            return tid,{'local':local,'spotify_url':photo},None
+            # Spotify's exact track oEmbed response supplies the actual
+            # capitalization and recording artist, not workbook guesses.
+            source='https://open.spotify.com/track/'+tid
+            info=json.loads(get('https://open.spotify.com/oembed?url='+urllib.parse.quote(source,safe='')))
+            photo=info.get('thumbnail_url') or previous.get('spotify_url','')
+            if not photo.startswith('https://'):raise ValueError('No verified track artwork')
+            local=old if stored else cache_image(TRACK_FOLDER/tid,photo)
+            title=str(info.get('title') or previous.get('title') or '').strip()
+            artist=str(info.get('author_name') or previous.get('artist') or '').strip()
+            result={'local':local,'spotify_url':photo}
+            if title:result['title']=title
+            if artist:result['artist']=artist
+            return tid,result,None
         except Exception as e:
-            if attempt==2:return tid,None,f'{tid}: {type(e).__name__} {e}'
-            time.sleep(.3*(attempt+1))
+            if attempt==2:
+                if stored:
+                    # Never discard an already verified cover on a temporary
+                    # Spotify metadata failure.
+                    return tid,previous,f'{tid}: metadata unavailable: {type(e).__name__}'
+                return tid,None,f'{tid}: {type(e).__name__} {e}'
+            time.sleep(.5*(attempt+1))
 
 def fetch_album(album):
     key=album['key'];ids=album_ids
