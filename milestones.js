@@ -58,8 +58,9 @@ const soloMilestoneEvidence={
    url:'https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html'}
  },
  'track:347PJwH4XqRbeaKaIW9sX3':{
-  100000000:{by:'2025-11-16',source:'102,411,742 streams in the Nov 16, 2025 workbook; fan 100M milestone post',
-   url:'https://wew.twstalker.com/doubleroom_mw'}
+  100000000:{date:'2025-09-11',
+   source:'September 11, 2025 milestone date supplied by the site owner; a September 15, 2025 news report independently confirms it had passed 100M',
+   url:'https://www.adatah.com/lifestyle/24415917937/bittersweet-wonwoo-mingyu-seventeen-feat-lee-hi-berhasil-mencapai-100-juta-streaming-di-spotify'}
  }
 };
 const externalEvidence={
