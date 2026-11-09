@@ -2316,6 +2316,8 @@ window.addEventListener('orientationchange',scheduleMobileRankingNameFit,{passiv
 document.fonts?.ready.then(scheduleMobileRankingNameFit).catch(()=>{});
 
 async function render(){const token=++renderToken;
+ const milestoneLink=document.querySelector('.milestone-nav-link');
+ if(milestoneLink)milestoneLink.href='milestones.html?type='+(tab==='solo'?'solo':'group');
  document.body.classList.toggle('svt-units-solo',tab==='solo');
  document.body.classList.toggle('svt-solo-all',tab==='solo'&&!selectedSoloArtist);
  document.body.classList.toggle('svt-solo-without-audience',tab==='solo'&&['JxJ','V8'].includes(selectedSoloArtist));
