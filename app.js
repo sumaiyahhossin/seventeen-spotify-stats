@@ -2566,7 +2566,7 @@ function periodChange(s,context,id){
  const matched=prevEndMatch||(
   startMatch&&context.prevEnd.tracks?.[startMatch.id]!=null
    ?{id:startMatch.id,value:context.prevEnd.tracks[startMatch.id]}:null);
- if(!matched)return null;
+ if(!matched)return fallbackChange();
  const before=snapshotDelta(context.prevEnd,context.prevStart,matched.id);
  if(now==null||before==null)return fallbackChange();
  // To compare the same elapsed number of days.
@@ -2963,6 +2963,18 @@ async function render(){const token=++renderToken;
   if(tab==='group'&&/^(?:tiny\s*light)$/i.test(String(x.name||'').trim())&&s.date<'2026-02-27')return false;
   return true;
  });
+ // A flagged workbook boundary must not hide a track's independently
+ // verified daily increases. Clearly mark any rescued partial period.
+ if(periodic&&baseline?.fallbackPairs?.length){
+  for(const row of rows){
+   if(!row.id||row.gain==null)continue;
+   const boundary=baseline.start?snapshotDelta(s,baseline.start,row.id):null;
+   if(boundary==null){
+    row.gainPartial=true;
+    if(row.change!=null)row.changePartial=true;
+   }
+  }
+ }
  // A missing period boundary means these are observed-day subtotals,
  // not a complete week/month. Label them so comparisons aren't misleading.
  if(periodic&&baseline?.partialPeriod){
