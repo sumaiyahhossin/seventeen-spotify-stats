@@ -573,9 +573,16 @@ function discographyRows(s,p,pp,baseline){
   // Period baselines retain their original archive values; translate their
   // snapshots as well rather than treating missing records as zero.
   if(baseline){
-   baseline={...baseline,start:remap(baseline.start),prevStart:remap(baseline.prevStart),prevEnd:remap(baseline.prevEnd),
-    observedPairs:(baseline.observedPairs||[]).map(([now,before])=>[remap(now),remap(before)]),
-    previousObservedPairs:(baseline.previousObservedPairs||[]).map(([now,before])=>[remap(now),remap(before)])};
+   // Preserve absent observation arrays: [] is truthy and previously made
+   // regular monthly/yearly periods skip their real start/end snapshots.
+   // Only sparse-archive fallbacks supply observedPairs explicitly.
+   const converted={...baseline,
+    start:remap(baseline.start),prevStart:remap(baseline.prevStart),prevEnd:remap(baseline.prevEnd)};
+   if(Array.isArray(baseline.observedPairs))
+    converted.observedPairs=baseline.observedPairs.map(([now,before])=>[remap(now),remap(before)]);
+   if(Array.isArray(baseline.previousObservedPairs))
+    converted.previousObservedPairs=baseline.previousObservedPairs.map(([now,before])=>[remap(now),remap(before)]);
+   baseline=converted;
   }
  }
 
