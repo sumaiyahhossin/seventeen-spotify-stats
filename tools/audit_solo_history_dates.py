@@ -64,7 +64,22 @@ def matching_index(group_rows,owner,row,row_kind,prev):
                    and norm(x['name'])==label
                    and (kind(x['name'])==row_kind or x['index']==row['index'])]
     nth=0 if unnamed else len(prev_matching)-1
-    return ref[nth]['index'] if nth>=0 and nth<len(ref) else None
+    if nth>=0 and nth<len(ref):return ref[nth]['index']
+    # Earlier workbooks sometimes repeat a song under several artists, while
+    # the Nov 6 sheet lists it only once. Use a global title match ONLY when
+    # every reference candidate is the same verified Spotify recording/release.
+    # Never assign by raw row index or a shared name like 'Coloring'.
+    candidates=[r for section in reference_groups.values() for r in section
+                if norm(r['name'])==referencelabel and kind(r['name'])==row_kind]
+    candidates=list({r['index']:r for r in candidates}.values())
+    ids={reference_indices.get(r['index'],{}).get('id') for r in candidates}
+    releases={reference_indices.get(r['index']-1,{}).get('releaseKey')
+              for r in candidates} if row_kind=='album' else set()
+    if len(ids)==1 and None not in ids and row_kind=='track':
+        return candidates[0]['index']
+    if row_kind=='album' and len(candidates)==1 and len(releases)==1:
+        return candidates[0]['index']
+    return None
 
 audited=0
 dated=0
