@@ -211,7 +211,10 @@
    if(isHistorical(snapshot)){
     const block=soloLegacySections(snapshot)?.[owner]||[];
     const grand=block.find(item=>historicalKind(snapshot,item.id)==='grand');
-    return grand?numberOrNull(snapshot.tracks[grand.id]):null;
+    if(grand)return numberOrNull(snapshot.tracks[grand.id]);
+    // JxJ and V8 have no workbook artist-grand row. Add their own unique tracks.
+    const ids=soloLegacyTrackIds(snapshot,owner);
+    return ids.length?exactIds(snapshot,ids,reference):null;
    }
    const ids=[...ownedSoloIds(owner)];
    return ids.length?exactIds(snapshot,ids,reference):null;
