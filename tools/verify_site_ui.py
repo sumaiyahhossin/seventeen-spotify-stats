@@ -122,6 +122,40 @@ def check_viewport(driver,width,height):
     print(f'Discography: {len(sections)} release-total rows, missing dates:',missing_dates,flush=True)
     assert not missing_dates,f'Undated solo release totals: {missing_dates[:20]}'
 
+    if width>=1000:
+        for snapshot_date in ('2025-11-16','2026-01-12','2026-07-14'):
+            driver.execute_script("""
+              const picker=document.getElementById('archiveDate');
+              picker.value=arguments[0];picker.dispatchEvent(new Event('change',{bubbles:true}));
+            """,snapshot_date)
+            WebDriverWait(driver,35).until(lambda d:
+                snapshot_date in d.find_element(By.ID,'dateNotice').text)
+            WebDriverWait(driver,35).until(lambda d:
+                len(d.find_elements(By.CSS_SELECTOR,'#ranking .rank-row'))>=70)
+            time.sleep(2.5)
+            audit=driver.execute_script("""
+              const rows=[...document.querySelectorAll('#ranking .rank-row')];
+              const missing=rows.filter(row=>!row.querySelector('.release-date'))
+               .map(row=>row.querySelector('.track-name')?.textContent||'unknown');
+              const late=rows.filter(row=>{
+               const text=row.querySelector('.release-date')?.textContent||'';
+               const date=text.replace(/^Released\\s*/, '').trim();
+               const ms=Date.parse(date);
+               return Number.isFinite(ms)&&ms>Date.parse(arguments[0]+'T23:59:59Z');
+              }).map(row=>row.querySelector('.track-name')?.textContent||'unknown');
+              const totals=rows.filter(row=>row.classList.contains('album-total-row'));
+              return {n:rows.length,totals:totals.length,missing,late,
+                spider:totals.filter(row=>/spider/i.test(row.querySelector('.track-name')?.textContent||''))
+                  .map(row=>row.querySelector('.track-copy')?.textContent||'')};
+            """,snapshot_date)
+            print('Historic release-date audit:',snapshot_date,audit,flush=True)
+            assert audit['n']>=70, f'{snapshot_date}: rows missing'
+            assert not audit['missing'],f'{snapshot_date}: undated releases {audit["missing"][:20]}'
+            assert not audit['late'],f'{snapshot_date}: displayed a future/unreleased song {audit["late"][:20]}'
+            if snapshot_date=='2025-11-16':
+                assert any('Apr 2, 2021' in title for title in audit['spider']), (
+                    'Spider must retain its original April 2, 2021 date, not SHINGIRU date')
+
 
 def main():
     socketserver.TCPServer.allow_reuse_address=True
