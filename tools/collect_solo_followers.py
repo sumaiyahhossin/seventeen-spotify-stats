@@ -90,8 +90,9 @@ if client_id and client_secret:
                 with urllib.request.urlopen(req,timeout=25) as response:
                     artist=json.load(response)
                 count=(artist.get('followers') or {}).get('total')
-                if isinstance(count,int) and count>=0:
+                if isinstance(count,int) and 0<count<=1000000000:
                     found[artist_id]=count
+                    print(f'STAT_FOLLOWERS_VERIFIED|{artist_id}|{count}|api',flush=True)
             except Exception as error:
                 print(f'Artist API unavailable for {artist_id} ({type(error).__name__})',flush=True)
         print(f'Spotify API: verified {len(found)} follower totals',flush=True)
@@ -102,40 +103,49 @@ missing=[id for id in pending if id not in found]
 if missing:
     classpath=os.getenv('COLLECTOR_CLASSPATH')
     if not classpath:
-        print('Missing COLLECTOR_CLASSPATH: cannot run fallback artist collector',file=sys.stderr)
+        print('Missing COLLECTOR_CLASSPATH: cannot run browser fallback',file=sys.stderr,flush=True)
     else:
-        # Probe only this hour's rotating batch; preserve every exact result.
-        print('Browser fallback for '+str(len(missing))+' unresolved profiles',flush=True)
+        print(f'Browser verification for {len(missing)} unresolved profiles, each isolated',flush=True)
         subprocess.run([sys.executable,str(ROOT/'tools/instrument.py'),'solo'],check=True)
         subprocess.run(['javac','-cp',classpath,'-d',str(ROOT/'build'),
                         str(ROOT/'build'/'Stream_Stats_Units_Duos.java')],check=True)
-        env=os.environ.copy()
-        env.pop('SVT_FIRST_TRACK_PREVIOUS',None)
-        env['SVT_FOLLOWERS_ONLY']=','.join(missing)
-        result=subprocess.run(['java','-cp',str(ROOT/'build')+os.pathsep+classpath,
-                               'Stream_Stats_Units_Duos'],capture_output=True,text=True,
-                              timeout=3300 if FULL_SCAN else 1200,env=env)
-        for line in result.stdout.splitlines():
-            match=re.fullmatch(r'STAT_FOLLOWERS\|([a-zA-Z0-9]{22})\|(\d+)',line.strip())
-            if match and match.group(1) in missing:
-                found[match.group(1)]=int(match.group(2))
-            elif line.startswith(('STAT_FOLLOWERS_UNAVAILABLE|','STAT_FOLLOWERS_DIAGNOSTIC|')):
-                print(line,flush=True)
-        if result.returncode:
-            print(f'Browser follower probe failed (Java exit {result.returncode}): {result.stderr[-500:]}',file=sys.stderr)
-        if any(id not in found for id in missing):
-            diagnostics=[line for line in result.stdout.splitlines() if line.startswith(('STAT_FOLLOWERS_UNAVAILABLE|','STAT_FOLLOWERS_DIAGNOSTIC|'))]
-            print('Some exact follower totals are still unavailable; retaining those profiles as unverified. '+ ' ; '.join(diagnostics[-6:]),flush=True)
-        else:
-            print('Browser fallback verified '+str(sum(id in found for id in missing))+' additional artists.',flush=True)
+        for index,artist_id in enumerate(missing,1):
+            env=os.environ.copy()
+            env.pop('SVT_FIRST_TRACK_PREVIOUS',None)
+            env['SVT_FOLLOWERS_ONLY']=artist_id
+            print(f'Artist {index}/{len(missing)}: checking {artist_id}',flush=True)
+            try:
+                result=subprocess.run(['java','-cp',str(ROOT/'build')+os.pathsep+classpath,
+                                       'Stream_Stats_Units_Duos'],
+                                      capture_output=True,text=True,timeout=110,env=env)
+            except subprocess.TimeoutExpired:
+                print(f'STAT_FOLLOWERS_UNAVAILABLE|{artist_id}|browser-timeout',flush=True)
+                continue
+            verified=False
+            for line in result.stdout.splitlines():
+                match=re.fullmatch(r'STAT_FOLLOWERS\\|([a-zA-Z0-9]{22})\\|(\\d+)',line.strip())
+                if match and match.group(1)==artist_id:
+                    value=int(match.group(2))
+                    if 0<value<=1000000000:
+                        found[artist_id]=value
+                        verified=True
+                        print(f'STAT_FOLLOWERS_VERIFIED|{artist_id}|{value}|browser',flush=True)
+                elif line.startswith(('STAT_FOLLOWERS_UNAVAILABLE|','STAT_FOLLOWERS_DIAGNOSTIC|')):
+                    print(line,flush=True)
+            if result.returncode!=0:
+                print(f'Browser attempt {artist_id} exited {result.returncode}: {result.stderr[-350:]}',
+                      file=sys.stderr,flush=True)
+            if not verified:
+                print(f'Follower total not verified for {artist_id}; keeping previous reading',flush=True)
+        print(f'Browser fallback collected {sum(artist_id in found for artist_id in missing)}/{len(missing)} exact totals',flush=True)
 
 if found:
-    now=TODAY.isoformat()
+    now=dt.datetime.now(ZoneInfo('America/New_York')).isoformat()
     history=data.get('history',{})
     if not isinstance(history,dict): history={}
     # Keep real observation dates; do NOT assign Nov 7 or any older day
     # to counts that were actually captured on Nov 9 or later.
-    observed_day=TODAY.date().isoformat()
+    observed_day=now[:10]
     observations=history.setdefault(observed_day,{})
     for artist_id,count in found.items():
         saved[artist_id]={'count':count,'captured_at':now,'source':'spotify-exact-followers'}
@@ -143,5 +153,5 @@ if found:
     data={'updated_at':now,'followers':saved,'history':history}
     OUTPUT.write_text(json.dumps(data,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
 remaining=sorted(id for id in ids if id not in saved or not isinstance(saved[id].get('count'),int))
-print(f'Solo/unit follower archive: {len(ids)-len(remaining)}/{len(ids)} verified. '
+print(f'Solo/unit follower archive: {len(ids)-len(remaining)}/{len(ids)} ever verified. '
       f'Unverified artist profiles: {len(remaining)}; unverified values remain blank.',flush=True)
