@@ -196,7 +196,7 @@
   const scope=tab,owner=selectedSoloArtist;
   modal.hidden=false;document.body.style.overflow='hidden';
   const tbody=$('#svtHistoryRows');tbody.innerHTML='<tr><td colspan="4">Loading saved snapshots…</td></tr>';
-  $('#svtHistoryTitle').textContent=metric.title||'Track streams';
+  $('#svtHistoryTitle').textContent=metric.value==='listeners'?'Monthly Listeners ('+(rank.endsWith('monthly')?'Monthly':rank.endsWith('weekly')?'Weekly':'Daily')+')':metric.title||'Track streams';
   $('#svtHistoryNote').textContent='Loading saved streaming history…';
   let ref;
   try{ref=await selectedSnapshot()||await latest(scope)}
@@ -204,6 +204,7 @@
   if(id!==opening)return;
   if(!ref?.date){tbody.innerHTML='<tr><td colspan="4">No saved streaming snapshot is available for this view.</td></tr>';return}
   const mode=rank.endsWith('monthly')?'monthly':rank.endsWith('weekly')?'weekly':'daily';
+  const canDecrease=metric.kind==='audience';
   const periodCount=mode==='monthly'?12:10;
   const titleLabel=mode==='monthly'?'month':mode==='weekly'?'week':'day';
   $('#svtHistoryNote').textContent='Last '+periodCount+' '+titleLabel+'s through '+dateText(ref.date)+' · '+(scope==='group'?'OT13':owner||'Units & Solo')+' · oldest first. Total is cumulative; increase requires verified comparable snapshots.';
@@ -236,8 +237,8 @@
    if(id!==opening)return;
    for(let i=9;i>=0;i--){
     const day=values[i],prev=values[i+1],before=values[i+2];
-    const gain=day.value!=null&&prev.value!=null&&day.value>=prev.value?day.value-prev.value:null;
-    const old=prev.value!=null&&before.value!=null&&prev.value>=before.value?prev.value-before.value:null;
+    const gain=day.value!=null&&prev.value!=null&&(canDecrease||day.value>=prev.value)?day.value-prev.value:null;
+    const old=prev.value!=null&&before.value!=null&&(canDecrease||prev.value>=before.value)?prev.value-before.value:null;
     renderRow(dateText(day.date),day.value,gain,gain!=null&&old!=null?gain-old:null);
    }
   }else{
@@ -270,7 +271,7 @@
       lastObserved?valueOf(lastObserved):Promise.resolve(null),
       startAvailable?valueOf(priorBoundary):Promise.resolve(null)
     ]);
-    const gain=hasFullEnd&&firstValue!=null&&lastValue!=null&&lastValue>=firstValue
+    const gain=hasFullEnd&&firstValue!=null&&lastValue!=null&&(canDecrease||lastValue>=firstValue)
        ?lastValue-firstValue:null;
     const label=mode==='monthly'
        ?new Date(first+'T12:00:00Z').toLocaleDateString('en-US',{month:'short',year:'numeric',timeZone:'UTC'})
