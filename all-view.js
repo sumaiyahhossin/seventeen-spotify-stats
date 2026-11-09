@@ -445,13 +445,14 @@ function renderMilestones(){
 }
 async function init(){
  try{
-  const [catalog,group,solo,media,followers,manifest,admin,soloAlbumSpecs,legacyLinks]=await Promise.all([
+  const [catalog,group,solo,media,followers,manifest,admin,soloAlbumSpecs,legacyLinks,evidence]=await Promise.all([
    read('data/catalog.json'),read('data/group.json'),read('data/solo.json'),
    read('data/solo-media.json'),read('data/solo-followers.json').catch(()=>({followers:{}})),
    read('data/manifest.json'),read('data/admin-releases.json').catch(()=>({releases:[]})),
-   read('data/solo-albums.json'),read('data/solo-legacy-track-links.json')
+   read('data/solo-albums.json'),read('data/solo-legacy-track-links.json'),
+   read('data/all-milestone-evidence.json').catch(()=>({byName:{},byTrack:{}}))
   ]);
-  state.catalog=catalog;state.group=group;state.solo=solo;state.media=media;state.followers=followers.followers||{};state.manifest=manifest;state.albumSpecs=soloAlbumSpecs;state.legacyLinks=legacyLinks;
+  state.catalog=catalog;state.group=group;state.solo=solo;state.media=media;state.followers=followers.followers||{};state.manifest=manifest;state.albumSpecs=soloAlbumSpecs;state.legacyLinks=legacyLinks;state.milestoneEvidence=evidence;
   for(const release of admin.releases||[]){const list=catalog[release.scope];if(list&&!list.some(r=>r.key===release.key))list.push(release)}
   buildRows();
   for(const extra of admin.releases||[])if(extra.scope==='solo'&&extra.release_type==='album')
@@ -460,17 +461,39 @@ async function init(){
   const names=unique(state.rows.flatMap(r=>r.owners)).filter(x=>x!=='Unassigned solo/unit').sort((a,b)=>a.localeCompare(b));
   $('owner').innerHTML='<option value="all">All recordings</option>'+names.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('');
   await applyPeriod();renderArtists();renderTracks();
+  const [prevGroup,prevSolo]=await Promise.all([
+   snapshot('group',dayBefore(group.date)),snapshot('solo',dayBefore(solo.date))]);
+  state.milestonePrevious={group:prevGroup,solo:prevSolo};
+  setupMilestoneOptions();renderMilestones();
  }catch(error){
   console.error('All view could not load saved sources',error);
-  $('artists').innerHTML='<tr><td colspan="4" class="status">Artist data unavailable. Please try refreshing.</td></tr>';
-  $('recordings').innerHTML='<tr><td colspan="5" class="status">Saved archive unavailable. Please try refreshing.</td></tr>';
+  $('artists').innerHTML='<tr><td colspan="2" class="svt-all-status">Artist data unavailable. Please try refreshing.</td></tr>';
+  $('recordings').innerHTML='<tr><td colspan="2" class="svt-all-status">Saved archive unavailable. Please try refreshing.</td></tr>';
   $('coverage').textContent='Unable to load a required saved source.';
  }
 }
 for(const id of ['artistMetric','artistScope'])$(id).addEventListener('change',renderArtists);
 for(const id of ['search','owner','sort','viewType'])$(id).addEventListener(id==='search'?'input':'change',()=>{state.page=0;renderTracks()});
-window.svtAllShown=()=>{if(state.rows.length){renderArtists();renderTracks()}};
-window.addEventListener('svt-media-ready',()=>{if(state.rows.length){renderArtists();renderTracks()}});
+window.svtAllShown=()=>{if(state.rows.length){renderArtists();renderTracks();if(state.milestonePrevious.group||state.milestonePrevious.solo)renderMilestones()}};
+window.addEventListener('svt-media-ready',()=>{if(state.rows.length){renderArtists();renderTracks();if(state.milestonePrevious.group||state.milestonePrevious.solo)renderMilestones()}});
+for(const [id,mode] of [['milestoneReached','reached'],['milestoneUpcoming','upcoming']]){
+ $(id).addEventListener('click',()=>{
+  state.milestoneMode=mode;state.milestonePage=0;
+  setupMilestoneOptions();renderMilestones();
+ });
+}
+for(const id of ['milestoneThreshold','milestoneSort','milestoneSearch'])
+ $(id).addEventListener(id==='milestoneSearch'?'input':'change',()=>{
+  state.milestonePage=0;renderMilestones();
+ });
+$('milestonePrev').addEventListener('click',()=>{
+ state.milestonePage=Math.max(0,state.milestonePage-1);renderMilestones();
+ $('milestoneRows').scrollIntoView({block:'nearest'});
+});
+$('milestoneNext').addEventListener('click',()=>{
+ state.milestonePage++;renderMilestones();
+ $('milestoneRows').scrollIntoView({block:'nearest'});
+});
 $('period').addEventListener('change',async()=>{state.period=$('period').value;state.page=0;$('coverage').textContent='Checking saved calendar boundaries…';await applyPeriod();renderTracks()});
 $('prev').addEventListener('click',()=>{state.page--;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
 $('next').addEventListener('click',()=>{state.page++;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
