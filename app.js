@@ -306,6 +306,23 @@ function comparablePrevious(s,p,id){
      Number.isFinite(s.tracks[id])&&s.tracks[id]>=p.tracks[mapped])
    return {id:mapped,value:p.tracks[mapped]};
  }
+ // Verified legacy title aliases in the imported SEVENTEEN workbook.
+ // These are fixed Spotify-ID-to-row-ID links, not fuzzy substring guesses.
+ if(tab==='group'&&isHistorical(p)){
+  const legacyAliases={
+   '2kDrUAONMhG6CbDGBkhdrY':'worldfeatannemarrie',
+   '6KfYVOicblNB8CaDZwbxiT':'dirtydancingfearjoshuadkdino',
+   '3oTDi9MWC0JB39FcsLRon3':'sosprodmarshmello',
+   '0xZ4WU5UfctiSeETi6pMEo':'golm',
+   '2B0l8kFr4PzxH6gqX3NIoi':'badinfluence',
+   '3ESkEsiPkaXl0CCRUMGkIk':'damagehoshisolo'
+  };
+  const legacyId=s.baseline_ids_2026_11_05?.[id]||current.group?.baseline_ids_2026_11_05?.[id];
+  if(legacyAliases[id]&&legacyId&&
+     normTrackName(p.names?.[legacyId]).startsWith(legacyAliases[id])&&
+     historicalKind(p,legacyId)==='track'&&Number.isFinite(p.tracks[legacyId]))
+   return {id:legacyId,value:p.tracks[legacyId]};
+ }
  // Imported spreadsheet IDs stay stable across the historical workbook.
  // The verified Nov 5 ID mapping is therefore valid for earlier months too.
  if(isHistorical(p)&&s.baseline_ids_2026_11_05?.[id]){
@@ -2518,8 +2535,17 @@ function historicalGroupTrackId(snapshot,id){
  const clean=n=>normTrackName(String(n||'')
   .replace(/\s*\((?:prod\.?\s*by|feat\.?|ft\.?)\s+[^)]*\)/gi,'')
   .replace(/\s*\b(?:feat\.?|ft\.?)\s+.*$/i,''));
+ const verifiedAliases={
+  '2kDrUAONMhG6CbDGBkhdrY':'worldfeatannemarrie',
+  '6KfYVOicblNB8CaDZwbxiT':'dirtydancingfearjoshuadkdino',
+  '3oTDi9MWC0JB39FcsLRon3':'sosprodmarshmello',
+  '0xZ4WU5UfctiSeETi6pMEo':'golm',
+  '2B0l8kFr4PzxH6gqX3NIoi':'badinfluence',
+  '3ESkEsiPkaXl0CCRUMGkIk':'damagehoshisolo'
+ };
  if(mapped&&snapshot.tracks?.[mapped]!=null&&historicalKind(snapshot,mapped)==='track'&&
     (normTrackName(liveName)===normTrackName(oldName)||
+     (verifiedAliases[id]&&normTrackName(oldName).startsWith(verifiedAliases[id]))||
      (clean(liveName).length>=5&&clean(liveName)===clean(oldName))))
   return mapped;
  // Duplicate workbook rows for the same song are safe ONLY when every
