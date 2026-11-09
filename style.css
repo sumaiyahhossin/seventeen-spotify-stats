@@ -1934,3 +1934,43 @@ body.svt-units-solo .svt-yearly-jump{display:none!important}
   width:21px!important;height:21px!important;min-width:21px!important;
  }
 }
+
+
+/* v129 — Daily = Name / daily increase / change.
+   Overall = Name / overall streams / daily increase / change. */
+body.svt-daily-ranking .table-head .svt-total-heading{display:none!important}
+body.svt-daily-ranking .table-head,
+body.svt-daily-ranking .rank-row{
+ grid-template-columns:minmax(0,1fr) minmax(130px,165px) minmax(115px,145px)!important;
+}
+@media(max-width:900px){
+ body.svt-compact-ranking-table.svt-daily-ranking .table-head,
+ body.svt-compact-ranking-table.svt-daily-ranking .rank-row{
+  grid-template-columns:minmax(0,1fr) minmax(0,79px) minmax(0,74px)!important;
+  column-gap:5px!important;
+ }
+ body.svt-compact-ranking-table.svt-daily-ranking .table-head .svt-total-heading{
+  display:none!important;
+ }
+ body.svt-compact-ranking-table.svt-daily-ranking .table-head span:nth-child(3)::after{
+  content:"DAILY"!important
+ }
+ body.svt-compact-ranking-table.svt-daily-ranking .rank-row>.rank-metric-gain{
+  grid-column:2!important
+ }
+ body.svt-compact-ranking-table.svt-daily-ranking .rank-row>.rank-metric-change{
+  grid-column:3!important
+ }
+ body.svt-compact-ranking-table.svt-overall-four-cols .table-head span:nth-child(2)::after{
+  content:"OVERALL"!important
+ }
+ body.svt-compact-ranking-table.svt-overall-four-cols .table-head span:nth-child(3)::after{
+  content:"DAILY"!important
+ }
+}
+@media(max-width:370px){
+ body.svt-compact-ranking-table.svt-daily-ranking .table-head,
+ body.svt-compact-ranking-table.svt-daily-ranking .rank-row{
+  grid-template-columns:minmax(0,1fr) 64px 61px!important;column-gap:3px!important
+ }
+}
