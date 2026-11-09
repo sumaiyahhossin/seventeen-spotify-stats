@@ -82,6 +82,7 @@ jobs:
 
   followers:
     name: Collect verified solo and unit followers
+    # Full verification scan requested: refresh every due solo and unit artist profile now; scheduled retries stay lightweight.
     # At 2 PM New York time, verify a new reporting-day follower reading.
     # Retry missing profiles hourly until all eligible profiles are complete;
     # then pause until the next local 2 PM cutoff (handles EDT/EST).
