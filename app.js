@@ -1863,7 +1863,51 @@ function soloLegacyTrackIds(s,owner){
  }
  return ids;
 }
+
+/* Exactly one official complete album in the Albums view.
+   Historical spreadsheet subtotals stay unmodified in the archive. */
+function canonicalSoloAlbumRows(s,p,pp,baseline){
+ if(!s)return [];
+ const periodic=['weekly','monthly','yearly'].some(k=>rank.endsWith(k));
+ const historical=isHistorical(s);
+ const idAt=(snapshot,index)=>index&&snapshot?
+  Object.keys(snapshot.tracks||{}).find(id=>Number(String(id).split(':').at(-1))===index):null;
+ return (soloAlbums||[]).filter(a=>!selectedSoloArtist||
+  a.owners?.some(owner=>owner.toLowerCase()===selectedSoloArtist.toLowerCase())
+ ).map(a=>{
+  let ids=[...new Set(a.tracks||[])];
+  // A member profile uses only tracks credited to that member, while
+  // V8/JxJ show their complete 8/7-track albums, respectively.
+  if(selectedSoloArtist&&!['JxJ','V8','Gilboard','Picheolin'].includes(selectedSoloArtist)){
+   ids=ids.filter(id=>ownedSoloIds(selectedSoloArtist).has(id));
+  }else if(selectedSoloArtist==='Picheolin')ids=ids.filter(id=>ownedSoloIds('Picheolin').has(id));
+  if(!ids.length)return null;
+  let streams=null,gain=null,change=null;
+  if(historical){
+   const index=selectedSoloArtist?a.legacyTotalIndices?.[selectedSoloArtist]:
+    (a.legacyTotalIndices?.all||
+      a.legacyTotalIndices?.[a.key==='jxj_dreamscape'?'JxJ':a.key==='v8'?'V8':
+        a.key==='gilboard'?'all':Object.keys(a.legacyTotalIndices||{})[0]]);
+   const key=idAt(s,index);
+   if(!key)return null;
+   streams=s.tracks[key];
+   gain=periodic?periodGain(s,baseline,key):safeGain(s,p,key);
+   change=periodic?periodChange(s,baseline,key):dailyChange(s,p,pp,key);
+  }else{
+   const vals=ids.map(id=>s.tracks?.[id]);
+   if(vals.every(v=>v!=null))streams=vals.reduce((sum,value)=>sum+value,0);
+   const gains=ids.map(id=>periodic?periodGain(s,baseline,id):safeGain(s,p,id));
+   if(gains.every(v=>v!=null))gain=gains.reduce((sum,value)=>sum+value,0);
+   const cmp=periodic?periodComparison(s,baseline,ids):dailyComparison(s,p,pp,ids);
+   change=cmp.value;
+  }
+  return {name:a.displayName,artworkRelease:a.key,albumIdentity:a.key,
+    releaseDate:a.releaseDate,kind:'album',streams,gain,change};
+ }).filter(Boolean);
+}
+
 function soloLegacyRows(s,p,pp,baseline,view){
+ if(view==='albums')return canonicalSoloAlbumRows(s,p,pp,baseline);
  const sections=soloLegacySections(s);if(!sections)return [];
  const periodic=['weekly','monthly','yearly'].some(period=>rank.endsWith(period));
  const owners=selectedSoloArtist?[selectedSoloArtist]:[...soloLegacyOwners,'V8','Picheolin','Gilboard','JxJ'];
@@ -1926,6 +1970,7 @@ function soloArtistTrackIds(s){
  return trackIds(s).filter(id=>ids.has(id));
 }
 function soloArtistRows(rows,s,p,baseline,pp){
+ if(tab==='solo'&&rank.startsWith('albums'))return rows;
  if(tab==='solo'&&isHistorical(s))return rows; // Already filtered by the workbook's artist credit blocks.
  if(tab!=='solo'||!selectedSoloArtist)return rows;
  const ids=ownedSoloIds(selectedSoloArtist);
