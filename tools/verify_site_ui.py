@@ -54,6 +54,12 @@ def check_viewport(driver,width,height):
     click(driver,'#tabs button[data-tab="solo"]')
     read_layout(driver,f'Units & Solo {width}px')
     click(driver,'#rankCategory button[data-type="albums"]')
+    # The daily tab sorts by daily gain; verify Most/Least STREAMED
+    # using the cumulative Overall tab rather than confusing the two.
+    driver.execute_script("""
+      const el=document.getElementById('rankPeriod');
+      el.value='overall';el.dispatchEvent(new Event('change',{bubbles:true}));
+    """)
     WebDriverWait(driver,40).until(lambda d:len(d.find_elements(By.CSS_SELECTOR,'#ranking .rank-row'))>=10)
     entries=driver.find_elements(By.CSS_SELECTOR,'#ranking .rank-row')
     titles=[x.find_element(By.CSS_SELECTOR,'.track-name').text for x in entries]
