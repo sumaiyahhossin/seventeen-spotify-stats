@@ -1705,8 +1705,8 @@ function renderArtistProfiles(){
  area.querySelector('#allSoloArtists')?.addEventListener('click',()=>{selectedSoloArtist=null;saveView();render()});
  area.querySelectorAll('[data-solo-artist]').forEach(button=>button.addEventListener('click',()=>{selectedSoloArtist=button.dataset.soloArtist;saveView();render()}));
  const unitPhotos={
-  V8:['https://books.r10s.jp/fan/images/oshiraku-images/v8_conceptphoto1_25f8875b2d.jpg','https://img.tenasia.co.kr/photo/202606/BF.44712139.1.jpg'],
-  JxJ:['https://www.allkpop.com/upload/2026/09/content/281130/web_data/allkpop_1790609592_htt9wk4biaabw8m.jpg','https://www.allkpop.com/upload/2026/09/content/271151/1790524315-hto0kr6ayaaq1-n.jpeg']
+  V8:['assets/profile-photos/v8.jpg','https://books.r10s.jp/fan/images/oshiraku-images/v8_conceptphoto1_25f8875b2d.jpg'],
+  JxJ:['assets/profile-photos/jxj.jpg','https://www.allkpop.com/upload/2026/09/content/281130/web_data/allkpop_1790609592_htt9wk4biaabw8m.jpg']
  };
  area.querySelectorAll('img[data-unit-photo]').forEach(img=>showArtistPhoto(img,unitPhotos[img.dataset.unitPhoto]));
  area.querySelectorAll('img[data-artist-photo]').forEach(img=>{
