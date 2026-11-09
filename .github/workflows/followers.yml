@@ -1,5 +1,6 @@
 name: Spotify followers — all 18 solo and unit profiles
 
+# This full-scan run enables browser network recording before each artist check.
 # Check every hour; the gate only runs profiles missing a verified reading
 # since the latest 2 PM America/New_York reporting cutoff. After all 18
 # have an observation, checks pause until the next cutoff.
