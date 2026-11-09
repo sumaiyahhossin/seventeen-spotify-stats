@@ -1,0 +1,215 @@
+{
+  "source": "Existing milestone records from milestones.js; dates are documented or owner-reported, not generated estimates",
+  "byName": {
+    "name:ohmy": {
+      "100000000": {
+        "date": "2026-09-23",
+        "source": "ChartMasters milestone history",
+        "url": "https://chartmasters.org/artist/seventeen/"
+      }
+    },
+    "name:hot": {
+      "100000000": {
+        "date": "2023-02-02",
+        "url": "https://x.com/WORLDMUSICAWARD/status/1621335112515190786",
+        "source": "World Music Awards dated announcement"
+      },
+      "200000000": {
+        "date": "2024-04-24",
+        "source": "Spotify milestone announcement (approximate date)",
+        "url": ""
+      },
+      "300000000": {
+        "date": "2026-08-18",
+        "source": "ChartMasters milestone history",
+        "url": "https://chartmasters.org/artist/seventeen/"
+      }
+    },
+    "name:17featjoshuaanddkofseventeen": {
+      "100000000": {
+        "date": "2026-08-17",
+        "source": "ChartMasters milestone history",
+        "url": "https://chartmasters.org/artist/seventeen/"
+      }
+    },
+    "name:darling": {
+      "100000000": {
+        "date": "2023-07-19",
+        "url": "https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html",
+        "source": "Korean Sales milestone archive"
+      },
+      "200000000": {
+        "date": "2026-02-15",
+        "source": "Spotify milestone announcement",
+        "url": ""
+      }
+    },
+    "name:lovemoneyfamefeatdjkhaled": {
+      "100000000": {
+        "date": "2026-02-06",
+        "source": "Spotify total reported as of Feb 6 by Maeil Business",
+        "url": "https://www.mk.co.kr/en/musics/11956771"
+      }
+    },
+    "name:super": {
+      "100000000": {
+        "date": "2023-08-05",
+        "url": "https://www.ptkorea.com/123870/",
+        "source": "chartdata Spotify milestone announcement"
+      },
+      "200000000": {
+        "date": "2024-05-02",
+        "source": "svt_spotify milestone announcement",
+        "url": "https://x.com/svt_spotify/status/1786091976246644797"
+      },
+      "300000000": {
+        "date": "2026-01-14",
+        "source": "ChartMasters milestone history",
+        "url": "https://chartmasters.org/artist/seventeen/"
+      }
+    },
+    "name:toyou": {
+      "100000000": {
+        "date": "2025-11-22",
+        "source": "ChartMasters milestone history",
+        "url": "https://chartmasters.org/artist/seventeen/"
+      }
+    },
+    "name:thunder": {
+      "100000000": {
+        "date": "2026-04-18",
+        "source": "The Korea Herald, citing Pledis",
+        "url": "https://www.koreaherald.com/article/10720987"
+      }
+    },
+    "name:rockwithyou": {
+      "100000000": {
+        "date": "2023-04-03",
+        "url": "https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html",
+        "source": "Korean Sales milestone archive"
+      },
+      "200000000": {
+        "date": "2025-05-12",
+        "source": "ChartMasters Spotify streams milestone",
+        "url": "https://chartmasters.org/artist/seventeen/"
+      }
+    },
+    "name:verynice": {
+      "100000000": {
+        "date": "2022-11-09",
+        "url": "https://www.reddit.com/r/seventeen/comments/yqtt7l/221110_seventeens_very_nice_has_now_surpassed_100/",
+        "source": "r/seventeen dated announcement"
+      },
+      "200000000": {
+        "date": "2025-02-28",
+        "source": "ChartMasters Spotify streams milestone",
+        "url": "https://chartmasters.org/artist/seventeen/"
+      }
+    },
+    "name:dontwannacry": {
+      "100000000": {
+        "date": "2021-03-13",
+        "url": "https://koreansalestwt.blogspot.com/2022/01/k-pop-artist-song-milestones-on-spotify.html",
+        "source": "Korean Sales Spotify milestone archive"
+      },
+      "200000000": {
+        "date": "2024-04-16",
+        "source": "Spotify milestone announcement",
+        "url": ""
+      }
+    },
+    "name:prettyu": {
+      "100000000": {
+        "date": "2023-12-21",
+        "url": "https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html",
+        "source": "Korean Sales #386"
+      }
+    },
+    "name:leftright": {
+      "100000000": {
+        "date": "2023-06-11",
+        "url": "https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html",
+        "source": "Historical milestone listing"
+      }
+    },
+    "name:leftandright": {
+      "100000000": {
+        "date": "2023-06-11",
+        "source": "Historical 100M Spotify milestone",
+        "url": ""
+      }
+    },
+    "name:clap": {
+      "100000000": {
+        "date": "2023-06-12",
+        "url": "https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html",
+        "source": "Historical milestone listing"
+      }
+    },
+    "name:readytolove": {
+      "100000000": {
+        "date": "2024-08-04",
+        "url": "https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html",
+        "source": "Korean Sales #474"
+      }
+    },
+    "name:world": {
+      "100000000": {
+        "date": "2024-01-23",
+        "url": "https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html",
+        "source": "Korean Sales #399"
+      }
+    },
+    "name:maestro": {
+      "100000000": {
+        "date": "2025-04-11",
+        "source": "User-provided milestone date",
+        "url": ""
+      }
+    },
+    "name:godofmusic": {
+      "100000000": {
+        "date": "2025-01-22",
+        "source": "User-provided milestone date",
+        "url": ""
+      }
+    },
+    "name:home": {
+      "100000000": {
+        "date": "2024-12-05",
+        "source": "Dated SEVENTEEN Spotify milestone announcement (link pending)",
+        "url": ""
+      }
+    },
+    "name:hit": {
+      "100000000": {
+        "date": "2025-09-26",
+        "source": "ChartMasters Spotify streams milestone",
+        "url": "https://chartmasters.org/artist/seventeen/"
+      }
+    },
+    "name:cheers": {
+      "100000000": {
+        "date": "2025-04-12",
+        "source": "ChartMasters Spotify streams milestone",
+        "url": "https://chartmasters.org/artist/seventeen/"
+      }
+    }
+  },
+  "byTrack": {
+    "track:7eBpUuPnDTfbeP1P4P93CS": {
+      "100000000": {
+        "date": "2024-06-28",
+        "source": "Korean Sales #456 Spotify milestone archive",
+        "url": "https://koreansalestwt.blogspot.com/2023/02/k-pop-artist-song-milestones-on-spotify.html"
+      }
+    },
+    "track:347PJwH4XqRbeaKaIW9sX3": {
+      "100000000": {
+        "date": "2025-09-11",
+        "source": "September 11, 2025 milestone date supplied by the site owner; a September 15, 2025 news report independently confirms it had passed 100M",
+        "url": "https://www.adatah.com/lifestyle/24415917937/bittersweet-wonwoo-mingyu-seventeen-feat-lee-hi-berhasil-mencapai-100-juta-streaming-di-spotify"
+      }
+    }
+  }
+}
