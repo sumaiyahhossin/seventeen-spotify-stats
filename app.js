@@ -1029,14 +1029,14 @@ function buildRows(s,p,pp,baseline){
      if(!(item.admin_added&&item.release_type==='album')&&!isAlbumTitle(item.title)&&!['dino_g4','jxj_dreamscape','jeonghan_g2','joshua_g8','picheolin_g3'].includes(item.key))continue;
      if(['gilboard','sharedTracks'].includes(item.key))continue;
      const ids=[...new Set(item.tracks)];
-     const streams=ids.every(id=>s.tracks[id]!=null)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
+     const streams=ids.every(id=>Number.isFinite(s.tracks[id])&&s.tracks[id]>0)?ids.reduce((a,id)=>a+s.tracks[id],0):null;
      const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids),dayChange=sumDailyChange(s,p,pp,ids);
      rows.push({name:catalogReleaseLabel(item),artworkRelease:item.key,kind:'album',streams,gain,change:periodic?sumPeriodChange(s,baseline,ids):dayChange,changePartial:periodic?periodComparison(s,baseline,ids).partial:dailyComparison(s,p,pp,ids).partial});
    }
  }else{
    rows=trackIds(s).map(id=>({
      id,name:tab==='solo'?(soloMedia.tracks?.[id]?.title||displayTrackName(s.names?.[id]||idName[id]||id)):displayTrackName((s.names?.[id]||idName[id]||id)==='247.0'?'247':s.names?.[id]||idName[id]||id),
-     streams:s.tracks[id],gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id)
+     streams:Number.isFinite(s.tracks[id])&&s.tracks[id]>0?s.tracks[id]:null,gain:periodic?periodGain(s,baseline,id):safeGain(s,p,id),change:periodic?periodChange(s,baseline,id):dailyChange(s,p,pp,id)
    }));
  }
  if(albums)rows.forEach(row=>{row.name=cleanAlbumLabel(row.name)});
@@ -2020,7 +2020,7 @@ function canonicalSoloAlbumRows(s,p,pp,baseline){
    }
   }else{
    const vals=ids.map(id=>s.tracks?.[id]);
-   if(vals.every(v=>v!=null))streams=vals.reduce((sum,value)=>sum+value,0);
+   if(vals.every(v=>Number.isFinite(v)&&v>0))streams=vals.reduce((sum,value)=>sum+value,0);
    const gains=ids.map(id=>periodic?periodGain(s,baseline,id):safeGain(s,p,id));
    if(gains.every(v=>v!=null))gain=gains.reduce((sum,value)=>sum+value,0);
    const cmp=periodic?periodComparison(s,baseline,ids):dailyComparison(s,p,pp,ids);
