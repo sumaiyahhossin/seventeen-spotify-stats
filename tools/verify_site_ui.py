@@ -98,7 +98,17 @@ def main():
             check_viewport(driver,390,850)
             driver.get(f'http://127.0.0.1:{PORT}/milestones.html?type=solo')
             WebDriverWait(driver,40).until(lambda d:'UNITS & SOLO' in d.find_element(By.CSS_SELECTOR,'.eyebrow').text)
-            print('Separate Unit/Solo milestones page verified',flush=True)
+            # Check the actual content, not just the page heading: 'Like you'
+            # is below 1M on Nov 6 and must be an upcoming UNIT milestone.
+            WebDriverWait(driver,45).until(
+                lambda d:len(d.find_elements(By.CSS_SELECTOR,'#upcomingRows .song-title'))>40)
+            milestone_names=[el.text.strip() for el in driver.find_elements(
+                By.CSS_SELECTOR,'#upcomingRows .song-title')]
+            assert any(name.lower()=='like you' for name in milestone_names), 'Unit/single milestone missing Like you'
+            assert not any(name.lower()=='maestro' for name in milestone_names), 'OT13 milestone leaked into Units & Solo'
+            assert 'Nov 6, 2026' in driver.find_element(By.ID,'upcomingStatus').text, 'Wrong solo milestone source date'
+            print('Separate Unit/Solo milestones verified:',len(milestone_names),
+                  'actual unit/solo tracks, November 6 source',flush=True)
             print('Website smoke checks passed',flush=True)
         finally:
             driver.quit()
