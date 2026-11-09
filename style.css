@@ -1842,3 +1842,95 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
 /* OT13 historical yearly totals belong to the group tab, not Units & Solo. */
 body.svt-units-solo #yearlyStreamsHistory,
 body.svt-units-solo .svt-yearly-jump{display:none!important}
+
+
+/* v128 — preserve compact rankings while restoring rank & trend indicators. */
+/* Increase = periwinkle blue; decrease = rose pink; unchanged/unknown = neutral. */
+#ranking .rank-row>.rank-metric-change.positive .metric-value,
+#ranking .rank-row>.rank-metric-change.positive .metric-compact,
+#ranking .rank-row>.rank-metric-gain.positive .metric-value,
+#ranking .rank-row>.rank-metric-gain.positive .metric-compact{
+ color:#a9caff!important;
+}
+#ranking .rank-row>.rank-metric-change.negative .metric-value,
+#ranking .rank-row>.rank-metric-change.negative .metric-compact,
+#ranking .rank-row>.rank-metric-gain.negative .metric-value,
+#ranking .rank-row>.rank-metric-gain.negative .metric-compact{
+ color:#ffb0d5!important;
+}
+#ranking .rank-row>.rank-metric-change.unchanged .metric-value,
+#ranking .rank-row>.rank-metric-change.unchanged .metric-compact{
+ color:#cec8e2!important;
+}
+#ranking .rank-row>.rank-metric.missing-value .metric-value,
+#ranking .rank-row>.rank-metric.missing-value .metric-compact{
+ color:#fff!important;
+}
+#ranking .rank-row .track>.rank-position>.rank-up{
+ color:#a9caff!important;background:rgba(147,189,255,.14)!important;
+}
+#ranking .rank-row .track>.rank-position>.rank-down{
+ color:#ffb0d5!important;background:rgba(255,152,202,.14)!important;
+}
+#ranking .rank-row .track>.rank-position>.rank-same,
+#ranking .rank-row .track>.rank-position>.rank-unknown{
+ color:#d1cce4!important;background:rgba(176,173,226,.08)!important;
+}
+@media(max-width:900px){
+ /* Tracks and Albums: rank number above a tiny arrow, cover, then title. */
+ body.svt-compact-ranking-table:not(.svt-discography-table) #ranking .rank-row>.track{
+  grid-template-columns:20px 24px minmax(0,1fr)!important;
+  column-gap:4px!important;
+ }
+ body.svt-compact-ranking-table:not(.svt-discography-table) #ranking .rank-row .track>.rank-position{
+  display:flex!important;grid-column:1!important;grid-row:1!important;
+  flex-direction:column!important;align-items:center!important;justify-content:center!important;
+  width:20px!important;min-width:0!important;max-width:20px!important;
+  gap:2px!important;margin:0!important;padding:0!important;
+  overflow:visible!important;
+ }
+ body.svt-compact-ranking-table:not(.svt-discography-table) #ranking .rank-row .track>.rank-position>.place{
+  display:block!important;font-size:10px!important;line-height:1!important;
+  font-weight:850!important;margin:0!important;padding:0!important;
+  white-space:nowrap!important;text-align:center!important;
+ }
+ body.svt-compact-ranking-table:not(.svt-discography-table) #ranking .rank-row .track>.rank-position>.rank-trend{
+  display:flex!important;align-items:center!important;justify-content:center!important;
+  font-size:8px!important;line-height:1.1!important;font-weight:800!important;
+  padding:1px!important;margin:0!important;
+  width:auto!important;min-width:14px!important;max-width:20px!important;
+  min-height:0!important;height:auto!important;
+  white-space:nowrap!important;letter-spacing:-.07em!important;
+  border-radius:3px!important;
+ }
+ body.svt-compact-ranking-table:not(.svt-discography-table) #ranking .rank-row .track>.cover-slot{
+  grid-column:2!important;grid-row:1!important;
+  width:24px!important;height:24px!important;min-width:24px!important;
+ }
+ body.svt-compact-ranking-table:not(.svt-discography-table) #ranking .rank-row .track>.cover-slot .cover{
+  width:24px!important;height:24px!important;min-width:24px!important;
+  object-fit:contain!important;
+ }
+ body.svt-compact-ranking-table:not(.svt-discography-table) #ranking .rank-row .track>.track-copy{
+  grid-column:3!important;grid-row:1!important;min-width:0!important;
+ }
+}
+@media(max-width:370px){
+ body.svt-compact-ranking-table:not(.svt-discography-table) #ranking .rank-row>.track{
+  grid-template-columns:17px 21px minmax(0,1fr)!important;
+  column-gap:3px!important;
+ }
+ body.svt-compact-ranking-table:not(.svt-discography-table) #ranking .rank-row .track>.rank-position{
+  width:17px!important;max-width:17px!important;
+ }
+ body.svt-compact-ranking-table:not(.svt-discography-table) #ranking .rank-row .track>.rank-position>.place{
+  font-size:9px!important;
+ }
+ body.svt-compact-ranking-table:not(.svt-discography-table) #ranking .rank-row .track>.rank-position>.rank-trend{
+  font-size:7px!important;max-width:17px!important;min-width:12px!important;
+ }
+ body.svt-compact-ranking-table:not(.svt-discography-table) #ranking .rank-row .track>.cover-slot,
+ body.svt-compact-ranking-table:not(.svt-discography-table) #ranking .rank-row .track>.cover-slot .cover{
+  width:21px!important;height:21px!important;min-width:21px!important;
+ }
+}
