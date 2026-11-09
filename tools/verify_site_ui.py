@@ -105,6 +105,15 @@ def check_viewport(driver,width,height):
     # two member sections. Both member SUBTOTALS must remain immediately
     # after their own tracks; the Albums tab still displays only one album.
     click(driver,'#rankCategory button[data-type="discography"]')
+    # This check targets the actual Nov 6 workbook credit breakdown. The
+    # latest live snapshots use canonical track IDs instead of workbook totals.
+    driver.execute_script("""
+      const picker=document.getElementById('archiveDate');
+      picker.value='2026-11-06';
+      picker.dispatchEvent(new Event('change',{bubbles:true}));
+    """)
+    WebDriverWait(driver,35).until(lambda d:
+        '2026-11-06' in d.find_element(By.ID,'dateNotice').text)
     WebDriverWait(driver,40).until(
        lambda d:len(d.find_elements(By.CSS_SELECTOR,'#ranking .album-total-row'))>=90)
     sections=driver.execute_script("""
@@ -115,9 +124,12 @@ def check_viewport(driver,width,height):
       }));
     """)
     for key in ('Jeonghan 6-Track Total','Joshua 6-Track Total',
-                'Full 7-Track Album Total','The8 7-Track Total',
-                'Vernon 7-Track Total','Full 8-Track Album Total'):
+                '1st Mini Album - DREAMSCAPE','The8 7-Track Total',
+                'Vernon 7-Track Total','1st Mini Album - V8'):
         assert any(key in row['title'] for row in sections),f'Missing album section subtotal: {key}'
+    assert not any('Full 7-Track Album Total' in row['title'] or
+                   'Full 8-Track Album Total' in row['title'] for row in sections), (
+        'Complete unit album titles must not have redundant track-total suffixes')
     missing_dates=[row['title'] for row in sections if not row['dated']]
     print(f'Discography: {len(sections)} release-total rows, missing dates:',missing_dates,flush=True)
     assert not missing_dates,f'Undated solo release totals: {missing_dates[:20]}'
@@ -157,6 +169,10 @@ def check_viewport(driver,width,height):
                     'Spider must retain its original April 2, 2021 date, not SHINGIRU date')
         # Restore the most recent snapshot before the mobile run. The July
         # 2026 archive correctly contains fewer than 11 albums at that date.
+        click(driver,'#latestDate')
+        WebDriverWait(driver,35).until(lambda d:
+            'Latest confirmed snapshot' in d.find_element(By.ID,'dateNotice').text)
+    else:
         click(driver,'#latestDate')
         WebDriverWait(driver,35).until(lambda d:
             'Latest confirmed snapshot' in d.find_element(By.ID,'dateNotice').text)
