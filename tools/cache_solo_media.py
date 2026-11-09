@@ -41,8 +41,8 @@ def cache_image(dest_stem, spotify_url):
     matches=[p for p in dest_stem.parent.glob(dest_stem.name+'.*') if p.suffix in ('.jpg','.png','.webp') and p.stat().st_size>1000]
     if matches:return matches[0].relative_to(ROOT).as_posix()
     payload=get(spotify_url,binary=True)
-    if payload[:3]==b'\\xff\\xd8\\xff':ext='.jpg'
-    elif payload[:8]==b'\\x89PNG\\r\\n\\x1a\\n':ext='.png'
+    if payload[:3]==b'\xff\xd8\xff':ext='.jpg'
+    elif payload[:8]==b'\x89PNG\r\n\x1a\n':ext='.png'
     elif payload[:4]==b'RIFF' and payload[8:12]==b'WEBP':ext='.webp'
     else:raise ValueError('unrecognized image response')
     if len(payload)<1200:raise ValueError('empty image')
@@ -92,7 +92,7 @@ def main():
     out={'source':'Exact Spotify oEmbed track/release IDs; mirrored to GitHub Pages; no fuzzy title matching',
          'tracks':tracks,'albums':arts,'missingTracks':[t for t in track_ids if t not in tracks],
          'missingAlbums':[a['key'] for a in albums if a['key'] not in arts]}
-    existing_path.write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\\n',encoding='utf-8')
+    existing_path.write_text(json.dumps(out,ensure_ascii=False,indent=2)+'\n',encoding='utf-8')
     for x in errors:print('WARN:',x)
     print(f'Cached {len(tracks)}/{len(track_ids)} exact Spotify track covers and {len(arts)}/{len(albums)} album covers')
     if len(tracks)!=len(track_ids) or len(arts)!=len(albums):
