@@ -2009,8 +2009,9 @@ function soloLegacySections(s){
 }
 /* Historical Excel sheets insert songs over time. Index positions in an
    earlier sheet cannot be interpreted using November 6's row numbers. */
-const soloHistoricalNameKey=name=>String(name||'').normalize('NFKC').toLocaleLowerCase('en')
- .replace(/[^\p{L}\p{N}]+/gu,'');
+// Excel coerces Jun's recording '9' to '9.0' in some dated exports.
+const soloHistoricalNameKey=name=>String(name||'').trim().replace(/^9\.0$/,'9')
+ .normalize('NFKC').toLocaleLowerCase('en').replace(/[^\p{L}\p{N}]+/gu,'');
 function matchedSoloReferenceIndex(snapshot,owner,source,expectedKind=null){
  if(!soloHistoryReference)return snapshot?.date==='2026-11-06'?source.index:null;
  if(snapshot?.date===soloHistoryReference.date)return source.index;
@@ -2185,9 +2186,8 @@ function canonicalSoloAlbumRows(s,p,pp,baseline){
   return {name:a.displayName,artworkRelease:a.key,albumIdentity:a.key,
     releaseDate:a.releaseDate,kind:'album',streams,gain,change};
  }).filter(Boolean);
- // Most/least STREAMED albums sort on cumulative album streams even if
- // the viewer is looking at daily, weekly or monthly growth columns.
- // Never sort album totals by a member's partial release or album-list order.
+ // Rank albums using the selected period's gain, or cumulative streams in
+ // Overall. Daily rankings must not sort by the all-time album total.
  if(sortOrder==='az'||sortOrder==='za')result.sort((a,b)=>{
   const cmp=a.name.localeCompare(b.name,'en',{numeric:true,sensitivity:'base'});
   return sortOrder==='az'?cmp:-cmp;
@@ -2197,10 +2197,11 @@ function canonicalSoloAlbumRows(s,p,pp,baseline){
   return sortOrder==='newest'?-cmp:cmp;
  });
  else result.sort((a,b)=>{
-  const x=a.streams,y=b.streams;
+  const x=rank.endsWith('overall')?a.streams:a.gain;
+  const y=rank.endsWith('overall')?b.streams:b.gain;
   if(x==null)return y==null?0:1;
   if(y==null)return -1;
-  return sortOrder==='least'?x-y:y-x;
+  return (sortOrder==='least'?x-y:y-x)||String(a.name).localeCompare(String(b.name));
  });
  return result;
 }
@@ -2742,11 +2743,10 @@ function renderRankMetrics(row,selectedDate=''){
  const compareWith=rank.endsWith('weekly')?'last week':rank.endsWith('monthly')?
   (incompleteMonth?'same days last month':'previous month'):
   rank.endsWith('yearly')?'last year':'yesterday';
- // Daily ranks by daily growth only; Overall adds cumulative stream totals.
- // Weekly/monthly/yearly retain their full saved history and comparison values.
- // Solo/unit daily discographies need their real cumulative Spotify counts.
- // A missing previous-day comparison must not hide a verified stream total.
- return (rank.endsWith('daily')&&tab==='group'?'':rankMetricHtml(row.streams,'streams','Total streams'))+
+ // Solo/unit charts show the selected gain and change until Overall is chosen.
+ // The history inspector still exposes the verified cumulative stream count.
+ const showStreams=rank.endsWith('overall')||(tab==='group'&&!rank.endsWith('daily'));
+ return (showStreams?rankMetricHtml(row.streams,'streams','Total streams'):'')+
   rankMetricHtml(row.gain,'gain',row.gainPartial?gainLabel+' (verified observed dates only)':gainLabel,{signed:true,estimated:row.estimatedGain,partial:row.gainPartial})+
   rankMetricHtml(row.change,'change','Change vs '+compareWith,{signed:true,partial:row.changePartial});
 }
@@ -2807,6 +2807,8 @@ async function render(){const token=++renderToken;
  useDatesForTab();renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;if(tab==='group')updateYear2026Streams();syncCalendar();restoreGroupNames(s,p);
  document.body.classList.toggle('svt-overall-four-cols',rank.endsWith('overall'));
  document.body.classList.toggle('svt-daily-ranking',rank.endsWith('daily')&&tab==='group');
+ document.body.classList.toggle('svt-solo-period-only',tab==='solo'&&!rank.endsWith('overall'));
+ document.body.classList.toggle('svt-solo-daily',tab==='solo'&&rank.endsWith('daily'));
  document.body.classList.toggle('svt-discography-table',rank.startsWith('discography'));
  const isPeriod=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
  const periodName=rank.endsWith('weekly')?'Weekly':rank.endsWith('monthly')?'Monthly':rank.endsWith('yearly')?'Yearly':'Daily';
@@ -3069,8 +3071,12 @@ async function render(){const token=++renderToken;
  comparisonValue.textContent=s?fmt(displayedTrackCount):'—';
  comparisonDetail.textContent=s?(tab==='group'?'Unique group tracks in the selected archive':'Tracks included in the selected profile'):'No saved snapshot available';
  const discography=rank.startsWith('discography');
- const orderPicker=$('#order').closest('.order-picker');
+ const orderSelect=$('#order');
+ const orderPicker=orderSelect.closest('.order-picker');
  orderPicker.hidden=discography;
+ const metricPeriod=rank.endsWith('daily')?'daily':rank.endsWith('weekly')?'weekly':rank.endsWith('monthly')?'monthly':'yearly';
+ orderSelect.querySelector('option[value="most"]').textContent=tab==='solo'&&!rank.endsWith('overall')?'Highest '+metricPeriod+' gain':'Most streamed';
+ orderSelect.querySelector('option[value="least"]').textContent=tab==='solo'&&!rank.endsWith('overall')?'Lowest '+metricPeriod+' gain':'Least streamed';
  const q=$('#search').value.toLowerCase();
  const daily=rank.endsWith('daily'),periodic=rank.endsWith('weekly')||rank.endsWith('monthly')||rank.endsWith('yearly');
  const periodLabel=rank.endsWith('weekly')?'WEEKLY':rank.endsWith('monthly')?'MONTHLY':'YEARLY';
@@ -3158,6 +3164,16 @@ async function render(){const token=++renderToken;
    const estimate=Math.round(observed*targetDays/observedDays);
    if(estimate>=0&&estimate<=row.streams){row.gain=estimate;row.estimatedGain=true}
   }
+ }
+ // Resolve all per-row gains, then sort by the numbers actually displayed.
+ if(tab==='solo'&&!discography&&(sortOrder==='most'||sortOrder==='least')){
+  rows.sort((a,b)=>{
+   const x=rank.endsWith('overall')?a.streams:a.gain;
+   const y=rank.endsWith('overall')?b.streams:b.gain;
+   if(x==null)return y==null?0:1;
+   if(y==null)return -1;
+   return (sortOrder==='least'?x-y:y-x)||String(a.name||'').localeCompare(String(b.name||''),'en',{numeric:true,sensitivity:'base'});
+  });
  }
  // Rank movement compares the same Tracks/Albums chart with the immediately
  // preceding calendar day, week, month, or year (not the previous saved date).
