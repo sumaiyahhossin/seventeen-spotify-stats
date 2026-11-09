@@ -41,7 +41,7 @@ if 'STAT_FIRST_UNCHANGED|' in result.stdout or 'STAT_FIRST_PROBE_FAILED|' in res
     sys.exit(0)
 
 (ROOT/'build'/f'{kind}.log').write_text(result.stdout+'\n'+result.stderr)
-tracks={};listeners={};followers=None
+tracks={};listeners={};followers=None;solo_followers={}
 for line in result.stdout.splitlines():
     m=re.match(r'STAT_TRACK\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|(\d+)',line)
     if m: tracks[m.group(1)]=int(m.group(2))
@@ -49,6 +49,8 @@ for line in result.stdout.splitlines():
     if m: listeners[m.group(1)]=int(m.group(2))
     m=re.match(r'STAT_FOLLOWERS\|(\d+)',line)
     if m: followers=int(m.group(1))
+    m=re.match(r'STAT_FOLLOWERS\|([A-Za-z0-9]{22})\|(\d+)',line)
+    if m and kind=='solo': solo_followers[m.group(1)]=int(m.group(2))
 if kind=='group' and followers is None:
     reasons=[line for line in result.stdout.splitlines() if line.startswith('STAT_FOLLOWERS_UNAVAILABLE|')]
     reason=reasons[-1].split('|',1)[1] if reasons else 'no exact follower metric emitted'
@@ -80,12 +82,58 @@ if kind=='group' and followers is None and os.getenv('SPOTIFY_CLIENT_ID') and os
             print('group: Spotify artist API did not provide exact followers')
     except Exception as error:
         print(f'group: Spotify artist API follower request failed ({type(error).__name__}); keeping unavailable')
+# When OAuth credentials are available, use Spotify's exact follower totals
+# for every solo/unit artist (not rounded public-page numbers).
+if kind=='solo' and os.getenv('SPOTIFY_CLIENT_ID') and os.getenv('SPOTIFY_CLIENT_SECRET'):
+    try:
+        import urllib.request, urllib.parse, base64
+        auth=base64.b64encode((os.environ['SPOTIFY_CLIENT_ID']+':'+os.environ['SPOTIFY_CLIENT_SECRET']).encode()).decode()
+        token_request=urllib.request.Request(
+            'https://accounts.spotify.com/api/token',
+            data=urllib.parse.urlencode({'grant_type':'client_credentials'}).encode(),
+            headers={'Authorization':'Basic '+auth,'Content-Type':'application/x-www-form-urlencoded'})
+        with urllib.request.urlopen(token_request,timeout=20) as response:
+            token=json.load(response)['access_token']
+        profiles=json.loads((DATA/'profile-images.json').read_text())
+        artists=list(profiles)
+        request=urllib.request.Request(
+            'https://api.spotify.com/v1/artists?'+urllib.parse.urlencode({'ids':','.join(artists)}),
+            headers={'Authorization':'Bearer '+token})
+        with urllib.request.urlopen(request,timeout=20) as response:
+            artist_data=json.load(response)
+        for artist in artist_data.get('artists') or []:
+            if not isinstance(artist,dict):continue
+            follower_count=(artist.get('followers') or {}).get('total')
+            if isinstance(follower_count,int) and follower_count>=0 and artist.get('id') in profiles:
+                solo_followers[artist['id']]=follower_count
+        print(f'solo: exact followers available for {len(solo_followers)} artist profiles')
+    except Exception as error:
+        print(f'solo: Spotify artist API follower request failed ({type(error).__name__}); retaining only verified dialog counts')
 cat=json.loads((DATA/'catalog.json').read_text())[kind]
 expected={id for item in cat for id in item['tracks']}
 missing=expected-set(tracks)
+# Retry only the IDs missing from the first Selenium scan. Never fill
+# missing counts with zeros, rounded estimates, or older history.
+if kind=='solo' and missing and result.returncode==0:
+    for attempt in range(1,4):
+        retry_env=collector_env.copy()
+        retry_env.pop('SVT_FIRST_TRACK_PREVIOUS',None)
+        retry_env['SVT_ONLY_TRACKS']=','.join(sorted(missing))
+        print(f'solo: retry {attempt}: scanning {len(missing)} actual missing Spotify song IDs')
+        retry_result=subprocess.run(
+            ['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],classname],
+            capture_output=True,text=True,timeout=2400,env=retry_env)
+        for line in retry_result.stdout.splitlines():
+            match=re.match(r'STAT_TRACK\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|(\d+)',line)
+            if match and int(match.group(2))>0:tracks[match.group(1)]=int(match.group(2))
+        missing=expected-set(tracks)
+        if not missing:break
+
 if result.returncode or missing or any(tracks[t]<=0 for t in expected):
     print(f'{kind}: incomplete collection; missing {len(missing)} of {len(expected)} tracks; exit={result.returncode}; retry next hour')
-    entry['last_attempt']=now.isoformat();state_path.write_text(json.dumps(state,indent=2));sys.exit(0)
+    entry['last_attempt']=now.isoformat();state_path.write_text(json.dumps(state,indent=2))
+    # Incomplete collections must not appear as successful GitHub jobs.
+    sys.exit(1)
 # Compare with the latest saved group snapshot, including manually imported history.
 if not previous:
     manifest_file=DATA/'manifest.json'
@@ -152,6 +200,8 @@ else:
     preserved_ids=[]
     preserved_baselines={}
 snapshot={'date':report_date,'captured_at':now.isoformat(),'tracks':tracks,'listeners':listeners}
+if kind=='solo' and solo_followers:
+    snapshot['followers']=solo_followers
 if kind=='group':
     if preserved_names: snapshot['names']=preserved_names
     if preserved_ids:
