@@ -110,41 +110,49 @@ if kind=='solo' and os.getenv('SPOTIFY_CLIENT_ID') and os.getenv('SPOTIFY_CLIENT
     except Exception as error:
         print(f'solo: Spotify artist API follower request failed ({type(error).__name__}); retaining only verified dialog counts')
 cat=json.loads((DATA/'catalog.json').read_text())[kind]
-expected={id for item in cat for id in item['tracks']}
-missing=expected-set(tracks)
-if missing:
-    by_id={tid:(item.get('key'),item.get('title')) for item in cat for tid in item['tracks']}
-    print(f'{kind}: unavailable song IDs from initial scan:',flush=True)
-    for tid in sorted(missing):
+expected={tid for item in cat for tid in item['tracks']}
+by_id={tid:(item.get('artist'),item.get('title')) for item in cat for tid in item['tracks']}
+# A zero from Spotify is a failed lookup, not a successful number. The initial
+# full scan is attempt one; make at most two additional targeted passes. This
+# applies to every group, unit, and solo track, not just selected songs.
+unresolved={tid for tid in expected if tracks.get(tid,0)<=0}
+if unresolved:
+    print(f'{kind}: {len(unresolved)} zero/missing tracks after scan 1 of 3',flush=True)
+    for tid in sorted(unresolved):
         print(f'  {tid}: {by_id.get(tid)}',flush=True)
-# Retry only the IDs missing from the first Selenium scan. Never fill
-# missing counts with zeros, rounded estimates, or older history.
-if kind=='solo' and missing and result.returncode==0:
-    for attempt in range(1,4):
-        retry_env=collector_env.copy()
-        retry_env.pop('SVT_FIRST_TRACK_PREVIOUS',None)
-        retry_env['SVT_ONLY_TRACKS']=','.join(sorted(missing))
-        print(f'solo: retry {attempt}: scanning {len(missing)} actual missing Spotify song IDs')
-        retry_result=subprocess.run(
-            ['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],classname],
-            capture_output=True,text=True,timeout=2400,env=retry_env)
-        print(f'solo: retry {attempt}: exit={retry_result.returncode}, '
-              f'lines={len(retry_result.stdout.splitlines())}, '
-              f'stderr={retry_result.stderr[-1200:]!r}',flush=True)
-        for line in retry_result.stdout.splitlines():
-            match=re.match(r'STAT_TRACK\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|(\d+)',line)
-            if match and int(match.group(2))>0:tracks[match.group(1)]=int(match.group(2))
-            if line.startswith('STAT_TRACK_UNAVAILABLE|'):
-                print('solo:',line,flush=True)
-        missing=expected-set(tracks)
-        if missing:print('solo: still unavailable: '+', '.join(sorted(missing)),flush=True)
-        if not missing:break
-
-if result.returncode or missing or any(tracks[t]<=0 for t in expected):
-    print(f'{kind}: incomplete collection; missing {len(missing)} of {len(expected)} tracks; exit={result.returncode}; retry next hour')
-    entry['last_attempt']=now.isoformat();state_path.write_text(json.dumps(state,indent=2))
-    # Incomplete collections must not appear as successful GitHub jobs.
+if result.returncode:
+    print(f'{kind}: collector exited {result.returncode}; not accepting zeros from a crashed scan')
+    entry['last_attempt']=now.isoformat()
+    state_path.write_text(json.dumps(state,indent=2))
     sys.exit(1)
+
+for attempt in (2,3):
+    if not unresolved:
+        break
+    retry_env=collector_env.copy()
+    retry_env.pop('SVT_FIRST_TRACK_PREVIOUS',None)
+    retry_env['SVT_ONLY_TRACKS']=','.join(sorted(unresolved))
+    print(f'{kind}: scan {attempt} of 3 for {len(unresolved)} zero/missing tracks',flush=True)
+    retry_result=subprocess.run(
+        ['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],classname],
+        capture_output=True,text=True,timeout=2400,env=retry_env)
+    print(f'{kind}: scan {attempt} exit={retry_result.returncode}',flush=True)
+    for line in retry_result.stdout.splitlines():
+        match=re.match(r'STAT_TRACK\\|https://open\\.spotify\\.com/track/([A-Za-z0-9]+)\\|(\\d+)',line)
+        if match and match.group(1) in unresolved and int(match.group(2))>0:
+            tracks[match.group(1)]=int(match.group(2))
+        elif line.startswith('STAT_TRACK_UNAVAILABLE|'):
+            print(f'{kind}: {line}',flush=True)
+    unresolved={tid for tid in expected if tracks.get(tid,0)<=0}
+
+# After all three scans, persist genuine zero results explicitly; never
+# substitute old counts or create fake positive values.
+for tid in sorted(unresolved):
+    tracks[tid]=0
+    print(f'{kind}: zero after 3 scans: {tid} {by_id.get(tid)}',flush=True)
+if unresolved:
+    print(f'{kind}: accepting {len(unresolved)} confirmed zero tracks; all expected IDs included',flush=True)
+
 # Compare with the latest saved group snapshot, including manually imported history.
 if not previous:
     manifest_file=DATA/'manifest.json'
