@@ -57,14 +57,25 @@ def check_viewport(driver,width,height):
     # combined total must include all distinct Spotify IDs exactly once.
     latest=json.loads((ROOT/'data/solo.json').read_text(encoding='utf-8'))
     catalogue=json.loads((ROOT/'data/catalog.json').read_text(encoding='utf-8'))
-    expected=sum(latest['tracks'].values())
-    assert len(latest['tracks'])>=183
+    # Two Picheolin singles have identical cumulative counts on Gilboard.
+    # Preserve all 183 raw Spotify IDs in history, but rank and total only
+    # 181 unique recordings when the reissued editions match.
+    reissues={
+        '3Y0ZwgYVHuwbW0JGjsYodR':'5W1bn5PzFgKok4GAZ1JUAw',
+        '594CTGIIVVTitwRhQJcWgM':'34wTGQ1yV5XtrSMR5dMLWY'
+    }
+    assert len(latest['tracks'])==183
+    for single,album in reissues.items():
+        assert latest['tracks'][single]==latest['tracks'][album], (
+            f'Pre-release and album counts diverged for {single}; review before deduplicating')
+    expected=sum(value for track,value in latest['tracks'].items()
+                 if track not in reissues)
     WebDriverWait(driver,30).until(lambda d:
         d.find_element(By.ID,'total').text.strip()==f'{expected:,}')
     print('Verified all solo/unit streams:', f'{expected:,}',flush=True)
     # Test zero-count profiles and units with a separately grouped album.
     artist_releases=catalogue['solo']
-    for owner in ('Hoshi','Seungkwan','JxJ','V8'):
+    for owner in ('Hoshi','Seungkwan','JxJ','V8','Picheolin'):
         releases=[release for release in artist_releases
                   if release.get('artist','').lower()==owner.lower()]
         ids={track for release in releases for track in release['tracks']}
@@ -72,11 +83,28 @@ def check_viewport(driver,width,height):
             ids={track for release in artist_releases if release['key']=='sharedTracks'
                  for track in release['tracks']}
         assert ids, f'{owner} has no mapped recordings'
-        count=sum(latest['tracks'][track] for track in ids)
+        count=sum(latest['tracks'][track] for track in ids if track not in reissues)
         click(driver,f'#artistProfiles [data-solo-artist="{owner}"]')
         WebDriverWait(driver,30).until(lambda d:
             d.find_element(By.ID,'total').text.strip()==f'{count:,}')
         print(owner,'verified solo/unit streams:',f'{count:,}',flush=True)
+    # Gilboard consists of six credited Picheolin recordings; its July
+    # prerelease singles must not create two more distinct recordings.
+    click(driver,'#artistProfiles [data-solo-artist="Picheolin"]')
+    WebDriverWait(driver,30).until(lambda d:
+        d.find_element(By.ID,'total').text.strip()=='12,745,528'
+        and d.find_element(By.ID,'gain').text.strip()=='+38,566'
+        and d.find_element(By.ID,'periodComparisonValue').text.strip()=='6')
+    print('Picheolin canonical profile: 6 tracks, 12,745,528 total, +38,566 daily',flush=True)
+    # The stream history inspector must use the same canonical total.
+    click(driver,'#total')
+    WebDriverWait(driver,30).until(lambda d:
+        not d.execute_script("return document.querySelector('.svt-history-dialog')?.hidden"))
+    inspected=driver.execute_script("""
+      return [...document.querySelectorAll('#svtHistoryRows tr')].map(x=>x.textContent);
+    """)
+    assert inspected, 'Picheolin historical total not loaded'
+    click(driver,'.svt-history-close')
     click(driver,'#allSoloArtists')
     WebDriverWait(driver,30).until(lambda d:
         d.find_element(By.ID,'total').text.strip()==f'{expected:,}')
@@ -96,7 +124,7 @@ def check_viewport(driver,width,height):
        }).catch(e=>done({error:String(e)}));
     """)
     print('Verified historical solo gains:',history_check,flush=True)
-    assert history_check=={'total':183,'matched':183,'gain':998787,'junGain':12925}, history_check
+    assert history_check=={'total':181,'matched':181,'gain':981931,'junGain':12925}, history_check
 
     # The desktop smoke test may leave Discography selected for the mobile pass.
     # Explicitly select Tracks before checking the ranked list.
@@ -109,7 +137,7 @@ def check_viewport(driver,width,height):
       period.value='daily';period.dispatchEvent(new Event('change',{bubbles:true}));
     """)
     WebDriverWait(driver,40).until(lambda d:
-        len(d.find_elements(By.CSS_SELECTOR,'#ranking .rank-row'))==183
+        len(d.find_elements(By.CSS_SELECTOR,'#ranking .rank-row'))==181
         and d.execute_script("return document.body.classList.contains('svt-solo-period-only')"))
     def metric_snapshot():
         return driver.execute_script("""
@@ -123,12 +151,12 @@ def check_viewport(driver,width,height):
             hiddenHeader:getComputedStyle(document.querySelector('.svt-total-heading')).display==='none'};
         """)
     daily_tracks=metric_snapshot()
-    assert daily_tracks['rows']==daily_tracks['ids']==183, daily_tracks
+    assert daily_tracks['rows']==daily_tracks['ids']==181, daily_tracks
     assert daily_tracks['totals']==0 and daily_tracks['changes']==183, daily_tracks
     assert daily_tracks['hiddenHeader'],daily_tracks
     gains=[g for g in daily_tracks['gains'] if g is not None]
     assert gains==sorted(gains,reverse=True), f'Daily solo tracks not ranked by gain: {gains[:12]}'
-    print('Daily solo tracks: 183 unique recordings, sorted by verified gain',flush=True)
+    print('Daily solo tracks: 181 unique recordings, sorted by verified gain',flush=True)
 
     click(driver,'#rankCategory button[data-type="albums"]')
     WebDriverWait(driver,40).until(lambda d:
@@ -191,6 +219,7 @@ def check_viewport(driver,width,height):
     # Check both original single and full album artwork with no diamond fallback.
     click(driver,'#rankCategory button[data-type="tracks"]')
     WebDriverWait(driver,40).until(lambda d:len(d.find_elements(By.CSS_SELECTOR,'#ranking .rank-row'))>150)
+    assert len(driver.find_elements(By.CSS_SELECTOR,'#ranking .rank-row'))==181, 'Combined Tracks view duplicates a reissued song'
     # Every unit/solo song in the combined Tracks view must be linked to
     # its exact Spotify recording, not the first similarly named group song.
     missing_links=driver.execute_script("""
