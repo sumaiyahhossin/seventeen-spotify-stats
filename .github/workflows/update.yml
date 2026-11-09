@@ -1,6 +1,8 @@
 name: Spotify stream snapshots
 # Both collectors start at 2 PM America/New_York and retry independently.
-# UTC 18:00–04:00 spans 2–11 PM Eastern through both daylight-saving seasons.
+# Start at 2 PM America/New_York (18 UTC in daylight time, 19 UTC in standard time).
+# The local-time gate prevents earlier UTC slots from collecting, and retries hourly
+# until each dataset is complete. Nov 8 backfill targets Spotify's Nov 7 reporting date.
 on:
   schedule:
     - cron: '0 18-23,0-4 * * *'
