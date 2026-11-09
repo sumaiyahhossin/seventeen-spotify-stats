@@ -1714,8 +1714,13 @@ function periodDates(date){
  }else if(rank.endsWith('monthly')){
   first=date.slice(0,7)+'-01';
   prevFirst=shiftedMonth(first,-1);
-  // To compare November 1–6 with October 1–6, not all of October.
-  prevLast=shifted(prevFirst,Math.min(d.getUTCDate(),new Date(Date.UTC(Number(prevFirst.slice(0,4)),Number(prevFirst.slice(5,7)),0)).getUTCDate())-1);
+  // Completed calendar months compare with the entire previous month,
+  // even when one month has 28/29/30 days and the other has 31.
+  // In-progress months compare like-for-like dates wherever possible.
+  const currentMonthDays=new Date(Date.UTC(d.getUTCFullYear(),d.getUTCMonth()+1,0)).getUTCDate();
+  const previousMonthDays=new Date(Date.UTC(Number(prevFirst.slice(0,4)),Number(prevFirst.slice(5,7)),0)).getUTCDate();
+  const previousDays=d.getUTCDate()===currentMonthDays?previousMonthDays:Math.min(d.getUTCDate(),previousMonthDays);
+  prevLast=shifted(prevFirst,previousDays-1);
  }else if(rank.endsWith('yearly')){
   first=date.slice(0,4)+'-01-01';
   prevFirst=shiftedYear(first,-1);
@@ -1863,9 +1868,10 @@ function periodChange(s,context,id){
  // To compare the same elapsed number of days.
  const elapsed=(Date.parse(s.date)-Date.parse(context.start.date))/86400000;
  const previousElapsed=(Date.parse(context.prevEnd.date)-Date.parse(context.prevStart.date))/86400000;
- // Do not compare unequal observed windows as if they were the same period.
- // Compare the exact days actually represented by the saved snapshots.
- return elapsed===previousElapsed?now-before:null;
+ // Weekly and year-to-date comparisons require equal observed durations.
+ // Completed calendar months may legitimately contain different day counts:
+ // compare full monthly totals, rather than incorrectly hiding their change.
+ return rank.endsWith('monthly')||elapsed===previousElapsed?now-before:null;
 }
 // To keep album and track comparisons aligned to the same dates.
 function sumPeriod(s,context,ids){if(!ids.length)return null;const values=ids.map(id=>periodGain(s,context,id));return values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null}
