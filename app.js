@@ -119,7 +119,7 @@ function properReleaseName(item){
  const namedSoloReleases={
   'jxj_dreamscape':'DREAMSCAPE','jeonghan_g2':'DREAMSCAPE','joshua_g8':'DREAMSCAPE','jun_g10':'9','bss_g2':'SECOND WIND','bss_g4':'TELEPARTY',
   'jxw_g1':'THIS MAN','hxw_g1':'BEAM','cxm_g1':'HYPE VIBES',
-  'dxs_g1':'Serenade','v8':'V8','picheolin_g3':'吉BOARD (Gilboard)',
+  'dxs_g1':'Serenade','dino_g1':'ICARUS','v8':'V8','picheolin_g3':'吉BOARD (Gilboard)',
   'gilboard':'吉BOARD (Gilboard)','dino_g4':'吉BOARD (Gilboard)','the8_g12':'V8','vernon_g9':'V8'
  };
  if(namedSoloReleases[item.key])return namedSoloReleases[item.key];
@@ -547,6 +547,7 @@ function dailyGainSummary(s,p,ids){
 function sumDaily(s,p,ids){return dailyGainSummary(s,p,ids).value}
 function formatDiscographyAlbumName(name){
  const raw=String(name||'').replace(/\s*Total\s*:?$/i,'').trim();
+ if(/^icarus(?:\s+(?:single|album|ost))?$/i.test(raw))return 'ICARUS';
  if(/love\s*&\s*letter.*repackage/i.test(raw))
   return 'LOVE & LETTER (Repackage) — '+(/new tracks/i.test(raw)?'New Tracks':'All Tracks');
  if(/sector\s*17.*repackage/i.test(raw))
@@ -2193,7 +2194,7 @@ function soloLegacyRows(s,p,pp,baseline,view){
    if(view!=='discography'&&seen.has(fingerprint)&&!editionCopy)continue;
    seen.add(fingerprint);
   }
-  const name=album?source.name.replace(/\s*(?:Total|Tota;)\s*:?$/i,'').trim():displayTrackName(source.name);
+  const name=album?formatDiscographyAlbumName(source.name.replace(/\s*(?:Total|Tota;)\s*:?$/i,'').trim()):displayTrackName(source.name);
   const row={id:source.id,name,streams:source.value,
    gain:periodic?periodGain(s,baseline,source.id):safeGain(s,p,source.id),
    change:periodic?periodChange(s,baseline,source.id):dailyChange(s,p,pp,source.id),
