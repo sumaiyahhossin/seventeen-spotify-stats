@@ -203,16 +203,34 @@
   catch(error){tbody.innerHTML='<tr><td colspan="4">Unable to load selected archive. Try selecting a date and reopening.</td></tr>';return}
   if(id!==opening)return;
   if(!ref?.date){tbody.innerHTML='<tr><td colspan="4">No saved streaming snapshot is available for this view.</td></tr>';return}
+  // Dedicated follower readings are collected independently of stream
+  // snapshots. Do not pretend a November 9 reading existed on November 7.
+  let followerData=null,profileId=null;
+  if(scope==='solo'&&metric.value==='followers'){
+   try{followerData=await load('data/solo-followers.json')}catch{}
+   profileId=soloArtists.find(([name])=>name===owner)?.[1]||null;
+   if(selection==='latest'){
+    const savedDays=Object.keys(followerData?.history||{}).filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)).sort();
+    const lastDay=savedDays.at(-1);
+    if(lastDay&&lastDay>ref.date)ref={...ref,date:lastDay};
+   }
+  }
   const mode=rank.endsWith('monthly')?'monthly':rank.endsWith('weekly')?'weekly':'daily';
   const canDecrease=metric.kind==='audience';
   const periodCount=mode==='monthly'?12:10;
   const titleLabel=mode==='monthly'?'month':mode==='weekly'?'week':'day';
   $('#svtHistoryNote').textContent='Last '+periodCount+' '+titleLabel+'s through '+dateText(ref.date)+' · '+(scope==='group'?'OT13':owner||'Units & Solo')+' · oldest first. Total is cumulative; increase requires verified comparable snapshots.';
+  if(followerData&&profileId)
+   $('#svtHistoryNote').textContent+=' · Followers are dated when collected; no November 7 count is fabricated.';
   const lookup=async date=>{
    try{return date===ref.date?ref:await getDate(scope,date)}
    catch{return null}
   };
   const valueOf=async date=>{
+   if(followerData&&profileId){
+    const saved=followerData.history?.[date]?.[profileId];
+    return saved?numberOrNull(saved.count):null;
+   }
    const snap=await lookup(date);
    if(!snap)return null;
    try{return metricValue(snap,metric,ref,scope,owner)}catch(error){console.warn('History value unavailable',error);return null}
