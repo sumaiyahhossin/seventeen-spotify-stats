@@ -2534,7 +2534,7 @@ $('#archiveDate').addEventListener('change',e=>{
  buildArchiveCanonicalIds(verifiedArchiveReference||current.group);
  const manifest=await load('data/manifest.json')||{dates:[],solo_dates:[]};
  groupDates=[...new Set([...(manifest.dates||[]),current.group?.date].filter(Boolean))].sort().reverse();
- soloHistoricalDates=new Set(manifest.solo_dates||[]);
+ soloHistoricalDates=new Set(manifest.solo_legacy_dates||manifest.solo_dates||[]);
  soloDates=[...new Set([...(manifest.solo_dates||[]),current.solo?.date].filter(Boolean))].sort().reverse();
  useDatesForTab();syncCalendar();await render();
  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,savedScroll)));
