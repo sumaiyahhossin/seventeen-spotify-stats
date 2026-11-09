@@ -98,6 +98,9 @@ def check_viewport(driver,width,height):
     print('Verified historical solo gains:',history_check,flush=True)
     assert history_check=={'total':183,'matched':183,'gain':998787,'junGain':12925}, history_check
 
+    # The desktop smoke test may leave Discography selected for the mobile pass.
+    # Explicitly select Tracks before checking the ranked list.
+    click(driver,'#rankCategory button[data-type="tracks"]')
     # Daily tracks must rank by daily gain, not by cumulative streams.
     driver.execute_script("""
       const order=document.getElementById('order');
