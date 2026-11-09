@@ -14,11 +14,13 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 const dayBefore=date=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-1);return d.toISOString().slice(0,10)};
 const monday=date=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-(d.getUTCDay()+6)%7);return d.toISOString().slice(0,10)};
 const firstOfMonth=date=>date.slice(0,7)+'-01';
+const firstOfYear=date=>date.slice(0,4)+'-01-01';
+const sameTitle=name=>String(name||'').normalize('NFKC').toLowerCase().replace(/[^\p{L}\p{N}]+/gu,'');
 const unique=arr=>[...new Set(arr)];
 const artistIds=[['SEVENTEEN','7nqOGRxlXj7N2JYbgNEjYH'],['S.Coups',null],['Jeonghan','6KDLlQYeeqUe5OQ2JrdNzF'],['Joshua','74AwWFYdjQ3ER5vHO4H7b0'],['Jun','38Gn0ZVC8TQwuaMxBK1yRV'],['Hoshi','6nWKAdMv1BDq1zHfZzkdbR'],['Wonwoo','3rHcBT06Vb1XGVUWhDALZt'],['Woozi','4TdiASPlU3QdZvGQBothcQ'],['Dokyeom','7G1kUsPtQCdolV6CPwHmh2'],['Mingyu','5gUpo0BRmo6EOTbyU3z5Ay'],['The8','4DqFd6XE3dX4LWXHJVVpLk'],['Seungkwan','0Vb2DjojEYsasFpc3aTZb6'],['Vernon','2Y34b9AOK30zXgL7cAH4NG'],['Dino','5YaeXxzvqGNBCguELlKo6G'],['BSS','1uAT5bTSp6dWbNmixIUP5t'],['JxW','7GvlsjcgBrsE578yghOq7D'],['HxW','1EReYiseDwE51FzGm7EK9n'],['CxM','7kjuLdYbtTkWBToMu2ebZN'],['DxS','4wBjmEkWhY4T22q00CiF5V'],['V8',null],['Picheolin','3V2EC4dPYLgtbi0TtrB1RA'],['JxJ',null]];
 const members=new Set(artistIds.slice(1,14).map(x=>x[0]));
 const units=new Set(artistIds.slice(14).map(x=>x[0]));
-const state={catalog:null,group:null,solo:null,media:null,followers:{},manifest:null,rows:[],albums:[],albumSpecs:[],snapshots:new Map(),page:0,limit:50,period:'overall'};
+const state={catalog:null,group:null,solo:null,media:null,followers:{},manifest:null,rows:[],albums:[],albumSpecs:[],legacyLinks:null,snapshots:new Map(),page:0,limit:50,period:'overall'};
 async function read(path){const r=await fetch(path,{cache:'no-cache'});if(!r.ok)throw new Error(path+' returned '+r.status);return r.json()}
 function nameFromRelease(release,id,index){
  const official=release.track_titles?.[id];
@@ -135,29 +137,68 @@ async function snapshot(scope,date){
  if(state.snapshots.has(key))return state.snapshots.get(key);
  const current=state[scope];
  if(current.date===date)return current;
- if(!(scope==='group'?(state.manifest.dates||[]):(state.manifest.solo_dates||[])).includes(date))return null;
+ const valid=(scope==='group'?state.manifest.dates:
+  [...(state.manifest.solo_dates||[]),...(state.manifest.solo_legacy_dates||[])])||[];
+ if(!valid.includes(date))return null;
  let saved=null;
- try{saved=await read('data/history/'+scope+'-'+date+'.json')}catch{}
- if(!saved||saved.date!==date||!saved.tracks)saved=null;
+ const paths=scope==='solo'&&(state.manifest.solo_legacy_dates||[]).includes(date)?
+  ['solo-'+date+'.json','data/history/solo-'+date+'.json']:
+  ['data/history/'+scope+'-'+date+'.json'];
+ for(const path of paths){
+  try{const value=await read(path);if(value?.date===date&&value.tracks){saved=value;break}}catch{}
+ }
  state.snapshots.set(key,saved);
  return saved;
 }
 function boundaryDate(scope,period){
- const current=state[scope].date;
- if(period==='daily')return dayBefore(current);
- if(period==='weekly')return dayBefore(monday(current));
- if(period==='monthly')return dayBefore(firstOfMonth(current));
+ const date=state[scope].date;
+ if(period==='daily')return dayBefore(date);
+ if(period==='weekly')return dayBefore(monday(date));
+ if(period==='monthly')return dayBefore(firstOfMonth(date));
+ if(period==='yearly')return dayBefore(firstOfYear(date));
  return null;
+}
+// Historical spreadsheets reused Spotify IDs for different songs and stored
+// the actual song under a separate legacy key (e.g. Water vs Candy).
+// Never subtract two songs merely because their dictionary keys match.
+function verifiedBaselineValue(scope,id,baseline){
+ if(!baseline?.tracks)return null;
+ const currentName=scope==='group'?state.group.names?.[id]:
+  (state.media.tracks?.[id]?.title||state.rows.find(r=>r.id===id)?.title);
+ const title=sameTitle(currentName);
+ if(!title)return null;
+ const recorded=baseline.tracks[id],recordedName=baseline.names?.[id];
+ // Modern Spotify snapshots have stable ID identities. Older imported
+ // archives require a title match, not just a key match.
+ if(Number.isFinite(recorded)&&
+    ((!baseline.names&&!baseline.source)||
+     (recordedName&&sameTitle(recordedName)===title)))
+  return recorded;
+ const candidates=[];
+ for(const [oldId,oldName] of Object.entries(baseline.names||{})){
+  if(sameTitle(oldName)!==title||!Number.isFinite(baseline.tracks[oldId]))continue;
+  if(scope==='solo'){
+   const index=Number(oldId.split(':').at(-1));
+   const linked=state.legacyLinks?.byIndex?.[index]?.id;
+   // Shared solo titles are ambiguous without an explicit workbook mapping.
+   if(linked!==id)continue;
+  }
+  candidates.push(baseline.tracks[oldId]);
+ }
+ // Multiple keys for identical values are a verified duplicate edition;
+ // distinct values with the same title may represent different recordings.
+ return candidates.length&&candidates.every(n=>n===candidates[0])?candidates[0]:null;
 }
 async function applyPeriod(){
  const rows=[...state.rows,...state.albums],period=state.period;
  if(period==='overall'){rows.forEach(row=>row.gain=null);return}
- const boundaries=await Promise.all(['group','solo'].map(async scope=>snapshot(scope,boundaryDate(scope,period))));
+ const boundaries=await Promise.all(['group','solo'].map(async scope=>
+  snapshot(scope,boundaryDate(scope,period))));
  const baselines={group:boundaries[0],solo:boundaries[1]};
  for(const row of rows){
-  const ids=row.ids||[row.id],now=state[row.scope].tracks,previous=baselines[row.scope]?.tracks;
+  const ids=row.ids||[row.id],now=state[row.scope].tracks,old=baselines[row.scope];
   const deltas=ids.map(id=>{
-   const a=now?.[id],b=previous?.[id];
+   const a=now?.[id],b=verifiedBaselineValue(row.scope,id,old);
    return Number.isFinite(a)&&Number.isFinite(b)&&a>=b?a-b:null;
   });
   row.gain=deltas.length&&deltas.every(Number.isFinite)?deltas.reduce((a,b)=>a+b,0):null;
@@ -256,13 +297,13 @@ function renderTracks(){
 }
 async function init(){
  try{
-  const [catalog,group,solo,media,followers,manifest,admin,soloAlbumSpecs]=await Promise.all([
+  const [catalog,group,solo,media,followers,manifest,admin,soloAlbumSpecs,legacyLinks]=await Promise.all([
    read('data/catalog.json'),read('data/group.json'),read('data/solo.json'),
    read('data/solo-media.json'),read('data/solo-followers.json').catch(()=>({followers:{}})),
    read('data/manifest.json'),read('data/admin-releases.json').catch(()=>({releases:[]})),
-   read('data/solo-albums.json')
+   read('data/solo-albums.json'),read('data/solo-legacy-track-links.json')
   ]);
-  state.catalog=catalog;state.group=group;state.solo=solo;state.media=media;state.followers=followers.followers||{};state.manifest=manifest;state.albumSpecs=soloAlbumSpecs;
+  state.catalog=catalog;state.group=group;state.solo=solo;state.media=media;state.followers=followers.followers||{};state.manifest=manifest;state.albumSpecs=soloAlbumSpecs;state.legacyLinks=legacyLinks;
   for(const release of admin.releases||[]){const list=catalog[release.scope];if(list&&!list.some(r=>r.key===release.key))list.push(release)}
   buildRows();
   for(const extra of admin.releases||[])if(extra.scope==='solo'&&extra.release_type==='album')
