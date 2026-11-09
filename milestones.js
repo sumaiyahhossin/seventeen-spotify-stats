@@ -3,6 +3,12 @@ const $=id=>document.getElementById(id);
 const releaseByKey={"g3":"2015-12-04","g4":"2016-02-12","g14":"2018-08-13","g17":"2019-05-19","g19":"2019-08-05","g21":"2019-12-01","g26":"2020-09-15","g30":"2021-07-30","g31":"2021-06-30","g34":"2022-04-15","g38":"2022-08-26","g40":"2022-12-08","g42":"2023-08-16","g45":"2023-09-01","g47":"2023-12-25","g48":"2024-02-16","g55":"2024-05-03","g57":"2024-10-18","g60":"2025-06-30","g61":"2025-07-14","g62":"2025-07-25","g63":"2025-10-10","g64":"2026-02-27","g7":"2016-07-04","g23":"2020-06-22","g24":"2020-08-24","g37":"2022-07-18","g44":"2023-08-23","g50":"2024-04-29","g51":"2024-04-29","g52":"2024-04-29","g53":"2024-04-29","g54":"2024-04-29","g1":"2015-05-29","g2":"2015-09-10","g5":"2016-04-25","g6":"2016-07-04","g8":"2016-12-05","g9":"2017-05-22","g10":"2017-11-06","g11":"2018-02-05","g12":"2018-05-30","g13":"2018-07-16","g16":"2019-01-21","g18":"2019-05-29","g20":"2019-09-16","g22":"2020-04-01","g25":"2020-09-09","g27":"2020-10-19","g28":"2021-04-21","g29":"2021-06-18","g32":"2021-10-22","g33":"2021-12-08","g35":"2022-05-27","g36":"2022-07-18","g39":"2022-11-09","g41":"2023-04-24","g43":"2023-08-23","g46":"2023-10-23","g49":"2024-04-29","g56":"2024-10-14","g58":"2024-11-27","g59":"2025-05-26"};
 const norm=s=>String(s||'').toLowerCase().normalize('NFKC').replace(/[^a-z0-9]/g,'');
 const format=d=>new Date(d+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric',year:'numeric'});
+const mobileCount=n=>new Intl.NumberFormat('en-US',{notation:'compact',maximumFractionDigits:1}).format(n);
+const mobileDate=d=>{
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(String(d||'')))return '—';
+ const [year,month,day]=d.split('-');return Number(month)+'/'+Number(day)+'/'+year.slice(2);
+};
+const responsiveValue=(full,small)=>'<span class="wide-value">'+full+'</span><span class="narrow-value" aria-hidden="true">'+small+'</span>';
 const days=(a,b)=>Math.round((Date.parse(b)-Date.parse(a))/86400000);
 function calendarElapsed(a,b){
  if(!a||!b||b<a)return '';
@@ -256,9 +262,10 @@ function renderUpcoming(){
   const img='<img class="song-cover" data-song-name="'+esc(r.name)+'" data-spotify-id="'+esc(r.id||'')+'" alt="" loading="lazy">';
   return '<tr><td><div class="song-cell"><span class="song-rank">'+String(i+1).padStart(2,'0')+'</span>'+img+'<div class="song-meta"><span class="song-title">'+esc(r.name)+'</span><span class="song-release">'+r.value.toLocaleString()+' streams</span></div></div></td>'+
   '<td data-label="NEXT MILESTONE"><span class="reached-value">'+shortStreams(r.target)+'</span></td>'+
-  '<td data-label="STREAMS LEFT">'+r.remaining.toLocaleString()+'</td>'+
-  '<td data-label="DAILY GAIN">'+(r.gain==null?'—':'+'+r.gain.toLocaleString())+'</td>'+
-  '<td data-label="ESTIMATED ARRIVAL"><span class="days-value">'+(r.estimate==null?'—':r.estimate.toLocaleString()+' days')+'</span>'+(r.expected?'<div class="song-release">'+format(r.expected)+'</div>':'')+'</td></tr>';
+  '<td data-label="STREAMS LEFT" title="'+r.remaining.toLocaleString()+' streams">'+responsiveValue(r.remaining.toLocaleString(),mobileCount(r.remaining))+'</td>'+
+  '<td data-label="DAILY GAIN" title="'+(r.gain==null?'Unavailable':r.gain.toLocaleString()+' streams')+'">'+responsiveValue(r.gain==null?'—':'+'+r.gain.toLocaleString(),r.gain==null?'—':'+'+mobileCount(r.gain))+'</td>'+
+  '<td data-label="ESTIMATED ARRIVAL" title="'+(r.expected?format(r.expected):'Unavailable')+'">'+
+   responsiveValue('<span class="days-value">'+(r.estimate==null?'—':r.estimate.toLocaleString()+' days')+'</span>'+(r.expected?'<div class="song-release">'+format(r.expected)+'</div>':''),r.expected?mobileDate(r.expected):(r.estimate==null?'—':r.estimate+'d'))+'</td></tr>';
  }).join(''):'<tr><td colspan="5">No tracks waiting for this milestone.</td></tr>';
  $('upcomingStatus').textContent=rows.length+' songs · Sorted by '+($('upcomingSort').selectedOptions[0]?.textContent||'Next milestone')+' · Latest snapshot: '+format(currentSnapshot.date)+(deltaDays!==1?' · Daily growth unavailable until two consecutive snapshots exist':' · Estimates use the latest one-day gain');
  loadMilestoneCovers();
@@ -319,8 +326,8 @@ function build(){
   const reached=r.date?format(r.date):r.range?format(r.range.from)+' – '+format(r.range.date):'Unknown';
   const elapsed=r.duration!=null?r.duration.toLocaleString()+' days <span class="elapsed-calendar">('+esc(calendarElapsed(r.release,r.date))+')</span>':'—';
   return '<tr><td><div class="song-cell"><span class="song-rank">'+String(index+1).padStart(2,'0')+'</span>'+image+'<div class="song-meta"><span class="song-title">'+esc(r.name)+'</span><span class="song-release">Released '+esc(released)+'</span></div></div></td>'+
-   '<td data-label="MILESTONE REACHED"><span class="reached-value">'+esc(reached)+'</span></td>'+
-   '<td data-label="TIME FROM RELEASE"><span class="days-value">'+elapsed+'</span></td></tr>';
+   '<td data-label="MILESTONE REACHED" title="'+esc(reached)+'"><span class="reached-value">'+responsiveValue(esc(reached),r.date?mobileDate(r.date):r.range?mobileDate(r.range.date):'—')+'</span></td>'+
+   '<td data-label="TIME FROM RELEASE" title="'+(r.duration==null?'Unavailable':r.duration.toLocaleString()+' days')+'"><span class="days-value">'+responsiveValue(elapsed,r.duration==null?'—':r.duration.toLocaleString()+'d')+'</span></td></tr>';
  }).join(''):'<tr><td colspan="3">No songs with a recorded milestone at this level.</td></tr>';
  loadMilestoneCovers();
 
