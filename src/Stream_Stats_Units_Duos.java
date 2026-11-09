@@ -706,6 +706,20 @@ public class Stream_Stats_Units_Duos {
                         }
                     } catch (Exception ignored) {}
                 }
+                if (!aboutClicked) {
+                    // Some Spotify layouts expose the About heading as a
+                    // clickable section rather than a button.
+                    for (WebElement el : driver.findElements(By.xpath(
+                            "//*[self::span or self::div or self::h2][normalize-space(text())='About']"))) {
+                        try {
+                            if (!el.isDisplayed()) continue;
+                            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", el);
+                            aboutClicked = true;
+                            clickMethod = "about-heading";
+                            break;
+                        } catch (Exception ignored) {}
+                    }
+                }
                 if (aboutClicked) {
                     Thread.sleep(1300);
                 }
@@ -731,6 +745,20 @@ public class Stream_Stats_Units_Duos {
                         System.out.println("STAT_FOLLOWERS|" + artistId + "|" + count);
                         return;
                     }
+                }
+            }
+            // Fallback for Spotify layouts that display the exact count in
+            // the artist's page rather than opening an About dialog. Never
+            // convert abbreviated labels such as 1.2M into invented numbers.
+            String pageText = getBodyText(driver).replace((char)160, ' ');
+            Matcher exactPageFollowers = Pattern.compile(
+                "(?<![\\\\d.])([0-9]{1,3}(?:[, ]+[0-9]{3})+|[0-9]{4,11})\\\\s+followers?\\\\b",
+                Pattern.CASE_INSENSITIVE).matcher(pageText);
+            if (exactPageFollowers.find()) {
+                long count = Long.parseLong(exactPageFollowers.group(1).replaceAll("[^0-9]", ""));
+                if (count >= 1000 && count <= 1000000000L) {
+                    System.out.println("STAT_FOLLOWERS|" + artistId + "|" + count);
+                    return;
                 }
             }
             // Diagnostic only: record page structure, never claim a shortened
