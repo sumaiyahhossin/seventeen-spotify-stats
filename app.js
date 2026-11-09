@@ -2967,9 +2967,15 @@ async function render(){const token=++renderToken;
  // verified daily increases. Clearly mark any rescued partial period.
  if(periodic&&baseline?.fallbackPairs?.length){
   for(const row of rows){
-   if(!row.id||row.gain==null)continue;
-   const boundary=baseline.start?snapshotDelta(s,baseline.start,row.id):null;
-   if(boundary==null){
+   if(row.gain==null)continue;
+   const releases=row.historyReleases?.length?row.historyReleases:
+    row.artworkRelease?[row.artworkRelease]:[];
+   const ids=row.id?[row.id]:[...new Set(releases.flatMap(key=>
+    (catalog[tab]||[]).find(item=>item.key===key)?.tracks||[]))];
+   if(!ids.length)continue;
+   const incomplete=ids.some(id=>!baseline.start||
+    snapshotDelta(s,baseline.start,id)==null);
+   if(incomplete){
     row.gainPartial=true;
     if(row.change!=null)row.changePartial=true;
    }
