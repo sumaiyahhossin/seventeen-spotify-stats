@@ -38,13 +38,15 @@
  modal.addEventListener('click',e=>{if(e.target===modal)close()});
  document.addEventListener('keydown',e=>{if(!modal.hidden&&e.key==='Escape')close()});
  const numberOrNull=n=>n!=null&&Number.isFinite(Number(n))?Number(n):null;
+ const scopeIsSolo=()=>tab==='solo';
  const exactIds=(snapshot,ids,reference)=>{
   const vals=[];
   for(const id of ids){
    let value=numberOrNull(snapshot.tracks?.[id]);
    if(value==null&&reference&&snapshot.date<reference.date&&
       typeof comparablePrevious==='function'){
-    const mapped=comparablePrevious(reference,snapshot,id);
+    const mapped=(scopeIsSolo()&&isHistorical(snapshot)&&typeof verifiedSoloLegacyValue==='function'
+      ?verifiedSoloLegacyValue(snapshot,id):null)||comparablePrevious(reference,snapshot,id);
     if(mapped)value=numberOrNull(mapped.value);
    }
    if(value==null)return null;
@@ -61,7 +63,8 @@
   if(metric.kind==='track'){
    let value=numberOrNull(snapshot.tracks?.[metric.id]);
    if(value==null&&reference&&snapshot.date<reference.date){
-    const found=comparablePrevious(reference,snapshot,metric.id);
+    const found=(scope==='solo'&&isHistorical(snapshot)&&typeof verifiedSoloLegacyValue==='function'
+      ?verifiedSoloLegacyValue(snapshot,metric.id):null)||comparablePrevious(reference,snapshot,metric.id);
     value=found?numberOrNull(found.value):null;
    }
    return value;
@@ -115,33 +118,86 @@
   catch(error){tbody.innerHTML='<tr><td colspan="4">Unable to load selected archive. Try selecting a date and reopening.</td></tr>';return}
   if(id!==opening)return;
   if(!ref?.date){tbody.innerHTML='<tr><td colspan="4">No saved streaming snapshot is available for this view.</td></tr>';return}
-  $('#svtHistoryNote').textContent='Last 10 calendar dates ending '+dateText(ref.date)+' · '+(scope==='group'?'OT13':owner||'Units & Solo')+' · '+(rank.split('-').at(-1)||'daily')+' view. Total is cumulative; Increase is day-over-day.';
-  const days=[];let date=ref.date;
-  for(let i=0;i<12;i++){days.push(date);date=previousDate(date)}
-  const values=await Promise.all(days.map(async date=>{
-   try{const snap=date===ref.date?ref:await getDate(scope,date);
-    let value=null;try{value=metricValue(snap,metric,ref,scope,owner)}catch(error){console.warn('History metric unavailable',error)}return {date,value,snapshot:!!snap}
-   }catch{return {date,value:null,snapshot:false}}
-  }));
-  if(id!==opening)return;
-  tbody.replaceChildren();
-  // Display the ten saved calendar dates oldest first, while calculating
-  // each gain against its actual preceding day (not the preceding table row).
-  for(let i=9;i>=0;i--){
-   const day=values[i],prev=values[i+1],before=values[i+2];
-   const gain=day.value!=null&&prev.value!=null&&day.value>=prev.value?day.value-prev.value:null;
-   const previousGain=prev.value!=null&&before.value!=null&&prev.value>=before.value?prev.value-before.value:null;
-   const change=gain!=null&&previousGain!=null?gain-previousGain:null;
+  const mode=rank.endsWith('monthly')?'monthly':rank.endsWith('weekly')?'weekly':'daily';
+  const titleLabel=mode==='monthly'?'month':mode==='weekly'?'week':'day';
+  $('#svtHistoryNote').textContent='Last 10 '+titleLabel+'s through '+dateText(ref.date)+' · '+(scope==='group'?'OT13':owner||'Units & Solo')+' · oldest first. Total is cumulative; increase requires verified comparable snapshots.';
+  const lookup=async date=>{
+   try{return date===ref.date?ref:await getDate(scope,date)}
+   catch{return null}
+  };
+  const valueOf=async date=>{
+   const snap=await lookup(date);
+   if(!snap)return null;
+   try{return metricValue(snap,metric,ref,scope,owner)}catch(error){console.warn('History value unavailable',error);return null}
+  };
+  const renderRow=(label,total,increase,change,partial=false)=>{
    const tr=document.createElement('tr');
    const showNumber=(n,signed=false)=>n==null?'—':(signed?(n>=0?'+':'−'):'')+fmt(Math.abs(n));
-   const cells=[dateText(day.date),showNumber(day.value),showNumber(gain,true),showNumber(change,true)];
+   const cells=[label,showNumber(total),showNumber(increase,true)+(partial&&increase!=null?'*':''),showNumber(change,true)];
    for(let k=0;k<cells.length;k++){
     const td=document.createElement('td');td.textContent=cells[k];
-    if(k>1&&((k===2?gain:change)!=null))td.className=(k===2?gain:change)>=0?'positive':'negative';
+    if(k>1&&((k===2?increase:change)!=null))td.className=(k===2?increase:change)>=0?'positive':'negative';
     if(cells[k]==='—')td.className='unavailable';
     tr.append(td);
    }
    tbody.append(tr);
+  };
+  tbody.replaceChildren();
+  if(mode==='daily'){
+   const days=[];let day=ref.date;
+   for(let i=0;i<12;i++){days.push(day);day=previousDate(day)}
+   const values=await Promise.all(days.map(async date=>({date,value:await valueOf(date)})));
+   if(id!==opening)return;
+   for(let i=9;i>=0;i--){
+    const day=values[i],prev=values[i+1],before=values[i+2];
+    const gain=day.value!=null&&prev.value!=null&&day.value>=prev.value?day.value-prev.value:null;
+    const old=prev.value!=null&&before.value!=null&&prev.value>=before.value?prev.value-before.value:null;
+    renderRow(dateText(day.date),day.value,gain,gain!=null&&old!=null?gain-old:null);
+   }
+  }else{
+   // Use fixed calendar weeks/months (including periods with no saved day),
+   // not ten arbitrary snapshots. A full period increase requires the
+   // previous boundary observation and the final day of that period.
+   const move=(date,n)=>{
+    const d=new Date(date+'T12:00:00Z');
+    if(mode==='weekly')d.setUTCDate(d.getUTCDate()+7*n);
+    else {d.setUTCDate(1);d.setUTCMonth(d.getUTCMonth()+n)}
+    return d.toISOString().slice(0,10);
+   };
+   const periodStart=date=>mode==='monthly'?date.slice(0,7)+'-01':(()=>{
+    const d=new Date(date+'T12:00:00Z');
+    d.setUTCDate(d.getUTCDate()-((d.getUTCDay()+6)%7));
+    return d.toISOString().slice(0,10);
+   })();
+   const endOf=start=>{const next=move(start,1);return previousDate(next)};
+   const dateList=[...new Set([...((scope==='solo'?soloDates:groupDates)||[]),ref.date])].filter(d=>/^20\\d{2}-\\d{2}-\\d{2}$/.test(d)&&d<=ref.date).sort();
+   const start=periodStart(ref.date);
+   const periods=Array.from({length:11},(_,i)=>move(start,i-10));
+   const periodData=await Promise.all(periods.map(async first=>{
+    const last=endOf(first),visibleEnd=last<ref.date?last:ref.date;
+    const observed=dateList.filter(d=>d>=first&&d<=visibleEnd);
+    const lastObserved=observed.at(-1)||null;
+    const priorBoundary=previousDate(first);
+    const startAvailable=dateList.includes(priorBoundary);
+    const hasFullEnd=!!lastObserved&&lastObserved===visibleEnd;
+    const [lastValue,firstValue]=await Promise.all([
+      lastObserved?valueOf(lastObserved):Promise.resolve(null),
+      startAvailable?valueOf(priorBoundary):Promise.resolve(null)
+    ]);
+    const gain=hasFullEnd&&firstValue!=null&&lastValue!=null&&lastValue>=firstValue
+       ?lastValue-firstValue:null;
+    const label=mode==='monthly'
+       ?new Date(first+'T12:00:00Z').toLocaleDateString('en-US',{month:'short',year:'numeric',timeZone:'UTC'})
+       :dateText(first)+' – '+dateText(last);
+    return {label,total:lastValue,gain,partial:visibleEnd!==last||!hasFullEnd};
+   }));
+   if(id!==opening)return;
+   for(let i=1;i<periodData.length;i++){
+    const row=periodData[i],prior=periodData[i-1];
+    const change=row.gain!=null&&prior.gain!=null&&!row.partial&&!prior.partial?row.gain-prior.gain:null;
+    renderRow(row.label,row.total,row.gain,change,row.partial);
+   }
+   $('#svtHistoryNote').textContent+=' · * In-progress period; missing boundaries are shown as —.';
   }
   modal.querySelector('.svt-history-close').focus();
  }
