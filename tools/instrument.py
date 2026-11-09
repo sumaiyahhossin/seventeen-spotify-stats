@@ -106,8 +106,11 @@ if kind in ('group','solo'):
         }
     '''
     probe=probe.replace('__FIRST_TRACK_ID__',first_track)
+    # Insert after the browser's CDP Network.enable call, not directly
+    # after new ChromeDriver(). Otherwise the early follower-only return
+    # skips network capture and exact artist statistics stay invisible.
     marker=("nf = NumberFormat.getInstance(Locale.US);" if kind=='group'
-            else "WebDriver driver = new ChromeDriver(options);")
+            else '((ChromeDriver) driver).executeCdpCommand("Network.enable", new HashMap<String, Object>());')
     if marker not in source:
         raise RuntimeError('Could not insert '+kind+' first-track probe')
     # An independent, lightweight follower-only pass can run when Spotify
