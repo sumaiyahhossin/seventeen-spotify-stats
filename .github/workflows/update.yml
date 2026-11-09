@@ -82,25 +82,19 @@ jobs:
 
   followers:
     name: Collect verified solo and unit followers
-    # Check all due profiles by single-artist API daily; up to three unresolved
-    # profiles get the browser fallback. Never invent exact counts.
-    # At 19:00 UTC daily (2 PM EST / 3 PM EDT) or when manually dispatched.
-    # Retest exact follower collection through Spotify artist profile images.
+    # Retry a rotating batch of missing exact follower counts hourly.
+    # When fully verified, refresh each profile once its observation is stale.
+    # No rounded estimates or invented historical follower observations.
     if: github.event_name == 'workflow_dispatch' || github.event_name == 'schedule' || (github.event_name == 'push' && github.event.head_commit.message == 'Run one-profile Spotify follower diagnostic')
     runs-on: ubuntu-24.04
-    timeout-minutes: 90
+    timeout-minutes: 40
     steps:
       - uses: actions/checkout@v5
         with:
           persist-credentials: true
       - name: Check exact follower coverage
         id: follower_gate
-        run: |
-          if [ "${{ github.event_name }}" = "schedule" ] && [ "$(date -u +%H)" != "19" ]; then
-            echo "due=false" >> "$GITHUB_OUTPUT"
-          else
-            python tools/solo_followers_due.py >> "$GITHUB_OUTPUT"
-          fi
+        run: python tools/solo_followers_due.py >> "$GITHUB_OUTPUT"
       - uses: actions/setup-java@v5
         if: steps.follower_gate.outputs.due == 'true'
         with:
@@ -133,5 +127,5 @@ jobs:
             git add -- data/solo-followers.json
             python tools/publish_snapshots.py
           else
-            echo 'No verified follower totals yet; nothing to publish. Daily verification will retry.'
+            echo 'No exact follower count in this batch; the next hourly attempt will cover another batch.'
           fi
