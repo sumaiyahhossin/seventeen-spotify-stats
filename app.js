@@ -347,7 +347,7 @@ function historicalKind(s,id){
  if(!name)return 'track';
  if(/\bTOTAL STREAMS\s*$/i.test(name)||/^\s*picheolin\s+streams\s*$/i.test(name))return 'grand';
  if(/monthly\s+listeners?|followers?/i.test(name))return 'audience';
- if(/\btotal\s*:?$/i.test(name))return 'album';
+ if(/\b(?:total|tota;)\s*:?$/i.test(name))return 'album';
  return 'track';
 }
 function isHistorical(s){return s?.source==='historical spreadsheet'}
@@ -367,6 +367,28 @@ function audienceValue(s,kind){
  });
  return found?s.tracks[found]:null;
 }
+
+/* Each historical member has their own listener/follower row in the workbook.
+   Do not use Jeonghan's audience metrics for another member or for all units. */
+function soloArtistAudienceValue(snapshot,artist,kind){
+ if(!snapshot||['JxJ','V8'].includes(artist))return null;
+ const owner=String(artist||'').toLowerCase().replace(/[^a-z0-9]/g,'');
+ if(!isHistorical(snapshot)){
+  const id=soloArtists.find(([name])=>name.toLowerCase()===artist.toLowerCase())?.[1];
+  const value=kind==='listeners'?snapshot.listeners?.[id]:snapshot.followers?.[id];
+  return value!=null&&Number.isFinite(Number(value))?Number(value):null;
+ }
+ const suffix=kind==='listeners'?/monthlylisteners?$/i:/followers?$/i;
+ for(const [id,name] of Object.entries(snapshot.names||{})){
+  const normalized=String(name).toLowerCase().replace(/[^a-z0-9]/g,'');
+  if(normalized.startsWith(owner)&&suffix.test(normalized)){
+   const n=snapshot.tracks?.[id];
+   if(Number.isFinite(Number(n))&&n!=null)return Number(n);
+  }
+ }
+ return null;
+}
+
 function displayTrackName(name){
  const raw=String(name||'').trim().replace(/&#x20;|&nbsp;/gi,' ').trim(),key=coverKey(raw);
  if(/^[A-Za-z0-9]{22}$/.test(raw))return 'Unidentified Spotify track';
@@ -2115,6 +2137,8 @@ document.fonts?.ready.then(scheduleMobileRankingNameFit).catch(()=>{});
 
 async function render(){const token=++renderToken;
  document.body.classList.toggle('svt-units-solo',tab==='solo');
+ document.body.classList.toggle('svt-solo-all',tab==='solo'&&!selectedSoloArtist);
+ document.body.classList.toggle('svt-solo-without-audience',tab==='solo'&&['JxJ','V8'].includes(selectedSoloArtist));
  $('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';try{useDatesForTab();renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;if(tab==='group')updateYear2026Streams();syncCalendar();restoreGroupNames(s,p);
  document.body.classList.toggle('svt-overall-four-cols',rank.endsWith('overall'));
  document.body.classList.toggle('svt-daily-ranking',rank.endsWith('daily'));
@@ -2155,7 +2179,7 @@ async function render(){const token=++renderToken;
   $('#dateDescription').textContent+=' · Versus November 2025: comparison uses only saved consecutive-day gains in each month; missing days are not estimated.';
  }
  $('#gainHeading').textContent=(isPeriod?periodName.toUpperCase():rank.endsWith('overall')?'TOTAL':'DAILY')+' STREAM GROWTH';
- const ids=s?trackIds(s):[];
+ const ids=s?(tab==='solo'&&isHistorical(s)?soloLegacyTrackIds(s,null):trackIds(s)):[];
  const memberIds=tab==='solo'&&selectedSoloArtist&&s?soloArtistTrackIds(s):ids;
  const groupTrackCount=s&&tab==='group'&&isHistorical(s)?(Object.values(s.names||{}).some(n=>/^tiny light$/i.test(String(n).trim()))?227:226):ids.length;
  
@@ -2163,7 +2187,9 @@ async function render(){const token=++renderToken;
  const periodStartDate=periodStart?.date||'';
  const audiencePeriod=isPeriod?periodName.toLowerCase()+' period':rank.endsWith('overall')?'selected date':'day';
  const setAudience=(kind,valueId,changeId)=>{
-  const now=audienceValue(s,kind),before=audienceValue(periodStart,kind);
+  const getter=x=>tab==='solo'&&selectedSoloArtist
+   ?soloArtistAudienceValue(x,selectedSoloArtist,kind):audienceValue(x,kind);
+  const now=getter(s),before=getter(periodStart);
   $(valueId).textContent=fmt(now);
   const valid=now!=null&&before!=null&&s&&periodStart&&Date.parse(s.date)>Date.parse(periodStart.date);
   const diff=valid?now-before:null;
@@ -2171,7 +2197,7 @@ async function render(){const token=++renderToken;
  };
  setAudience('listeners','#listeners','#listenersChange');
  setAudience('followers','#followers','#followersChange');
- const grandId=s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;
+ const grandId=tab==='group'&&s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;
  $('#total').textContent=s?fmt(tab==='solo'&&selectedSoloArtist?memberIds.reduce((a,id)=>a+Number(s.tracks[id]||0),0):grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';
  const gainNote=$('#gain').nextElementSibling;
  const comparisonCard=$('#periodComparisonCard');
