@@ -178,26 +178,81 @@ function artistStats(){
   return {...a,listeners:Number.isFinite(listeners)?listeners:null,followers,streams};
  });
 }
+function artworkFor(row){
+ try{const source=window.svtSharedMedia?.coverFor(row);if(source)return source}catch(e){console.warn('Shared cover not ready',e)}
+ if(row.scope==='solo'){
+  const localAlbum=row.kind==='album'?state.media.albums?.[row.releaseKey]:null;
+  const localTrack=state.media.tracks?.[row.id]?.local;
+  if(localAlbum||localTrack)return 'image:'+(localAlbum||localTrack);
+ }
+ const id=row.id||row.ids?.[0];
+ return validId(id||'')?'track:'+id:'missing';
+}
+function paintArtists(){
+ document.querySelectorAll('#svtAllView [data-all-artist-photo]').forEach(img=>{
+  if(img.dataset.requested)return;
+  img.dataset.requested='1';
+  window.svtSharedMedia?.artistImage(img,img.dataset.allArtistPhoto);
+ });
+}
 function renderArtists(){
  const metric=$('artistMetric').value,scope=$('artistScope').value;
  const rows=artistStats().filter(a=>scope==='all'||(scope==='members'?members.has(a.name):units.has(a.name)));
  rows.sort((a,b)=>(b[metric]??-1)-(a[metric]??-1)||a.name.localeCompare(b.name));
- $('artistNote').textContent='Monthly listeners and streams: '+state.group.date+' (group), '+state.solo.date+' (solo/unit). Followers: separately verified readings; no invented profiles for JxJ or V8. Artist streams are based on distinct owned recording IDs and can overlap across unit and member credits.';
- $('artists').innerHTML=rows.map((a,i)=>'<tr><td><span class="song">'+(a[metric]==null?'—':i+1)+'. '+esc(a.name)+'</span><div class="sub">'+(a.name==='SEVENTEEN'?'Group':members.has(a.name)?'Member':'Unit')+'</div></td><td class="num">'+fmt(a.streams)+'</td><td class="num">'+fmt(a.listeners)+'</td><td class="num">'+fmt(a.followers)+'</td></tr>').join('');
+ $('artistNote').textContent='Monthly listeners and streams: '+state.group.date+' (group), '+state.solo.date+' (solo/unit). Followers: separately verified. JxJ and V8 have no independent Spotify profile. Shared recordings may be credited to multiple profiles, but count once in the combined catalog.';
+ $('artists').innerHTML=rows.map((a,i)=>
+ '<tr><td><div class="svt-all-person">'+
+ '<img class="svt-all-avatar artist-profile-photo" data-all-artist-photo="'+esc(a.name)+'" alt="'+esc(a.name)+' profile photo" loading="lazy">'+
+ '<div class="svt-all-person-copy"><span class="svt-all-song">'+(a[metric]==null?'—':i+1)+'. '+esc(a.name)+'</span>'+
+ '<div class="svt-all-sub">'+(a.name==='SEVENTEEN'?'Group':members.has(a.name)?'Member':'Unit')+
+ ' · '+(a.recordings.size||0)+' recordings<span class="svt-all-mobile-selected"> · '+
+ (metric==='listeners'?'Listeners':metric==='followers'?'Followers':'Streams')+': '+fmt(a[metric])+
+ '</span></div></div></div></td><td class="svt-all-num">'+fmt(a.streams)+
+ '</td><td class="svt-all-num">'+fmt(a.listeners)+'</td><td class="svt-all-num">'+fmt(a.followers)+'</td></tr>'
+ ).join('')||'<tr><td colspan="4" class="svt-all-status">No artists found.</td></tr>';
+ paintArtists();
 }
 function renderTracks(){
- const search=$('search').value.trim().toLowerCase(),owner=$('owner').value,sort=$('sort').value,period=state.period;
- const rows=state.rows.filter(r=>(owner==='all'||r.owners.includes(owner))&&(!search||[r.title,r.id,...r.owners,...r.releaseNames].join(' ').toLowerCase().includes(search)));
- const score=r=>period==='overall'?r.streams:r.gain;
- rows.sort((a,b)=>sort==='title'?(a.title||'').localeCompare(b.title||''):sort==='newest'?(b.date||'').localeCompare(a.date||''):sort==='oldest'?(a.date||'9999').localeCompare(b.date||'9999'):(score(b)??-1)-(score(a)??-1)||String(a.title).localeCompare(String(b.title)));
- const totalPages=Math.max(1,Math.ceil(rows.length/state.limit));state.page=Math.min(state.page,totalPages-1);
- const start=state.page*state.limit,shown=rows.slice(start,start+state.limit);
- $('gainTitle').textContent=period==='overall'?'':period[0].toUpperCase()+period.slice(1)+' gain';
- $('coverage').textContent='Latest saved group: '+state.group.date+' · solo/unit: '+state.solo.date+' · '+(period==='overall'?'Cumulative verified totals':period+' gains require prior calendar boundary');
- $('recordCount').textContent=rows.length.toLocaleString()+' recordings · '+state.rows.length.toLocaleString()+' distinct IDs overall';
- $('recordings').innerHTML=shown.map(r=>'<tr><td><a class="song" href="https://open.spotify.com/track/'+encodeURIComponent(r.id)+'" target="_blank" rel="noopener noreferrer">'+esc(r.title||'Unidentified Spotify recording')+'</a><div class="sub">'+esc(r.releaseNames[0]||'Release not documented')+(r.releaseNames.length>1?' · '+r.releaseNames.length+' releases':'')+'</div></td><td>'+esc(r.owners.join(' · '))+'</td><td>'+esc(r.date||'—')+'</td><td class="num">'+fmt(r.streams)+'</td><td class="num">'+(period==='overall'?'—':fmt(r.gain))+'</td></tr>').join('')||'<tr><td colspan="5" class="status">No matching recordings.</td></tr>';
+ const query=$('search').value.trim().toLowerCase(),owner=$('owner').value;
+ const order=$('sort').value,period=state.period,isAlbum=$('viewType').value==='albums';
+ const entire=isAlbum?state.albums:state.rows;
+ const rows=entire.filter(r=>(owner==='all'||r.owners.includes(owner))&&
+  (!query||[r.title,r.id||'',...r.owners,...r.releaseNames].join(' ').toLowerCase().includes(query)));
+ const score=row=>period==='overall'?row.streams:row.gain;
+ rows.sort((a,b)=>order==='title'?(a.title||'').localeCompare(b.title||''):
+  order==='newest'?(b.date||'').localeCompare(a.date||''):
+  order==='oldest'?(a.date||'9999').localeCompare(b.date||'9999'):
+  (score(b)??-1)-(score(a)??-1)||String(a.title).localeCompare(String(b.title)));
+ const totalPages=Math.max(1,Math.ceil(rows.length/state.limit));
+ state.page=Math.min(state.page,totalPages-1);
+ const shown=rows.slice(state.page*state.limit,(state.page+1)*state.limit);
+ $('recordHeading').textContent=isAlbum?'Every album':'Every saved recording';
+ $('gainTitle').textContent=period==='overall'?'Selected gain':period[0].toUpperCase()+period.slice(1)+' gain';
+ $('coverage').textContent='Latest saved group: '+state.group.date+' · solo/unit: '+state.solo.date+
+  ' · '+(period==='overall'?'Cumulative verified totals':period+' gains need a comparable saved date');
+ $('recordCount').textContent=rows.length.toLocaleString()+(isAlbum?' albums':' recordings')+
+  ' · '+entire.length.toLocaleString()+' '+(isAlbum?'total albums':'distinct recordings');
+ $('recordings').innerHTML=shown.map(row=>{
+  const name=esc(row.title||'Unidentified Spotify recording');
+  const artwork=esc(artworkFor(row));
+  const isTrack=validId(row.id||'');
+  const link=isTrack?'<a class="svt-all-song" href="https://open.spotify.com/track/'+encodeURIComponent(row.id)+
+   '" target="_blank" rel="noopener noreferrer">'+name+'</a>':'<span class="svt-all-song">'+name+'</span>';
+  const sub=(isAlbum?row.owners.join(' · '):row.releaseNames[0]||'Release not documented')+
+   (!isAlbum&&row.releaseNames.length>1?' · '+row.releaseNames.length+' releases':'')+
+   (row.date?' · '+row.date:'');
+  return '<tr><td><div class="svt-all-record"><span class="svt-all-art-holder">'+
+   '<img class="svt-all-cover cover" data-cover-track="'+artwork+'" data-cover-name="'+name+
+   '" data-cover-kind="'+(isAlbum?'album':'track')+'" alt="'+name+' cover" loading="lazy">'+
+   '<span class="cover-placeholder" hidden></span></span>'+
+   '<div class="svt-all-record-copy">'+link+'<div class="svt-all-sub">'+esc(sub)+
+   '</div></div></div></td><td>'+esc(row.owners.join(' · '))+'</td><td>'+esc(row.date||'—')+
+   '</td><td class="svt-all-num">'+fmt(row.streams)+'</td>'+
+   '<td class="svt-all-num">'+(period==='overall'?'—':fmt(row.gain))+'</td></tr>';
+ }).join('')||'<tr><td colspan="5" class="svt-all-status">No matching '+(isAlbum?'albums':'recordings')+'.</td></tr>';
  $('pageInfo').textContent=(state.page+1)+' / '+totalPages;
  $('prev').disabled=state.page===0;$('next').disabled=state.page+1>=totalPages;
+ window.svtSharedMedia?.fillArtwork();
 }
 async function init(){
  try{
