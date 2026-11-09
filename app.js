@@ -2371,14 +2371,36 @@ function periodDates(date){
 async function periodBaseline(s){
  if(!s||!['weekly','monthly','yearly'].some(p=>rank.endsWith(p)))return null;
  const range=periodDates(s.date),available=new Set(dates);
- // Use the closest available observation on or before a period boundary.
- // Missing calendar days should not blank an entire week/month; the actual
- // observed interval is retained and comparisons require equal durations.
- const get=async(d,limit=7)=>{
-  const candidate=dates.find(x=>x<=d&&x>=shifted(d,-limit));
-  return candidate?getDate(tab,candidate):null;
- };
- const [start,prevStart,prevEnd]=await Promise.all([get(range.start),get(range.prevStart),get(range.prevEnd)]);
+ // A calendar-period gain must start at its actual boundary. Using a
+ // nearby observation silently turns a weekly/monthly number into an
+ // arbitrary shorter interval.
+ const get=async date=>available.has(date)?getDate(tab,date):null;
+ const [start,prevStart,prevEnd]=await Promise.all([
+  get(range.start),get(range.prevStart),get(range.prevEnd)
+ ]);
+ // If the current boundary is missing, show only the sum of consecutive,
+ // individually verified daily observations. Never bridge a missing date.
+ // Changes compare ONLY equivalent calendar days from the prior period.
+ if(!start&&(rank.endsWith('weekly')||rank.endsWith('monthly'))){
+  const periodFirst=range.first;
+  const periodPreviousFirst=rank.endsWith('weekly')
+   ?shifted(periodFirst,-7):shiftedMonth(periodFirst,-1);
+  const currentDays=dates.filter(date=>date>=periodFirst&&date<=s.date).sort();
+  const makePairs=async days=>(await Promise.all(days.map(async day=>{
+   const before=shifted(day,-1);
+   if(!available.has(before))return null;
+   const [now,previous]=await Promise.all([getDate(tab,day),getDate(tab,before)]);
+   return now&&previous?[now,previous]:null;
+  }))).filter(Boolean);
+  const observedPairs=await makePairs(currentDays);
+  const priorEquivalentDays=observedPairs.map(([now])=>
+   rank.endsWith('weekly')?shifted(now.date,-7):shiftedMonth(now.date,-1)
+  ).filter(day=>day>=periodPreviousFirst);
+  const previousObservedPairs=await makePairs(priorEquivalentDays);
+  return {start:null,prevStart,prevEnd,range,observedPairs,
+   previousObservedPairs,partialPeriod:true,
+   partialWeek:rank.endsWith('weekly')};
+ }
  // Early November 2025 has no pre-November baseline. Build weekly gains
  // from the real consecutive-day observations instead of returning blanks.
  if(tab==='group'&&rank.endsWith('weekly')&&
@@ -2482,14 +2504,19 @@ function periodGain(s,context,id){
 function periodChange(s,context,id){
  if(context?.observedPairs){
   if(!context.previousObservedPairs?.length)return null;
-  // For incomplete weeks, all observed days must match the same days last
-  // week. Comparing a two-day sample with a six-day sample is not a change.
-  if(context.partialWeek){
+  // Compare only equal observed days and do not fill missing track
+  // recordings with zero, which would distort week/month changes.
+  if(context.partialPeriod||context.partialWeek){
    const prev=new Set(context.previousObservedPairs.map(([now])=>now.date));
    if(context.observedPairs.length!==context.previousObservedPairs.length||
-      context.observedPairs.some(([now])=>!prev.has(shifted(now.date,-7))))return null;
+      context.observedPairs.some(([now])=>!prev.has(
+       rank.endsWith('weekly')?shifted(now.date,-7):shiftedMonth(now.date,-1)
+      )))return null;
   }
-  const sum=pairs=>{const values=pairs.map(([now,previous])=>snapshotDelta(now,previous,id)).filter(v=>v!=null);return values.length?values.reduce((a,b)=>a+b,0):null};
+  const sum=pairs=>{
+   const values=pairs.map(([now,previous])=>snapshotDelta(now,previous,id));
+   return values.length&&values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null;
+  };
   const current=sum(context.observedPairs),previous=sum(context.previousObservedPairs);
   return current!=null&&previous!=null?current-previous:null;
  }
