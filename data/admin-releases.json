@@ -1,0 +1,6 @@
+{
+  "version": 1,
+  "releases": [],
+  "artists": [],
+  "notes": "Admin-created additions are merged by tools/catalog.py and collected by tools/pipeline.py. Do not place credentials here."
+}
