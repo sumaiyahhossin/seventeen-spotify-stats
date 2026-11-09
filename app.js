@@ -1893,8 +1893,12 @@ const soloHistoricalNameKey=name=>String(name||'').normalize('NFKC').toLocaleLow
 function matchedSoloReferenceIndex(snapshot,owner,source,expectedKind=null){
  if(!soloHistoryReference)return snapshot?.date==='2026-11-06'?source.index:null;
  if(snapshot?.date===soloHistoryReference.date)return source.index;
- const name=soloHistoricalNameKey(source.name);
  const targetKind=expectedKind||historicalKind(snapshot,source.id);
+ // Excel coerces Jun's track title "9" into the numeric-looking "9.0".
+ // This is one verified song-specific alias, not a broad fuzzy match.
+ const normalizeSourceName=value=>owner==='Jun'&&targetKind==='track'&&
+  String(value||'').trim()==='9.0'?'9':soloHistoricalNameKey(value);
+ const name=normalizeSourceName(source.name);
  const section=soloLegacySections(snapshot)?.[owner]||[];
  const reference=soloLegacySections(soloHistoryReference)?.[owner]||[];
  const previous=section.find(row=>row.index===source.index-1);
@@ -1910,7 +1914,7 @@ function matchedSoloReferenceIndex(snapshot,owner,source,expectedKind=null){
  const options=reference.filter(row=>soloHistoricalNameKey(row.name)===refName&&
   historicalKind(soloHistoryReference,row.id)===targetKind);
  const priorSame=section.filter(row=>row.index<=source.index&&
-  soloHistoricalNameKey(row.name)===name&&
+  normalizeSourceName(row.name)===name&&
   (historicalKind(snapshot,row.id)===targetKind||row.index===source.index));
  const direct=options[unnamedTotal?0:priorSame.length-1];
  if(direct)return direct.index;
