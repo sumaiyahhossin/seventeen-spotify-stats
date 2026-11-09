@@ -1,5 +1,5 @@
 {
-  "date": "2026-11-08",
+  "date": "2026-11-07",
   "captured_at": "2026-11-09T01:36:38.359139-05:00",
   "tracks": {
     "1beUALLSloBEvYre65QiW6": 8652151,
@@ -205,5 +205,6 @@
     "7kjuLdYbtTkWBToMu2ebZN": 267605,
     "4wBjmEkWhY4T22q00CiF5V": 304694,
     "3V2EC4dPYLgtbi0TtrB1RA": 268733
-  }
+  },
+  "date_correction": "Reporting cutoff correction: collected before 2 PM New York on 2026-11-09; 2026-11-07 reporting data, as verified by site owner."
 }
