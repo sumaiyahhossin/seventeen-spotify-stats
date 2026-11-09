@@ -1990,3 +1990,32 @@ body.svt-daily-ranking .rank-row{
  background:rgba(139,107,178,.27)!important;
  border-color:rgba(207,172,238,.52)!important;
 }
+
+/* v160 — Solo statistics: combined view needs four cards;
+   individual member and unit views retain audience cards except V8/JxJ. */
+body.svt-solo-all .stats>.stat:nth-child(4),
+body.svt-solo-all .stats>.stat:nth-child(5),
+body.svt-solo-without-audience .stats>.stat:nth-child(4),
+body.svt-solo-without-audience .stats>.stat:nth-child(5){
+ display:none!important;
+}
+.artist-profile-photo,.artist-profile-placeholder{
+ width:72px!important;height:72px!important;
+ min-width:72px!important;min-height:72px!important;
+ aspect-ratio:1 / 1!important;object-fit:contain!important;
+ object-position:center!important;border-radius:12px!important;
+}
+@media(max-width:480px){
+ .artist-profile-photo,.artist-profile-placeholder{
+  width:54px!important;height:54px!important;
+  min-width:54px!important;min-height:54px!important;
+ }
+}
+.controls .ranking-category{
+ min-height:50px!important;padding-block:5px!important;align-items:center!important
+}
+.controls .ranking-category button{
+ min-height:40px!important;display:flex!important;
+ align-items:center!important;justify-content:center!important;
+ padding-block:10px!important;line-height:1.2!important
+}
