@@ -639,6 +639,7 @@ public class Stream_Stats_Units_Duos {
     }
 
     private static void printMonthlyListeners(WebDriver driver, String listenerUrl) {
+        if (System.getenv("SVT_ONLY_TRACKS") != null) return;
         try {
             driver.get(listenerUrl);
             Thread.sleep(4000 + (int) (Math.random() * 4000));
@@ -646,6 +647,70 @@ public class Stream_Stats_Units_Duos {
             System.out.println(nf.format(listenersCount));
         } catch (Exception e) {
             System.out.println("0");
+        }
+        // A retry of missing SONGS must not rescan 18 artist pages.
+        if (System.getenv("SVT_ONLY_TRACKS") == null) {
+            fetchExactArtistFollowers(driver, listenerUrl);
+        }
+    }
+
+    /**
+     * Exact artist follower count, scoped to the opened About dialog.
+     * Never convert abbreviated public-facing K/M numbers into invented totals.
+     * V8 and JxJ have no individual Spotify artist profiles.
+     */
+    private static void fetchExactArtistFollowers(WebDriver driver, String artistUrl) {
+        final String artistId;
+        try {
+            artistId = artistUrl.split("/artist/")[1].split("\\?")[0].trim();
+        } catch (Exception e) {
+            return;
+        }
+        try {
+            String artistName = "";
+            List<WebElement> headings = driver.findElements(By.cssSelector("h1"));
+            if (!headings.isEmpty()) artistName = headings.get(0).getText().trim();
+            for (int attempt = 0; attempt < 5; attempt++) {
+                List<WebElement> buttons = driver.findElements(By.cssSelector("button[aria-label]"));
+                for (WebElement button : buttons) {
+                    if (!button.isDisplayed()) continue;
+                    String label = button.getAttribute("aria-label");
+                    if (label == null || label.isBlank()) continue;
+                    // Artist name button opens Spotify's About dialog.
+                    if (label.equalsIgnoreCase(artistName) && !artistName.isBlank()) {
+                        try {
+                            ((JavascriptExecutor) driver).executeScript("arguments[0].click();", button);
+                            break;
+                        } catch (Exception ignored) {}
+                    }
+                }
+                Thread.sleep(900);
+                List<WebElement> dialogs = driver.findElements(By.cssSelector(
+                    "dialog[open], [role='dialog']"));
+                for (WebElement dialog : dialogs) {
+                    if (!dialog.isDisplayed()) continue;
+                    String content = dialog.getText().replace((char)160, ' ').trim();
+                    Pattern before = Pattern.compile(
+                        "([0-9]{1,3}(?:[, ]+[0-9]{3})+|[0-9]{4,11})\\s+followers?\\b",
+                        Pattern.CASE_INSENSITIVE);
+                    Pattern after = Pattern.compile(
+                        "\\bfollowers?\\s+([0-9]{1,3}(?:[, ]+[0-9]{3})+|[0-9]{4,11})\\b",
+                        Pattern.CASE_INSENSITIVE);
+                    Matcher matcher = before.matcher(content);
+                    if (!matcher.find()) {
+                        matcher = after.matcher(content);
+                        if (!matcher.find()) continue;
+                    }
+                    long count = Long.parseLong(matcher.group(1).replaceAll("[^0-9]", ""));
+                    if (count >= 1000 && count <= 1000000000L) {
+                        System.out.println("STAT_FOLLOWERS|" + artistId + "|" + count);
+                        return;
+                    }
+                }
+            }
+            System.out.println("STAT_FOLLOWERS_UNAVAILABLE|" + artistId + "|exact-about-number-not-found");
+        } catch (Exception e) {
+            System.out.println("STAT_FOLLOWERS_UNAVAILABLE|" + artistId + "|" + e.getClass().getSimpleName());
         }
     }
 
@@ -707,6 +772,12 @@ public class Stream_Stats_Units_Duos {
 
     private static long fetchCount(WebDriver driver, String songUrl) throws InterruptedException {
         songUrl = normalizeSongUrl(songUrl);
+        // Recovery pass only requests songs which failed the full collection.
+        String onlyTracks = System.getenv("SVT_ONLY_TRACKS");
+        if (onlyTracks != null && !onlyTracks.isBlank()) {
+            String songId = songUrl.replace("https://open.spotify.com/track/", "").split("\\?")[0];
+            if (!java.util.Arrays.asList(onlyTracks.split(",")).contains(songId)) return 0;
+        }
 
         if (streamCache.containsKey(songUrl)) {
             long cachedValue = Long.parseLong(streamCache.get(songUrl).replace(",", "").replace(".", ""));
