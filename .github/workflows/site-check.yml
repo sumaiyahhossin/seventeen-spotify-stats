@@ -4,6 +4,8 @@ on:
   push:
     paths:
       - 'app.js'
+      - 'history-popup.js'
+      - 'all-view.js'
       - 'index.html'
       - 'style.css'
       - 'data/catalog.json'
@@ -24,6 +26,8 @@ jobs:
       - name: Verify JavaScript syntax
         run: |
           node --check app.js
+          node --check history-popup.js
+          node --check all-view.js
           node --check milestones.js
       - name: Verify dated songs and profile images
         run: |
