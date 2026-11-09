@@ -118,7 +118,10 @@ def main():
         if git("diff", "--cached", "--quiet", check=False).returncode == 0:
             print("Latest main already contains these changes")
             return
-        git("commit", "-m", "Update SEVENTEEN Group streams")
+        message = ("Update verified followers for solo and unit artists"
+                   if paths == ["data/solo-followers.json"]
+                   else "Update SEVENTEEN Spotify stream snapshots")
+        git("commit", "-m", message)
         pushed = git("push", "origin", "HEAD:main", check=False)
         if pushed.returncode == 0:
             print("Published collected stats successfully")
