@@ -719,12 +719,31 @@ public class Stream_Stats_Units_Duos {
                     }
                     if (chosen != null) {
                         try {
-                            final WebElement picture = chosen;
+                            // Spotify listens on the image wrapper on many
+                            // artist pages. Clicking the child image through
+                            // JS can be a no-op. Prefer its actual interactive
+                            // ancestor and a Selenium pointer click.
+                            WebElement clickTarget = chosen;
+                            try {
+                                WebElement ancestor = chosen.findElement(By.xpath(
+                                  "./ancestor::*[self::button or @role='button' or @tabindex='0'][1]"));
+                                if (ancestor.isDisplayed()) clickTarget = ancestor;
+                            } catch (Exception ignored) {}
                             ((JavascriptExecutor) driver).executeScript(
-                                "arguments[0].scrollIntoView({block:'center'});arguments[0].click();",
-                                picture);
+                                "arguments[0].scrollIntoView({block:'center'});", clickTarget);
+                            try {
+                                new org.openqa.selenium.interactions.Actions(driver)
+                                   .moveToElement(clickTarget).pause(Duration.ofMillis(250))
+                                   .click().perform();
+                                clickMethod = clickTarget.equals(chosen)
+                                   ? "artist-image-pointer" : "artist-image-wrapper-pointer";
+                            } catch (Exception pointerError) {
+                                ((JavascriptExecutor) driver).executeScript(
+                                    "arguments[0].click();", clickTarget);
+                                clickMethod = clickTarget.equals(chosen)
+                                   ? "artist-image-js" : "artist-image-wrapper-js";
+                            }
                             aboutClicked = true;
-                            clickMethod = "artist-profile-image";
                         } catch (Exception ignored) {}
                     }
                 }
@@ -781,6 +800,22 @@ public class Stream_Stats_Units_Duos {
                     Thread.sleep(1300);
                 } else {
                     Thread.sleep(1200);
+                }
+                // If the artwork was not interactive after all, don't keep
+                // treating the first click as successful for every retry.
+                // The next loop may try the alternate About controls.
+                if (aboutClicked && clickMethod.startsWith("artist-image")) {
+                    boolean dialogOpen = false;
+                    for (WebElement box : driver.findElements(By.cssSelector(
+                            "dialog[open], [role='dialog']"))) {
+                        try { if (box.isDisplayed()) { dialogOpen = true; break; } }
+                        catch (Exception ignored) {}
+                    }
+                    if (!dialogOpen && attempt >= 1) {
+                        // Allow the other visible About buttons to be tried
+                        // instead of clicking an inert profile image 10 times.
+                        aboutClicked = false;
+                    }
                 }
                 // Read the exact integer in the SAME compact Spotify
                 // Followers container supplied by the current About markup:
