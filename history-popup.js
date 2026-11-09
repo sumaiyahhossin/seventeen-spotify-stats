@@ -217,8 +217,10 @@
    return ids.length?exactIds(snapshot,ids,reference):null;
   }
   if(isHistorical(snapshot)){
-   const grand=Object.keys(snapshot.tracks||{}).find(id=>historicalKind(snapshot,id)==='grand'&&/solo|unit/i.test(snapshot.names?.[id]||''));
-   return grand?numberOrNull(snapshot.tracks[grand]):null;
+   // Historical workbooks save artist grand totals, not a combined solo/unit grand.
+   // Sum the distinct dated track recordings; never add album totals twice.
+   const ids=soloLegacyTrackIds(snapshot,null);
+   return ids.length?exactIds(snapshot,ids,reference):null;
   }
   const ids=[...new Set((catalog.solo||[]).flatMap(item=>item.tracks||[]))];
   return ids.length?exactIds(snapshot,ids,reference):null;
