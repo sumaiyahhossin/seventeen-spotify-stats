@@ -104,6 +104,12 @@ def main():
                 lambda d:len(d.find_elements(By.CSS_SELECTOR,'#upcomingRows .song-title'))>40)
             milestone_names=[el.text.strip() for el in driver.find_elements(
                 By.CSS_SELECTOR,'#upcomingRows .song-title')]
+            details=driver.execute_script("""
+              const el=document.getElementById('upcomingThreshold');
+              return {filter:el?.value, status:document.getElementById('upcomingStatus')?.textContent,
+                titles:[...document.querySelectorAll('#upcomingRows .song-title')].slice(0,60).map(x=>x.textContent)};
+            """)
+            print('Solo milestone diagnostic:',details,flush=True)
             assert any(name.lower()=='like you' for name in milestone_names), 'Unit/single milestone missing Like you'
             assert not any(name.lower()=='maestro' for name in milestone_names), 'OT13 milestone leaked into Units & Solo'
             assert 'Nov 6, 2026' in driver.find_element(By.ID,'upcomingStatus').text, 'Wrong solo milestone source date'
