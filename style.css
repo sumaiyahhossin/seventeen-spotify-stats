@@ -174,7 +174,9 @@ a.artist-profile:hover,a.artist-profile:focus-visible{background:#ffb8d72c;trans
 .artist-profile-photo.loaded{opacity:1}
 .artist-profile-placeholder{display:flex;align-items:center;justify-content:center;font-size:27px}
 .artist-profile-name{font-size:12px;font-weight:800;text-align:center;overflow-wrap:anywhere}
-@media(max-width:480px){.artist-profile-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.artist-profile{padding:10px 3px}.artist-profile-photo,.artist-profile-placeholder{width:48px;height:48px}.artist-profile-name{font-size:10px}}
+.artist-profile-followers{display:block;max-width:100%;font:600 10px/1.25 system-ui;text-align:center;color:#c4c5d7;overflow-wrap:anywhere}
+.artist-profile-followers.verified{color:#e6bfe0;font-weight:750}
+@media(max-width:480px){.artist-profile-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.artist-profile{padding:10px 3px}.artist-profile-photo,.artist-profile-placeholder{width:48px;height:48px}.artist-profile-name{font-size:10px}.artist-profile-followers{font-size:8px;line-height:1.2}}
 
 /* Midnight CARAT archive refresh */
 body{background:radial-gradient(ellipse at 10% -10%,#51304955,transparent 36%),radial-gradient(ellipse at 100% 0%,#233a6655,transparent 38%),#090e1b}
