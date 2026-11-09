@@ -1,0 +1,26 @@
+name: Browser UI layout and media verification
+on:
+  push:
+    paths:
+      - 'index.html'
+      - 'app.js'
+      - 'style.css'
+      - 'milestones.js'
+      - 'milestones.html'
+      - 'tools/verify_site_ui.py'
+      - '.github/workflows/site-ui.yml'
+  workflow_dispatch:
+jobs:
+  browser:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-python@v6
+        with:
+          python-version: '3.12'
+      - uses: browser-actions/setup-chrome@v2
+      - name: Install Selenium
+        run: pip install --quiet 'selenium>=4.25,<5'
+      - name: Verify actual desktop/mobile browser rendering
+        run: python tools/verify_site_ui.py
