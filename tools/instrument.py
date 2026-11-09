@@ -79,15 +79,16 @@ if kind=='group':
 
     source=source.replace('private static void fetchMonthlyListeners()', follower_java+'\n    private static void fetchMonthlyListeners()')
     source=source.replace('fetchMonthlyListeners();','fetchMonthlyListeners();\n        fetchFollowersMetric();',1)
-# Group freshness probe: check Shining Diamond before scanning the full catalog.
-# This is injected into the generated Java, leaving the original collector intact.
-if kind=='group':
+# Group uses Shining Diamond; Units & Solo uses Jeonghan's Better Half.
+# Inject after the driver exists so both Java collectors compile safely.
+if kind in ('group','solo'):
+    first_track='4BHThgh4ODCszIJ6e4YGGw' if kind=='group' else '1beUALLSloBEvYre65QiW6'
     probe = r'''
         String previousFirst = System.getenv("SVT_FIRST_TRACK_PREVIOUS");
         if (previousFirst != null && !previousFirst.isBlank()) {
             try {
                 long oldCount = Long.parseLong(previousFirst);
-                long newCount = fetchCount(driver, "https://open.spotify.com/track/4BHThgh4ODCszIJ6e4YGGw");
+                long newCount = fetchCount(driver, "https://open.spotify.com/track/__FIRST_TRACK_ID__");
                 System.out.println("STAT_FIRST_PROBE|" + newCount + "|" + oldCount);
                 if (newCount <= 0 || newCount == oldCount) {
                     System.out.println("STAT_FIRST_UNCHANGED|retry-next-hour");
@@ -104,9 +105,11 @@ if kind=='group':
             }
         }
     '''
-    marker='nf = NumberFormat.getInstance(Locale.US);'
+    probe=probe.replace('__FIRST_TRACK_ID__',first_track)
+    marker=("nf = NumberFormat.getInstance(Locale.US);" if kind=='group'
+            else "WebDriver driver = new ChromeDriver(options);")
     if marker not in source:
-        raise RuntimeError('Could not insert first-track probe')
+        raise RuntimeError('Could not insert '+kind+' first-track probe')
     source=source.replace(marker,marker+'\n'+probe,1)
 out=root/'build';out.mkdir(exist_ok=True)
 (out/('Stream_Stats.java' if kind=='group' else 'Stream_Stats_Units_Duos.java')).write_text(source)
