@@ -155,6 +155,11 @@ def check_viewport(driver,width,height):
             if snapshot_date=='2025-11-16':
                 assert any('Apr 2, 2021' in title for title in audit['spider']), (
                     'Spider must retain its original April 2, 2021 date, not SHINGIRU date')
+        # Restore the most recent snapshot before the mobile run. The July
+        # 2026 archive correctly contains fewer than 11 albums at that date.
+        click(driver,'#latestDate')
+        WebDriverWait(driver,35).until(lambda d:
+            'Latest confirmed snapshot' in d.find_element(By.ID,'dateNotice').text)
 
 
 def main():
