@@ -1092,9 +1092,10 @@ function buildRows(s,p,pp,baseline){
    for(const spec of [...requestedGroupAlbums,...(catalog.group||[]).filter(x=>x.admin_added&&x.release_type==='album').map(x=>({keys:[x.key],name:x.title}))]){
      const ids=[...new Set(spec.keys.flatMap(key=>releasesByKey.get(key)?.tracks||[]))];
      const streams=ids.length&&ids.every(id=>s.tracks[id]!=null)?ids.reduce((sum,id)=>sum+s.tracks[id],0):null;
-     const gain=periodic?sumPeriod(s,baseline,ids):sumDaily(s,p,ids);
+     const gainSummary=periodic?partialPeriodSum(s,baseline,ids):null;
+     const gain=periodic?gainSummary.value:sumDaily(s,p,ids);
      const dayChange=sumDailyChange(s,p,pp,ids);
-     rows.push({name:spec.name,artworkRelease:canonicalGroupAlbumKey(spec.keys),albumIdentity:canonicalGroupAlbumKey(spec.keys),historyReleases:spec.keys,kind:'album',streams,gain,
+     rows.push({name:spec.name,artworkRelease:canonicalGroupAlbumKey(spec.keys),albumIdentity:canonicalGroupAlbumKey(spec.keys),historyReleases:spec.keys,kind:'album',streams,gain,gainPartial:!!gainSummary?.partial,
        change:periodic?sumPeriodChange(s,baseline,ids):dayChange,changePartial:periodic?periodComparison(s,baseline,ids).partial:dailyComparison(s,p,pp,ids).partial});
    }
  }else if(albums){
@@ -2471,10 +2472,10 @@ async function periodBaseline(s){
    observedPairs:pairs.filter(Boolean),previousObservedPairs:previousPairs,
    observedDays:observed.length,missingDays:missing,partialMonth:month};
  }
- // Keep a verified consecutive-day fallback for tracks whose boundary
- // observations are flagged as anomalous. Never count a reset as streams.
- if((rank.endsWith('weekly')||rank.endsWith('monthly'))&&
-    (!start||(start.anomalies||[]).length||(s.anomalies||[]).length)){
+ // Always retain consecutive-day observations for week/month rows.
+ // Some recordings are absent or reset even when the whole snapshot's
+ // anomaly list is empty; per-track fallback must still work.
+ if(rank.endsWith('weekly')||rank.endsWith('monthly')){
   const pairsFor=async(first,last)=>{
    const dayList=dates.filter(date=>date>=first&&date<=last).sort();
    return (await Promise.all(dayList.map(async day=>{
@@ -2587,7 +2588,17 @@ function periodChange(s,context,id){
  return rank.endsWith('monthly')||elapsed===previousElapsed?now-before:fallbackChange();
 }
 // To keep album and track comparisons aligned to the same dates.
-function sumPeriod(s,context,ids){if(!ids.length)return null;const values=ids.map(id=>periodGain(s,context,id));return values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null}
+function sumPeriod(s,context,ids){
+ if(!ids.length)return null;
+ const values=ids.map(id=>periodGain(s,context,id));
+ return values.every(v=>v!=null)?values.reduce((a,b)=>a+b,0):null;
+}
+function partialPeriodSum(s,context,ids){
+ const values=ids.map(id=>periodGain(s,context,id));
+ const valid=values.filter(v=>v!=null);
+ return {value:valid.length?valid.reduce((a,b)=>a+b,0):null,
+  partial:valid.length<ids.length||ids.some(id=>incompleteObservedPeriod(s,context,id))};
+}
 function periodComparison(s,context,ids){
  if(!ids.length)return {value:null,partial:false,matched:0,total:0};
  const values=ids.map(id=>periodChange(s,context,id));
