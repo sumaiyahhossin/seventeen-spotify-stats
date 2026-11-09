@@ -2569,9 +2569,14 @@ function rankMetricHtml(value,key,label,{signed=false,estimated=false,partial=fa
   '<span class="metric-compact" aria-hidden="true">'+compact+'</span></div>';
 }
 function renderRankMetrics(row){
- const gainLabel=rank.endsWith('weekly')?'Gain this week':rank.endsWith('monthly')?'Gain this month':
+ const selectedDate=current?.[tab]?.date||'';
+ const incompleteMonth=rank.endsWith('monthly')&&selectedDate&&
+  Number(selectedDate.slice(8))<new Date(Date.UTC(Number(selectedDate.slice(0,4)),Number(selectedDate.slice(5,7)),0)).getUTCDate();
+ const gainLabel=rank.endsWith('weekly')?'Gain this week':rank.endsWith('monthly')?
+  (incompleteMonth?'Month-to-date gain':'Monthly gain'):
   rank.endsWith('yearly')?'Gain this year':'Gain vs yesterday';
- const compareWith=rank.endsWith('weekly')?'last week':rank.endsWith('monthly')?'last month':
+ const compareWith=rank.endsWith('weekly')?'last week':rank.endsWith('monthly')?
+  (incompleteMonth?'same days last month':'previous month'):
   rank.endsWith('yearly')?'last year':'yesterday';
  // Daily ranks by daily growth only; Overall adds cumulative stream totals.
  // Weekly/monthly/yearly retain their full saved history and comparison values.
@@ -2860,9 +2865,9 @@ async function render(){const token=++renderToken;
  const headers=document.querySelectorAll('.table-head span');
  headers[0].textContent='NAME';
  headers[1].textContent=rank.endsWith('overall')?'OVERALL STREAMS':'TOTAL STREAMS';
- headers[2].textContent=rank.endsWith('weekly')?'GAIN THIS WEEK':rank.endsWith('monthly')?'GAIN THIS MONTH':rank.endsWith('yearly')?'GAIN THIS YEAR':'DAILY INCREASE';
+ headers[2].textContent=rank.endsWith('weekly')?'GAIN THIS WEEK':rank.endsWith('monthly')?'MONTH-TO-DATE GAIN':rank.endsWith('yearly')?'GAIN THIS YEAR':'DAILY INCREASE';
  headers[3].textContent='CHANGE';
- headers[3].title='Current gain minus the previous '+(rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'day')+' gain';
+ headers[3].title=rank.endsWith('monthly')?'Current month-to-date gain minus the gain from the same calendar days of the previous month (full-month comparisons for completed months)': 'Current gain minus the previous '+(rank.endsWith('weekly')?'week':rank.endsWith('yearly')?'year':'day')+' gain';
  document.querySelector('.table-head').classList.remove('period-ranking');$('#ranking').classList.remove('period-ranking');
  const allRankingRows=soloArtistRows(buildRows(s,p,pp,baseline),s,p,baseline,pp);
  // Discography search must work across both song names and release names.
