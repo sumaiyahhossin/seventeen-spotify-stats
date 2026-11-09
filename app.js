@@ -253,6 +253,12 @@ function normTrackName(name){
 }
 function comparablePrevious(s,p,id){
  if(!s||!p||s.tracks?.[id]==null)return null;
+ // Live solo IDs and archived spreadsheet row identifiers are different.
+ // Match by the explicit Spotify-ID-to-workbook mapping, not loose titles.
+ if(tab==='solo'&&!isHistorical(s)&&isHistorical(p)){
+  const verified=verifiedSoloLegacyValue(p,id);
+  if(verified&&s.tracks[id]>=verified.value)return verified;
+ }
  // The 2026-11-05 workbook misspells Anne-Marie as Anne-Marrie.
  // Match the verified Spotify track ID to that exact legacy row, preserving
  // the recorded stream totals and day-over-day comparisons.
@@ -1974,6 +1980,31 @@ function soloSnapshotAlbumRow(snapshot,owner,canonicalIndex){
   .filter(row=>soloHistoricalNameKey(row.name)===title&&historicalKind(snapshot,row.id)===kind)[nth]||null;
 }
 
+// Resolve the SAME Spotify recording in imported Excel snapshots. Their
+// "legacy:" row IDs are not Spotify IDs, so ordinary key lookups cannot
+// compute the daily gains at the November 6 -> November 7 transition.
+// Only use the owner-specific, verified Nov 6 workbook track linkage.
+function verifiedSoloLegacyValue(snapshot,spotifyId){
+ if(!snapshot||!isHistorical(snapshot)||!soloHistoryReference)return null;
+ const ownerBlocks=soloLegacySections(soloHistoryReference)||{};
+ const historicalBlocks=soloLegacySections(snapshot)||{};
+ const possibilities=[];
+ for(const [index,link] of Object.entries(soloLegacyLinks.byIndex||{})){
+  if(link?.id!==spotifyId)continue;
+  const referenceRow=Object.values(ownerBlocks).flat().find(row=>row.index===Number(index)&&historicalKind(soloHistoryReference,row.id)==='track');
+  if(!referenceRow)continue;
+  const owner=Object.keys(ownerBlocks).find(name=>(ownerBlocks[name]||[]).includes(referenceRow));
+  if(!owner)continue;
+  const matchedIndex=matchedSoloReferenceIndex(snapshot,owner,referenceRow,'track');
+  const row=(historicalBlocks[owner]||[]).find(item=>item.index===matchedIndex);
+  if(!row||historicalKind(snapshot,row.id)!=='track'||!Number.isFinite(row.value))continue;
+  possibilities.push({id:row.id,value:row.value});
+ }
+ // Duplicated unit/member credits must resolve to identical numbers.
+ // Otherwise the workbook does not establish a unique verified count.
+ if(!possibilities.length||new Set(possibilities.map(row=>row.value)).size!==1)return null;
+ return possibilities[0];
+}
 function soloLegacyTrackIds(s,owner){
  const sections=soloLegacySections(s);if(!sections)return [];
  const chosen=owner?[owner]:[...soloLegacyOwners,'V8','Picheolin','Gilboard','JxJ'];
