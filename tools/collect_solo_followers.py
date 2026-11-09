@@ -58,11 +58,13 @@ if not pending:
 
 # Rotate across overdue profiles rather than retrying the first few each hour.
 # Small bounded batches prevent competing stream jobs from timing out.
-if os.getenv('SVT_FOLLOWERS_FULL_SCAN')=='1':
+FULL_SCAN=os.getenv('SVT_FOLLOWERS_FULL_SCAN','').strip().lower() in ('1','true','yes','on')
+if FULL_SCAN:
     print('Full manual follower scan: checking every due profile',flush=True)
 else:
     rotation=(int(TODAY.timestamp()//3600)*3)%len(pending)
     pending=(pending[rotation:]+pending[:rotation])[:3]
+print(f'Follower scan mode: {"FULL" if FULL_SCAN else "HOURLY"}; profiles this run: {len(pending)}',flush=True)
 print('Follower scan batch: '+', '.join(pending),flush=True)
 print('API verification for '+str(len(pending))+' profiles',flush=True)
 
@@ -112,7 +114,7 @@ if missing:
         env['SVT_FOLLOWERS_ONLY']=','.join(missing)
         result=subprocess.run(['java','-cp',str(ROOT/'build')+os.pathsep+classpath,
                                'Stream_Stats_Units_Duos'],capture_output=True,text=True,
-                              timeout=3300 if os.getenv('SVT_FOLLOWERS_FULL_SCAN')=='1' else 1200,env=env)
+                              timeout=3300 if FULL_SCAN else 1200,env=env)
         for line in result.stdout.splitlines():
             match=re.fullmatch(r'STAT_FOLLOWERS\|([a-zA-Z0-9]{22})\|(\d+)',line.strip())
             if match and match.group(1) in missing:
