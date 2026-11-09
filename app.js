@@ -1,6 +1,7 @@
 const $=s=>document.querySelector(s),fmt=n=>n==null?'—':Number(n).toLocaleString('en-US');
 let selectedSoloArtist=null;
 let addedUnitArtistOrder=[];
+let verifiedSoloFollowers={};
 let soloAlbums=[],soloMedia={tracks:{},albums:{}},soloLegacyLinks={byIndex:{}},soloHistoryReference=null;
 let artworkMap={tracks:{},albums:{}};let sortOrder='most';let tab='group',rank='tracks-daily',rankType='tracks',catalog={},current={},history={},dates=[],groupDates=[],soloDates=[],soloHistoricalDates=new Set(),selection='latest',period='week';
 // To keep the selected view after refresh.
@@ -217,7 +218,7 @@ function syncPeriodPicker(){
  const dateLabel=document.querySelector('#dailyPickerWrap label');
  if(dateLabel)dateLabel.textContent=rank.endsWith('weekly')?'STREAMING WEEK':rank.endsWith('monthly')?'STREAMING MONTH':rank.endsWith('yearly')?'STREAMING YEAR':'STREAMING DATE';
  if(!periodic)return;
- const available=[...new Set([...dates,...(current[tab]?.date?[current[tab].date]:[])].filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d>='2025-01-01').map(periodKey).filter(Boolean))].sort().reverse();
+ const available=[...new Set([...dates,...(current[tab]?.date?[current[tab].date]:[])].filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d>='2025-01-01').map(periodKey).filter(Boolean))].sort();
  const latestDate=current[tab]?.date||dates[0];
  const defaultKey=(selection!=='latest'&&availableDates().includes(selection)?periodKey(selection):latestDate?periodKey(latestDate):available[0]);
  if(!selectedPeriodKey||!available.includes(selectedPeriodKey)||selectedPeriodKey[0]!==defaultKey?.[0])selectedPeriodKey=defaultKey;
@@ -2559,8 +2560,28 @@ async function render(){const token=++renderToken;
  };
  setAudience('listeners','#listeners','#listenersChange');
  setAudience('followers','#followers','#followersChange');
+ // An independent follower scan is timestamped when collected. Show its
+ // real observation date only in the latest view, never backdate to an archive.
+ if(tab==='solo'&&selectedSoloArtist&&!['JxJ','V8'].includes(selectedSoloArtist)&&
+    selection==='latest'&&s?.date===current.solo?.date){
+  const artistId=soloArtists.find(([name])=>name===selectedSoloArtist)?.[1];
+  const observation=verifiedSoloFollowers[artistId];
+  if(observation&&Number.isFinite(observation.count)){
+   $('#followers').textContent=fmt(observation.count);
+   $('#followersChange').textContent='Verified '+new Date(observation.captured_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' · separate from stream snapshot';
+  }
+ }
+
  const grandId=tab==='group'&&s&&isHistorical(s)?Object.keys(s.tracks).find(id=>historicalKind(s,id)==='grand'):null;
- $('#total').textContent=s?fmt(tab==='solo'&&selectedSoloArtist?memberIds.reduce((a,id)=>a+Number(s.tracks[id]||0),0):grandId?s.tracks[grandId]:ids.reduce((a,id)=>a+s.tracks[id],0)):'—';
+ const totalIds=tab==='solo'&&selectedSoloArtist?memberIds:ids;
+ const totalMissing=totalIds.filter(id=>!Number.isFinite(s?.tracks?.[id])||s.tracks[id]<=0);
+ const calculatedTotal=s&&totalIds.length&&!totalMissing.length
+  ?totalIds.reduce((sum,id)=>sum+s.tracks[id],0):null;
+ const verifiedWorkbookGrand=grandId&&Number.isFinite(s?.tracks?.[grandId])?s.tracks[grandId]:null;
+ $('#total').textContent=s?fmt(verifiedWorkbookGrand??calculatedTotal):'—';
+ $('#total').closest('.stat').querySelector('span').textContent=totalMissing.length?
+  totalMissing.length+' recording(s) awaiting verified Spotify counts · total unavailable':
+  'Total Spotify track streams';
  const gainNote=$('#gain').nextElementSibling;
  const comparisonCard=$('#periodComparisonCard');
  const comparisonValue=$('#periodComparisonValue');
@@ -2839,7 +2860,7 @@ function navigateDate(step){
  const periodic=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
  if(periodic){
   const picker=$('#periodPicker'),keys=[...picker.options].map(o=>o.value);
-  const i=keys.indexOf(selectedPeriodKey),target=keys[i-step];
+  const i=keys.indexOf(selectedPeriodKey),target=keys[i+step];
   if(target){selectedPeriodKey=target;saveView();render()}
   return;
  }
@@ -2865,8 +2886,8 @@ function syncCalendar(){
  if(pretty&&picker.value){const [year,month,day]=picker.value.split('-').map(Number);pretty.textContent=periodic?(rank.endsWith('yearly')?String(year):rank.endsWith('monthly')?new Date(Date.UTC(year,month-1,1)).toLocaleDateString('en-US',{timeZone:'UTC',month:'long',year:'numeric'}):(()=>{const monday=selectedPeriodKey?.startsWith('W:')?selectedPeriodKey.slice(2):shifted(picker.value,-((new Date(picker.value+'T00:00:00Z').getUTCDay()+6)%7));const sunday=shifted(monday,6);const format=d=>new Date(d+'T00:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric'});return format(monday)+' – '+format(sunday)+', '+sunday.slice(0,4)})()):new Date(Date.UTC(year,month-1,day)).toLocaleDateString('en-US',{timeZone:'UTC',month:'long',day:'numeric',year:'numeric'});}
 
   const keys=[...$('#periodPicker').options].map(o=>o.value),i=keys.indexOf(selectedPeriodKey);
-  $('#prevDate').disabled=i<0||i===keys.length-1;
-  $('#nextDate').disabled=i<=0;
+  $('#prevDate').disabled=i<=0;
+  $('#nextDate').disabled=i<0||i===keys.length-1;
   $('#dateNotice').textContent=selectedPeriodKey?'Selected '+rank.split('-').at(-1)+' period':'No saved period';
  }else{
   $('#prevDate').disabled=!date||available.indexOf(date)<=0;
@@ -2919,6 +2940,8 @@ $('#archiveDate').addEventListener('change',e=>{
  load('data/solo-albums.json'),load('data/solo-media.json'),
  load('data/solo-legacy-track-links.json'),load('solo-2026-11-06.json'),load('data/admin-releases.json')]);
  catalog=catalog||{};soloAlbums=soloAlbums||[];
+ try{verifiedSoloFollowers=(await load('data/solo-followers.json'))?.followers||{}}catch{verifiedSoloFollowers={}}
+
  // Preview newly published releases immediately, even before the next collector
  // regenerates catalog.json. Existing snapshots are never filled with fake data.
  adminReleases=adminReleases||{releases:[],artists:[]};
