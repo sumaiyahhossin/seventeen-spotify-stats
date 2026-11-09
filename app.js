@@ -449,8 +449,8 @@ function displayTrackName(name){
   'cheers to youth':'Cheers to Youth','eyes on you':'Eyes on You',
   'power of love':'Power of Love','sweetest thing':'Sweetest Thing',
   'world feat anne marie':'_WORLD (feat. Anne-Marie)',
-  'power of love holiday ver':'Power of Love (Holiday Ver.)',
-  'power of love inst':'Power of Love (Inst.)',
+  'power of love holiday ver':'Home - Japanese ver.',
+  'power of love inst':'Snap Shoot - Japanese ver.',
   'hitorijanai korean ver':'Hitorijanai (Korean Ver.)',
   '24h korean ver':'24H (Korean Ver.)'
  };
