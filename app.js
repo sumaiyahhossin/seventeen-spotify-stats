@@ -1912,7 +1912,25 @@ function matchedSoloReferenceIndex(snapshot,owner,source,expectedKind=null){
  const priorSame=section.filter(row=>row.index<=source.index&&
   soloHistoricalNameKey(row.name)===name&&
   (historicalKind(snapshot,row.id)===targetKind||row.index===source.index));
- return options[unnamedTotal?0:priorSame.length-1]?.index??null;
+ const direct=options[unnamedTotal?0:priorSame.length-1];
+ if(direct)return direct.index;
+ // A historical workbook may credit a song to two members even though the
+ // reference sheet lists that Spotify recording only under one. Recover a
+ // release date only when every matching title resolves to the SAME exact
+ // Spotify recording. Shared titles with different IDs stay unresolved.
+ const globalRows=[...soloLegacyOwners,'V8','Picheolin','Gilboard','JxJ']
+  .flatMap(credit=>soloLegacySections(soloHistoryReference)?.[credit]||[])
+  .filter(row=>soloHistoricalNameKey(row.name)===refName&&
+    historicalKind(soloHistoryReference,row.id)===targetKind);
+ const candidates=[...new Map(globalRows.map(row=>[row.index,row])).values()];
+ if(targetKind==='track'){
+  const ids=new Set(candidates.map(row=>soloLegacyLinks.byIndex?.[row.index]?.id));
+  if(ids.size===1&&!ids.has(undefined)&&candidates.length)return candidates[0].index;
+ }else if(targetKind==='album'&&candidates.length===1){
+  const prior=soloLegacyLinks.byIndex?.[candidates[0].index-1];
+  if(prior?.releaseKey)return candidates[0].index;
+ }
+ return null;
 }
 function soloSnapshotAlbumRow(snapshot,owner,canonicalIndex){
  if(!snapshot||!canonicalIndex||!soloHistoryReference)return null;
