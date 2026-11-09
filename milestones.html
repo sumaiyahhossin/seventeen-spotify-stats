@@ -123,6 +123,66 @@ select,input{width:100%;height:47px;min-width:0;background:#292c50;border:1px so
  .song-title{font-size:8px!important}
  .days-value,.reached-value{font-size:8px!important}
 }
+
+/* v4 — Reached milestones get the same slim row/table treatment as upcoming. */
+@media(max-width:650px){
+ #reachedView .table{
+  overflow-x:hidden!important;
+  border:1px solid #ffffff22!important;
+  background:#ffffff08!important;
+  border-radius:12px!important;
+ }
+ #reachedView table{
+  width:100%!important;max-width:100%!important;
+  table-layout:fixed!important;border-collapse:collapse!important;
+ }
+ #reachedView tbody tr{
+  display:table-row!important;
+  margin:0!important;padding:0!important;
+  background:transparent!important;
+  border:0!important;border-radius:0!important;
+ }
+ #reachedView tbody td,#reachedView thead th{
+  display:table-cell!important;grid-column:auto!important;
+  vertical-align:middle!important;
+  padding:9px 4px!important;margin:0!important;
+  border:0!important;border-bottom:1px solid #ffffff16!important;
+  background:transparent!important;line-height:1.25!important;
+  font-size:9px!important;white-space:nowrap!important;
+  overflow:hidden!important;text-overflow:ellipsis!important;
+ }
+ #reachedView thead th{
+  font-size:0!important;
+  background:#ffffff0d!important;
+ }
+ #reachedView th:first-child,#reachedView td:first-child{width:43%!important;text-align:left!important}
+ #reachedView th:nth-child(2),#reachedView td:nth-child(2){width:34%!important;text-align:right!important}
+ #reachedView th:nth-child(3),#reachedView td:nth-child(3){width:23%!important;text-align:right!important}
+ #reachedView .song-cell,#upcomingView .song-cell{
+  min-width:0!important;
+  align-items:center!important;
+  gap:4px!important;
+ }
+ #reachedView .song-meta,#upcomingView .song-meta{
+  flex:1 1 0!important;min-width:0!important;overflow:hidden!important;
+ }
+ #reachedView .song-title,#upcomingView .song-title{
+  display:block!important;white-space:nowrap!important;
+  overflow:hidden!important;text-overflow:ellipsis!important;
+  word-break:normal!important;
+ }
+ #reachedView .song-cover,#upcomingView .song-cover{
+  object-fit:contain!important;object-position:center!important;
+ }
+ #reachedView td:first-child:before,
+ #reachedView td:not(:first-child):before{display:none!important;content:none!important}
+}
+@media(max-width:360px){
+ #reachedView th,#reachedView td{padding:8px 2px!important;font-size:8px!important}
+ #reachedView th:first-child,#reachedView td:first-child{width:42%!important}
+ #reachedView th:nth-child(2),#reachedView td:nth-child(2){width:35%!important}
+ #reachedView th:nth-child(3),#reachedView td:nth-child(3){width:23%!important}
+}
 </style></head>
 <body><main><a class="back" href="./">← Back to Spotify Stats</a><section class="hero"><div class="eyebrow">SEVENTEEN · SPOTIFY HISTORY</div><h1>Streaming <em>Milestones</em> ✦</h1><p>Browse milestone dates and how many days each song took to reach its streaming milestone.</p></section><nav class="milestone-tabs" aria-label="Milestone views"><button type="button" id="tabReached" aria-selected="true">Milestones</button><button type="button" id="tabUpcoming" aria-selected="false">Milestones to Be Reached</button></nav>
 <section id="reachedView" class="panel">
@@ -133,4 +193,4 @@ select,input{width:100%;height:47px;min-width:0;background:#292c50;border:1px so
 <div class="controls"><label>Next milestone <select id="upcomingThreshold"><option value="0">All next milestones</option><option value="1000000">1M</option><option value="10000000">10M</option><option value="20000000">20M</option><option value="30000000">30M</option><option value="40000000">40M</option><option value="50000000">50M</option><option value="60000000">60M</option><option value="70000000">70M</option><option value="80000000">80M</option><option value="90000000">90M</option><option value="100000000">100M</option><option value="200000000">200M</option><option value="300000000">300M</option><option value="400000000">400M</option></select></label><label>Sort <select id="upcomingSort"><option value="target">Next milestone</option><option value="soonest">Soonest expected</option><option value="closest">Fewest streams left</option><option value="streams">Most streams</option><option value="name">Song A–Z</option></select></label><label>Find song <input id="upcomingSearch" placeholder="Search tracks"></label></div>
 <div class="summary" id="upcomingStatus">Loading latest snapshot…</div>
 <div class="table"><table><thead><tr><th>SONG</th><th>NEXT MILESTONE</th><th>STREAMS LEFT</th><th>DAILY GAIN</th><th>ESTIMATED ARRIVAL</th></tr></thead><tbody id="upcomingRows"></tbody></table></div>
-<p class="muted">Estimates use the latest daily gain and can change with future updates. A date is shown only when a valid daily gain is available.</p></section></main><script src="milestones.js?v=20261108-compact-milestones-v3" onerror="document.getElementById('status').textContent='Milestone details unavailable; showing saved song totals when loaded.'"></script></body></html>
+<p class="muted">Estimates use the latest daily gain and can change with future updates. A date is shown only when a valid daily gain is available.</p></section></main><script src="milestones.js?v=20261108-responsive-names-v4" onerror="document.getElementById('status').textContent='Milestone details unavailable; showing saved song totals when loaded.'"></script></body></html>
