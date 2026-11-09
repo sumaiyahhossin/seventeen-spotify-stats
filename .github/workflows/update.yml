@@ -82,7 +82,7 @@ jobs:
 
   followers:
     name: Collect verified solo and unit followers
-    # Run full exact follower verification with Spotify value-label selector and updated click fallback.
+    # Full manual follower scan after fixing GitHub Actions boolean true parsing (all 17 due profiles).
     # At 2 PM New York time, verify a new reporting-day follower reading.
     # Retry missing profiles hourly until all eligible profiles are complete;
     # then pause until the next local 2 PM cutoff (handles EDT/EST).
