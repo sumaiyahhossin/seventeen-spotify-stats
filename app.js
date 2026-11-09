@@ -2609,7 +2609,7 @@ function renderRankMetrics(row,selectedDate=''){
  // Solo/unit daily discographies need their real cumulative Spotify counts.
  // A missing previous-day comparison must not hide a verified stream total.
  return (rank.endsWith('daily')&&tab==='group'?'':rankMetricHtml(row.streams,'streams','Total streams'))+
-  rankMetricHtml(row.gain,'gain',gainLabel,{signed:true,estimated:row.estimatedGain})+
+  rankMetricHtml(row.gain,'gain',row.gainPartial?gainLabel+' (verified observed dates only)':gainLabel,{signed:true,estimated:row.estimatedGain,partial:row.gainPartial})+
   rankMetricHtml(row.change,'change','Change vs '+compareWith,{signed:true,partial:row.changePartial});
 }
 
@@ -2926,6 +2926,14 @@ async function render(){const token=++renderToken;
   if(tab==='group'&&/^(?:tiny\s*light)$/i.test(String(x.name||'').trim())&&s.date<'2026-02-27')return false;
   return true;
  });
+ // A missing period boundary means these are observed-day subtotals,
+ // not a complete week/month. Label them so comparisons aren't misleading.
+ if(periodic&&baseline?.partialPeriod){
+  for(const row of rows){
+   row.gainPartial=row.gain!=null;
+   row.changePartial=row.change!=null;
+  }
+ }
  // Estimates are displayed only for missing growth, never recorded totals.
  if(daily||periodic){
   for(const row of rows){
