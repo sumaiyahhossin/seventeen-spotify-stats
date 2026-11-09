@@ -110,6 +110,28 @@ if kind in ('group','solo'):
             else "WebDriver driver = new ChromeDriver(options);")
     if marker not in source:
         raise RuntimeError('Could not insert '+kind+' first-track probe')
+    # An independent, lightweight follower-only pass can run when Spotify
+    # stream counts are unchanged; the usual first-track gate must not block it.
+    if kind == 'solo':
+        follower_probe = r'''
+        String followerOnly = System.getenv("SVT_FOLLOWERS_ONLY");
+        if (followerOnly != null && !followerOnly.isBlank()) {
+            for (String artistId : followerOnly.split(",")) {
+                if (!artistId.matches("[A-Za-z0-9]{22}")) continue;
+                final String artistUrl = "https://open.spotify.com/artist/" + artistId;
+                try {
+                    driver.get(artistUrl);
+                    Thread.sleep(4500);
+                    fetchExactArtistFollowers(driver, artistUrl);
+                } catch (Exception error) {
+                    System.out.println("STAT_FOLLOWERS_UNAVAILABLE|" + artistId + "|" + error.getClass().getSimpleName());
+                }
+            }
+            driver.quit();
+            return;
+        }
+        '''
+        probe=follower_probe+'\n'+probe
     source=source.replace(marker,marker+'\n'+probe,1)
 out=root/'build';out.mkdir(exist_ok=True)
 (out/('Stream_Stats.java' if kind=='group' else 'Stream_Stats_Units_Duos.java')).write_text(source)
