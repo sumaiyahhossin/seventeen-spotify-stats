@@ -138,7 +138,7 @@ for attempt in (2,3):
         capture_output=True,text=True,timeout=2400,env=retry_env)
     print(f'{kind}: scan {attempt} exit={retry_result.returncode}',flush=True)
     for line in retry_result.stdout.splitlines():
-        match=re.match(r'STAT_TRACK\\|https://open\\.spotify\\.com/track/([A-Za-z0-9]+)\\|(\\d+)',line)
+        match=re.match(r'STAT_TRACK\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|(\d+)',line)
         if match and match.group(1) in unresolved and int(match.group(2))>0:
             tracks[match.group(1)]=int(match.group(2))
         elif line.startswith('STAT_TRACK_UNAVAILABLE|'):
