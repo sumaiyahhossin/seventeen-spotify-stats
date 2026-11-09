@@ -37,7 +37,8 @@ function buildRows(){
  for(const scope of ['group','solo']){
   const snapshot=state[scope];
   for(const release of state.catalog[scope]||[]){
-   const artist=scope==='group'?'SEVENTEEN':release.artist;
+   const canonicalOwner=artistIds.find(([name])=>name.toLowerCase()===String(release.artist||'').toLowerCase())?.[0];
+   const artist=scope==='group'?'SEVENTEEN':(canonicalOwner||release.artist);
    const releaseDate=scope==='group'?(groupOriginalReleaseDates[release.key]||groupStandaloneReleaseDates[release.key]||release.release_date):release.release_date;
    (release.tracks||[]).forEach((id,index)=>{
     if(!validId(id))return;
