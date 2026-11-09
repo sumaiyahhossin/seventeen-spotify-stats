@@ -3,15 +3,17 @@ ROOT=pathlib.Path(__file__).resolve().parents[1]
 DATA=ROOT/'data'; TZ=zoneinfo.ZoneInfo('America/New_York')
 now=datetime.datetime.now(TZ)
 today=now.date().isoformat()
-report_date=(now.date()-datetime.timedelta(days=1)).isoformat()
+# Spotify's reporting day rolls over at 2 PM America/New_York.
+# Runs before the cutoff still belong to the preceding reporting cycle.
+report_date=(now.date()-datetime.timedelta(days=1 if now.hour>=14 else 2)).isoformat()
 state_path=DATA/'state.json'
 state=json.loads(state_path.read_text()) if state_path.exists() else {'group':{},'solo':{}}
 kind=sys.argv[1]
 entry=state.setdefault(kind,{})
 current_path=DATA/f'{kind}.json'
 previous=json.loads(current_path.read_text()) if current_path.exists() else None
-if entry.get('checked_date')!=today:
-    entry['pending']=today
+if entry.get('reported_date')!=report_date:
+    entry['pending']=report_date
 force_collect = os.getenv('FORCE_COLLECT') == 'true'
 # Missing follower counts never restart an otherwise completed stream scan.
 if not entry.get('pending') and not force_collect:
@@ -282,6 +284,6 @@ if previous and previous['date'] not in manifest[date_key]:manifest[date_key].ap
 if report_date not in manifest[date_key]:manifest[date_key].append(report_date)
 manifest[date_key]=sorted(set(manifest[date_key]),reverse=True)
 manifest_path.write_text(json.dumps(manifest,indent=2))
-entry.update({'checked_date':today,'pending':None,'last_success':now.isoformat()})
+entry.update({'checked_date':today,'reported_date':report_date,'pending':None,'last_success':now.isoformat()})
 state_path.write_text(json.dumps(state,indent=2))
 print(kind,'saved Spotify reporting date',report_date,'tracks:',len(tracks))
