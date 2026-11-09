@@ -31,7 +31,7 @@
  `;
  const style=document.createElement('style');style.textContent=css;document.head.append(style);
  const modal=document.createElement('div');modal.className='svt-history-dialog';modal.hidden=true;modal.setAttribute('role','presentation');
- modal.innerHTML='<section class="svt-history-window" role="dialog" aria-modal="true" aria-labelledby="svtHistoryTitle"><div class="svt-history-top"><div><div style="font:750 10px system-ui;letter-spacing:.15em;color:#d6b1f5">✦ VERIFIED STREAM HISTORY</div><h2 id="svtHistoryTitle">History</h2></div><button type="button" class="svt-history-close" aria-label="Close history">×</button></div><p class="svt-history-note" id="svtHistoryNote"></p><div class="svt-history-wrap"><table class="svt-history-table"><thead><tr><th>Date</th><th>Total</th><th>Increase</th><th>Change in increase</th></tr></thead><tbody id="svtHistoryRows"></tbody></table></div><p class="svt-history-note">A dash means the saved data is unavailable. Increases require two consecutive dates; changes require three. No missing days are filled with estimates.</p></section>';
+ modal.innerHTML='<section class="svt-history-window" role="dialog" aria-modal="true" aria-labelledby="svtHistoryTitle"><div class="svt-history-top"><div><div style="font:750 10px system-ui;letter-spacing:.15em;color:#d6b1f5">✦ VERIFIED STREAM HISTORY</div><h2 id="svtHistoryTitle">History</h2></div><button type="button" class="svt-history-close" aria-label="Close history">×</button></div><p class="svt-history-note" id="svtHistoryNote"></p><div class="svt-history-wrap"><table class="svt-history-table"><thead><tr><th>Date</th><th>Total</th><th>Increase</th><th>Change in increase</th></tr></thead><tbody id="svtHistoryRows"></tbody></table></div><p class="svt-history-note">A dash means comparable saved data is unavailable. Daily increases need consecutive dates; weekly and monthly gains need verified period boundaries. No missing dates are estimated.</p></section>';
  document.body.append(modal);
  const close=()=>{modal.hidden=true;document.body.style.removeProperty('overflow')};
  modal.querySelector('.svt-history-close').addEventListener('click',close);
@@ -170,7 +170,7 @@
     return d.toISOString().slice(0,10);
    })();
    const endOf=start=>{const next=move(start,1);return previousDate(next)};
-   const dateList=[...new Set([...((scope==='solo'?soloDates:groupDates)||[]),ref.date])].filter(d=>/^20\\d{2}-\\d{2}-\\d{2}$/.test(d)&&d<=ref.date).sort();
+   const dateList=[...new Set([...((scope==='solo'?soloDates:groupDates)||[]),ref.date])].filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d<=ref.date).sort();
    const start=periodStart(ref.date);
    const periods=Array.from({length:11},(_,i)=>move(start,i-10));
    const periodData=await Promise.all(periods.map(async first=>{
