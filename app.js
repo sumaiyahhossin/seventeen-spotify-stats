@@ -1787,7 +1787,9 @@ function renderRankMetrics(row){
   rankMetricHtml(row.gain,'gain',gainLabel,{signed:true,estimated:row.estimatedGain})+
   rankMetricHtml(row.change,'change','Change vs '+compareWith,{signed:true,partial:row.changePartial});
 }
-async function render(){const token=++renderToken;$('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';try{renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;updateYear2026Streams();syncCalendar();restoreGroupNames(s,p);
+async function render(){const token=++renderToken;
+ document.body.classList.toggle('svt-units-solo',tab==='solo');
+ $('#ranking').innerHTML='<div class="empty">Loading saved streaming data…</div>';try{renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;if(tab==='group')updateYear2026Streams();syncCalendar();restoreGroupNames(s,p);
  document.body.classList.toggle('svt-overall-four-cols',rank.endsWith('overall'));
  document.body.classList.toggle('svt-discography-table',rank.startsWith('discography'));
  const isPeriod=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
