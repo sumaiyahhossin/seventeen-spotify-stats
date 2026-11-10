@@ -1,0 +1,121 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#14112b"><title>Collection Report ✦ SEVENTEEN Spotify Stats</title>
+<style>
+:root{color-scheme:dark;--bg:#111127;--panel:#1a1735;--border:#51466f;--txt:#f8f5ff;--sub:#bfb1d7;--pink:#ffb4d9;--blue:#a9caff;--gold:#f7ddac}
+*{box-sizing:border-box}body{margin:0;background:radial-gradient(ellipse at 15% 0%,#33254f 0,transparent 45%),radial-gradient(ellipse at 93% 55%,#24274b 0,transparent 40%),var(--bg);color:var(--txt);font:14px/1.6 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;min-height:100vh}
+a{color:var(--pink)}.wrap{max-width:1150px;margin:0 auto;padding:30px 18px 70px}.top{display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap}a.back{color:#faf4ff;text-decoration:none;border:1px solid var(--border);border-radius:40px;padding:9px 16px;background:#302947;font-weight:700}.eyebrow{font-size:11px;font-weight:800;letter-spacing:.23em;text-transform:uppercase;color:var(--pink);margin:32px 0 5px}h1{font-size:clamp(30px,6vw,60px);line-height:1.06;margin:3px 0 14px;letter-spacing:-.055em}h2{font-size:17px;margin:0 0 12px;letter-spacing:-.02em}.intro{max-width:670px;color:var(--sub);font-size:14px}.toolbar{margin:27px 0 22px;padding:15px;border:1px solid var(--border);border-radius:17px;background:#1b1835;display:flex;gap:10px;align-items:center;flex-wrap:wrap}.toolbar label{color:var(--sub);font-size:11px;letter-spacing:.07em;font-weight:800;text-transform:uppercase}.toolbar select,.toolbar button{border:1px solid #63557d;border-radius:10px;color:#fff;background:#302948;padding:10px 12px;font:inherit;cursor:pointer}.toolbar select{min-width:175px}.toolbar button:disabled{opacity:.35;cursor:default}.toolbar .status{margin-left:auto;color:var(--sub);font-size:12px}.cards{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.card,.section{background:linear-gradient(145deg,rgba(54,45,87,.9),rgba(25,23,53,.92));border:1px solid var(--border);border-radius:18px;padding:18px;min-width:0}.card small{font-size:10px;letter-spacing:.12em;color:var(--sub);font-weight:800;display:block;text-transform:uppercase}.card strong{display:block;font-size:clamp(18px,2.4vw,31px);line-height:1.25;letter-spacing:-.045em;margin:8px 0;overflow-wrap:anywhere}.card span{font-size:12px;color:var(--sub)}.good{color:var(--blue)!important}.warn{color:var(--pink)!important}.sections{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:13px}.section{padding:19px}.section p,.note{color:var(--sub);font-size:12px}.meta{display:flex;gap:8px;flex-wrap:wrap;margin:8px 0 18px}.pill{background:#342b50;border-radius:30px;padding:5px 11px;font-size:11px;font-weight:700;color:var(--gold)}.list{list-style:none;padding:0;margin:0}.list li{display:flex;justify-content:space-between;gap:13px;padding:9px 0;border-top:1px solid #61547655}.list li span:nth-child(2){text-align:right;color:var(--sub);font-size:12px;font-variant-numeric:tabular-nums}.empty{color:var(--blue)!important}.error{padding:16px;border:1px solid #be6086;border-radius:12px;background:#582a47;margin:12px 0}.footer{margin-top:24px;text-align:center;color:var(--sub);font-size:11px}.inline-count{font-variant-numeric:tabular-nums}@media(max-width:780px){.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.sections{grid-template-columns:1fr}.toolbar .status{margin-left:0;width:100%}}@media(max-width:340px){.cards{grid-template-columns:1fr}}
+</style></head><body><main class="wrap">
+<div class="top"><a class="back" href="index.html?view=all">← Back to Spotify Stats</a><span style="color:#e9bce1;font-weight:800;letter-spacing:.16em;font-size:11px">SEVENTEEN ✦</span></div>
+<div class="eyebrow">Archive integrity / Daily Collection</div><h1>Collection Report <span style="color:var(--pink)">✦</span></h1>
+<p class="intro">An independent read-only report for each saved day. Check which recordings were collected, see newly added tracks, and inspect zero-stream observations without changing the historical archive.</p>
+<div class="toolbar"><label for="date">Saved date</label><button id="previous" title="Previous date">‹</button><select id="date" aria-label="Saved report date"></select><button id="next" title="Next date">›</button><button id="latest">Latest</button><span class="status" id="status">Reading archive…</span></div>
+<div id="error" class="error" hidden></div>
+<div class="cards" id="cards">
+<div class="card"><small>OT13</small><strong id="group-count">—</strong><span id="group-status">Checking…</span></div>
+<div class="card"><small>Units & Solo</small><strong id="solo-count">—</strong><span id="solo-status">Checking…</span></div>
+<div class="card"><small>Collection coverage</small><strong id="coverage">—</strong><span id="coverage-note">Verifying saved snapshot files</span></div>
+<div class="card"><small>New recordings</small><strong id="new-count">—</strong><span id="new-note">Compared with previous saved day</span></div>
+</div>
+<div class="sections">
+<section class="section"><h2>✦ Collection details</h2><div class="meta" id="tags"></div><ul class="list" id="details"></ul><p class="note">A zero is a valid saved stream observation; it is not counted as missing. Older spreadsheet archives use legacy identities and cannot always be checked against the current Spotify-ID catalog.</p></section>
+<section class="section"><h2>✦ Newly added songs</h2><p class="note">Songs appearing for the first time in the saved catalog compared with the prior available snapshot. This does not assume they were released that day.</p><ul class="list" id="new"></ul></section>
+<section class="section"><h2>✦ Zero-stream observations</h2><p class="note">Legitimate saved zeros, shown for reference only.</p><ul class="list" id="zeros"></ul></section>
+<section class="section"><h2>✦ Needs attention</h2><p class="note">Missing files, invalid values, or missing previously collected recordings. Songs that had not yet been released are not flagged.</p><ul class="list" id="issues"></ul></section>
+</div><footer class="footer">Saved snapshots are read directly from the site's archive · No fabricated streams · <a href="index.html">Spotify Stats</a></footer>
+</main><script>
+(()=>{'use strict';
+const $=id=>document.getElementById(id),fmt=v=>Number(v||0).toLocaleString('en-US');
+const label=d=>d?new Date(d+'T12:00:00Z').toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric',timeZone:'UTC'}):'—';
+const escape=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+const validId=id=>/^[A-Za-z0-9]{22}$/.test(id);
+const load=async path=>{const r=await fetch(path,{cache:'no-store'});if(!r.ok)throw Error(path+' returned '+r.status);return r.json()};
+let manifest,catalog,media,latestGroup,latestSolo,dates=[],sequence=0;
+const cached=new Map();
+async function archive(scope,date){
+ const latest=scope==='group'?latestGroup:latestSolo;
+ if(latest.date===date)return latest;
+ const key=scope+'-'+date;if(cached.has(key))return cached.get(key);
+ const paths=scope==='solo'&&(manifest.solo_legacy_dates||[]).includes(date)?
+  ['solo-'+date+'.json','data/history/solo-'+date+'.json']:
+  ['data/history/'+scope+'-'+date+'.json'];
+ for(const path of paths){try{const d=await load(path);if(d.date===date){cached.set(key,d);return d}}catch{}}
+ cached.set(key,null);return null;
+}
+const setList=(id,items,empty)=>{$(id).innerHTML=items.length?items.map(row=>'<li><span>'+escape(row[0])+'</span><span>'+escape(row[1]||'')+'</span></li>').join(''):'<li class="empty">'+escape(empty)+'</li>'};
+const names={group:id=>latestGroup.names?.[id]||id,solo:id=>media.tracks?.[id]?.title||id};
+function ids(scope,snap,date){
+ if(!snap)return [];
+ if(scope==='group'){
+  // Use the canonical recording population only; anthology editions can
+  // appear in the raw collector but are intentionally not distinct tracks.
+  const all=latestGroup.canonical_track_ids||Object.keys(latestGroup.tracks);
+  return all.filter(id=>!!snap.tracks?.[id]&&validId(id));
+ }
+ return Object.keys(snap.tracks||{}).filter(validId);
+}
+async function render(date){
+ const turn=++sequence;
+ $('status').textContent='Checking '+label(date)+'…';
+ const index=dates.indexOf(date);$('previous').disabled=index<=0;$('next').disabled=index<0||index===dates.length-1;
+ const prior=dates[index-1]||null;
+ const [group,solo,previousGroup,previousSolo]=await Promise.all([
+  archive('group',date),archive('solo',date),
+  prior?archive('group',prior):null,prior?archive('solo',prior):null]);
+ if(turn!==sequence)return;
+ const issues=[],newRows=[],zeros=[],details=[];
+ const snapshots={group,solo},previous={group:previousGroup,solo:previousSolo};
+ let total=0,verified=0,legacy=false;
+ for(const scope of ['group','solo']){
+  const snap=snapshots[scope],prev=previous[scope],title=scope==='group'?'OT13':'Units & Solo';
+  if(!snap){issues.push([title,'Snapshot file missing']);$(scope+'-count').textContent='—';$(scope+'-status').textContent='Missing snapshot';continue}
+  const entries=Object.entries(snap.tracks||{});
+  const isLegacy=snap.source==='historical spreadsheet';legacy ||=isLegacy;
+  const expected=scope==='group'?latestGroup.canonical_track_ids||[]:Object.keys(latestSolo.tracks||{});
+  const present=entries.filter(([id,v])=>!isLegacy&&validId(id)&&Number.isFinite(v));
+  const canonical=present.filter(([id])=>expected.includes(id));
+  const missing=(!isLegacy?expected.filter(id=>snap.tracks[id]===undefined):[]);
+  const bad=entries.filter(([id,v])=>!Number.isFinite(v)||v<0);
+  total+=expected.length;verified+=isLegacy?0:canonical.length;
+  $(scope+'-count').textContent=isLegacy?fmt(entries.length)+' rows':fmt(canonical.length)+' / '+fmt(expected.length);
+  $(scope+'-status').textContent=isLegacy?'Historical spreadsheet (legacy keys)':missing.length||bad.length?'Review recording issues':'All current catalog IDs present';
+  details.push([title+' archive',label(snap.date)]);
+  details.push([title+' saved entries',fmt(entries.length)]);
+  details.push([title+' source',isLegacy?'Historical spreadsheet':'Spotify-ID archive']);
+  if(bad.length)issues.push([title+' invalid values',fmt(bad.length)]);
+  if(!isLegacy){
+   for(const id of missing)issues.push([names[scope](id),title+' · Not found in this snapshot']);
+   for(const [id,v] of canonical)if(v===0)zeros.push([names[scope](id),title+' · 0']);
+   if(prev&&!prev.source){
+    const priorIds=new Set(Object.keys(prev.tracks||{}));
+    for(const [id] of canonical)if(!priorIds.has(id))newRows.push([names[scope](id),title]);
+   }
+  }else{
+   for(const [id,v] of entries)if(v===0&&!/(total|listeners|followers)/i.test(snap.names?.[id]||''))zeros.push([snap.names?.[id]||id,title+' · 0']);
+  }
+ }
+ $('coverage').textContent=issues.length?'Review '+fmt(issues.length):legacy?'Legacy archive':'Complete';
+ $('coverage').className=issues.length?'warn':legacy?'':'good';
+ $('coverage-note').textContent=legacy?'Legacy workbook rows cannot be fully verified against current Spotify IDs':issues.length?'Some saved values or files need attention':'All expected canonical IDs present';
+ $('new-count').textContent=fmt(newRows.length);$('new-note').textContent=prior?'Compared with '+label(prior):'No previous shared snapshot';
+ $('tags').innerHTML='<span class="pill">'+escape(label(date))+'</span><span class="pill">'+escape(legacy?'Historical import':'Modern Spotify snapshots')+'</span>';
+ setList('details',details,'No snapshot details');setList('new',newRows,'No new recordings found');setList('zeros',zeros,'No zero-stream recordings');setList('issues',issues,'No missing or invalid values detected');
+ $('status').textContent='Report loaded · '+label(date);
+ history.replaceState(null,'','?date='+encodeURIComponent(date));
+}
+function pick(date){$('date').value=date;render(date).catch(e=>{$('error').hidden=false;$('error').textContent='Could not load report: '+e.message;$('status').textContent='Unavailable'})}
+$('date').addEventListener('change',()=>pick($('date').value));
+$('previous').addEventListener('click',()=>pick(dates[Math.max(0,dates.indexOf($('date').value)-1)]));
+$('next').addEventListener('click',()=>pick(dates[Math.min(dates.length-1,dates.indexOf($('date').value)+1)]));
+$('latest').addEventListener('click',()=>pick(dates.at(-1)));
+Promise.all([load('data/manifest.json'),load('data/catalog.json'),load('data/solo-media.json'),load('data/group.json'),load('data/solo.json')]).then(([m,c,sm,g,s])=>{
+ manifest=m;catalog=c;media=sm;latestGroup=g;latestSolo=s;
+ const soloDates=new Set([...(m.solo_dates||[]),...(m.solo_legacy_dates||[])]);
+ dates=(m.dates||[]).filter(d=>soloDates.has(d)).sort();
+ if(!dates.length)throw Error('No shared archive dates are saved');
+ $('date').innerHTML=dates.map(d=>'<option value="'+d+'">'+label(d)+'</option>').join('');
+ const requested=new URLSearchParams(location.search).get('date');
+ pick(dates.includes(requested)?requested:dates.at(-1));
+}).catch(e=>{$('error').hidden=false;$('error').textContent='Unable to load saved snapshot metadata: '+e.message;$('status').textContent='Unavailable'});
+})();
+</script></body></html>
