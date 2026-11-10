@@ -914,6 +914,12 @@ async function showAllHistory(row){
  document.getElementById('all-history-note').textContent='Last '+count+' '+(mode==='monthly'?'months':mode==='weekly'?'weeks':'days')+' through '+displayDate(end)+' · verified saved observations only. * means a verified subset or incomplete period, not a full historical total. Unrecorded dates are labeled; missing comparisons show —. Pink negative changes reflect recorded counter decreases or revisions.';
  tbody.innerHTML='<tr><td colspan="4">Loading saved history…</td></tr>';
  if(!allHistoryDialog.open)allHistoryDialog.showModal();
+ // Require exact saved dates for comparisons; never interpolate records.
+ const hasSavedDate=(scope,date)=>!!date&&(scope==='group'?
+  (state.manifest?.dates||[]).includes(date):
+  scope==='solo'?[...(state.manifest?.solo_dates||[]),...(state.manifest?.solo_legacy_dates||[])].includes(date):
+  (state.manifest?.dates||[]).includes(date)&&
+   [...(state.manifest?.solo_dates||[]),...(state.manifest?.solo_legacy_dates||[])].includes(date));
  const periods=[];
  if(mode==='daily'){
   for(let i=count+1;i>=0;i--){
@@ -931,11 +937,23 @@ async function showAllHistory(row){
    const cutoff=last<end?last:end;
    const candidates=known.filter(d=>d>=start&&d<=cutoff);
    const observation=candidates.at(-1)||null;
-   periods.push({date:observation,label:mode==='monthly'?displayMonth(start):displayDate(start)+' – '+displayDate(last),
+   periods.push({date:observation,start,last,label:mode==='monthly'?displayMonth(start):displayDate(start)+' – '+displayDate(last),
     partial:observation!==last});
   }
  }
- const observations=await Promise.all([...new Set(periods.map(p=>p.date).filter(Boolean))].map(async date=>{
+ // For incomplete months/weeks, align comparison to the same number
+ // of elapsed calendar days in the preceding period, never a full period.
+ const alignedPriorDates=[];
+ if(mode!=='daily')for(let i=1;i<periods.length;i++){
+  const current=periods[i],prior=periods[i-1];
+  if(!current.partial||!current.date||!prior.start)continue;
+  const elapsed=Math.round((Date.parse(current.date)-Date.parse(current.start))/86400000);
+  const aligned=historyDay(prior.start,elapsed);
+  if(aligned<=prior.last&&hasSavedDate(row.scope,aligned)){
+   current.alignedPriorDate=aligned;alignedPriorDates.push(aligned);
+  }
+ }
+ const observations=await Promise.all([...new Set([...periods.map(p=>p.date),...alignedPriorDates].filter(Boolean))].map(async date=>{
   try{return [date,await historyValueAt(date,row)]}catch(error){console.warn('All history observation',date,error);return [date,null]}
  }));
  if(request!==historyRequest)return;
@@ -943,11 +961,6 @@ async function showAllHistory(row){
  const signed=n=>Number.isFinite(n)?(n>0?'+':'')+fmt(n):'—';
  const tone=n=>Number.isFinite(n)?n>0?'svt-gain-positive':n<0?'svt-gain-negative':'svt-gain-neutral':'svt-gain-neutral';
  const output=[];
- const hasSavedDate=(scope,date)=>!!date&&(scope==='group'?
-  (state.manifest?.dates||[]).includes(date):
-  scope==='solo'?[...(state.manifest?.solo_dates||[]),...(state.manifest?.solo_legacy_dates||[])].includes(date):
-  (state.manifest?.dates||[]).includes(date)&&
-   [...(state.manifest?.solo_dates||[]),...(state.manifest?.solo_legacy_dates||[])].includes(date));
  for(let i=0;i<count;i++){
   const current=mode==='daily'?periods[i+2]:periods[i+1];
   const prev=mode==='daily'?periods[i+1]:periods[i];
