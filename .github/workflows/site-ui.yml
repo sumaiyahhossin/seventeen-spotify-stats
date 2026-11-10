@@ -4,6 +4,7 @@ on:
     paths:
       - 'index.html'
       - 'app.js'
+      - 'history-popup.js'
       - 'all-view.js'
       - 'all.html'
       - 'all-milestones.html'
