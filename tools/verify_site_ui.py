@@ -100,6 +100,12 @@ def check_viewport(driver,width,height):
     click(driver,'#total')
     WebDriverWait(driver,30).until(lambda d:
         not d.execute_script("return document.querySelector('.svt-history-dialog')?.hidden"))
+    # The inspector fetches historical snapshots after opening the dialog;
+    # wait for its asynchronous rows instead of racing the network.
+    WebDriverWait(driver,30).until(lambda d:d.execute_script("""
+      const rows=[...document.querySelectorAll('#svtHistoryRows tr')];
+      return rows.length>0 && rows.some(x=>/\\d/.test(x.textContent||''));
+    """))
     inspected=driver.execute_script("""
       return [...document.querySelectorAll('#svtHistoryRows tr')].map(x=>x.textContent);
     """)
