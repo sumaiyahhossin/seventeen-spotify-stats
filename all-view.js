@@ -224,7 +224,7 @@ function buildDiscography(){
 
    for(const id of ids){
     const row=canonical.get(id);
-    const title=scope==='group'?snap.names?.[id]:state.media.tracks?.[id]?.title;
+    const title=scope==='group'?(snap.names?.[id]||state.group.names?.[id]||row?.title):state.media.tracks?.[id]?.title;
     all.push({id,title:originalAllTrackTitle(title||row?.title||id,scope,id),kind:'track',scope,
      owners:row?.owners?.length?row.owners:[owner],releaseNames:[name],date:release.track_release_dates?.[id]||date,
      releaseKey:release.key,streams:archivedTrackValue(scope,id,title||row?.title||''),
@@ -339,7 +339,14 @@ async function applyPeriod(){
  for(const row of rows){
   const ids=row.ids||[row.id],now=state[row.scope].tracks,old=baselines[row.scope];
   const deltas=ids.map(id=>{
-   const a=now?.[id],b=verifiedBaselineValue(row.scope,id,old);
+   const title=row.kind==='track'?row.title:(row.scope==='group'?state.group.names?.[id]:state.media.tracks?.[id]?.title);
+   const a=row.kind==='track'&&row.discographyTrack?row.streams:now?.[id];
+   let b=verifiedBaselineValue(row.scope,id,old);
+   if(!Number.isFinite(b)&&old?.names&&title){
+    const matches=Object.entries(old.names).filter(([key,name])=>sameTitle(name)===sameTitle(title)&&Number.isFinite(old.tracks?.[key])&&
+     (row.scope==='group'||state.legacyLinks?.byIndex?.[Number(key.split(':').at(-1))]?.id===id));
+    if(matches.length===1||matches.length&&matches.every(([key])=>old.tracks[key]===old.tracks[matches[0][0]]))b=old.tracks[matches[0][0]];
+   }
    return Number.isFinite(a)&&Number.isFinite(b)&&a>=b?a-b:null;
   });
   row.gain=deltas.length&&deltas.every(Number.isFinite)?deltas.reduce((a,b)=>a+b,0):null;
