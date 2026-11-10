@@ -357,7 +357,14 @@ async function applyPeriod(){
      (row.scope==='group'||state.legacyLinks?.byIndex?.[Number(key.split(':').at(-1))]?.id===id));
     if(matches.length===1||matches.length&&matches.every(([key])=>old.tracks[key]===old.tracks[matches[0][0]]))b=old.tracks[matches[0][0]];
    }
-   return Number.isFinite(a)&&Number.isFinite(b)&&a>=b?a-b:null;
+   if(!Number.isFinite(a)||!Number.isFinite(b)||a<b)return null;
+   const gained=a-b;
+   if(old?.source==='historical spreadsheet'){
+    const elapsed=Math.max(1,Math.round((Date.parse(state[row.scope].date)-Date.parse(old.date))/86400000));
+    // Reject implausible workbook-to-current edition jumps, not real streams.
+    if(gained>Math.max(100000*elapsed,a*.05))return null;
+   }
+   return gained;
   });
   row.gain=deltas.length&&deltas.every(Number.isFinite)?deltas.reduce((a,b)=>a+b,0):null;
  }
