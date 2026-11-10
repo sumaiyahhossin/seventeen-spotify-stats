@@ -520,7 +520,7 @@ def main():
                         """)
                         assert len(records)==expected,(mode,len(records),records)
                         assert all(len(record)==4 for record in records),(mode,records)
-                        valid=sum(bool(__import__('re').search(r'\\d',record[1]))
+                        valid=sum(any(character.isdigit() for character in record[1])
                                   for record in records)
                         if mode in ('daily','weekly'):
                             assert valid>=9,(mode,valid,records)
