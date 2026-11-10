@@ -490,10 +490,12 @@ function renderSummary(){
   const figure=allVerified?totalGrowth:verifiedSubset;
   $('summaryGrowth').textContent=Number.isFinite(figure)?
    (figure>0?'+':'')+fmt(figure)+(allVerified?'':'*'):'—';
-  $('summaryGrowthNote').textContent=allVerified?
-   (period==='daily'?'From '+displayDate(dayBefore(groupDate))+' to '+displayDate(groupDate):'Verified '+period+' increase ending '+displayDate(groupDate)):
-   observedGains.length?observedGains.length+' of '+rows.length+' recordings verified · partial '+period+' gain only (*)':
+  const corrections=observedGains.filter(n=>n<0).length;
+  const note=allVerified?
+   (period==='daily'?'From '+displayDate(dayBefore(groupDate))+' to '+displayDate(groupDate):'Verified '+period+' net counter change ending '+displayDate(groupDate)):
+   observedGains.length?observedGains.length+' of '+rows.length+' recordings verified · partial '+period+' change only (*)':
     'No comparable '+period+' archive observations — no estimated growth';
+  $('summaryGrowthNote').textContent=note+(corrections?' · '+corrections+' saved counter decrease'+(corrections===1?'':'s')+' included':'');
  }
  $('summaryGrowth').classList.toggle('svt-gain-positive',Number.isFinite(totalGrowth)&&totalGrowth>0);
  $('summaryGrowth').classList.toggle('svt-gain-negative',Number.isFinite(totalGrowth)&&totalGrowth<0);
