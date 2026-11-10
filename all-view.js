@@ -39,6 +39,16 @@ function normalizeTitle(raw){
  const special={'20.0':'20','247.0':'247','golm':'God of Light Music','god of light music':'God of Light Music','9 teen':'9-TEEN','a teen':'A-TEEN'};
  return special[t.toLowerCase()]||t;
 }
+// Use the same display capitalization as OT13 and Units/Solo, including
+// deliberately styled titles such as _WORLD, MANSAE, 9-TEEN, V8 and GILBOARD.
+function originalAllTrackTitle(name,scope,id){
+ const formatter=window.svtSharedMedia?.trackTitle;
+ return normalizeTitle(formatter?formatter(name,scope,id):name);
+}
+function originalAllReleaseTitle(release){
+ const formatter=window.svtSharedMedia?.releaseTitle;
+ return formatter?formatter(release):String(release.title||release.key||'');
+}
 function validId(id){return /^[A-Za-z0-9]{22}$/.test(id)}
 function buildRows(){
  const byId=new Map();
@@ -63,12 +73,12 @@ function buildRows(){
     if(artist)row.owners.add(artist);
     // The Gilboard-only "Like It" recording is Dino's solo, not Picheolin's.
     if(release.key==='gilboard'&&index===6){row.owners.delete('Picheolin');row.owners.add('Dino')}
-    if(release.title)row.releaseNames.add(release.title);
+    if(release.title)row.releaseNames.add(originalAllReleaseTitle(release));
     const date=release.track_release_dates?.[id]||releaseDate;
     if(/^\d{4}-\d{2}-\d{2}$/.test(date||'')&&(!row.date||date<row.date))row.date=date;
     const title=scope==='group'?snapshot.names?.[id]:state.media.tracks?.[id]?.title;
     const candidate=title||nameFromRelease(release,id,index);
-    if(candidate&&(!row.title||title))row.title=normalizeTitle(candidate);
+    if(candidate&&(!row.title||(scope===row.scope&&title)))row.title=originalAllTrackTitle(candidate,scope,id);
     const count=snapshot.tracks?.[id];
     if(Number.isFinite(count)&&count>=0)row.streams=count;
    });
@@ -81,7 +91,7 @@ function buildRows(){
    let row=byId.get(id);
    if(!row){row={id,scope,owners:new Set([scope==='group'?'SEVENTEEN':'Unassigned solo/unit']),releaseNames:new Set(),date:null,title:null,streams:null};byId.set(id,row)}
    if(row.streams==null)row.streams=count;
-   if(!row.title)row.title=normalizeTitle(snapshot.names?.[id]||state.media.tracks?.[id]?.title||'');
+   if(!row.title)row.title=originalAllTrackTitle(snapshot.names?.[id]||state.media.tracks?.[id]?.title||'',scope,id);
   }
  }
  // Shared unit tracks can belong to multiple artist views, without
@@ -176,8 +186,7 @@ function buildDiscography(){
    const owner=scope==='group'?'SEVENTEEN':
     artistIds.find(([name])=>name.toLowerCase()===String(release.artist||'').toLowerCase())?.[0]||
     release.artist||'Unassigned solo/unit';
-   const name=typeof catalogReleaseLabel==='function'?
-    catalogReleaseLabel(release):String(release.title||release.key);
+   const name=originalAllReleaseTitle(release);
    const date=scope==='group'?
     (groupOriginalReleaseDates[release.key]||groupStandaloneReleaseDates[release.key]||release.release_date||null):
     (release.release_date||release.releaseDate||null);
@@ -191,7 +200,7 @@ function buildDiscography(){
    for(const id of ids){
     const row=canonical.get(id);
     const title=scope==='group'?snap.names?.[id]:state.media.tracks?.[id]?.title;
-    all.push({id,title:normalizeTitle(title||row?.title||id),kind:'track',scope,
+    all.push({id,title:originalAllTrackTitle(title||row?.title||id,scope,id),kind:'track',scope,
      owners:row?.owners?.length?row.owners:[owner],releaseNames:[name],date:release.track_release_dates?.[id]||date,
      releaseKey:release.key,streams:snap.tracks?.[id]??null,
      sortDate:date,releaseOrder:all.length,discographyTrack:true});
@@ -215,7 +224,7 @@ function buildDiscography(){
    releaseOrder:begin,discographyHeader:true});
   for(const id of ids){
    const main=canonical.get(id),name=state.media.tracks?.[id]?.title||main?.title||id;
-   all.push({id,title:normalizeTitle(name),kind:'track',scope:'solo',
+   all.push({id,title:originalAllTrackTitle(name,'solo',id),kind:'track',scope:'solo',
     owners:main?.owners?.length?main.owners:owners,releaseNames:[spec.displayName||spec.key],
     date,sortDate:date,releaseKey:spec.key,releaseOrder:all.length,
     streams:state.solo.tracks[id],discographyTrack:true});
