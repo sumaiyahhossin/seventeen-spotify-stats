@@ -398,9 +398,20 @@ function renderSummary(){
  });
  const valid=deltas.filter(Number.isFinite);
  const complete=sameDay&&rows.length>0&&valid.length===rows.length;
- $('summaryGrowth').textContent=complete?'+'+fmt(valid.reduce((a,b)=>a+b,0)):'—';
- $('summaryGrowthNote').textContent=complete?'From '+dayBefore(groupDate)+' to '+groupDate:
-  'Daily growth requires full consecutive snapshots for both categories';
+ const period=state.period;
+ const heading=document.getElementById('all-summaryGrowthHeading');
+ if(heading)heading.textContent=period==='overall'?'STREAM GROWTH · OVERALL':period.toUpperCase()+' STREAM GROWTH';
+ if(period==='overall'){
+  $('summaryGrowth').textContent='—';
+  $('summaryGrowthNote').textContent='Overall shows cumulative streams. Select Daily, Weekly, Monthly or Yearly for growth.';
+ }else if(period==='daily'){
+  $('summaryGrowth').textContent=complete?'+'+fmt(valid.reduce((a,b)=>a+b,0)):'—';
+  $('summaryGrowthNote').textContent=complete?'From '+dayBefore(groupDate)+' to '+groupDate:
+   'Daily growth requires full consecutive snapshots for both categories';
+ }else{
+  $('summaryGrowth').textContent='—';
+  $('summaryGrowthNote').textContent='See verified '+period+' gains in the track and album rankings below';
+ }
  $('summaryCoverage').textContent=allComplete?
   fmt(rows.length)+' distinct Spotify recordings · group, members and units combined without duplicate editions or shared recording IDs. '+
   (complete?'All '+fmt(rows.length)+' recordings have verified previous-day comparisons.':
@@ -698,7 +709,7 @@ if(allArchiveDate)allArchiveDate.addEventListener('change',async()=>{
  }catch(error){console.warn('Combined archive date',error);$('coverage').textContent='Could not load that archived date.'}
  finally{allArchiveDate.disabled=false}
 });
-$('period').addEventListener('change',async()=>{state.period=$('period').value;state.page=0;$('coverage').textContent='Checking saved calendar boundaries…';await applyPeriod();renderTracks();renderArtists()});
+$('period').addEventListener('change',async()=>{state.period=$('period').value;state.page=0;$('coverage').textContent='Checking saved calendar boundaries…';await applyPeriod();renderSummary();renderTracks();renderArtists()});
 $('prev').addEventListener('click',()=>{state.page--;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
 $('next').addEventListener('click',()=>{state.page++;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
 
