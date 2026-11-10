@@ -7,8 +7,9 @@ on:
       - 'tools/catalog.py'
       - 'tools/pipeline.py'
       - 'tools/instrument.py'
-      - 'app.js'
-      - 'milestones.js'
+      - 'tools/gate.py'
+      - 'tools/reporting_window.py'
+      - 'tools/test_reporting_window.py'
       - '.github/workflows/collector-check.yml'
   workflow_dispatch:
 jobs:
@@ -28,9 +29,11 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      - name: Test 2 PM New York reporting, DST and midnight retries
+        run: python tools/test_reporting_window.py
       - name: Check Python and JavaScript syntax
         run: |
-          python -m py_compile tools/pipeline.py tools/instrument.py tools/gate.py tools/catalog.py
+          python -m py_compile tools/pipeline.py tools/instrument.py tools/gate.py tools/catalog.py tools/reporting_window.py
           node --check app.js
           node --check milestones.js
       - name: Prepare Selenium Java dependencies
