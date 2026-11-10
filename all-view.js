@@ -42,7 +42,7 @@ function saveAllViewState(){
  try{sessionStorage.setItem(allViewKey,JSON.stringify({
   date:state.group.date===state.solo.date?state.group.date:null,
   period:state.period,mode:state.mode,page:state.page,
-  owner:$('owner')?.value||'all',query:$('search')?.value||'',sort:$('sort')?.value||'streams'
+  owner:$('owner')?.value||'all',query:$('search')?.value||'',sort:$('sort')?.value||'streams',artistSort:$('artistSort')?.value||'most'
  }))}catch{}
 }
 window.addEventListener('pagehide',saveAllViewState);
@@ -435,9 +435,9 @@ function renderSummary(){
  const sameDay=!!groupDate&&groupDate===soloDate;
  $('summaryDate').textContent=sameDay?dateFormat(groupDate):'See dates below';
  $('toolbarDate').textContent=sameDay?dateFormat(groupDate):
-  'OT13 '+(groupDate||'—')+' · Solo '+(soloDate||'—');
- $('summaryDateNote').textContent=sameDay?'Both archives · '+groupDate:
-  'OT13 '+(groupDate||'—')+' · Unit/Solo '+(soloDate||'—');
+  'OT13 '+displayDate(groupDate)+' · Solo '+displayDate(soloDate);
+ $('summaryDateNote').textContent=sameDay?'Both archives · '+displayDate(groupDate):
+  'OT13 '+displayDate(groupDate)+' · Unit/Solo '+displayDate(soloDate);
  const prev=state.milestonePrevious||{};
  const deltas=rows.map(row=>{
   const source=prev[row.scope];
@@ -464,7 +464,7 @@ function renderSummary(){
   $('summaryGrowth').textContent=Number.isFinite(figure)?
    (figure>0?'+':'')+fmt(figure)+(allVerified?'':'*'):'—';
   $('summaryGrowthNote').textContent=allVerified?
-   (period==='daily'?'From '+dayBefore(groupDate)+' to '+groupDate:'Verified '+period+' increase ending '+groupDate):
+   (period==='daily'?'From '+displayDate(dayBefore(groupDate))+' to '+displayDate(groupDate):'Verified '+period+' increase ending '+displayDate(groupDate)):
    observedGains.length?observedGains.length+' of '+rows.length+' recordings verified · partial '+period+' gain only (*)':
     'No comparable '+period+' archive observations — no estimated growth';
  }
@@ -634,6 +634,7 @@ function renderTracks(){
    }).flatMap(block=>block.items.sort((a,b)=>(a.releaseOrder??0)-(b.releaseOrder??0))));
  }else rows.sort((a,b)=>{
   if(effectiveOrder==='title')return (a.title||'').localeCompare(b.title||'');
+  if(effectiveOrder==='title-za')return (b.title||'').localeCompare(a.title||'');
   if(effectiveOrder==='newest')return (b.sortDate||b.date||'').localeCompare(a.sortDate||a.date||'');
   if(effectiveOrder==='oldest')return (a.sortDate||a.date||'9999').localeCompare(b.sortDate||b.date||'9999');
   const x=score(a),y=score(b);
@@ -658,7 +659,10 @@ function renderTracks(){
   isAlbum?'Album Rankings · All Artists':'Track Rankings · All Artists';
  $('totalTitle').textContent='TOTAL STREAMS';
  $('gainTitle').hidden=period==='overall';
- $('gainTitle').textContent=period.toUpperCase()+' STREAMS ADDED';
+ $('gainTitle').textContent=period.toUpperCase()+' INCREASE';
+ $('changeTitle').hidden=period==='overall';
+ $('changeTitle').textContent='CHANGE';
+ document.getElementById('svtAllView').classList.toggle('svt-all-period-metrics',period!=='overall');
  const date=state.group.date,from=boundaryDate('group',period);
  const periodRange=period==='overall'?'all-time totals':
   (from&&date?dayBefore(date)>from?dayBefore(date):date:date);
@@ -686,6 +690,9 @@ function renderTracks(){
   const added=row.gain;
   const printGain=Number.isFinite(added)?(added>0?'+':'')+fmt(added):'—';
   const gainColor=Number.isFinite(added)?(added>0?'svt-gain-positive':added<0?'svt-gain-negative':'svt-gain-neutral'):'svt-gain-neutral';
+  const changed=row.change;
+  const printChange=Number.isFinite(changed)?(changed>0?'+':'')+fmt(changed):'—';
+  const changeColor=Number.isFinite(changed)?(changed>0?'svt-gain-positive':changed<0?'svt-gain-negative':'svt-gain-neutral'):'svt-gain-neutral';
   return '<tr'+(isDiscography&&row.discographyHeader?' class="svt-all-release-row"':'')+
    '><td><div class="svt-all-record"><span class="svt-all-rank">'+ranked+'</span>'+
    '<span class="svt-all-art-holder"><img class="svt-all-cover cover" data-cover-track="'+artwork+
@@ -693,7 +700,8 @@ function renderTracks(){
    '" alt="'+name+' cover" loading="lazy"><span class="cover-placeholder" hidden></span></span>'+
    '<div class="svt-all-record-copy">'+link+'<div class="svt-all-sub">'+esc(sub)+
    '</div></div></div></td><td class="svt-all-num svt-all-stream-total" data-all-history="'+sourceRows.indexOf(row)+'" tabindex="0" role="button" title="View saved stream history">'+printTotal+'</td>'+
-   (period==='overall'?'':'<td class="svt-all-num '+gainColor+'" data-all-history="'+sourceRows.indexOf(row)+'" tabindex="0" role="button" title="View saved stream history">'+printGain+'</td>')+'</tr>';
+   (period==='overall'?'':'<td class="svt-all-num '+gainColor+'" data-all-history="'+sourceRows.indexOf(row)+'" tabindex="0" role="button" title="View saved stream history">'+printGain+'</td>'+
+    '<td class="svt-all-num '+changeColor+'" data-all-history="'+sourceRows.indexOf(row)+'" tabindex="0" role="button" title="View saved stream history">'+printChange+'</td>')+'</tr>';
  }).join('')||'<tr><td colspan="2" class="svt-all-status">No matching '+(isDiscography?'releases':isAlbum?'albums':'recordings')+'.</td></tr>';
  $('pageInfo').textContent=(state.page+1)+' / '+totalPages;
  $('prev').disabled=state.page===0;$('next').disabled=state.page+1>=totalPages;
@@ -727,7 +735,7 @@ async function init(){
   }
   $('period').value=state.period;
   if(typeof allRemembered.query==='string')$('search').value=allRemembered.query;
-  if(['streams','least','newest','oldest','title'].includes(allRemembered.sort))$('sort').value=allRemembered.sort;
+  if(['streams','least','newest','oldest','title','title-za'].includes(allRemembered.sort))$('sort').value=allRemembered.sort;
   buildRows();
   for(const extra of admin.releases||[])if(extra.scope==='solo'&&extra.release_type==='album')
    state.albumSpecs.push({key:extra.key,displayName:extra.title,releaseDate:extra.release_date,owners:[extra.artist],tracks:extra.tracks});
