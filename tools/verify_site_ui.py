@@ -413,14 +413,14 @@ def main():
                     """)
                     try:
                         WebDriverWait(driver,25).until(lambda d:
-                            'Nov 7, 2026' in d.find_element(By.ID,'all-summaryDate').text)
+                            d.execute_script("return document.getElementById('all-summaryDate')?.textContent?.includes('Nov 7, 2026')"))
                     except Exception:
                         print('Archive date loading diagnosis:',driver.execute_script("""
                             return {summary:document.getElementById('all-summaryDate')?.textContent,
                              selected:document.getElementById('all-archiveDate')?.value,
                              period:document.getElementById('all-period')?.value,
                              coverage:document.getElementById('all-coverage')?.textContent,
-                             state:window.svtAllAudit?.(),
+                             state:(()=>{const x=window.svtAllAudit?.();return x?{date:x.date,period:x.period,tracks:x.tracks,verified:x.verified,missing:x.missing?.slice(0,8)}:null})(),
                              url:location.href};
                         """),flush=True)
                         raise
