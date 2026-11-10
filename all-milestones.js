@@ -113,13 +113,34 @@ const releaseArtworkAliases={
  'face the sun album':'Face the Sun','your choice album':'Your Choice',
  'heng garae album':'Heng:garæ'
 };
+// Apple documents callback-based cross-site Search API responses.
+// JSONP avoids CORS errors that occur with fetch() from GitHub Pages.
+let albumCoverCallbackIndex=0;
+function itunesSearchWithCallback(term,kind){
+ return new Promise(resolve=>{
+  const callback='svtAlbumArtResponse'+(++albumCoverCallbackIndex);
+  const script=document.createElement('script');
+  let done=false;
+  const finish=data=>{
+   if(done)return;
+   done=true;clearTimeout(timeout);
+   try{delete window[callback]}catch{window[callback]=undefined}
+   script.remove();
+   resolve(Array.isArray(data?.results)?data.results:[]);
+  };
+  const timeout=setTimeout(()=>finish(null),9000);
+  window[callback]=data=>finish(data);
+  script.onerror=()=>finish(null);
+  const query=new URLSearchParams({term,entity:kind,limit:'60',country:'US',callback});
+  script.src='https://itunes.apple.com/search?'+query;
+  script.async=true;
+  document.head.appendChild(script);
+ });
+}
 async function itunesArtwork(term,kind,expected){
- const params=new URLSearchParams({term,entity:kind,limit:'60',country:'US'});
- const res=await fetch('https://itunes.apple.com/search?'+params.toString());
- if(!res.ok)return '';
- const data=await res.json();
+ const items=await itunesSearchWithCallback(term,kind);
  const clean=s=>artworkName(s).replace(/\b(album|single|ep|mini)\b/g,'').trim();
- const matches=(data.results||[]).filter(item=>{
+ const matches=items.filter(item=>{
   if(!/seventeen/i.test(item.artistName||''))return false;
   const title=kind==='album'?item.collectionName:item.trackName;
   return clean(title)===clean(expected);
