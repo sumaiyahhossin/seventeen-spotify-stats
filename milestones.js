@@ -73,6 +73,12 @@ const externalEvidence={
  ['name:'+norm('To you')]:{100000000:{date:'2025-11-22',source:'ChartMasters milestone history',url:'https://chartmasters.org/artist/seventeen/'}},
  ['name:'+norm('THUNDER')]:{100000000:{date:'2026-04-18',source:'Pledis confirmation reported Apr 20 (Saturday crossing)',url:'https://www.koreaherald.com/article/10720987'}}
 };
+// The archive calls this recording "LOVE, MONEY, FAME" without its feature
+// suffix. Both titles refer to the exact track confirmed at 100M on Feb 6.
+(externalEvidence['name:'+norm('LOVE, MONEY, FAME')]??={})[100000000]={
+ date:'2026-02-06',source:'ChartMasters February 6, 2026 milestone; Pledis confirmed the February 6 total',
+ url:'https://chartmasters.org/artist/seventeen/'
+};
 // Dated 200M Spotify milestones supplied from milestone announcements.
 for(const [song,date,source,url] of [
  ['Rock with you','2025-05-12','Spotify milestone announcement',''],
