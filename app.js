@@ -2199,7 +2199,28 @@ function verifiedSoloLegacyValue(snapshot,spotifyId){
   if(matched&&Number.isFinite(matched.value)&&matched.value>=0)
    possibilities.push({id:matched.id,value:matched.value});
  }
- if(!possibilities.length||new Set(possibilities.map(row=>row.value)).size!==1)return null;
+ if(!possibilities.length||new Set(possibilities.map(row=>row.value)).size!==1){
+  // The two GILBOARD album IDs are reissues of confirmed earlier singles;
+  // before Aug 3 the saved sheet contains their original single rows.
+  const single={
+   '34wTGQ1yV5XtrSMR5dMLWY':'594CTGIIVVTitwRhQJcWgM',
+   '5W1bn5PzFgKok4GAZ1JUAw':'3Y0ZwgYVHuwbW0JGjsYodR'
+  }[spotifyId];
+  if(single&&snapshot.date<'2026-08-03')
+   return verifiedSoloLegacyValue(snapshot,single);
+
+  // In older BSS workbooks, Good Day 2025's track and subtotal were
+  // accidentally labeled identically. Their two saved values are equal;
+  // match exactly once, never add them or assign other identically named tracks.
+  if(spotifyId==='4SinziOMDPR58wWHakWP9v'&&snapshot.date<'2026-05-01'){
+   const matches=Object.entries(snapshot.names||{}).filter(([id,name])=>
+    soloHistoricalNameKey(name)==='goodday2025telepathybythemoonlightwindow'&&
+    Number.isFinite(snapshot.tracks?.[id]));
+   if(matches.length===2&&snapshot.tracks[matches[0][0]]===snapshot.tracks[matches[1][0]])
+    return {id:matches[0][0],value:snapshot.tracks[matches[0][0]]};
+  }
+  return null;
+ }
  return possibilities[0];
 }
 function soloLegacyTrackIds(s,owner){
