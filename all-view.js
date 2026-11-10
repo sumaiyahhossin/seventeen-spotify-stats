@@ -184,7 +184,8 @@ function buildDiscography(){
    const key=scope+':'+release.key;
    if(seenReleases.has(key))continue;
    seenReleases.add(key);
-   const ids=unique((release.tracks||[]).filter(id=>validId(id)&&valid.has(id)));
+   // A missing historical snapshot value must not erase a released song from Discography.
+   const ids=unique((release.tracks||[]).filter(id=>validId(id)));
    if(!ids.length)continue;
    const owner=scope==='group'?'SEVENTEEN':
     artistIds.find(([name])=>name.toLowerCase()===String(release.artist||'').toLowerCase())?.[0]||
@@ -215,9 +216,11 @@ function buildDiscography(){
  // catalog instead of as a standalone unit release in the per-member catalog.
  // Include an actual unit release heading so artist filtering keeps the album
  // alongside its songs, without changing the underlying recording totals.
+ const seenUnitAlbums=new Set();
  for(const spec of state.albumSpecs||[]){
-  if(!['jxj_dreamscape','v8','gilboard'].includes(spec.key))continue;
-  const ids=unique((spec.tracks||[]).filter(id=>validId(id)&&validSolo.has(id)));
+  if(!['jxj_dreamscape','v8','gilboard'].includes(spec.key)||seenUnitAlbums.has(spec.key))continue;
+  seenUnitAlbums.add(spec.key);
+  const ids=unique((spec.tracks||[]).filter(id=>validId(id)));
   if(!ids.length)continue;
   const owners=['jxj_dreamscape','v8'].includes(spec.key)?[spec.key==='v8'?'V8':'JxJ']:(spec.owners||[]),name=spec.displayName||spec.key;
   const date=spec.releaseDate||spec.release_date||null,begin=all.length;
