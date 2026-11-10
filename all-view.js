@@ -69,6 +69,7 @@ function buildRows(){
     release.key==='sharedTracks'?'JxJ':
     release.key==='gilboard'?'Picheolin':(canonicalOwner||release.artist);
    const releaseDate=scope==='group'?(groupOriginalReleaseDates[release.key]||groupStandaloneReleaseDates[release.key]||release.release_date):release.release_date;
+   if(/^\d{4}-\d{2}-\d{2}$/.test(releaseDate||'')&&releaseDate>snapshot.date)continue;
    (release.tracks||[]).forEach((id,index)=>{
     if(!validId(id))return;
     // Exclude known legacy aliases from the group catalog. The current
@@ -94,6 +95,7 @@ function buildRows(){
   // from current snapshots even when release metadata has not arrived yet.
   for(const [id,count] of Object.entries(snapshot.tracks||{})){
    if(!validId(id)||!Number.isFinite(count))continue;
+   if(snapshot.source==='historical spreadsheet'&&!byId.has(id))continue;
    if(scope==='group'&&Array.isArray(snapshot.canonical_track_ids)&&!snapshot.canonical_track_ids.includes(id))continue;
    let row=byId.get(id);
    if(!row){row={id,scope,owners:new Set([scope==='group'?'SEVENTEEN':'Unassigned solo/unit']),releaseNames:new Set(),date:null,title:null,streams:null};byId.set(id,row)}
