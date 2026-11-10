@@ -564,6 +564,17 @@ def main():
                     el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));
                 """)
                 assert len(driver.find_elements(By.CSS_SELECTOR,'#upcomingRows .song-title'))>=390,                    'Combined upcoming milestones omitted many unit/solo songs'
+                # The page must not send hundreds of CORS-blocked Spotify
+                # oEmbed calls when showing the full upcoming list.
+                assert driver.execute_script("""
+                    return [...performance.getEntriesByType('resource')].filter(item=>
+                      item.name.includes('open.spotify.com/oembed')).length===0;
+                """),'All milestone covers still request blocked Spotify oEmbed endpoints'
+                assert driver.execute_script("""
+                    const cover=document.querySelector('#upcomingRows .song-cover');
+                    return !!cover && !!document.querySelector('#upcomingRows .song-title');
+                """),'Combined milestone listing lost song artwork positions'
+
                 assert driver.execute_script("""
                     return document.documentElement.scrollWidth<=window.innerWidth+5
                 """),f'All milestone page horizontal overflow at {width}px'
