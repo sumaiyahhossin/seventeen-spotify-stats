@@ -1990,6 +1990,19 @@ function renderArtistProfiles(){
 }
 // The All tab calls the same image resolver as the original artist and ranking views.
 window.svtSharedMedia={
+ // Match the original OT13 and Units/Solo naming rules. Raw collector
+ // catalog labels are lower-case and should never be printed verbatim in All.
+ trackTitle(name,scope,id){
+  const raw=String(name||'').trim();
+  if(scope==='solo'){
+   const original=soloMedia.tracks?.[id]?.title;
+   return original||displayTrackName(raw);
+  }
+  return displayTrackName(raw);
+ },
+ releaseTitle(release){
+  return catalogReleaseLabel(release);
+ },
  artistImage(img,name){
   if(!img)return;
   const originals=sharedSoloProfilePhotos[name];
