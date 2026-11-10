@@ -2206,8 +2206,21 @@ function verifiedSoloLegacyValue(snapshot,spotifyId){
    '34wTGQ1yV5XtrSMR5dMLWY':'594CTGIIVVTitwRhQJcWgM',
    '5W1bn5PzFgKok4GAZ1JUAw':'3Y0ZwgYVHuwbW0JGjsYodR'
   }[spotifyId];
-  if(single&&snapshot.date<'2026-08-03')
-   return verifiedSoloLegacyValue(snapshot,single);
+  if(single&&snapshot.date<'2026-08-03'){
+   const matchedSingle=verifiedSoloLegacyValue(snapshot,single);
+   if(matchedSingle)return matchedSingle;
+   // Some July sheets list these singles outside the later Gilboard
+   // artist block, so the ordinary owner-section matcher cannot find them.
+   // Their exact song titles have one unique saved numeric observation.
+   const canonicalName=spotifyId==='34wTGQ1yV5XtrSMR5dMLWY'?
+    'micheomicheo':'lovesick';
+   const rows=Object.entries(snapshot.names||{}).filter(([key,name])=>
+    soloHistoricalNameKey(name)===canonicalName&&
+    Number.isFinite(snapshot.tracks?.[key]));
+   if(rows.length&&rows.every(([key])=>
+     snapshot.tracks[key]===snapshot.tracks[rows[0][0]]))
+    return {id:rows[0][0],value:snapshot.tracks[rows[0][0]]};
+  }
 
   // In older BSS workbooks, Good Day 2025's track and subtotal were
   // accidentally labeled identically. Their two saved values are equal;
