@@ -125,9 +125,48 @@ def audit() -> dict:
                            "legacy_dates": legacy_days, "saved_zero_values": zero_values,
                            "latest_date": modern[scope].get("date"),
                            "latest_entries": len(modern[scope].get("tracks", {}))}
+    # Coverage for the All view is the intersection of the independently
+    # collected OT13 and Unit/Solo reporting dates.
+    shared = dated["group"] & dated["solo"]
+    first = min(dated["group"] | dated["solo"])
+    latest = min(modern["group"].get("date", ""), modern["solo"].get("date", ""))
+    day = dt.date.fromisoformat(first)
+    finish = dt.date.fromisoformat(latest)
+    missing_shared = []
+    while day <= finish:
+        if day.isoformat() not in shared:
+            missing_shared.append(day.isoformat())
+        day += dt.timedelta(days=1)
+    weeks = []
+    sunday = finish - dt.timedelta(days=(finish.weekday() + 1) % 7)
+    for count in range(10):
+        end = sunday - dt.timedelta(weeks=count)
+        baseline = end - dt.timedelta(days=7)
+        weeks.append({"ending": end.isoformat(), "baseline": baseline.isoformat(),
+                      "both_boundaries_saved": end.isoformat() in shared and baseline.isoformat() in shared})
+    months = []
+    current_month = dt.date(finish.year, finish.month, 1)
+    for count in range(12):
+        last_day = current_month - dt.timedelta(days=1)
+        next_month = current_month - dt.timedelta(days=1)
+        begin_month = dt.date(next_month.year, next_month.month, 1)
+        baseline = begin_month - dt.timedelta(days=1)
+        months.append({"month": begin_month.strftime("%Y-%m"), "baseline": baseline.isoformat(),
+                       "ending": last_day.isoformat(),
+                       "both_boundaries_saved": baseline.isoformat() in shared and last_day.isoformat() in shared})
+        current_month = begin_month
+    year_coverage = {
+        "first_saved_date": first, "latest_saved_date": latest,
+        "shared_saved_dates": len(shared),
+        "missing_shared_dates": len(missing_shared),
+        "missing_shared_date_list": missing_shared,
+        "latest_ten_weeks": weeks,
+        "recent_twelve_completed_months": months,
+    }
     return {"checked_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
             "result": "issues" if problems else "gaps recorded" if any(item["missing_calendar_days"] for item in overview.values()) else "pass",
-            "overview": overview, "issues": problems, "newly_added": newly_added}
+            "overview": overview, "year_coverage": year_coverage,
+            "issues": problems, "newly_added": newly_added}
 
 
 def main() -> int:
@@ -143,6 +182,13 @@ def main() -> int:
         print(f"{scope}: {item['checked_dates']} / {item['listed_dates']} days; "
               f"{item['latest_entries']} latest entries; {item['saved_zero_values']} valid zeros; "
               f"{item['missing_calendar_days']} unrecorded calendar dates")
+    coverage = report["year_coverage"]
+    print(f"All: {coverage['shared_saved_dates']} shared saved dates, "
+          f"{coverage['missing_shared_dates']} dates without both archives")
+    print(f"All: {sum(x['both_boundaries_saved'] for x in coverage['latest_ten_weeks'])}"
+          "/10 recent weekly endpoint pairs saved")
+    print(f"All: {sum(x['both_boundaries_saved'] for x in coverage['recent_twelve_completed_months'])}"
+          "/12 previous complete monthly endpoint pairs saved")
     for item in report["issues"][:40]:
         print(f"ISSUE {item['date']} {item['scope']}: {item['error']}")
     summary = __import__("os").environ.get("GITHUB_STEP_SUMMARY")
@@ -154,6 +200,12 @@ def main() -> int:
             for scope, item in report["overview"].items():
                 file.write(f"- {scope}: {item['checked_dates']}/{item['listed_dates']} validated, "
                            f"{item['saved_zero_values']} zero entries.\n")
+            file.write(f"- All shared archive: {coverage['shared_saved_dates']} days saved, "
+                       f"{coverage['missing_shared_dates']} missing between archive endpoints.\\n")
+            file.write(f"- Recent ten weekly endpoints: "
+                       f"{sum(x['both_boundaries_saved'] for x in coverage['latest_ten_weeks'])}/10.\\n")
+            file.write(f"- Previous twelve completed monthly endpoints: "
+                       f"{sum(x['both_boundaries_saved'] for x in coverage['recent_twelve_completed_months'])}/12.\\n")
             for issue in report["issues"][:20]:
                 file.write(f"- **{issue['date']} {issue['scope']}**: {issue['error']}\n")
     return 0 if not report["issues"] else 1
