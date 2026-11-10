@@ -478,12 +478,19 @@ def main():
                         const picker=document.getElementById('all-archiveDate');
                         picker.value='2026-11-08';
                         picker.dispatchEvent(new Event('change',{bubbles:true}));
+                    """)
+                    WebDriverWait(driver,30).until(lambda d:d.execute_script("""
+                        return document.getElementById('all-summaryDate')?.textContent?.includes('Nov 8, 2026') &&
+                          document.getElementById('all-summaryStreams')?.textContent?.trim()==='10,315,463,577';
+                    """))
+                    driver.execute_script("""
                         const period=document.getElementById('all-period');
                         period.value='overall';period.dispatchEvent(new Event('change',{bubbles:true}));
                     """)
-                    WebDriverWait(driver,45).until(lambda d:
-                        'Nov 8, 2026' in d.find_element(By.ID,'all-summaryDate').text
-                        and d.find_element(By.ID,'all-summaryStreams').text.strip()=='10,315,463,577')
+                    WebDriverWait(driver,30).until(lambda d:d.execute_script("""
+                        return document.getElementById('all-period')?.value==='overall' &&
+                          document.getElementById('all-summaryStreams')?.textContent?.trim()==='10,315,463,577';
+                    """))
 
                 # Original and All use the same light-colored stat cards.
                 assert driver.execute_script("""
