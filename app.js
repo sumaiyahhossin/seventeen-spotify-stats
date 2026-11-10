@@ -2036,7 +2036,7 @@ window.svtSharedMedia={
   const previousTab=tab,previousRank=rank;
   try{
    tab=row.scope==='solo'?'solo':'group';
-   rank=(row.kind==='album'?'albums':'tracks')+'-overall';
+   rank=row.discographyAppearance?'discography-overall':(row.kind==='album'?'albums':'tracks')+'-overall';
    return artworkTrack({id:row.id||null,name:row.title||row.name||'',kind:row.kind||'track',
     artworkRelease:row.releaseKey||row.artworkRelease||null,releaseDate:row.date||null})||
     (/^[a-zA-Z0-9]{22}$/.test(row.id||'')?'track:'+row.id:null);
