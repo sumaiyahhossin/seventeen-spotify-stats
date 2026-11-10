@@ -494,9 +494,9 @@ def main():
                 water=driver.execute_script("""
                     const row=[...document.querySelectorAll('#all-recordings tr')]
                         .find(r=>r.querySelector('.svt-all-song')?.textContent==='Water');
-                    return {value:row?.querySelector('.svt-all-num')?.textContent?.trim()||'',
+                    return {value:row?.querySelector('.svt-all-num:not(.svt-all-stream-total)')?.textContent?.trim()||'',
                         rows:[...document.querySelectorAll('#all-recordings tr')]
-                            .map(r=>Number(r.querySelector('.svt-all-num')?.textContent.replace(/[^0-9]/g,'')))};
+                            .map(r=>Number(r.querySelector('.svt-all-num:not(.svt-all-stream-total)')?.textContent.replace(/[^0-9]/g,'')))};
                 """)
                 if json.loads((ROOT/'data/group.json').read_text(encoding='utf-8'))['date']=='2026-11-08':
                     assert water['value']=='+66,556',f'Water weekly gained an unrelated song: {water}'
@@ -537,11 +537,11 @@ def main():
                     document.getElementById('all-search').value='';
                     document.getElementById('all-search').dispatchEvent(new Event('input',{bubbles:true}));
                 """)
-                assert driver.find_element(By.ID,'all-gainTitle').text=='WEEKLY GAIN'
+                assert driver.find_element(By.ID,'all-gainTitle').text=='WEEKLY STREAMS ADDED'
                 assert driver.execute_script("""
                     return [...document.querySelectorAll('#all-recordings tr')].every(
-                        row=>row.querySelectorAll('td').length===2);
-                """),'Combined period ranking should display only the selected metric'
+                        row=>row.querySelectorAll('td').length===3);
+                """),'All period rankings should display total streams and streams added'
                 # The compact combined ranking matches OG's dense track layout.
                 assert driver.execute_script("""
                     const row=document.querySelector('#all-recordings tr');
