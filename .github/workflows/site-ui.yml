@@ -6,6 +6,8 @@ on:
       - 'app.js'
       - 'all-view.js'
       - 'all.html'
+      - 'all-milestones.html'
+      - 'all-milestones.js'
       - 'data/all-milestone-evidence.json'
       - 'data/solo-albums.json'
       - 'style.css'
