@@ -356,9 +356,15 @@ def main():
 
                 assert len(driver.find_elements(By.CSS_SELECTOR,'#all-rankCategory [data-all-rank]'))==6,                    'All should offer six distinct ranking choices'
                 assert driver.find_element(By.CSS_SELECTOR,'#all-rankCategory [data-all-rank="tracks"]').get_attribute('class').find('active')>=0
+                # Overall shows cumulative streams, not a one-day growth value.
+                # Verify both the overall figure and the Daily comparison separately.
+                driver.execute_script("""
+                    const period=document.getElementById('all-period');
+                    period.value='overall';period.dispatchEvent(new Event('change',{bubbles:true}));
+                """)
                 WebDriverWait(driver,40).until(lambda d:
                     d.find_element(By.ID,'all-summaryTracks').text.strip() not in ('','—') and
-                    d.find_element(By.ID,'all-summaryGrowth').text.strip() not in ('','—'))
+                    d.find_element(By.ID,'all-summaryStreams').text.strip() not in ('','—'))
                 assert len(driver.find_elements(By.CSS_SELECTOR,'#svtAllView .svt-all-stats > .stat'))==4
                 current_group=json.loads((ROOT/'data/group.json').read_text(encoding='utf-8'))
                 current_solo=json.loads((ROOT/'data/solo.json').read_text(encoding='utf-8'))
@@ -370,7 +376,17 @@ def main():
                           document.getElementById('all-summaryDate').textContent]
                     """)
                     assert observed[0]=='10,315,463,577',f'Combined total double-counted source recordings: {observed}'
-                    assert observed[1]=='+2,493,721',f'Combined daily gains double-counted recordings: {observed}'
+                    assert observed[1]=='—',f'Overall should not display one-day growth: {observed}'
+                    driver.execute_script("""
+                        const period=document.getElementById('all-period');
+                        period.value='daily';period.dispatchEvent(new Event('change',{bubbles:true}));
+                    """)
+                    WebDriverWait(driver,30).until(lambda d:
+                        d.find_element(By.ID,'all-summaryGrowth').text.strip()=='+2,493,721')
+                    driver.execute_script("""
+                        const period=document.getElementById('all-period');
+                        period.value='overall';period.dispatchEvent(new Event('change',{bubbles:true}));
+                    """)
                     assert observed[2]=='406',f'Expected 406 canonical recordings, not {observed}'
                     assert 'Nov 8, 2026' in observed[3],f'Combined date missing: {observed}'
                     print('Verified combined total 10,315,463,577 · daily +2,493,721 · 406 tracks',flush=True)
