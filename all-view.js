@@ -47,6 +47,11 @@ function originalAllTrackTitle(name,scope,id){
  return normalizeTitle(formatter?formatter(name,scope,id):name);
 }
 function originalAllReleaseTitle(release){
+ if(release.key==='g49')return '17 IS RIGHT HERE — New Tracks';
+ if(release.key==='g50')return '17 IS RIGHT HERE — Korean Versions';
+ if(release.key==='g51'||release.key==='g52')return '17 IS RIGHT HERE — Additional Tracks';
+ if(release.key==='g53')return '17 IS RIGHT HERE — Original Tracks';
+ if(release.key==='g54')return '17 IS RIGHT HERE — Digital Bonus Track';
  const formatter=window.svtSharedMedia?.releaseTitle;
  const label=formatter?formatter(release):String(release.title||release.key||'');
  return /^g\d+$/i.test(String(label).trim())?String(release.title||release.description||'Unnamed release').replace(/\s*\([^)]*tracks?\).*$/i,''):label;
@@ -169,6 +174,8 @@ function buildAlbums(){
 }
 function buildDiscography(){
  const all=[];
+ const anthologyKeys=new Set(['g49','g50','g51','g52','g53','g54']);
+ const anthologyIds=unique((state.catalog.group||[]).filter(r=>anthologyKeys.has(r.key)).flatMap(r=>r.tracks||[]));
  // Each official release and track appearance stays visible. This catalog
  // is a list of release appearances, never the source for combined totals.
  const validSolo=new Set(Object.keys(state.solo.tracks||{}));
@@ -209,7 +216,15 @@ function buildDiscography(){
      releaseKey:release.key,streams:snap.tracks?.[id]??null,
      sortDate:date,releaseOrder:all.length,discographyTrack:true});
    }
-   all.push({kind:'album',title:name,scope,releaseKey:release.key,
+   if(scope==='group'&&anthologyKeys.has(release.key)){
+    if(release.key==='g54'){
+     const total=anthologyIds.every(id=>Number.isFinite(snap.tracks?.[id]))?
+      anthologyIds.reduce((sum,id)=>sum+snap.tracks[id],0):null;
+     all.push({kind:'album',title:'17 IS RIGHT HERE — All Tracks',scope,releaseKey:'g49',
+      owners:[owner],releaseNames:['17 IS RIGHT HERE'],date,sortDate:date,streams:total,
+      ids:anthologyIds,releaseOrder:all.length,discographyHeader:true});
+    }
+   }else all.push({kind:'album',title:name,scope,releaseKey:release.key,
     owners:[owner],releaseNames:[name],date,sortDate:date,streams,ids,releaseOrder:all.length,discographyHeader:true});
   }
  }
