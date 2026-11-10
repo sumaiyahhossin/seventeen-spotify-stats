@@ -1,0 +1,40 @@
+name: Audit all saved Spotify history (every 10 minutes)
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/history-integrity.yml'
+      - 'tools/audit_saved_history.py'
+permissions:
+  contents: read
+concurrency:
+  group: full-spotify-archive-audit
+  cancel-in-progress: true
+jobs:
+  audit:
+    name: Check every archived date and track value
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Check all saved history and create report
+        id: audit
+        continue-on-error: true
+        run: python tools/audit_saved_history.py --output collection-audit.json
+      - name: Attach detailed audit result
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: full-history-audit
+          path: collection-audit.json
+          retention-days: 30
+      - name: Mark missing or invalid archive data as failed
+        if: steps.audit.outcome == 'failure'
+        run: |
+          echo "::error::Saved history audit found missing or invalid snapshot data. Check the attached full-history-audit artifact."
+          exit 1
