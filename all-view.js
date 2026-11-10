@@ -953,8 +953,15 @@ async function showAllHistory(row){
    if(!a?.values||!b?.values)return {gain:null,complete:false};
    let gain=0,count=0;
    for(const [trackId,value] of Object.entries(a.values)){
-    if(!Number.isFinite(b.values[trackId]))continue;
-    const difference=value-b.values[trackId];
+    let earlier=b.values[trackId];
+    if(!Number.isFinite(earlier)){
+     // First appearance after a verified release date: the recording had
+     // no Spotify streams before that date, rather than missing data.
+     const released=state.rows.find(record=>record.id===trackId)?.date;
+     if(released&&b.date<released&&a.date>=released)earlier=0;
+     else continue;
+    }
+    const difference=value-earlier;
     if(difference<0)continue;
     // An edition swap or workbook mapping jump is not a streaming increase.
     const elapsed=a.date&&b.date?Math.max(1,Math.round((Date.parse(a.date)-Date.parse(b.date))/86400000)):1;
