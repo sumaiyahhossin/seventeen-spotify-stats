@@ -4,6 +4,13 @@ name: Deploy SEVENTEEN Spotify Stats to GitHub Pages
 on:
   push:
     branches: [main]
+    # Collector code and CI configuration don't change the published website.
+    paths-ignore:
+      - '.github/**'
+      - 'tools/**'
+      - 'src/**'
+      - '**/*.md'
+      - 'pom.xml'
   workflow_dispatch:
 
 permissions:
