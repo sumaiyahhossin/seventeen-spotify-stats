@@ -8,7 +8,7 @@ a{color:var(--pink)}.wrap{max-width:1150px;margin:0 auto;padding:30px 18px 70px}
 </style></head><body><main class="wrap">
 <div class="top"><a class="back" href="index.html?view=all">← Back to Spotify Stats</a><span style="color:#e9bce1;font-weight:800;letter-spacing:.16em;font-size:11px">SEVENTEEN ✦</span></div>
 <div class="eyebrow">Archive integrity / Daily Collection</div><h1>Collection Report <span style="color:var(--pink)">✦</span></h1>
-<p class="intro">An independent read-only report for each saved day. Check which recordings were collected, see newly added tracks, and inspect zero-stream observations without changing the historical archive.</p>
+<p class="intro">An independent read-only report for each saved day. Check which recordings were collected, see newly added tracks, and inspect zero-stream observations without changing the historical archive. <a href="https://github.com/sumaiyahhossin/seventeen-spotify-stats/actions/workflows/history-integrity.yml" target="_blank" rel="noopener noreferrer">View the 10-minute full-history checks</a>.</p>
 <div class="toolbar"><label for="date">Saved date</label><button id="previous" title="Previous date">‹</button><select id="date" aria-label="Saved report date"></select><button id="next" title="Next date">›</button><button id="latest">Latest</button><span class="status" id="status">Reading archive…</span></div>
 <div id="error" class="error" hidden></div>
 <div class="cards" id="cards">
@@ -44,13 +44,19 @@ async function archive(scope,date){
 }
 const setList=(id,items,empty)=>{$(id).innerHTML=items.length?items.map(row=>'<li><span>'+escape(row[0])+'</span><span>'+escape(row[1]||'')+'</span></li>').join(''):'<li class="empty">'+escape(empty)+'</li>'};
 const names={group:id=>latestGroup.names?.[id]||id,solo:id=>media.tracks?.[id]?.title||id};
+function firstRelease(scope,id){
+ const dates=(catalog[scope]||[]).filter(r=>r.tracks?.includes(id))
+  .map(r=>r.track_release_dates?.[id]||r.release_date)
+  .filter(d=>/^\d{4}-\d{2}-\d{2}$/.test(d||'')).sort();
+ return dates[0]||null;
+}
 function ids(scope,snap,date){
  if(!snap)return [];
  if(scope==='group'){
   // Use the canonical recording population only; anthology editions can
   // appear in the raw collector but are intentionally not distinct tracks.
   const all=latestGroup.canonical_track_ids||Object.keys(latestGroup.tracks);
-  return all.filter(id=>!!snap.tracks?.[id]&&validId(id));
+  return all.filter(id=>Number.isFinite(snap.tracks?.[id])&&validId(id));
  }
  return Object.keys(snap.tracks||{}).filter(validId);
 }
@@ -71,7 +77,8 @@ async function render(date){
   if(!snap){issues.push([title,'Snapshot file missing']);$(scope+'-count').textContent='—';$(scope+'-status').textContent='Missing snapshot';continue}
   const entries=Object.entries(snap.tracks||{});
   const isLegacy=snap.source==='historical spreadsheet';legacy ||=isLegacy;
-  const expected=scope==='group'?latestGroup.canonical_track_ids||[]:Object.keys(latestSolo.tracks||{});
+  const expected=(scope==='group'?latestGroup.canonical_track_ids||[]:Object.keys(latestSolo.tracks||{}))
+   .filter(id=>!firstRelease(scope,id)||firstRelease(scope,id)<=date);
   const present=entries.filter(([id,v])=>!isLegacy&&validId(id)&&Number.isFinite(v));
   const canonical=present.filter(([id])=>expected.includes(id));
   const missing=(!isLegacy?expected.filter(id=>snap.tracks[id]===undefined):[]);
