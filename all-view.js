@@ -972,11 +972,14 @@ async function showAllHistory(row){
     const difference=value-earlier;
     // Preserve verified downward corrections rather than dropping the date.
     // An edition swap or workbook mapping jump is not a streaming increase.
-    const elapsed=a.date&&b.date?Math.max(1,Math.round((Date.parse(a.date)-Date.parse(b.date))/86400000)):1;
-    if(Math.abs(difference)>Math.max(100000*elapsed,value*.05))continue;
+    // Every value is an exact verified archive identity. Keep legitimate
+    // corrections and newly released songs, even when their gain is large.
     gain+=difference;count++;
    }
-   return {gain:count?gain:null,complete:a.complete&&b.complete&&count===a.eligible};
+   const complete=!!(a.complete&&b.complete&&count===a.eligible);
+   // When both full canonical populations are present, subtract the actual
+   // saved combined totals. This includes all net Spotify corrections.
+   return {gain:complete?a.total-b.total:count?gain:null,complete,matched:count};
   };
   if(isCombined&&present)present.date=current.date;
   if(isCombined&&previous)previous.date=prev.date;
