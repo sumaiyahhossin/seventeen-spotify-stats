@@ -1,0 +1,38 @@
+name: Refresh Group Cover Cache
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'tools/cache_group_cover_urls.py'
+      - '.github/workflows/refresh-group-covers.yml'
+permissions:
+  contents: write
+jobs:
+  artwork-cache:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Cache original Spotify album cover URLs
+        run: python tools/cache_group_cover_urls.py
+      - name: Commit only updated cover metadata
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/group-cover-urls.json
+          if git diff --cached --quiet; then
+            echo "No new cover URLs."
+            exit 0
+          fi
+          git commit -m "Cache verified group album cover URLs"
+          for attempt in 1 2 3 4; do
+            git pull --rebase origin main
+            if git push origin HEAD:main; then exit 0; fi
+            sleep 3
+          done
+          exit 1
