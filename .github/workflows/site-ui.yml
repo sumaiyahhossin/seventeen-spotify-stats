@@ -4,6 +4,10 @@ on:
     paths:
       - 'index.html'
       - 'app.js'
+      - 'all-view.js'
+      - 'all.html'
+      - 'data/all-milestone-evidence.json'
+      - 'data/solo-albums.json'
       - 'style.css'
       - 'milestones.js'
       - 'milestones.html'
