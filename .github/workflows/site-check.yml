@@ -3,11 +3,7 @@ name: Verify dashboard and profile assets
 on:
   push:
     paths:
-      - 'app.js'
       - 'history-popup.js'
-      - 'all-view.js'
-      - 'index.html'
-      - 'style.css'
       - 'data/catalog.json'
       - 'data/profile-images.json'
       - 'assets/profile-photos/**'
