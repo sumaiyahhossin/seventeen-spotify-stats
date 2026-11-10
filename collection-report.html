@@ -21,6 +21,7 @@ a{color:var(--pink)}.wrap{max-width:1150px;margin:0 auto;padding:30px 18px 70px}
 <section class="section"><h2>✦ Collection details</h2><div class="meta" id="tags"></div><ul class="list" id="details"></ul><p class="note">A zero is a valid saved stream observation; it is not counted as missing. Older spreadsheet archives use legacy identities and cannot always be checked against the current Spotify-ID catalog.</p></section>
 <section class="section"><h2>✦ Newly added songs</h2><p class="note">Songs appearing for the first time in the saved catalog compared with the prior available snapshot. This does not assume they were released that day.</p><ul class="list" id="new"></ul></section>
 <section class="section"><h2>✦ Zero-stream observations</h2><p class="note">Legitimate saved zeros, shown for reference only.</p><ul class="list" id="zeros"></ul></section>
+<section class="section"><h2>✦ Unrecorded archive days</h2><p class="note" id="gaps-note">Checking which dates have no saved snapshot. These dates cannot be reconstructed without their original source data.</p><ul class="list" id="gaps"></ul></section>
 <section class="section"><h2>✦ Needs attention</h2><p class="note">Missing files, invalid values, or missing previously collected recordings. Songs that had not yet been released are not flagged.</p><ul class="list" id="issues"></ul></section>
 </div><footer class="footer">Saved snapshots are read directly from the site's archive · No fabricated streams · <a href="index.html">Spotify Stats</a></footer>
 </main><script>
@@ -121,6 +122,22 @@ Promise.all([load('data/manifest.json'),load('data/catalog.json'),load('data/sol
  dates=(m.dates||[]).filter(d=>soloDates.has(d)).sort();
  if(!dates.length)throw Error('No shared archive dates are saved');
  $('date').innerHTML=dates.map(d=>'<option value="'+d+'">'+label(d)+'</option>').join('');
+ const missing=[];
+ for(const [scope,available] of [['OT13',m.dates||[]],['Units & Solo',[...(m.solo_dates||[]),...(m.solo_legacy_dates||[])] ]]){
+  const saved=[...new Set(available)].sort();
+  for(let i=1;i<saved.length;i++){
+   let d=new Date(saved[i-1]+'T12:00:00Z');
+   const last=saved[i];
+   for(d.setUTCDate(d.getUTCDate()+1);d.toISOString().slice(0,10)<last;d.setUTCDate(d.getUTCDate()+1)){
+    missing.push([label(d.toISOString().slice(0,10)),scope]);
+   }
+  }
+ }
+ missing.reverse();
+ $('gaps-note').textContent=missing.length?
+  missing.length+' missing saved-date entries in the historical archive. Displaying the 60 most recent; no streams are estimated for unrecorded days.':
+  'Every day between the oldest and newest snapshots is saved.';
+ setList('gaps',missing.slice(0,60),'No gaps detected');
  const requested=new URLSearchParams(location.search).get('date');
  pick(dates.includes(requested)?requested:dates.at(-1));
 }).catch(e=>{$('error').hidden=false;$('error').textContent='Unable to load saved snapshot metadata: '+e.message;$('status').textContent='Unavailable'});
