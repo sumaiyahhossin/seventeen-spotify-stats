@@ -434,7 +434,11 @@ def main():
                     const titles=[...document.querySelectorAll('#all-artists .svt-all-song')].map(x=>x.textContent);
                     return titles.includes('Picheolin');
                 """),'Stream rankings lost a recorded profile'
+                # Search is intentionally persisted on refresh; clear the prior viewport's
+                # Love Is Gone filter before testing Picheolin's full six-recording catalog.
                 driver.execute_script("""
+                    const search=document.getElementById('all-search');
+                    search.value='';search.dispatchEvent(new Event('input',{bubbles:true}));
                     const el=document.getElementById('all-owner');
                     el.value='Picheolin';el.dispatchEvent(new Event('change',{bubbles:true}));
                 """)
