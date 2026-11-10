@@ -9,6 +9,11 @@ const groupStandaloneReleaseDates={
 };
 const groupOriginalReleaseDates={"g7":"2016-07-04","g23":"2020-06-22","g24":"2020-08-24","g37":"2022-07-18","g44":"2023-08-23","g50":"2024-04-29","g51":"2024-04-29","g52":"2024-04-29","g53":"2024-04-29","g54":"2024-04-29","g1":"2015-05-29","g2":"2015-09-10","g5":"2016-04-25","g6":"2016-07-04","g8":"2016-12-05","g9":"2017-05-22","g10":"2017-11-06","g11":"2018-02-05","g12":"2018-05-30","g13":"2018-07-16","g16":"2019-01-21","g18":"2019-05-29","g20":"2019-09-16","g22":"2020-04-01","g23":"2020-06-22","g25":"2020-09-09","g27":"2020-10-19","g28":"2021-04-21","g29":"2021-06-18","g32":"2021-10-22","g33":"2021-12-08","g35":"2022-05-27","g36":"2022-07-18","g39":"2022-11-09","g41":"2023-04-24","g43":"2023-08-23","g46":"2023-10-23","g49":"2024-04-29","g56":"2024-10-14","g58":"2024-11-27","g59":"2025-05-26"};
 const $=id=>document.getElementById('all-'+id);
+const allModes=new Set(['tracks','albums','discography','followers','listeners','streams']);
+const allModeStorage='svt-all-six-category-v1';
+let rememberedMode='tracks';
+try{const saved=sessionStorage.getItem(allModeStorage);if(allModes.has(saved))rememberedMode=saved}catch{}
+
 const fmt=n=>Number.isFinite(n)?Math.round(n).toLocaleString('en-US'):'—';
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dayBefore=date=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-1);return d.toISOString().slice(0,10)};
@@ -20,7 +25,7 @@ const unique=arr=>[...new Set(arr)];
 const artistIds=[['SEVENTEEN','7nqOGRxlXj7N2JYbgNEjYH'],['S.Coups',null],['Jeonghan','6KDLlQYeeqUe5OQ2JrdNzF'],['Joshua','74AwWFYdjQ3ER5vHO4H7b0'],['Jun','38Gn0ZVC8TQwuaMxBK1yRV'],['Hoshi','6nWKAdMv1BDq1zHfZzkdbR'],['Wonwoo','3rHcBT06Vb1XGVUWhDALZt'],['Woozi','4TdiASPlU3QdZvGQBothcQ'],['Dokyeom','7G1kUsPtQCdolV6CPwHmh2'],['Mingyu','5gUpo0BRmo6EOTbyU3z5Ay'],['The8','4DqFd6XE3dX4LWXHJVVpLk'],['Seungkwan','0Vb2DjojEYsasFpc3aTZb6'],['Vernon','2Y34b9AOK30zXgL7cAH4NG'],['Dino','5YaeXxzvqGNBCguELlKo6G'],['BSS','1uAT5bTSp6dWbNmixIUP5t'],['JxW','7GvlsjcgBrsE578yghOq7D'],['HxW','1EReYiseDwE51FzGm7EK9n'],['CxM','7kjuLdYbtTkWBToMu2ebZN'],['DxS','4wBjmEkWhY4T22q00CiF5V'],['V8',null],['Picheolin','3V2EC4dPYLgtbi0TtrB1RA'],['JxJ',null]];
 const members=new Set(artistIds.slice(1,14).map(x=>x[0]));
 const units=new Set(artistIds.slice(14).map(x=>x[0]));
-const state={catalog:null,group:null,solo:null,media:null,followers:{},manifest:null,rows:[],albums:[],discography:[],mode:'tracks',albumSpecs:[],legacyLinks:null,milestoneEvidence:{byName:{},byTrack:{}},milestonePrevious:{},milestoneMode:'reached',milestonePage:0,snapshots:new Map(),page:0,limit:50,period:'overall'};
+const state={catalog:null,group:null,solo:null,media:null,followers:{},manifest:null,rows:[],albums:[],discography:[],mode:rememberedMode,albumSpecs:[],legacyLinks:null,milestoneEvidence:{byName:{},byTrack:{}},milestonePrevious:{},milestoneMode:'reached',milestonePage:0,snapshots:new Map(),page:0,limit:50,period:'overall'};
 async function read(path){const r=await fetch(path,{cache:'no-cache'});if(!r.ok)throw new Error(path+' returned '+r.status);return r.json()}
 function nameFromRelease(release,id,index){
  const official=release.track_titles?.[id];
@@ -364,10 +369,33 @@ function renderArtists(){
  ' are available for these profiles.</td></tr>';
  paintArtists();
 }
+function selectAllCategory(mode,options={}){
+ if(!allModes.has(mode))mode='tracks';
+ state.mode=mode;
+ const audience=['streams','followers','listeners'].includes(mode);
+ $('audienceSection').hidden=!audience;
+ $('catalogSection').hidden=audience;
+ $('viewType').value=audience?'tracks':mode;
+ if(audience)$('artistMetric').value=mode;
+ for(const button of document.querySelectorAll('#all-rankCategory button[data-all-rank]')){
+  const active=button.dataset.allRank===mode;
+  button.classList.toggle('active',active);
+  button.setAttribute('aria-pressed',String(active));
+ }
+ if(mode==='discography'&&options.userChoice)$('sort').value='oldest';
+ else if(mode!=='discography'&&options.userChoice&&$('sort').value==='oldest')
+  $('sort').value='streams';
+ try{sessionStorage.setItem(allModeStorage,mode)}catch{}
+ if(state.rows.length){
+  if(audience)renderArtists();
+  else{if(options.userChoice)state.page=0;renderTracks()}
+ }
+}
 function renderTracks(){
  const query=$('search').value.trim().toLowerCase(),owner=$('owner').value;
- const order=$('sort').value,period=state.period,isAlbum=$('viewType').value==='albums';
- const entire=isAlbum?state.albums:state.rows;
+ const order=$('sort').value,period=state.period,mode=state.mode;
+ const isDiscography=mode==='discography',isAlbum=mode==='albums';
+ const entire=isDiscography?state.discography:isAlbum?state.albums:state.rows;
  const rows=entire.filter(r=>(owner==='all'||r.owners.includes(owner))&&
   (!query||[r.title,r.id||'',...r.owners,...r.releaseNames].join(' ').toLowerCase().includes(query)));
  const score=row=>period==='overall'?row.streams:row.gain;
@@ -377,7 +405,10 @@ function renderTracks(){
  rows.sort((a,b)=>{
   if(order==='title')return (a.title||'').localeCompare(b.title||'');
   if(order==='newest')return (b.date||'').localeCompare(a.date||'');
-  if(order==='oldest')return (a.date||'9999').localeCompare(b.date||'9999');
+  if(order==='oldest'){
+   const diff=(a.date||'9999').localeCompare(b.date||'9999');
+   return diff||(isDiscography?(a.releaseOrder??9999)-(b.releaseOrder??9999):0);
+  }
   const x=score(a),y=score(b);
   if(!Number.isFinite(x))return Number.isFinite(y)?1:0;
   if(!Number.isFinite(y))return -1;
@@ -387,7 +418,10 @@ function renderTracks(){
  state.page=Math.min(state.page,totalPages-1);
  const shown=rows.slice(state.page*state.limit,(state.page+1)*state.limit);
  const verified=rows.filter(r=>Number.isFinite(score(r))).length;
- $('recordHeading').textContent=isAlbum?'Every saved album':'Every saved recording';
+ $('recordHeading').textContent=isDiscography?'Every release · Group + Units & Solo':
+  isAlbum?'Every saved album':'Every saved recording';
+ $('catalogModeLabel').textContent=isDiscography?'Discography · Group, Members & Units':
+  isAlbum?'Album Rankings · All Artists':'Track Rankings · All Artists';
  $('gainTitle').textContent=period==='overall'?'TOTAL STREAMS':period.toUpperCase()+' GAIN';
  const date=state.group.date,from=boundaryDate('group',period);
  const periodRange=period==='overall'?'all-time totals':
@@ -397,7 +431,9 @@ function renderTracks(){
   ' (beginning after the baseline date)';
  $('coverage').textContent='Latest saved: Group '+state.group.date+' · Unit/Solo '+state.solo.date+
   ' · '+periodText;
- $('recordCount').textContent=rows.length.toLocaleString()+(isAlbum?' albums':' recordings')+
+ $('recordCount').textContent=isDiscography?
+  rows.length.toLocaleString()+' discography entries · source release appearances (not added to All totals)':
+  rows.length.toLocaleString()+(isAlbum?' albums':' recordings')+
   ' · '+verified.toLocaleString()+' with verified '+metricLabel;
  $('recordings').innerHTML=shown.map((row,i)=>{
   const name=esc(row.title||'Unidentified Spotify recording');
@@ -408,15 +444,17 @@ function renderTracks(){
    ' · '+(isAlbum?'Album':(row.releaseNames[0]||'Release not documented'))+
    (!isAlbum&&row.releaseNames.length>1?' · '+row.releaseNames.length+' releases':'')+
    (row.date?' · '+row.date:'');
-  const ranked=Number.isFinite(value)?String(state.page*state.limit+i+1).padStart(2,'0'):'—';
+  const ranked=isDiscography?(row.discographyHeader?'◆':'·'):
+   Number.isFinite(value)?String(state.page*state.limit+i+1).padStart(2,'0'):'—';
   const printed=Number.isFinite(value)?(period==='overall'?'':'+')+fmt(value):'—';
-  return '<tr><td><div class="svt-all-record"><span class="svt-all-rank">'+ranked+'</span>'+
+  return '<tr'+(isDiscography&&row.discographyHeader?' class="svt-all-release-row"':'')+
+   '><td><div class="svt-all-record"><span class="svt-all-rank">'+ranked+'</span>'+
    '<span class="svt-all-art-holder"><img class="svt-all-cover cover" data-cover-track="'+artwork+
    '" data-cover-name="'+name+'" data-cover-kind="'+(isAlbum?'album':'track')+
    '" alt="'+name+' cover" loading="lazy"><span class="cover-placeholder" hidden></span></span>'+
    '<div class="svt-all-record-copy">'+link+'<div class="svt-all-sub">'+esc(sub)+
    '</div></div></div></td><td class="svt-all-num">'+printed+'</td></tr>';
- }).join('')||'<tr><td colspan="2" class="svt-all-status">No matching '+(isAlbum?'albums':'recordings')+'.</td></tr>';
+ }).join('')||'<tr><td colspan="2" class="svt-all-status">No matching '+(isDiscography?'releases':isAlbum?'albums':'recordings')+'.</td></tr>';
  $('pageInfo').textContent=(state.page+1)+' / '+totalPages;
  $('prev').disabled=state.page===0;$('next').disabled=state.page+1>=totalPages;
  window.svtSharedMedia?.fillArtwork();
@@ -559,7 +597,7 @@ async function init(){
   buildAlbums();buildDiscography();
   const names=unique(state.rows.flatMap(r=>r.owners)).filter(x=>x!=='Unassigned solo/unit').sort((a,b)=>a.localeCompare(b));
   $('owner').innerHTML='<option value="all">All recordings</option>'+names.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('');
-  await applyPeriod();renderArtists();renderTracks();
+  await applyPeriod();selectAllCategory(state.mode);renderArtists();renderTracks();
   const [prevGroup,prevSolo]=await Promise.all([
    snapshot('group',dayBefore(group.date)),snapshot('solo',dayBefore(solo.date))]);
   state.milestonePrevious={group:prevGroup,solo:prevSolo};
@@ -572,9 +610,17 @@ async function init(){
   $('coverage').textContent='Unable to load a required saved source.';
  }
 }
-for(const id of ['artistMetric','artistScope'])$(id).addEventListener('change',renderArtists);
+$('rankCategory').addEventListener('click',event=>{
+ const button=event.target.closest('button[data-all-rank]');
+ if(button)selectAllCategory(button.dataset.allRank,{userChoice:true});
+});
+for(const id of ['artistMetric','artistScope'])$(id).addEventListener('change',()=>{
+ if($('artistMetric').value!==state.mode&&['streams','listeners','followers'].includes($('artistMetric').value))
+  selectAllCategory($('artistMetric').value);
+ renderArtists();
+});
 for(const id of ['search','owner','sort','viewType'])$(id).addEventListener(id==='search'?'input':'change',()=>{state.page=0;renderTracks()});
-window.svtAllShown=()=>{if(state.rows.length){renderSummary();renderArtists();renderTracks();if(state.milestonePrevious.group||state.milestonePrevious.solo)renderMilestones()}};
+window.svtAllShown=()=>{selectAllCategory(state.mode);if(state.rows.length){renderSummary();renderArtists();renderTracks();if(state.milestonePrevious.group||state.milestonePrevious.solo)renderMilestones()}};
 window.addEventListener('svt-media-ready',()=>{if(state.rows.length){renderSummary();renderArtists();renderTracks();if(state.milestonePrevious.group||state.milestonePrevious.solo)renderMilestones()}});
 for(const [id,mode] of [['milestoneReached','reached'],['milestoneUpcoming','upcoming']]){
  $(id).addEventListener('click',()=>{
@@ -597,6 +643,7 @@ $('milestoneNext').addEventListener('click',()=>{
 $('period').addEventListener('change',async()=>{state.period=$('period').value;state.page=0;$('coverage').textContent='Checking saved calendar boundaries…';await applyPeriod();renderTracks()});
 $('prev').addEventListener('click',()=>{state.page--;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
 $('next').addEventListener('click',()=>{state.page++;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
+selectAllCategory(state.mode);
 init();
 
 })();
