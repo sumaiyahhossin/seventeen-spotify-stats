@@ -404,17 +404,33 @@ def main():
                     # All must fully bridge the November 6 legacy workbook
                     # to November 7's Spotify-ID snapshots for ALL 406 canonical
                     # recordings: group 227 + solo 183, net of mirrored editions.
+                    # Avoid firing two asynchronous snapshot changes together:
+                    # first settle the selected historical date, then period.
                     driver.execute_script("""
                         const picker=document.getElementById('all-archiveDate');
                         picker.value='2026-11-07';
                         picker.dispatchEvent(new Event('change',{bubbles:true}));
+                    """)
+                    WebDriverWait(driver,45).until(lambda d:
+                        'Nov 7, 2026' in d.find_element(By.ID,'all-summaryDate').text)
+                    driver.execute_script("""
                         const period=document.getElementById('all-period');
                         period.value='daily';period.dispatchEvent(new Event('change',{bubbles:true}));
                     """)
-                    WebDriverWait(driver,45).until(lambda d:
-                        'Nov 7, 2026' in d.find_element(By.ID,'all-summaryDate').text and
-                        d.find_element(By.ID,'all-summaryGrowth').text.strip() not in ('','—') and
-                        '*' not in d.find_element(By.ID,'all-summaryGrowth').text)
+                    try:
+                        WebDriverWait(driver,30).until(lambda d:
+                            d.find_element(By.ID,'all-summaryGrowth').text.strip() not in ('','—')
+                            and '*' not in d.find_element(By.ID,'all-summaryGrowth').text)
+                    except Exception:
+                        print('All date/period diagnostics:',driver.execute_script("""
+                            return {date:document.getElementById('all-summaryDate')?.textContent,
+                              streams:document.getElementById('all-summaryStreams')?.textContent,
+                              growth:document.getElementById('all-summaryGrowth')?.textContent,
+                              note:document.getElementById('all-summaryGrowthNote')?.textContent,
+                              coverage:document.getElementById('all-summaryCoverage')?.textContent,
+                              period:document.getElementById('all-period')?.value};
+                        """),flush=True)
+                        raise
                     click(driver,'#all-rankCategory [data-all-rank="streams"]')
                     assert driver.execute_script("""
                         const names=new Set(['SEVENTEEN','JxJ','Joshua','Jeonghan','V8']);
