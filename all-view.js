@@ -452,9 +452,10 @@ function renderArtists(){
  const metric=$('artistMetric').value,scope=$('artistScope').value;
  const labels={streams:'HIGHEST STREAMS',followers:'HIGHEST FOLLOWERS',
   listeners:'HIGHEST MONTHLY LISTENERS'};
- $('artistMetricHeading').textContent=(labels[metric]||labels.streams)+(state.period==='overall'?'':' · '+state.period.toUpperCase()+' CHANGE');
+ $('artistMetricHeading').textContent=metric==='streams'&&state.period!=='overall'?state.period.toUpperCase()+' STREAMS GAINED':
+  (labels[metric]||labels.streams)+(state.period==='overall'?'':' · '+state.period.toUpperCase()+' CHANGE');
  const header=$('artistSectionTitle');
- if(header)header.textContent=(metric==='streams'?'Total Streams':
+ if(header)header.textContent=(metric==='streams'?(state.period==='overall'?'Total Streams':state.period[0].toUpperCase()+state.period.slice(1)+' Streams Gained'):
   metric==='followers'?'Highest Followers':'Highest Monthly Listeners');
  // One selected metric, one descending ranking. A profile without a verified
  // value for the selected metric is excluded, not ranked as 0.
@@ -493,14 +494,15 @@ function renderArtists(){
   .filter(a=>(scope==='all'||(scope==='members'?members.has(a.name):units.has(a.name)))&&
    Number.isFinite(a[metric]))
   .sort((a,b)=>period==='overall'?b[metric]-a[metric]||a.name.localeCompare(b.name):
-   (Number.isFinite(b.change)?b.change:-Infinity)-(Number.isFinite(a.change)?a.change:-Infinity)||a.name.localeCompare(b.name));
+   (Number.isFinite(metric==='streams'?b.observedGain:b.change)?(metric==='streams'?b.observedGain:b.change):-Infinity)-
+   (Number.isFinite(metric==='streams'?a.observedGain:a.change)?(metric==='streams'?a.observedGain:a.change):-Infinity)||a.name.localeCompare(b.name));
  const source=metric==='streams'?'recording totals':metric==='listeners'?
   'monthly listener observations':'verified follower snapshots';
  $('artistNote').textContent=rows.length+' profiles with saved '+source+
   ' · ranked from highest to lowest · profiles with unavailable values are hidden. '+
   'Group: '+state.group.date+' · Solo/Unit: '+state.solo.date+'. '+
   'Streams on member and unit profiles may overlap; the combined track catalog counts distinct recordings once.'+
-  (metric==='streams'&&period!=='overall'?' * Indicates only a verified subset of monthly streams, not a complete period total.':'');
+  (metric==='streams'&&period!=='overall'?' * Indicates only a verified subset of '+period+' streams, not a complete period total.':'');
  $('artists').innerHTML=rows.map((a,i)=>
   '<tr><td><div class="svt-all-person">'+
   '<span class="svt-all-rank">'+String(i+1).padStart(2,'0')+'</span>'+
