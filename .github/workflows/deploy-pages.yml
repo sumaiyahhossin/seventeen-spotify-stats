@@ -1,4 +1,5 @@
 name: Deploy SEVENTEEN Spotify Stats to GitHub Pages
+# Start fresh workflow runs; rerunning a completed run can duplicate the github-pages artifact.
 
 on:
   push:
