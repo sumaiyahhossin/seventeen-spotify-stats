@@ -378,17 +378,20 @@ function verifiedGainBetween(scope,id,newer,older,title,releaseDate){
  }
  return gain;
 }
+let periodEpoch=0;
 async function applyPeriod(){
- const period=state.period,scopes=['group','solo'];
+ const epoch=++periodEpoch,period=state.period,scopes=['group','solo'];
+ const dateKey=state.group?.date+'|'+state.solo?.date;
  if(period==='overall'){
   state.metricBaseline={group:null,solo:null};
   [...state.rows,...state.albums,...state.discography].forEach(row=>{row.gain=null;row.change=null});
-  return;
+  return true;
  }
  const [currentBoundaries,olderBoundaries]=await Promise.all([
   Promise.all(scopes.map(scope=>snapshot(scope,boundaryDate(scope,period)))),
   Promise.all(scopes.map(scope=>snapshot(scope,earlierBoundary(scope,period))))
  ]);
+ if(epoch!==periodEpoch||period!==state.period||dateKey!==state.group?.date+'|'+state.solo?.date)return false;
  const baseline={group:currentBoundaries[0],solo:currentBoundaries[1]};
  const older={group:olderBoundaries[0],solo:olderBoundaries[1]};
  state.metricBaseline=baseline;
@@ -408,6 +411,7 @@ async function applyPeriod(){
   const priorGain=prior.length&&prior.every(Number.isFinite)?prior.reduce((sum,v)=>sum+v,0):null;
   row.change=Number.isFinite(row.gain)&&Number.isFinite(priorGain)?row.gain-priorGain:null;
  }
+ return true;
 }
 function artistStats(){
  const byName=new Map(artistIds.map(([name,id])=>[name,{name,id,recordings:new Set()}]));
@@ -789,7 +793,7 @@ window.addEventListener('svt-media-ready',async()=>{
  if(!state.rows.length)return;
  // Rebuild archived values after original history identity metadata becomes ready.
  buildRows();buildAlbums();buildDiscography();
- await applyPeriod();
+ if(!await applyPeriod())return;
  renderSummary();renderArtists();renderTracks();
 });
 const allArchiveDate=document.getElementById('all-archiveDate');
@@ -828,14 +832,14 @@ if(allArchiveDate)allArchiveDate.addEventListener('change',async()=>{
   state.group=group;state.solo=solo;
   buildRows();buildAlbums();buildDiscography();
   state.page=0;
-  await applyPeriod();
+  if(!await applyPeriod())return;
   const [prevGroup,prevSolo]=await Promise.all([snapshot('group',dayBefore(date)),snapshot('solo',dayBefore(date))]);
   state.milestonePrevious={group:prevGroup,solo:prevSolo};
   renderSummary();selectAllCategory(state.mode);renderArtists();renderTracks();syncAllDatePicker();saveAllViewState();
  }catch(error){console.warn('Combined archive date',error);$('coverage').textContent='Could not load that archived date.'}
  finally{allArchiveDate.disabled=false}
 });
-$('period').addEventListener('change',async()=>{state.period=$('period').value;state.page=0;$('coverage').textContent='Checking saved calendar boundaries…';await applyPeriod();renderSummary();renderTracks();renderArtists();saveAllViewState()});
+$('period').addEventListener('change',async()=>{state.period=$('period').value;state.page=0;$('coverage').textContent='Checking saved calendar boundaries…';if(!await applyPeriod())return;renderSummary();renderTracks();renderArtists();saveAllViewState()});
 $('prev').addEventListener('click',()=>{state.page--;renderTracks();saveAllViewState();$('recordings').scrollIntoView({block:'nearest'})});
 $('next').addEventListener('click',()=>{state.page++;renderTracks();saveAllViewState();$('recordings').scrollIntoView({block:'nearest'})});
 
