@@ -26,7 +26,22 @@ const unique=arr=>[...new Set(arr)];
 const artistIds=[['SEVENTEEN','7nqOGRxlXj7N2JYbgNEjYH'],['S.Coups',null],['Jeonghan','6KDLlQYeeqUe5OQ2JrdNzF'],['Joshua','74AwWFYdjQ3ER5vHO4H7b0'],['Jun','38Gn0ZVC8TQwuaMxBK1yRV'],['Hoshi','6nWKAdMv1BDq1zHfZzkdbR'],['Wonwoo','3rHcBT06Vb1XGVUWhDALZt'],['Woozi','4TdiASPlU3QdZvGQBothcQ'],['Dokyeom','7G1kUsPtQCdolV6CPwHmh2'],['Mingyu','5gUpo0BRmo6EOTbyU3z5Ay'],['The8','4DqFd6XE3dX4LWXHJVVpLk'],['Seungkwan','0Vb2DjojEYsasFpc3aTZb6'],['Vernon','2Y34b9AOK30zXgL7cAH4NG'],['Dino','5YaeXxzvqGNBCguELlKo6G'],['BSS','1uAT5bTSp6dWbNmixIUP5t'],['JxW','7GvlsjcgBrsE578yghOq7D'],['HxW','1EReYiseDwE51FzGm7EK9n'],['CxM','7kjuLdYbtTkWBToMu2ebZN'],['DxS','4wBjmEkWhY4T22q00CiF5V'],['V8',null],['Picheolin','3V2EC4dPYLgtbi0TtrB1RA'],['JxJ',null]];
 const members=new Set(artistIds.slice(1,14).map(x=>x[0]));
 const units=new Set(artistIds.slice(14).map(x=>x[0]));
-const state={metricBaseline:null,followersHistory:{},catalog:null,group:null,solo:null,media:null,followers:{},manifest:null,rows:[],albums:[],discography:[],mode:rememberedMode,albumSpecs:[],legacyLinks:null,milestonePrevious:{},snapshots:new Map(),page:0,limit:50,period:'overall'};
+const allViewKey='svt-all-view-state-v2';
+let allRemembered={};
+try{allRemembered=JSON.parse(sessionStorage.getItem(allViewKey)||'{}')||{}}catch{}
+const allRestoredScroll=(()=>{
+ try{const saved=JSON.parse(sessionStorage.getItem('svt-dashboard-view-v2')||'{}');return saved.activeView==='all'&&Number.isFinite(Number(saved.scrollY))?Number(saved.scrollY):null}catch{return null}
+})();
+const state={metricBaseline:null,followersHistory:{},catalog:null,group:null,solo:null,media:null,followers:{},manifest:null,rows:[],albums:[],discography:[],mode:rememberedMode,albumSpecs:[],legacyLinks:null,milestonePrevious:{},snapshots:new Map(),page:Number.isInteger(allRemembered.page)&&allRemembered.page>=0?allRemembered.page:0,limit:50,period:['overall','daily','weekly','monthly','yearly'].includes(allRemembered.period)?allRemembered.period:'overall'};
+function saveAllViewState(){
+ if(!state.group?.date||!state.solo?.date)return;
+ try{sessionStorage.setItem(allViewKey,JSON.stringify({
+  date:state.group.date===state.solo.date?state.group.date:null,
+  period:state.period,mode:state.mode,page:state.page,
+  owner:$('owner')?.value||'all',query:$('search')?.value||'',sort:$('sort')?.value||'streams'
+ }))}catch{}
+}
+window.addEventListener('pagehide',saveAllViewState);
 async function read(path){const r=await fetch(path,{cache:'no-cache'});if(!r.ok)throw new Error(path+' returned '+r.status);return r.json()}
 function nameFromRelease(release,id,index){
  const official=release.track_titles?.[id];
@@ -634,18 +649,28 @@ async function init(){
   for(const release of admin.releases||[]){const list=catalog[release.scope];if(list&&!list.some(r=>r.key===release.key))list.push(release)}
   const picker=document.getElementById('all-archiveDate');
   const sharedDates=(manifest.dates||[]).filter(d=>(manifest.solo_dates||[]).includes(d)||(manifest.solo_legacy_dates||[]).includes(d)).sort();
-  if(picker){picker.min=sharedDates[0]||group.date;picker.max=sharedDates.at(-1)||group.date;picker.value=group.date===solo.date?group.date:'';picker.title='Choose a day with saved OT13 and Units & Solo snapshots';}
+  if(sharedDates.includes(allRemembered.date)&&allRemembered.date!==group.date){
+   const [savedGroup,savedSolo]=await Promise.all(['group','solo'].map(scope=>snapshot(scope,allRemembered.date)));
+   if(savedGroup&&savedSolo){state.group=savedGroup;state.solo=savedSolo;}
+  }
+  if(picker){picker.min=sharedDates[0]||group.date;picker.max=sharedDates.at(-1)||group.date;picker.value=state.group.date===state.solo.date?state.group.date:'';picker.title='Choose a day with saved OT13 and Units & Solo snapshots';}
+  $('period').value=state.period;
+  if(typeof allRemembered.query==='string')$('search').value=allRemembered.query;
+  if(['streams','least','newest','oldest','title'].includes(allRemembered.sort))$('sort').value=allRemembered.sort;
   buildRows();
   for(const extra of admin.releases||[])if(extra.scope==='solo'&&extra.release_type==='album')
    state.albumSpecs.push({key:extra.key,displayName:extra.title,releaseDate:extra.release_date,owners:[extra.artist],tracks:extra.tracks});
   buildAlbums();buildDiscography();
   const names=unique(state.rows.flatMap(r=>r.owners)).filter(x=>x!=='Unassigned solo/unit').sort((a,b)=>a.localeCompare(b));
   $('owner').innerHTML='<option value="all">All recordings</option>'+names.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('');
+  if(names.includes(allRemembered.owner))$('owner').value=allRemembered.owner;
   await applyPeriod();selectAllCategory(state.mode);renderArtists();renderTracks();
   const [prevGroup,prevSolo]=await Promise.all([
    snapshot('group',dayBefore(group.date)),snapshot('solo',dayBefore(solo.date))]);
   state.milestonePrevious={group:prevGroup,solo:prevSolo};
   renderSummary();syncAllDatePicker();
+  saveAllViewState();
+  if(allRestoredScroll!==null)requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,allRestoredScroll)));
  }catch(error){
   console.error('All view could not load saved sources',error);
   $('artists').innerHTML='<tr><td colspan="2" class="svt-all-status">Artist data unavailable. Please try refreshing.</td></tr>';
@@ -662,7 +687,7 @@ for(const id of ['artistMetric','artistScope'])$(id).addEventListener('change',(
   selectAllCategory($('artistMetric').value);
  renderArtists();
 });
-for(const id of ['search','owner','sort','viewType'])$(id).addEventListener(id==='search'?'input':'change',()=>{state.page=0;renderTracks()});
+for(const id of ['search','owner','sort','viewType'])$(id).addEventListener(id==='search'?'input':'change',()=>{state.page=0;renderTracks();saveAllViewState()});
 window.svtAllShown=()=>{selectAllCategory(state.mode);if(state.rows.length){renderSummary();renderArtists();renderTracks();}};
 window.addEventListener('svt-media-ready',()=>{if(state.rows.length){renderSummary();renderArtists();renderTracks();}});
 const allArchiveDate=document.getElementById('all-archiveDate');
@@ -704,13 +729,13 @@ if(allArchiveDate)allArchiveDate.addEventListener('change',async()=>{
   await applyPeriod();
   const [prevGroup,prevSolo]=await Promise.all([snapshot('group',dayBefore(date)),snapshot('solo',dayBefore(date))]);
   state.milestonePrevious={group:prevGroup,solo:prevSolo};
-  renderSummary();selectAllCategory(state.mode);renderArtists();renderTracks();syncAllDatePicker();
+  renderSummary();selectAllCategory(state.mode);renderArtists();renderTracks();syncAllDatePicker();saveAllViewState();
  }catch(error){console.warn('Combined archive date',error);$('coverage').textContent='Could not load that archived date.'}
  finally{allArchiveDate.disabled=false}
 });
-$('period').addEventListener('change',async()=>{state.period=$('period').value;state.page=0;$('coverage').textContent='Checking saved calendar boundaries…';await applyPeriod();renderSummary();renderTracks();renderArtists()});
-$('prev').addEventListener('click',()=>{state.page--;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
-$('next').addEventListener('click',()=>{state.page++;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
+$('period').addEventListener('change',async()=>{state.period=$('period').value;state.page=0;$('coverage').textContent='Checking saved calendar boundaries…';await applyPeriod();renderSummary();renderTracks();renderArtists();saveAllViewState()});
+$('prev').addEventListener('click',()=>{state.page--;renderTracks();saveAllViewState();$('recordings').scrollIntoView({block:'nearest'})});
+$('next').addEventListener('click',()=>{state.page++;renderTracks();saveAllViewState();$('recordings').scrollIntoView({block:'nearest'})});
 
 /* All archive history inspector: real dated snapshots, no interpolated values. */
 const allHistoryDialog=document.createElement('dialog');
