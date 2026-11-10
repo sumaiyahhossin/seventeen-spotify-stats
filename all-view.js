@@ -297,7 +297,7 @@ function renderSummary(){
  $('summaryStreams').textContent=allComplete?fmt(streams):'—';
  $('summaryTracks').textContent=rows.length?fmt(rows.length):'—';
  const groupDate=state.group?.date,soloDate=state.solo?.date;
- const dateFormat=date=>/^\\d{4}-\\d{2}-\\d{2}$/.test(date||'')?
+ const dateFormat=date=>/^\d{4}-\d{2}-\d{2}$/.test(date||'')?
   new Date(date+'T12:00:00Z').toLocaleDateString('en-US',
    {timeZone:'UTC',year:'numeric',month:'short',day:'numeric'}):'—';
  const sameDay=!!groupDate&&groupDate===soloDate;
