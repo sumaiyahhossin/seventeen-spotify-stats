@@ -457,10 +457,23 @@ def main():
                             period.value=arguments[0];
                             period.dispatchEvent(new Event('change',{bubbles:true}));
                         """,metric)
-                        WebDriverWait(driver,45).until(lambda d:
-                            d.find_element(By.ID,'all-summaryGrowthHeading').text.upper().startswith(metric.upper())
-                            and d.find_element(By.ID,'all-summaryGrowth').text.strip() not in ('','—')
-                            and '*' not in d.find_element(By.ID,'all-summaryGrowth').text)
+                        try:
+                            WebDriverWait(driver,40).until(lambda d:
+                                d.find_element(By.ID,'all-summaryGrowthHeading').text.upper().startswith(metric.upper())
+                                and d.find_element(By.ID,'all-summaryGrowth').text.strip() not in ('','—')
+                                and '*' not in d.find_element(By.ID,'all-summaryGrowth').text)
+                        except Exception:
+                            print(metric+' All history integrity details:',driver.execute_script("""
+                              const a=window.svtAllAudit?.();
+                              return {date:a?.date,soloDate:a?.soloDate,period:a?.period,
+                                allTracks:a?.tracks,verified:a?.verified,
+                                missing:a?.missing?.slice(0,25),
+                                heading:document.getElementById('all-summaryGrowthHeading')?.textContent,
+                                growth:document.getElementById('all-summaryGrowth')?.textContent,
+                                growthNote:document.getElementById('all-summaryGrowthNote')?.textContent,
+                                coverage:document.getElementById('all-coverage')?.textContent};
+                            """),flush=True)
+                            raise
                     driver.execute_script("""
                         const picker=document.getElementById('all-archiveDate');
                         picker.value='2026-11-08';
