@@ -874,7 +874,7 @@ function historySnapshotValue(snap,row){
  const ids=row.ids||[row.id];
  const values=ids.map(id=>{
   const releaseDate=state.rows.find(record=>record.id===id)?.date||row.date;
-  if(releaseDate&&snap.date<releaseDate)return 0;
+  if(releaseDate&&snap.date<releaseDate)return null;
   return archivedSnapshotValue(snap,row.scope,id,
    id===row.id?row.title:row.scope==='group'?latestArchives?.group?.names?.[id]:state.media?.tracks?.[id]?.title);
  });
@@ -898,7 +898,7 @@ async function historyValueAt(date,row){
   // A partial total is visibly marked and never described as the complete total.
   return matched?{total,matched,eligible,complete:matched===eligible,values}:null;
  }
- if(row.date&&date<row.date)return 0;
+ if(row.date&&date<row.date)return null;
  return historySnapshotValue(await snapshot(row.scope,date),row);
 }
 async function showAllHistory(row){
@@ -968,8 +968,9 @@ async function showAllHistory(row){
   if(isCombined&&older&&before)older.date=before.date;
   const pair=isCombined?comparable(present,previous):null;
   const oldPair=isCombined?comparable(previous,older):null;
+  const releasedNow=!isCombined&&row.date&&current.date>=row.date&&prev.date<row.date;
   const gain=isCombined?pair.gain:
-   Number.isFinite(total)&&Number.isFinite(previous)&&total>=previous?total-previous:null;
+   Number.isFinite(total)&&(releasedNow?total:Number.isFinite(previous)&&total>=previous?total-previous:null);
   const oldGain=isCombined?oldPair.gain:
    Number.isFinite(previous)&&Number.isFinite(older)&&previous>=older?previous-older:null;
   const change=(!isCombined||pair.complete&&oldPair.complete)&&
