@@ -433,8 +433,16 @@ function renderTracks(){
  const order=$('sort').value,period=state.period,mode=state.mode;
  const isDiscography=mode==='discography',isAlbum=mode==='albums';
  const entire=isDiscography?state.discography:isAlbum?state.albums:state.rows;
- const rows=entire.filter(r=>(owner==='all'||r.owners.includes(owner))&&
-  (!query||[r.title,r.id||'',...r.owners,...r.releaseNames].join(' ').toLowerCase().includes(query)));
+ const rows=entire.filter(r=>{
+  if(owner!=='all'&&!r.owners.includes(owner))return false;
+  if(!query)return true;
+  // Original snapshot aliases remain searchable even when the original
+  // ranking prints the official display form (GOM → God of Music).
+  const rawName=r.id?(r.scope==='group'?state.group.names?.[r.id]:
+   state.media.tracks?.[r.id]?.title):'';
+  return [r.title,rawName,r.id||'',...r.owners,...r.releaseNames]
+   .join(' ').toLowerCase().includes(query);
+ });
  const score=row=>period==='overall'?row.streams:row.gain;
  const metricLabel=period==='overall'?'total streams':period+' gain';
  $('sort').querySelector('[value="streams"]').textContent='Highest '+metricLabel;
