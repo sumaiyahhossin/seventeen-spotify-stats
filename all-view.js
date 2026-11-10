@@ -185,14 +185,16 @@ function buildDiscography(){
     ids.reduce((sum,id)=>sum+snap.tracks[id],0):null;
    const isAlbum=/\b(album|mini|ep|repackage|best|compilation)\b/i.test(String(release.title||''));
    // A header separates release editions in the same order as OT13/solo Discography.
+   const displayOrder=all.length;
    all.push({kind:'album',title:name,scope,releaseKey:release.key,
-    owners:[owner],releaseNames:[name],date,streams,ids,discographyHeader:true});
+    owners:[owner],releaseNames:[name],date,sortDate:date,streams,ids,releaseOrder:displayOrder,discographyHeader:true});
    for(const id of ids){
     const row=canonical.get(id);
     const title=scope==='group'?snap.names?.[id]:state.media.tracks?.[id]?.title;
     all.push({id,title:normalizeTitle(title||row?.title||id),kind:'track',scope,
      owners:row?.owners?.length?row.owners:[owner],releaseNames:[name],date:release.track_release_dates?.[id]||date,
-     releaseKey:release.key,streams:snap.tracks?.[id]??null,discographyTrack:true});
+     releaseKey:release.key,streams:snap.tracks?.[id]??null,
+     sortDate:date,releaseOrder:all.length,discographyTrack:true});
    }
   }
  }
@@ -345,6 +347,9 @@ function renderArtists(){
  const labels={streams:'HIGHEST STREAMS',followers:'HIGHEST FOLLOWERS',
   listeners:'HIGHEST MONTHLY LISTENERS'};
  $('artistMetricHeading').textContent=labels[metric]||labels.streams;
+ const header=$('artistSectionTitle');
+ if(header)header.textContent=(metric==='streams'?'Total Streams':
+  metric==='followers'?'Highest Followers':'Highest Monthly Listeners');
  // One selected metric, one descending ranking. A profile without a verified
  // value for the selected metric is excluded, not ranked as 0.
  const rows=artistStats()
@@ -406,7 +411,7 @@ function renderTracks(){
   if(order==='title')return (a.title||'').localeCompare(b.title||'');
   if(order==='newest')return (b.date||'').localeCompare(a.date||'');
   if(order==='oldest'){
-   const diff=(a.date||'9999').localeCompare(b.date||'9999');
+   const diff=(a.sortDate||a.date||'9999').localeCompare(b.sortDate||b.date||'9999');
    return diff||(isDiscography?(a.releaseOrder??9999)-(b.releaseOrder??9999):0);
   }
   const x=score(a),y=score(b);
@@ -463,6 +468,8 @@ function renderTracks(){
 // OT13 and Unit/Solo milestone pages. Never invent a historical crossing date.
 const milestoneValues=[100000000,200000000,300000000,400000000,500000000,
  600000000,700000000,800000000,900000000,1000000000];
+const upcomingMilestoneValues=[1000000,10000000,20000000,30000000,40000000,
+ 50000000,60000000,70000000,80000000,90000000,...milestoneValues];
 const milestoneNameKey=name=>'name:'+String(name||'').toLowerCase().normalize('NFKC').replace(/[^a-z0-9]/g,'');
 const milestoneShort=n=>n>=1000000000?'1B':Math.round(n/1000000)+'M';
 const milestoneDays=(date1,date2)=>/^20\d\d-\d\d-\d\d$/.test(date1||'')&&
@@ -484,7 +491,8 @@ function setupMilestoneOptions(){
  const mode=state.milestoneMode,selected=$('milestoneThreshold').value;
  $('milestoneThreshold').innerHTML='<option value="0">'+
   (mode==='reached'?'All reached milestones':'All next milestones')+'</option>'+
-  milestoneValues.map(v=>'<option value="'+v+'">'+milestoneShort(v)+'</option>').join('');
+  (mode==='reached'?milestoneValues:upcomingMilestoneValues).map(v=>
+   '<option value="'+v+'">'+milestoneShort(v)+'</option>').join('');
  if([...$('milestoneThreshold').options].some(o=>o.value===selected))
   $('milestoneThreshold').value=selected;
  else $('milestoneThreshold').value=mode==='reached'?'100000000':'0';
@@ -521,7 +529,7 @@ function renderMilestones(){
    elapsed=date?milestoneDays(row.date,date):null;
    if(elapsed!=null&&elapsed<0)elapsed=null;
   }else{
-   target=milestoneValues.find(value=>row.streams<value);
+   target=upcomingMilestoneValues.find(value=>row.streams<value);
    if(!target||(threshold&&target!==threshold))continue;
    left=target-row.streams;
    gain=milestoneDailyGain(row);
