@@ -416,10 +416,15 @@ function renderSummary(){
   $('summaryGrowth').textContent='—';
   $('summaryGrowthNote').textContent='Cumulative streams shown on the left. Choose a time period to see growth.';
  }else{
-  $('summaryGrowth').textContent=allVerified?(totalGrowth>0?'+':'')+fmt(totalGrowth):'—';
+  const observedGains=verifiedGains.filter(Number.isFinite);
+  const verifiedSubset=observedGains.length?observedGains.reduce((sum,n)=>sum+n,0):null;
+  const figure=allVerified?totalGrowth:verifiedSubset;
+  $('summaryGrowth').textContent=Number.isFinite(figure)?
+   (figure>0?'+':'')+fmt(figure)+(allVerified?'':'*'):'—';
   $('summaryGrowthNote').textContent=allVerified?
    (period==='daily'?'From '+dayBefore(groupDate)+' to '+groupDate:'Verified '+period+' increase ending '+groupDate):
-   'Incomplete or unmatched '+period+' archive boundaries — no estimated total';
+   observedGains.length?observedGains.length+' of '+rows.length+' recordings verified · partial '+period+' gain only (*)':
+    'No comparable '+period+' archive observations — no estimated growth';
  }
  $('summaryGrowth').classList.toggle('svt-gain-positive',Number.isFinite(totalGrowth)&&totalGrowth>0);
  $('summaryGrowth').classList.toggle('svt-gain-negative',Number.isFinite(totalGrowth)&&totalGrowth<0);
@@ -510,7 +515,8 @@ function renderArtists(){
   '<div class="svt-all-person-copy"><span class="svt-all-song">'+esc(a.name)+'</span>'+
   '<div class="svt-all-sub">'+(a.name==='SEVENTEEN'?'Group':members.has(a.name)?'Member':'Unit')+
   ' · '+(a.recordings.size||0)+' recordings</div></div></div></td>'+
-  '<td class="svt-all-num">'+
+  '<td class="svt-all-num '+(metric==='streams'&&period!=='overall'?
+   Number.isFinite(a.observedGain)?a.observedGain>0?'svt-gain-positive':a.observedGain<0?'svt-gain-negative':'svt-gain-neutral':'svt-gain-neutral':'')+'">'+
   (metric==='streams'&&period!=='overall'
    ?(Number.isFinite(a.observedGain)?(a.observedGain>0?'+':'')+fmt(a.observedGain)+(a.partial?'*':''):'—')+
     '<div class="svt-all-sub">'+(a.partial?
