@@ -363,10 +363,13 @@ function earlierBoundary(scope,period){
  if(period==='yearly')return dayBefore(firstOfYear(current));
  return null;
 }
-function verifiedGainBetween(scope,id,newer,older,title){
+function verifiedGainBetween(scope,id,newer,older,title,releaseDate){
  if(!newer||!older)return null;
- const a=archivedSnapshotValue(newer,scope,id,title);
- const b=archivedSnapshotValue(older,scope,id,title);
+ const released=/^\d{4}-\d{2}-\d{2}$/.test(releaseDate||'');
+ // A recording released during this period had zero pre-release streams.
+ // Only use zero when its verified release date is later than the baseline.
+ const a=released&&newer.date<releaseDate?0:archivedSnapshotValue(newer,scope,id,title);
+ const b=released&&older.date<releaseDate?0:archivedSnapshotValue(older,scope,id,title);
  if(!Number.isFinite(a)||!Number.isFinite(b)||a<b)return null;
  const gain=a-b;
  if(older.source==='historical spreadsheet'&&newer.source!=='historical spreadsheet'){
@@ -393,12 +396,14 @@ async function applyPeriod(){
   const ids=row.ids||[row.id],scope=row.scope;
   const deltas=ids.map(id=>{
    const title=scope==='group'?latestArchives?.group?.names?.[id]:state.media?.tracks?.[id]?.title;
-   return verifiedGainBetween(scope,id,state[scope],baseline[scope],title||row.title);
+   const releaseDate=state.rows.find(record=>record.id===id)?.date||row.date;
+   return verifiedGainBetween(scope,id,state[scope],baseline[scope],title||row.title,releaseDate);
   });
   row.gain=deltas.length&&deltas.every(Number.isFinite)?deltas.reduce((sum,v)=>sum+v,0):null;
   const prior=ids.map(id=>{
    const title=scope==='group'?latestArchives?.group?.names?.[id]:state.media?.tracks?.[id]?.title;
-   return verifiedGainBetween(scope,id,baseline[scope],older[scope],title||row.title);
+   const releaseDate=state.rows.find(record=>record.id===id)?.date||row.date;
+   return verifiedGainBetween(scope,id,baseline[scope],older[scope],title||row.title,releaseDate);
   });
   const priorGain=prior.length&&prior.every(Number.isFinite)?prior.reduce((sum,v)=>sum+v,0):null;
   row.change=Number.isFinite(row.gain)&&Number.isFinite(priorGain)?row.gain-priorGain:null;
@@ -837,8 +842,12 @@ const historyPeriodShift=(date,mode,offset)=>{const d=new Date(date+'T12:00:00Z'
 function historySnapshotValue(snap,row){
  if(!snap)return null;
  const ids=row.ids||[row.id];
- const values=ids.map(id=>archivedSnapshotValue(snap,row.scope,id,
-  id===row.id?row.title:row.scope==='group'?latestArchives?.group?.names?.[id]:state.media?.tracks?.[id]?.title));
+ const values=ids.map(id=>{
+  const releaseDate=state.rows.find(record=>record.id===id)?.date||row.date;
+  if(releaseDate&&snap.date<releaseDate)return 0;
+  return archivedSnapshotValue(snap,row.scope,id,
+   id===row.id?row.title:row.scope==='group'?latestArchives?.group?.names?.[id]:state.media?.tracks?.[id]?.title);
+ });
  return values.length&&values.every(Number.isFinite)?values.reduce((a,b)=>a+b,0):null;
 }
 let historyRequest=0;
@@ -859,7 +868,7 @@ async function historyValueAt(date,row){
   // A partial total is visibly marked and never described as the complete total.
   return matched?{total,matched,eligible,complete:matched===eligible,values}:null;
  }
- if(row.date&&date<row.date)return null;
+ if(row.date&&date<row.date)return 0;
  return historySnapshotValue(await snapshot(row.scope,date),row);
 }
 async function showAllHistory(row){
