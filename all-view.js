@@ -479,12 +479,14 @@ function renderArtists(){
     const baseline=state.metricBaseline?.[scope];
     previous=baseline?.listeners?.[a.id]??baseline?.monthly_listeners?.[a.id]??null;
    }else{
-    const totals=[...a.recordings].map(id=>{
-     const row=state.rows.find(r=>r.id===id);
-     const snap=row&&state.metricBaseline?.[row.scope];
-     return row&&snap?verifiedBaselineValue(row.scope,id,snap):null;
-    });
-    previous=totals.length&&totals.every(Number.isFinite)?totals.reduce((sum,n)=>sum+n,0):null;
+    // Streams ranked by the selected period's gain, not cumulative streams.
+    // Each recording contributes at most once to an artist's total.
+    const tracks=state.rows.filter(row=>a.recordings.has(row.id));
+    const verified=tracks.filter(row=>Number.isFinite(row.gain));
+    const observedGain=verified.length?verified.reduce((sum,row)=>sum+row.gain,0):null;
+    const complete=tracks.length>0&&verified.length===tracks.length;
+    return {...a,change:complete?observedGain:null,observedGain,
+     observedTracks:verified.length,totalTracks:tracks.length,partial:!complete};
    }
    return {...a,change:Number.isFinite(current)&&Number.isFinite(previous)?current-previous:null};
   })
@@ -497,7 +499,8 @@ function renderArtists(){
  $('artistNote').textContent=rows.length+' profiles with saved '+source+
   ' · ranked from highest to lowest · profiles with unavailable values are hidden. '+
   'Group: '+state.group.date+' · Solo/Unit: '+state.solo.date+'. '+
-  'Streams on member and unit profiles may overlap; the combined track catalog counts distinct recordings once.';
+  'Streams on member and unit profiles may overlap; the combined track catalog counts distinct recordings once.'+
+  (metric==='streams'&&period!=='overall'?' * Indicates only a verified subset of monthly streams, not a complete period total.':'');
  $('artists').innerHTML=rows.map((a,i)=>
   '<tr><td><div class="svt-all-person">'+
   '<span class="svt-all-rank">'+String(i+1).padStart(2,'0')+'</span>'+
@@ -505,7 +508,14 @@ function renderArtists(){
   '<div class="svt-all-person-copy"><span class="svt-all-song">'+esc(a.name)+'</span>'+
   '<div class="svt-all-sub">'+(a.name==='SEVENTEEN'?'Group':members.has(a.name)?'Member':'Unit')+
   ' · '+(a.recordings.size||0)+' recordings</div></div></div></td>'+
-  '<td class="svt-all-num">'+fmt(a[metric])+(period==='overall'?'':'<div class="svt-all-sub '+(Number.isFinite(a.change)?a.change>0?'svt-gain-positive':a.change<0?'svt-gain-negative':'svt-gain-neutral':'svt-gain-neutral')+'">'+(Number.isFinite(a.change)?(a.change>0?'+':'')+fmt(a.change):'—')+' '+period+' change</div>')+'</td></tr>'
+  '<td class="svt-all-num">'+
+  (metric==='streams'&&period!=='overall'
+   ?(Number.isFinite(a.observedGain)?(a.observedGain>0?'+':'')+fmt(a.observedGain)+(a.partial?'*':''):'—')+
+    '<div class="svt-all-sub">'+(a.partial?
+      'Verified subset: '+(a.observedTracks||0)+' / '+(a.totalTracks||0)+' tracks · incomplete '+period:
+      period+' streams gained')+'</div>'
+   :fmt(a[metric])+(period==='overall'?'':'<div class="svt-all-sub '+(Number.isFinite(a.change)?a.change>0?'svt-gain-positive':a.change<0?'svt-gain-negative':'svt-gain-neutral':'svt-gain-neutral')+'">'+(Number.isFinite(a.change)?(a.change>0?'+':'')+fmt(a.change):'—')+' '+period+' change</div>'))+
+  '</td></tr>'
  ).join('')||'<tr><td colspan="2" class="svt-all-status">No verified '+labels[metric].toLowerCase()+
  ' are available for these profiles.</td></tr>';
  paintArtists();
