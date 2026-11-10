@@ -564,6 +564,18 @@ def main():
                                     assert change==current_gain-prior_gain,(
                                       'Change in increase disagrees with saved period gains',mode,today,yesterday)
                                     checked_changes+=1
+                        if mode=='monthly':
+                            diagnostics=driver.execute_async_script("""
+                              const done=arguments[arguments.length-1];
+                              const dates=['2025-12-31','2026-01-16','2026-02-28','2026-03-31',
+                                '2026-04-30','2026-05-31','2026-06-30','2026-07-31',
+                                '2026-08-31','2026-09-30','2026-10-31','2026-11-08'];
+                              Promise.all(dates.map(d=>window.svtAllHistoryAudit(d)))
+                                .then(all=>done(all.map(r=>({date:r.date,matched:r.matched,eligible:r.eligible,
+                                  missing:r.missing.slice(0,20)}))))
+                                .catch(e=>done([{error:String(e)}]));
+                            """)
+                            print('Full-year All recording coverage:',diagnostics,flush=True)
                         assert checked_gains>=3,(mode,'Too few fully comparable gains',checked_gains,records)
                         assert checked_changes>=2,(mode,'Too few verified gain changes',checked_changes,records)
                         print('Verified historical arithmetic',mode,checked_gains,'gains and',checked_changes,'changes',flush=True)
