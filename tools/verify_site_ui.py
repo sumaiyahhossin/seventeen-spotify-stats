@@ -433,10 +433,23 @@ def main():
                 """)
                 assert any('solo-album-covers/jxj_dreamscape.jpg' in x for x in album_sources),(
                     f'All Albums did not reuse JxJ album sleeve: {album_sources}')
+                driver.execute_script("""
+                    document.getElementById('all-owner').value='all';
+                    document.getElementById('all-owner').dispatchEvent(new Event('change',{bubbles:true}));
+                """)
                 click(driver,'#all-rankCategory [data-all-rank="discography"]')
                 assert not driver.find_element(By.ID,'all-catalogSection').get_attribute('hidden')
                 assert 'discography' in driver.find_element(By.ID,'all-recordCount').text
-                assert len(driver.find_elements(By.CSS_SELECTOR,'#all-recordings .svt-all-release-row'))>0,                    'Discography release headers missing'
+                WebDriverWait(driver,20).until(lambda d:
+                    len(d.find_elements(By.CSS_SELECTOR,'#all-recordings .svt-all-release-row'))>0)
+                assert not driver.execute_script("""
+                    return !!document.getElementById('svtAllMilestones');
+                """),'All milestones should live on a separate page, not the dashboard'
+                assert driver.find_element(By.CSS_SELECTOR,'#svtAllView a.milestone-nav-link').get_attribute('href').endswith('/all-milestones.html')
+                assert driver.execute_script("""
+                    return getComputedStyle(document.querySelector('#all-catalogSection')).color !== 'rgb(35, 52, 82)'
+                """),'All is still using the incorrect white theme'
+
                 click(driver,'#all-rankCategory [data-all-rank="tracks"]')
                 # A legacy workbook reused Water's current Spotify ID for Candy;
                 # All must look up Water's actual archive recording by name.
@@ -468,25 +481,11 @@ def main():
                     return [...document.querySelectorAll('#all-recordings tr')].every(
                         row=>row.querySelectorAll('td').length===2);
                 """),'Combined period ranking should display only the selected metric'
-                # All must include reached and upcoming milestones, using the
-                # same track covers and saved evidence as the original pages.
-                driver.execute_script("document.getElementById('all-milestoneSearch').value=''")
-                WebDriverWait(driver,25).until(lambda d:
-                    len(d.find_elements(By.CSS_SELECTOR,'#all-milestoneRows tr .svt-all-song'))>0)
-                assert '100M' in driver.find_element(By.ID,'all-milestoneStatus').text
+                # The compact combined ranking matches OG's dense track layout.
                 assert driver.execute_script("""
-                    return [...document.querySelectorAll('#all-milestoneRows img')]
-                      .every(img=>img.dataset.coverTrack&&img.dataset.coverTrack!=='missing');
-                """),'All reached milestones lost source track artwork'
-                assert len(driver.find_elements(By.CSS_SELECTOR,'#all-milestoneRows .svt-all-song'))>0
-                click(driver,'#all-milestoneUpcoming')
-                assert driver.find_element(By.ID,'all-milestoneThreshold').get_attribute('value')=='0',                    'Upcoming should default to all next milestones, not only 100M'
-                assert '1M' in driver.find_element(By.ID,'all-milestoneThreshold').text
-                WebDriverWait(driver,25).until(lambda d:
-                    'upcoming milestone' in d.find_element(By.ID,'all-milestoneStatus').text)
-                assert len(driver.find_elements(By.CSS_SELECTOR,'#all-milestoneRows .svt-all-song'))>0
-                click(driver,'#all-milestoneReached')
-                assert 'MILESTONE REACHED'==driver.find_element(By.ID,'all-milestoneValueHeading').text
+                    const row=document.querySelector('#all-recordings tr');
+                    return !!row && row.getBoundingClientRect().height < 85;
+                """),'All song ranking occupies too much vertical space'
                 # Cross-catalog Joshua tracks count once, with The8's
                 # independently released Love Is Gone still included.
                 driver.execute_script("""
@@ -525,6 +524,44 @@ def main():
                 d.execute_script("return document.body.classList.contains('svt-all-view')"))
             assert 'index.html?view=all' in driver.current_url,'Legacy All did not redirect to the main dashboard'
             print('All legacy navigation, Picheolin streams and both responsive views verified',flush=True)
+            # All has a dedicated milestone page with the original dark layout,
+            # and the documented Feb 6 LOVE, MONEY, FAME threshold date.
+            for width in (1300,390):
+                driver.set_window_size(width,850)
+                driver.get(f'http://127.0.0.1:{PORT}/all-milestones.html')
+                WebDriverWait(driver,40).until(lambda d:
+                    'distinct recordings reached' in d.find_element(By.ID,'status').text)
+                assert driver.find_element(By.CSS_SELECTOR,'a.back').get_attribute('href').endswith('index.html?view=all')
+                assert driver.execute_script("""
+                    return getComputedStyle(document.body).backgroundImage.includes('radial-gradient')
+                """),'All milestone page does not match the original dark milestone design'
+                driver.execute_script("""
+                    const el=document.getElementById('search');
+                    el.value='LOVE, MONEY, FAME';el.dispatchEvent(new Event('input',{bubbles:true}));
+                """)
+                WebDriverWait(driver,15).until(lambda d:
+                    'LOVE, MONEY, FAME' in d.find_element(By.ID,'rows').text)
+                money=driver.execute_script("""
+                    const tr=[...document.querySelectorAll('#rows tr')]
+                        .find(tr=>tr.querySelector('.song-title')?.textContent==='LOVE, MONEY, FAME');
+                    return {title:tr?.querySelector('.song-title')?.textContent,
+                      reached:tr?.querySelector('[data-label="MILESTONE REACHED"]')?.textContent};
+                """)
+                assert money['title']=='LOVE, MONEY, FAME' and 'Feb 6, 2026' in (money['reached'] or ''),(
+                    f'LOVE, MONEY, FAME 100M date missing: {money}')
+                click(driver,'#tabUpcoming')
+                WebDriverWait(driver,25).until(lambda d:
+                    'distinct recordings' in d.find_element(By.ID,'upcomingStatus').text)
+                # Clear the reached-only search on the new upcoming panel.
+                driver.execute_script("""
+                    const el=document.getElementById('upcomingSearch');
+                    el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));
+                """)
+                assert len(driver.find_elements(By.CSS_SELECTOR,'#upcomingRows .song-title'))>=390,                    'Combined upcoming milestones omitted many unit/solo songs'
+                assert driver.execute_script("""
+                    return document.documentElement.scrollWidth<=window.innerWidth+5
+                """),f'All milestone page horizontal overflow at {width}px'
+                print('Dedicated All milestone page, LOVE MONEY FAME date, mobile:',width,flush=True)
             driver.get(f'http://127.0.0.1:{PORT}/milestones.html?type=solo')
             WebDriverWait(driver,40).until(lambda d:'UNITS & SOLO' in d.find_element(By.CSS_SELECTOR,'.eyebrow').text)
             # Selenium .text is empty inside the hidden Upcoming panel unless
