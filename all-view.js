@@ -562,6 +562,7 @@ function renderTracks(){
  const totalPages=isDiscography?1:Math.max(1,Math.ceil(rows.length/state.limit));
  state.page=isDiscography?0:Math.min(state.page,totalPages-1);
  const shown=isDiscography?rows:rows.slice(state.page*state.limit,(state.page+1)*state.limit);
+ const sourceRows=isDiscography?state.discography:isAlbum?state.albums:state.rows;
  const pagination=document.querySelector('#svtAllView .svt-all-pagination');
  if(pagination){
   pagination.hidden=isDiscography;
@@ -604,7 +605,7 @@ function renderTracks(){
    '" data-cover-name="'+name+'" data-cover-kind="'+(isAlbum?'album':'track')+
    '" alt="'+name+' cover" loading="lazy"><span class="cover-placeholder" hidden></span></span>'+
    '<div class="svt-all-record-copy">'+link+'<div class="svt-all-sub">'+esc(sub)+
-   '</div></div></div></td><td class="svt-all-num">'+printed+'</td></tr>';
+   '</div></div></div></td><td class="svt-all-num" data-all-history="'+sourceRows.indexOf(row)+'" tabindex="0" role="button" title="View saved stream history">'+printed+'</td></tr>';
  }).join('')||'<tr><td colspan="2" class="svt-all-status">No matching '+(isDiscography?'releases':isAlbum?'albums':'recordings')+'.</td></tr>';
  $('pageInfo').textContent=(state.page+1)+' / '+totalPages;
  $('prev').disabled=state.page===0;$('next').disabled=state.page+1>=totalPages;
@@ -700,6 +701,79 @@ if(allArchiveDate)allArchiveDate.addEventListener('change',async()=>{
 $('period').addEventListener('change',async()=>{state.period=$('period').value;state.page=0;$('coverage').textContent='Checking saved calendar boundaries…';await applyPeriod();renderTracks();renderArtists()});
 $('prev').addEventListener('click',()=>{state.page--;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
 $('next').addEventListener('click',()=>{state.page++;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
+
+/* All archive history inspector: real dated snapshots, no interpolated values. */
+const allHistoryDialog=document.createElement('dialog');
+allHistoryDialog.id='svt-all-history-dialog';
+allHistoryDialog.innerHTML='<div class="all-history-head"><h2 id="all-history-title">Stream history</h2><button type="button" aria-label="Close history">×</button></div><p id="all-history-note"></p><div class="all-history-scroll"><table><thead><tr><th>Date</th><th>Total</th><th>Increase</th><th>Change in increase</th></tr></thead><tbody id="all-history-body"></tbody></table></div>';
+document.body.append(allHistoryDialog);
+const historyCss=document.createElement('style');
+historyCss.textContent='#svt-all-history-dialog{width:min(740px,94vw);max-height:88dvh;overflow:auto;border:1px solid #8570b6;border-radius:18px;background:#191a36;color:#f8f3ff;padding:20px;box-shadow:0 20px 80px #080817}#svt-all-history-dialog::backdrop{background:#050515cc;backdrop-filter:blur(6px)}#svt-all-history-dialog .all-history-head{display:flex;justify-content:space-between;align-items:center;gap:12px}#svt-all-history-dialog h2{font:800 22px Manrope,sans-serif;margin:0}#svt-all-history-dialog button{border:1px solid #8275ad;background:#343154;color:white;border-radius:9px;padding:8px 14px;cursor:pointer}#all-history-note{font:12px/1.5 Manrope,sans-serif;color:#c4b9de}#svt-all-history-dialog .all-history-scroll{overflow-x:auto}#svt-all-history-dialog table{width:100%;border-collapse:collapse;font:12px/1.5 Manrope,sans-serif;min-width:500px}#svt-all-history-dialog th,#svt-all-history-dialog td{padding:11px 8px;text-align:right;border-bottom:1px solid #44405e;white-space:nowrap}#svt-all-history-dialog th:first-child,#svt-all-history-dialog td:first-child{text-align:left}#svtAllView [data-all-history]{cursor:pointer;text-decoration:underline dotted transparent;text-underline-offset:4px}#svtAllView [data-all-history]:hover,#svtAllView [data-all-history]:focus-visible{text-decoration-color:#f0b6e7;outline-color:#d4a8ed}';
+document.head.append(historyCss);
+allHistoryDialog.querySelector('button').addEventListener('click',()=>allHistoryDialog.close());
+const historyDay=(date,offset)=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()+offset);return d.toISOString().slice(0,10)};
+const historyPeriodStart=(date,mode)=>{if(mode==='monthly')return date.slice(0,7)+'-01';const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-(d.getUTCDay()+6)%7);return d.toISOString().slice(0,10)};
+const historyPeriodShift=(date,mode,offset)=>{const d=new Date(date+'T12:00:00Z');if(mode==='monthly')d.setUTCMonth(d.getUTCMonth()+offset);else d.setUTCDate(d.getUTCDate()+7*offset);return d.toISOString().slice(0,10)};
+function historySnapshotValue(snap,row){
+ if(!snap)return null;
+ const ids=row.ids||[row.id];
+ const values=ids.map(id=>{
+  const name=id===row.id?row.title:(row.scope==='group'?latestArchives?.group?.names?.[id]:state.media.tracks?.[id]?.title);
+  const direct=snap.tracks?.[id];
+  if(Number.isFinite(direct)&&(!snap.source||snap.source!=='historical spreadsheet'||(snap.names?.[id]&&sameTitle(snap.names[id])===sameTitle(name))))return direct;
+  const matches=Object.entries(snap.names||{}).filter(([key,title])=>sameTitle(title)===sameTitle(name)&&Number.isFinite(snap.tracks?.[key])&&(row.scope==='group'||key===id||state.legacyLinks?.byIndex?.[Number(key.split(':').at(-1))]?.id===id));
+  return matches.length===1||matches.length&&matches.every(([key])=>snap.tracks[key]===snap.tracks[matches[0][0]])?snap.tracks[matches[0][0]]:null;
+ });
+ return values.length&&values.every(Number.isFinite)?values.reduce((a,b)=>a+b,0):null;
+}
+let historyRequest=0;
+async function showAllHistory(row){
+ const request=++historyRequest;
+ const mode=state.period==='monthly'||state.period==='yearly'?'monthly':state.period==='weekly'?'weekly':'daily';
+ const count=mode==='monthly'?12:10;
+ const end=state[row.scope].date;
+ const tbody=document.getElementById('all-history-body');
+ document.getElementById('all-history-title').textContent=row.title||'Combined streams';
+ document.getElementById('all-history-note').textContent='Last '+count+' '+(mode==='monthly'?'months':mode==='weekly'?'weeks':'days')+' through '+end+' · '+row.scope+' · verified snapshots only. Missing or unmatched data appears as —.';
+ tbody.innerHTML='<tr><td colspan="4">Loading saved history…</td></tr>';
+ if(!allHistoryDialog.open)allHistoryDialog.showModal();
+ const dates=[];
+ if(mode==='daily')for(let i=count-1;i>=-2;i--)dates.push(historyDay(end,-i));
+ else{
+  const first=historyPeriodStart(end,mode);
+  for(let i=count;i>=0;i--){
+   const start=historyPeriodShift(first,mode,-i);
+   const next=historyPeriodShift(start,mode,1);
+   const last=historyDay(next,-1);
+   dates.push(last>end?end:last);
+  }
+ }
+ const values=await Promise.all([...new Set(dates)].map(async date=>({date,value:historySnapshotValue(await snapshot(row.scope,date),row)})));
+ if(request!==historyRequest)return;
+ const byDate=new Map(values.map(item=>[item.date,item.value]));
+ const output=[];
+ for(let i=0;i<count;i++){
+  const date=mode==='daily'?dates[i]:dates[i+1];
+  const prior=mode==='daily'?historyDay(date,-1):dates[i];
+  const before=mode==='daily'?historyDay(date,-2):i>0?dates[i-1]:null;
+  const total=byDate.get(date),previous=byDate.get(prior),older=before?byDate.get(before):null;
+  const gain=Number.isFinite(total)&&Number.isFinite(previous)&&total>=previous?total-previous:null;
+  const oldGain=Number.isFinite(previous)&&Number.isFinite(older)&&previous>=older?previous-older:null;
+  const change=Number.isFinite(gain)&&Number.isFinite(oldGain)?gain-oldGain:null;
+  const label=mode==='monthly'?date.slice(0,7):mode==='weekly'?prior+' – '+date:date;
+  output.push('<tr><td>'+esc(label)+'</td><td>'+fmt(total)+'</td><td>'+(Number.isFinite(gain)?'+'+fmt(gain):'—')+'</td><td>'+(Number.isFinite(change)?(change>=0?'+':'')+fmt(change):'—')+'</td></tr>');
+ }
+ tbody.innerHTML=output.join('');
+}
+document.getElementById('all-recordings')?.addEventListener('click',event=>{
+ const element=event.target.closest('[data-all-history]');
+ if(!element)return;
+ const index=Number(element.dataset.allHistory);
+ const rows=state.mode==='discography'?state.discography:state.mode==='albums'?state.albums:state.rows;
+ const row=rows[index];
+ if(row)showAllHistory(row).catch(console.error);
+});
+
 selectAllCategory(state.mode);
 init();
 
