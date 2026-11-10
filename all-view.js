@@ -26,7 +26,7 @@ const unique=arr=>[...new Set(arr)];
 const artistIds=[['SEVENTEEN','7nqOGRxlXj7N2JYbgNEjYH'],['S.Coups',null],['Jeonghan','6KDLlQYeeqUe5OQ2JrdNzF'],['Joshua','74AwWFYdjQ3ER5vHO4H7b0'],['Jun','38Gn0ZVC8TQwuaMxBK1yRV'],['Hoshi','6nWKAdMv1BDq1zHfZzkdbR'],['Wonwoo','3rHcBT06Vb1XGVUWhDALZt'],['Woozi','4TdiASPlU3QdZvGQBothcQ'],['Dokyeom','7G1kUsPtQCdolV6CPwHmh2'],['Mingyu','5gUpo0BRmo6EOTbyU3z5Ay'],['The8','4DqFd6XE3dX4LWXHJVVpLk'],['Seungkwan','0Vb2DjojEYsasFpc3aTZb6'],['Vernon','2Y34b9AOK30zXgL7cAH4NG'],['Dino','5YaeXxzvqGNBCguELlKo6G'],['BSS','1uAT5bTSp6dWbNmixIUP5t'],['JxW','7GvlsjcgBrsE578yghOq7D'],['HxW','1EReYiseDwE51FzGm7EK9n'],['CxM','7kjuLdYbtTkWBToMu2ebZN'],['DxS','4wBjmEkWhY4T22q00CiF5V'],['V8',null],['Picheolin','3V2EC4dPYLgtbi0TtrB1RA'],['JxJ',null]];
 const members=new Set(artistIds.slice(1,14).map(x=>x[0]));
 const units=new Set(artistIds.slice(14).map(x=>x[0]));
-const state={catalog:null,group:null,solo:null,media:null,followers:{},manifest:null,rows:[],albums:[],discography:[],mode:rememberedMode,albumSpecs:[],legacyLinks:null,milestonePrevious:{},snapshots:new Map(),page:0,limit:50,period:'overall'};
+const state={metricBaseline:null,followersHistory:{},catalog:null,group:null,solo:null,media:null,followers:{},manifest:null,rows:[],albums:[],discography:[],mode:rememberedMode,albumSpecs:[],legacyLinks:null,milestonePrevious:{},snapshots:new Map(),page:0,limit:50,period:'overall'};
 async function read(path){const r=await fetch(path,{cache:'no-cache'});if(!r.ok)throw new Error(path+' returned '+r.status);return r.json()}
 function nameFromRelease(release,id,index){
  const official=release.track_titles?.[id];
@@ -294,6 +294,8 @@ function verifiedBaselineValue(scope,id,baseline){
  return candidates.length&&candidates.every(n=>n===candidates[0])?candidates[0]:null;
 }
 async function applyPeriod(){
+ const metricBaselines=await Promise.all(['group','solo'].map(scope=>state.period==='overall'?Promise.resolve(null):snapshot(scope,boundaryDate(scope,state.period))));
+ state.metricBaseline={group:metricBaselines[0],solo:metricBaselines[1]};
  const rows=[...state.rows,...state.albums,...state.discography],period=state.period;
  if(period==='overall'){rows.forEach(row=>row.gain=null);return}
  const boundaries=await Promise.all(['group','solo'].map(async scope=>
@@ -384,16 +386,46 @@ function renderArtists(){
  const metric=$('artistMetric').value,scope=$('artistScope').value;
  const labels={streams:'HIGHEST STREAMS',followers:'HIGHEST FOLLOWERS',
   listeners:'HIGHEST MONTHLY LISTENERS'};
- $('artistMetricHeading').textContent=labels[metric]||labels.streams;
+ $('artistMetricHeading').textContent=(labels[metric]||labels.streams)+(state.period==='overall'?'':' · '+state.period.toUpperCase()+' CHANGE');
  const header=$('artistSectionTitle');
  if(header)header.textContent=(metric==='streams'?'Total Streams':
   metric==='followers'?'Highest Followers':'Highest Monthly Listeners');
  // One selected metric, one descending ranking. A profile without a verified
  // value for the selected metric is excluded, not ranked as 0.
+ const period=state.period;
+ const boundary=period==='overall'?null:boundaryDate('solo',period);
+ const history=state.followersHistory||{};
+ const followerDates=Object.keys(history).sort();
+ const observedDate=followerDates.at(-1);
+ const followerBase=period==='overall'?null:history[boundary]||null;
  const rows=artistStats()
+  .map(a=>{
+   if(period==='overall')return {...a,change:null};
+   let current=a[metric],previous=null;
+   if(metric==='followers'){
+    // Only compare exact dated observations; do not fabricate daily values.
+    const observed=history[observedDate]?.[a.id]?.count;
+    const baseline=followerBase?.[a.id]?.count;
+    current=Number.isFinite(observed)?observed:current;
+    previous=Number.isFinite(baseline)?baseline:null;
+   }else if(metric==='listeners'){
+    const scope=a.name==='SEVENTEEN'?'group':'solo';
+    const baseline=state.metricBaseline?.[scope];
+    previous=baseline?.listeners?.[a.id]??baseline?.monthly_listeners?.[a.id]??null;
+   }else{
+    const totals=[...a.recordings].map(id=>{
+     const row=state.rows.find(r=>r.id===id);
+     const snap=row&&state.metricBaseline?.[row.scope];
+     return row&&snap?verifiedBaselineValue(row.scope,id,snap):null;
+    });
+    previous=totals.length&&totals.every(Number.isFinite)?totals.reduce((sum,n)=>sum+n,0):null;
+   }
+   return {...a,change:Number.isFinite(current)&&Number.isFinite(previous)?current-previous:null};
+  })
   .filter(a=>(scope==='all'||(scope==='members'?members.has(a.name):units.has(a.name)))&&
    Number.isFinite(a[metric]))
-  .sort((a,b)=>b[metric]-a[metric]||a.name.localeCompare(b.name));
+  .sort((a,b)=>period==='overall'?b[metric]-a[metric]||a.name.localeCompare(b.name):
+   (Number.isFinite(b.change)?b.change:-Infinity)-(Number.isFinite(a.change)?a.change:-Infinity)||a.name.localeCompare(b.name));
  const source=metric==='streams'?'recording totals':metric==='listeners'?
   'monthly listener observations':'verified follower snapshots';
  $('artistNote').textContent=rows.length+' profiles with saved '+source+
@@ -407,7 +439,7 @@ function renderArtists(){
   '<div class="svt-all-person-copy"><span class="svt-all-song">'+esc(a.name)+'</span>'+
   '<div class="svt-all-sub">'+(a.name==='SEVENTEEN'?'Group':members.has(a.name)?'Member':'Unit')+
   ' · '+(a.recordings.size||0)+' recordings</div></div></div></td>'+
-  '<td class="svt-all-num">'+fmt(a[metric])+'</td></tr>'
+  '<td class="svt-all-num">'+fmt(a[metric])+(period==='overall'?'':'<div class="svt-all-sub">'+(Number.isFinite(a.change)?(a.change>0?'+':'')+fmt(a.change):'—')+' '+period+' change</div>')+'</td></tr>'
  ).join('')||'<tr><td colspan="2" class="svt-all-status">No verified '+labels[metric].toLowerCase()+
  ' are available for these profiles.</td></tr>';
  paintArtists();
@@ -519,7 +551,7 @@ async function init(){
    read('data/solo-albums.json'),read('data/solo-legacy-track-links.json')
   ]);
   latestArchives={group,solo};
-  state.catalog=catalog;state.group=group;state.solo=solo;state.media=media;state.followers=followers.followers||{};state.manifest=manifest;state.albumSpecs=soloAlbumSpecs;state.legacyLinks=legacyLinks;
+  state.catalog=catalog;state.group=group;state.solo=solo;state.media=media;state.followers=followers.followers||{};state.followersHistory=followers.history||{};state.manifest=manifest;state.albumSpecs=soloAlbumSpecs;state.legacyLinks=legacyLinks;
   for(const release of admin.releases||[]){const list=catalog[release.scope];if(list&&!list.some(r=>r.key===release.key))list.push(release)}
   const picker=document.getElementById('all-archiveDate');
   const sharedDates=(manifest.dates||[]).filter(d=>(manifest.solo_dates||[]).includes(d)||(manifest.solo_legacy_dates||[]).includes(d)).sort();
@@ -597,7 +629,7 @@ if(allArchiveDate)allArchiveDate.addEventListener('change',async()=>{
  }catch(error){console.warn('Combined archive date',error);$('coverage').textContent='Could not load that archived date.'}
  finally{allArchiveDate.disabled=false}
 });
-$('period').addEventListener('change',async()=>{state.period=$('period').value;state.page=0;$('coverage').textContent='Checking saved calendar boundaries…';await applyPeriod();renderTracks()});
+$('period').addEventListener('change',async()=>{state.period=$('period').value;state.page=0;$('coverage').textContent='Checking saved calendar boundaries…';await applyPeriod();renderTracks();renderArtists()});
 $('prev').addEventListener('click',()=>{state.page--;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
 $('next').addEventListener('click',()=>{state.page++;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
 selectAllCategory(state.mode);
