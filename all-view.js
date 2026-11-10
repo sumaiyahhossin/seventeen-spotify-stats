@@ -520,7 +520,11 @@ function renderTracks(){
  state.page=isDiscography?0:Math.min(state.page,totalPages-1);
  const shown=isDiscography?rows:rows.slice(state.page*state.limit,(state.page+1)*state.limit);
  const pagination=document.querySelector('#svtAllView .svt-all-pagination');
- if(pagination)pagination.hidden=isDiscography;
+ if(pagination){
+  pagination.hidden=isDiscography;
+  pagination.style.setProperty('display',isDiscography?'none':'flex','important');
+  pagination.setAttribute('aria-hidden',String(isDiscography));
+ }
  const verified=rows.filter(r=>Number.isFinite(score(r))).length;
  $('recordHeading').textContent=isDiscography?'Every release · Group + Units & Solo':
   isAlbum?'Every saved album':'Every saved recording';
