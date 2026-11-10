@@ -98,25 +98,55 @@ function visualName(row){
  return row.scope==='group'? 'SEVENTEEN'+(owners.length?' · '+owners.join(', '):''):
   owners.length?owners.join(', '):'Unit/Solo';
 }
+// Match the original milestone view's album art via the CORS-enabled
+// iTunes catalogue. Spotify's oEmbed endpoint rejects client-side fetches,
+// causing blocked requests and blank covers on mobile and desktop.
+const artworkName=s=>String(s||'').toLowerCase().normalize('NFKC')
+ .replace(/[^a-z0-9]+/g,' ').trim();
+const releaseArtworkAliases={
+ 'fml album':'FML','al1 album':'Al1','you make my day album':'YOU MAKE MY DAY',
+ 'you make my dawn album':'YOU MADE MY DAWN','an ode album':'An Ode',
+ 'seventeenth heaven album':'SEVENTEENTH HEAVEN',
+ '17 is right here best album':'17 IS RIGHT HERE',
+ 'spill the feels album':'SPILL THE FEELS','happy burstday album':'HAPPY BURSTDAY',
+ 'love letter album':'LOVE & LETTER','attacca album':'Attacca',
+ 'face the sun album':'Face the Sun','your choice album':'Your Choice',
+ 'heng garae album':'Heng:garæ'
+};
+async function itunesArtwork(term,kind,expected){
+ const params=new URLSearchParams({term,entity:kind,limit:'60',country:'US'});
+ const res=await fetch('https://itunes.apple.com/search?'+params.toString());
+ if(!res.ok)return '';
+ const data=await res.json();
+ const clean=s=>artworkName(s).replace(/\\b(album|single|ep|mini)\\b/g,'').trim();
+ const matches=(data.results||[]).filter(item=>{
+  if(!/seventeen/i.test(item.artistName||''))return false;
+  const title=kind==='album'?item.collectionName:item.trackName;
+  return clean(title)===clean(expected);
+ });
+ const selected=matches.find(item=>String(item.artistName).toLowerCase()==='seventeen')||matches[0];
+ return selected?.artworkUrl100?.replace(/\\d+x\\d+bb/,'600x600bb')||'';
+}
 async function coverUrl(row){
+ // The original Units & Solo archive already saves the correct track covers.
  const local=state.media.tracks?.[row.id]?.local;
  if(local&&row.scope==='solo')return local;
  const entry=state.art.tracks?.[coverKey(row.name)];
- let id=entry?.id||row.id;
- let type=entry?.id?'album':'track';
- if(!/^[a-zA-Z0-9]{22}$/.test(id||'')){id=row.id;type='track'}
- const key=type+':'+id;
- if(!state.covers.has(key)){
-  state.covers.set(key,(async()=>{
+ const alias=releaseArtworkAliases[coverKey(entry?.release)]||
+  String(entry?.release||'').replace(/\\s+(?:album|single|mini album|ep)$/i,'').trim();
+ const identity=alias?'album:'+artworkName(alias):'track:'+artworkName(row.name);
+ if(!state.covers.has(identity)){
+  state.covers.set(identity,(async()=>{
    try{
-    const r=await fetch('https://open.spotify.com/oembed?url='+encodeURIComponent('https://open.spotify.com/'+type+'/'+id));
-    const data=r.ok?await r.json():null;
-    return data?.thumbnail_url||null;
-   }catch{return null}
+    if(alias){
+     const image=await itunesArtwork('SEVENTEEN '+alias,'album',alias);
+     if(image)return image;
+    }
+    return await itunesArtwork('SEVENTEEN '+row.name,'song',row.name);
+   }catch{return ''}
   })());
  }
- const url=await state.covers.get(key);
- return url||'';
+ return await state.covers.get(identity);
 }
 // Combined upcoming milestones can contain 400+ recordings. Fetch cover art
 // for visible/nearby rows only, rather than firing hundreds of Spotify calls.
