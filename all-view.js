@@ -904,6 +904,17 @@ async function historyValueAt(date,row){
  if(row.date&&date<row.date)return null;
  return historySnapshotValue(await snapshot(row.scope,date),row);
 }
+// Read-only diagnostic: exposes which catalog recordings cannot be matched
+// in each saved historical snapshot (never fills missing observations).
+window.svtAllHistoryAudit=async date=>{
+ const row={scope:'all'};
+ const value=await historyValueAt(date,row);
+ const unmatched=state.rows.filter(track=>!(track.date&&track.date>date)&&
+  !Object.prototype.hasOwnProperty.call(value?.values||{},track.id));
+ return {date,matched:value?.matched??0,eligible:value?.eligible??0,
+  complete:!!value?.complete,
+  missing:unmatched.map(track=>({id:track.id,title:track.title,scope:track.scope,release:track.date}))};
+};
 async function showAllHistory(row){
  const request=++historyRequest;
  const mode=['monthly','yearly'].includes(state.period)?'monthly':state.period==='weekly'?'weekly':'daily';
