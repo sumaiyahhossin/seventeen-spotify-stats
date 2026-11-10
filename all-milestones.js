@@ -71,6 +71,7 @@ function buildNow(){
   byId.set(id,{id,scope:'solo',name:name||id,value,owners:state.owners.get(id)||new Set(['Unit/Solo'])});
  }
  state.rows=[...byId.values()].map(row=>({...row,release:state.releaseDates.get(row.id)||null}));
+ milestonePhotoIndex.clear();for(const row of state.rows)milestonePhotoIndex.set(row.id,row);
  const groupCount=groupIds.filter(id=>Number.isFinite(state.group.tracks?.[id])).length;
  const soloCount=Object.keys(state.solo.tracks||{}).length;
  $('status').textContent='All '+state.rows.length+' distinct recordings · '+format(state.group.date)+
@@ -117,17 +118,35 @@ async function coverUrl(row){
  const url=await state.covers.get(key);
  return url||'';
 }
-function paintCovers(){
- document.querySelectorAll('.song-cover[data-spotify-id]').forEach(img=>{
-  if(img.dataset.loaded==='1')return;
-  img.dataset.loaded='1';
-  const row=state.rows.find(r=>r.id===img.dataset.spotifyId);
-  if(!row)return;
-  coverUrl(row).then(url=>{
-   if(img.isConnected&&url)img.src=url;
-   else if(img.isConnected)img.style.opacity='.35';
-  });
+// Combined upcoming milestones can contain 400+ recordings. Fetch cover art
+// for visible/nearby rows only, rather than firing hundreds of Spotify calls.
+const milestonePhotoIndex=new Map();
+const milestoneCoverObserver=typeof IntersectionObserver!=='undefined'?
+ new IntersectionObserver(entries=>{
+  for(const entry of entries){
+   if(!entry.isIntersecting)continue;
+   milestoneCoverObserver.unobserve(entry.target);
+   loadVisibleMilestoneCover(entry.target);
+  }
+ },{rootMargin:'320px 0px',threshold:0}):null;
+function loadVisibleMilestoneCover(img){
+ if(img.dataset.loaded==='1')return;
+ img.dataset.loaded='1';
+ const row=milestonePhotoIndex.get(img.dataset.spotifyId);
+ if(!row)return;
+ coverUrl(row).then(url=>{
+  if(!img.isConnected)return;
+  if(url)img.src=url;else img.style.opacity='.35';
  });
+}
+function paintCovers(){
+ for(const img of document.querySelectorAll('.song-cover[data-spotify-id]')){
+  if(img.dataset.loaded==='1'||img.dataset.observed==='1')continue;
+  if(milestoneCoverObserver){
+   img.dataset.observed='1';
+   milestoneCoverObserver.observe(img);
+  }else loadVisibleMilestoneCover(img);
+ }
 }
 function titleHtml(row,index){
  const source='<img class="song-cover" data-spotify-id="'+esc(row.id)+'" alt="" loading="lazy">';
