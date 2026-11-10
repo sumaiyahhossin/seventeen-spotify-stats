@@ -198,6 +198,29 @@ function buildDiscography(){
    }
   }
  }
+ // Some unit albums (JxJ, V8) are defined in the canonical solo album
+ // catalog instead of as a standalone unit release in the per-member catalog.
+ // Include an actual unit release heading so artist filtering keeps the album
+ // alongside its songs, without changing the underlying recording totals.
+ for(const spec of state.albumSpecs||[]){
+  if(!['jxj_dreamscape','v8','gilboard'].includes(spec.key))continue;
+  const ids=unique((spec.tracks||[]).filter(id=>validId(id)&&validSolo.has(id)));
+  if(!ids.length)continue;
+  const owners=spec.owners||[],name=spec.displayName||spec.key;
+  const date=spec.releaseDate||spec.release_date||null,begin=all.length;
+  const streams=ids.every(id=>Number.isFinite(state.solo.tracks?.[id]))?
+   ids.reduce((sum,id)=>sum+state.solo.tracks[id],0):null;
+  all.push({kind:'album',title:name,scope:'solo',releaseKey:spec.key,
+   owners,releaseNames:[name],date,sortDate:date,streams,ids,
+   releaseOrder:begin,discographyHeader:true});
+  for(const id of ids){
+   const main=canonical.get(id),name=state.media.tracks?.[id]?.title||main?.title||id;
+   all.push({id,title:normalizeTitle(name),kind:'track',scope:'solo',
+    owners:main?.owners?.length?main.owners:owners,releaseNames:[spec.displayName||spec.key],
+    date,sortDate:date,releaseKey:spec.key,releaseOrder:all.length,
+    streams:state.solo.tracks[id],discographyTrack:true});
+  }
+ }
  state.discography=all;
 }
 async function snapshot(scope,date){
