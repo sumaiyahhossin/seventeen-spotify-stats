@@ -481,21 +481,39 @@ function renderTracks(){
   return [r.title,rawName,r.id||'',...r.owners,...r.releaseNames]
    .join(' ').toLowerCase().includes(query);
  });
+ // Discography is a release-by-release timeline, never a stream ranking.
+ const sortSelect=$('sort');
+ for(const option of sortSelect.options)option.hidden=isDiscography&&!['oldest','newest'].includes(option.value);
+ if(isDiscography&&!['oldest','newest'].includes(sortSelect.value))sortSelect.value='oldest';
+ const effectiveOrder=sortSelect.value;
  const score=row=>period==='overall'?row.streams:row.gain;
  const metricLabel=period==='overall'?'total streams':period+' gain';
  $('sort').querySelector('[value="streams"]').textContent='Highest '+metricLabel;
  $('sort').querySelector('[value="least"]').textContent='Lowest '+metricLabel;
- rows.sort((a,b)=>{
-  if(order==='title')return (a.title||'').localeCompare(b.title||'');
-  if(order==='newest')return (b.sortDate||b.date||'').localeCompare(a.sortDate||a.date||'')||(isDiscography?(b.releaseOrder??0)-(a.releaseOrder??0):0);
-  if(order==='oldest'){
-   const diff=(a.sortDate||a.date||'9999').localeCompare(b.sortDate||b.date||'9999');
-   return diff||(isDiscography?(a.releaseOrder??9999)-(b.releaseOrder??9999):0);
+ if(isDiscography){
+  // Keep each release's original track order and its subtotal row together.
+  // Only flip the order of release blocks, never individual album tracks.
+  const blocks=new Map();
+  for(const row of rows){
+   const key=row.scope+':'+row.releaseKey;
+   if(!blocks.has(key))blocks.set(key,{date:row.sortDate||row.date||'',first:row.releaseOrder??0,items:[]});
+   blocks.get(key).items.push(row);
   }
+  rows.splice(0,rows.length,...[...blocks.values()]
+   .sort((a,b)=>{
+    if(!a.date)return b.date?1:a.first-b.first;
+    if(!b.date)return -1;
+    const compare=a.date.localeCompare(b.date);
+    return (effectiveOrder==='newest'?-compare:compare)||(effectiveOrder==='newest'?b.first-a.first:a.first-b.first);
+   }).flatMap(block=>block.items.sort((a,b)=>(a.releaseOrder??0)-(b.releaseOrder??0))));
+ }else rows.sort((a,b)=>{
+  if(effectiveOrder==='title')return (a.title||'').localeCompare(b.title||'');
+  if(effectiveOrder==='newest')return (b.sortDate||b.date||'').localeCompare(a.sortDate||a.date||'');
+  if(effectiveOrder==='oldest')return (a.sortDate||a.date||'9999').localeCompare(b.sortDate||b.date||'9999');
   const x=score(a),y=score(b);
   if(!Number.isFinite(x))return Number.isFinite(y)?1:0;
   if(!Number.isFinite(y))return -1;
-  return (order==='least'?x-y:y-x)||String(a.title).localeCompare(String(b.title));
+  return (effectiveOrder==='least'?x-y:y-x)||String(a.title).localeCompare(String(b.title));
  });
  const totalPages=Math.max(1,Math.ceil(rows.length/state.limit));
  state.page=Math.min(state.page,totalPages-1);
