@@ -255,7 +255,8 @@
    }
   }
   const mode=rank.endsWith('monthly')?'monthly':rank.endsWith('weekly')?'weekly':'daily';
-  const canDecrease=metric.kind==='audience';
+  // Both audience and streaming counters can show verified downward revisions.
+  const canDecrease=true;
   const periodCount=mode==='monthly'?12:10;
   const titleLabel=mode==='monthly'?'month':mode==='weekly'?'week':'day';
   const historyMeasureNote=metric.value==='listeners'
@@ -393,9 +394,6 @@
    // observations are shown as unavailable rather than silently omitted.
    for(let i=1;i<periodData.length;i++){
     const row=periodData[i],prior=periodData[i-1];
-    if(mode==='monthly'&&scope==='solo'&&!followerData&&row.first<'2026-05-01'){
-     row.total=null;row.gain=null;row.partial=true;
-    }
     let comparison=prior.gain,comparisonPartial=prior.partial;
     // A partial current calendar week/month must compare like-for-like days.
     if(row.visibleEnd<endOf(row.first)){
