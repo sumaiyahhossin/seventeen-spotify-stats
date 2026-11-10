@@ -505,7 +505,7 @@ function renderArtists(){
   '<div class="svt-all-person-copy"><span class="svt-all-song">'+esc(a.name)+'</span>'+
   '<div class="svt-all-sub">'+(a.name==='SEVENTEEN'?'Group':members.has(a.name)?'Member':'Unit')+
   ' · '+(a.recordings.size||0)+' recordings</div></div></div></td>'+
-  '<td class="svt-all-num">'+fmt(a[metric])+(period==='overall'?'':'<div class="svt-all-sub">'+(Number.isFinite(a.change)?(a.change>0?'+':'')+fmt(a.change):'—')+' '+period+' change</div>')+'</td></tr>'
+  '<td class="svt-all-num">'+fmt(a[metric])+(period==='overall'?'':'<div class="svt-all-sub '+(Number.isFinite(a.change)?a.change>0?'svt-gain-positive':a.change<0?'svt-gain-negative':'svt-gain-neutral':'svt-gain-neutral')+'">'+(Number.isFinite(a.change)?(a.change>0?'+':'')+fmt(a.change):'—')+' '+period+' change</div>')+'</td></tr>'
  ).join('')||'<tr><td colspan="2" class="svt-all-status">No verified '+labels[metric].toLowerCase()+
  ' are available for these profiles.</td></tr>';
  paintArtists();
