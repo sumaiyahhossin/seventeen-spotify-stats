@@ -41,6 +41,18 @@ def audit() -> dict:
 
     for scope in ("group", "solo"):
         days = sorted(dated[scope])
+        # Missing calendar days are not the same as broken JSON files.
+        # Record gaps explicitly instead of silently passing the archive.
+        missing_days = []
+        for before, after in zip(days, days[1:]):
+            try:
+                current_day = dt.date.fromisoformat(before) + dt.timedelta(days=1)
+                next_day = dt.date.fromisoformat(after)
+                while current_day < next_day:
+                    missing_days.append(current_day.isoformat())
+                    current_day += dt.timedelta(days=1)
+            except ValueError:
+                continue
         previous = None
         all_recordings = modern[scope].get("canonical_track_ids") if scope == "group" else list(modern[scope].get("tracks", {}))
         canonical_ids = set(all_recordings or modern[scope].get("tracks", {}))
@@ -108,11 +120,13 @@ def audit() -> dict:
             previous = snap
             validated += 1
         overview[scope] = {"listed_dates": len(days), "checked_dates": validated,
+                           "missing_calendar_days": len(missing_days),
+                           "missing_calendar_dates": missing_days,
                            "legacy_dates": legacy_days, "saved_zero_values": zero_values,
                            "latest_date": modern[scope].get("date"),
                            "latest_entries": len(modern[scope].get("tracks", {}))}
     return {"checked_at_utc": dt.datetime.now(dt.timezone.utc).isoformat(),
-            "result": "pass" if not problems else "issues",
+            "result": "issues" if problems else "gaps recorded" if any(item["missing_calendar_days"] for item in overview.values()) else "pass",
             "overview": overview, "issues": problems, "newly_added": newly_added}
 
 
@@ -127,7 +141,8 @@ def main() -> int:
     print(f"Full archive audit: {report['result']} ({len(report['issues'])} issues)")
     for scope, item in report["overview"].items():
         print(f"{scope}: {item['checked_dates']} / {item['listed_dates']} days; "
-              f"{item['latest_entries']} latest entries; {item['saved_zero_values']} valid zeros")
+              f"{item['latest_entries']} latest entries; {item['saved_zero_values']} valid zeros; "
+              f"{item['missing_calendar_days']} unrecorded calendar dates")
     for item in report["issues"][:40]:
         print(f"ISSUE {item['date']} {item['scope']}: {item['error']}")
     summary = __import__("os").environ.get("GITHUB_STEP_SUMMARY")
