@@ -48,7 +48,8 @@ function originalAllTrackTitle(name,scope,id){
 }
 function originalAllReleaseTitle(release){
  const formatter=window.svtSharedMedia?.releaseTitle;
- return formatter?formatter(release):String(release.title||release.key||'');
+ const label=formatter?formatter(release):String(release.title||release.key||'');
+ return /^g\d+$/i.test(String(label).trim())?String(release.title||release.description||'Unnamed release').replace(/\s*\([^)]*tracks?\).*$/i,''):label;
 }
 function validId(id){return /^[A-Za-z0-9]{22}$/.test(id)}
 function buildRows(){
@@ -196,8 +197,7 @@ function buildDiscography(){
    const isAlbum=/\b(album|mini|ep|repackage|best|compilation)\b/i.test(String(release.title||''));
    // A header separates release editions in the same order as OT13/solo Discography.
    const displayOrder=all.length;
-   all.push({kind:'album',title:name,scope,releaseKey:release.key,
-    owners:[owner],releaseNames:[name],date,sortDate:date,streams,ids,releaseOrder:displayOrder,discographyHeader:true});
+
    for(const id of ids){
     const row=canonical.get(id);
     const title=scope==='group'?snap.names?.[id]:state.media.tracks?.[id]?.title;
@@ -206,6 +206,8 @@ function buildDiscography(){
      releaseKey:release.key,streams:snap.tracks?.[id]??null,
      sortDate:date,releaseOrder:all.length,discographyTrack:true});
    }
+   all.push({kind:'album',title:name,scope,releaseKey:release.key,
+    owners:[owner],releaseNames:[name],date,sortDate:date,streams,ids,releaseOrder:all.length,discographyHeader:true});
   }
  }
  // Some unit albums (JxJ, V8) are defined in the canonical solo album
@@ -220,9 +222,7 @@ function buildDiscography(){
   const date=spec.releaseDate||spec.release_date||null,begin=all.length;
   const streams=ids.every(id=>Number.isFinite(state.solo.tracks?.[id]))?
    ids.reduce((sum,id)=>sum+state.solo.tracks[id],0):null;
-  all.push({kind:'album',title:name,scope:'solo',releaseKey:spec.key,
-   owners,releaseNames:[name],date,sortDate:date,streams,ids,
-   releaseOrder:begin,discographyHeader:true});
+
   for(const id of ids){
    const main=canonical.get(id),name=state.media.tracks?.[id]?.title||main?.title||id;
    all.push({id,title:originalAllTrackTitle(name,'solo',id),kind:'track',scope:'solo',
@@ -230,6 +230,9 @@ function buildDiscography(){
     date,sortDate:date,releaseKey:spec.key,releaseOrder:all.length,
     streams:state.solo.tracks[id],discographyTrack:true});
   }
+  all.push({kind:'album',title:name,scope:'solo',releaseKey:spec.key,
+   owners,releaseNames:[name],date,sortDate:date,streams,ids,
+   releaseOrder:all.length,discographyHeader:true});
  }
  state.discography=all;
 }
@@ -359,6 +362,8 @@ function renderSummary(){
   'Some unique recordings lack verified totals; no combined number is displayed until all totals are available.';
 }
 function artworkFor(row){
+ // HIT's pre-release single uses its own sleeve, not the later An Ode cover.
+ if(row.scope==='group'&&row.id==='0uIw1c0E2nyFWWwEVzhl30'&&row.releaseKey==='g19')return 'release:HIT';
  try{const source=window.svtSharedMedia?.coverFor(row);if(source)return source}catch(e){console.warn('Shared cover not ready',e)}
  if(row.scope==='solo'){
   const localAlbum=row.kind==='album'?state.media.albums?.[row.releaseKey]:null;
@@ -450,7 +455,7 @@ function renderTracks(){
  $('sort').querySelector('[value="least"]').textContent='Lowest '+metricLabel;
  rows.sort((a,b)=>{
   if(order==='title')return (a.title||'').localeCompare(b.title||'');
-  if(order==='newest')return (b.date||'').localeCompare(a.date||'');
+  if(order==='newest')return (b.sortDate||b.date||'').localeCompare(a.sortDate||a.date||'')||(isDiscography?(b.releaseOrder??0)-(a.releaseOrder??0):0);
   if(order==='oldest'){
    const diff=(a.sortDate||a.date||'9999').localeCompare(b.sortDate||b.date||'9999');
    return diff||(isDiscography?(a.releaseOrder??9999)-(b.releaseOrder??9999):0);
