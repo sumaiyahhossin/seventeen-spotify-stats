@@ -155,8 +155,8 @@ function buildAlbums(){
   const releases=spec.keys.map(key=>byKey.get(key)).filter(Boolean);
   const ids=unique(releases.flatMap(item=>item.tracks||[])).filter(validId);
   if(!ids.length)continue;
-  const streams=ids.every(id=>Number.isFinite(state.group.tracks?.[id]))
-   ?ids.reduce((sum,id)=>sum+state.group.tracks[id],0):null;
+  const values=ids.map(id=>archivedTrackValue('group',id,latestArchives?.group?.names?.[id]||state.rows.find(row=>row.id===id)?.title||''));
+  const streams=values.every(Number.isFinite)?values.reduce((sum,value)=>sum+value,0):null;
   const key=spec.keys[0];
   result.push({title:spec.name,kind:'album',scope:'group',releaseKey:key,
    owners:['SEVENTEEN'],releaseNames:[spec.name],ids,
@@ -166,8 +166,8 @@ function buildAlbums(){
   const ids=unique(spec.tracks||[]).filter(validId);
   if(!ids.length)continue;
   const owners=spec.owners?.length?spec.owners:[spec.artist||'Unassigned solo/unit'];
-  const streams=ids.every(id=>Number.isFinite(state.solo.tracks?.[id]))
-   ?ids.reduce((sum,id)=>sum+state.solo.tracks[id],0):null;
+  const values=ids.map(id=>archivedTrackValue('solo',id,state.media.tracks?.[id]?.title||state.rows.find(row=>row.id===id)?.title||''));
+  const streams=values.every(Number.isFinite)?values.reduce((sum,value)=>sum+value,0):null;
   result.push({title:spec.displayName||spec.title||spec.key,scope:'solo',kind:'album',
    releaseKey:spec.key,owners,ids,releaseNames:[spec.displayName||spec.title||spec.key],
    date:spec.releaseDate||spec.release_date||null,streams});
