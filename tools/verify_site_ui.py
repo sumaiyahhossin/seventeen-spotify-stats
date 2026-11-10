@@ -529,8 +529,14 @@ def main():
             for width in (1300,390):
                 driver.set_window_size(width,850)
                 driver.get(f'http://127.0.0.1:{PORT}/all-milestones.html')
-                WebDriverWait(driver,40).until(lambda d:
-                    'distinct recordings reached' in d.find_element(By.ID,'status').text)
+                # A previous visit can restore Upcoming and hide Reached.
+                # Selenium .text is empty inside a hidden panel; test the
+                # underlying loaded data, then click Reached like a real user.
+                WebDriverWait(driver,40).until(lambda d:d.execute_script("""
+                    return document.querySelectorAll('#rows .song-title').length>0 &&
+                     (document.getElementById('status')?.textContent||'').includes('distinct recordings reached');
+                """))
+                click(driver,'#tabReached')
                 assert driver.find_element(By.CSS_SELECTOR,'a.back').get_attribute('href').endswith('index.html?view=all')
                 assert driver.execute_script("""
                     return getComputedStyle(document.body).backgroundImage.includes('radial-gradient')
