@@ -45,9 +45,13 @@ def check_column_dividers(driver, section):
           .filter(el=>getComputedStyle(el).display!=='none').slice(1);
         const metrics=[...document.querySelectorAll('#svtPrimaryStats #ranking .rank-row:first-child>.rank-metric')]
           .filter(el=>getComputedStyle(el).display!=='none');
+        const line=el=>{
+          const p=getComputedStyle(el,'::before');
+          return p.content!=='none' && p.width==='1px' && p.backgroundColor!=='rgba(0, 0, 0, 0)';
+        };
         return {headings:header.length,metrics:metrics.length,
-          borderedHeadings:header.filter(el=>getComputedStyle(el).borderLeftWidth==='1px').length,
-          borderedMetrics:metrics.filter(el=>getComputedStyle(el).borderLeftWidth==='1px').length};
+          borderedHeadings:header.filter(line).length,
+          borderedMetrics:metrics.filter(line).length};
     """)
     assert checked['headings']>=2 and checked['borderedHeadings']==checked['headings'],(section,checked)
     assert checked['metrics']>=2 and checked['borderedMetrics']==checked['metrics'],(section,checked)
@@ -118,11 +122,12 @@ def check_viewport(driver,width,height):
     # Gilboard consists of six credited Picheolin recordings; its July
     # prerelease singles must not create two more distinct recordings.
     click(driver,'#artistProfiles [data-solo-artist="Picheolin"]')
+    # Derive current values from the snapshot instead of hardcoding a daily
+    # stream count that becomes stale whenever the collector works.
     WebDriverWait(driver,30).until(lambda d:
-        d.find_element(By.ID,'total').text.strip()=='12,745,528'
-        and d.find_element(By.ID,'gain').text.strip()=='+38,566'
+        d.find_element(By.ID,'total').text.strip()==f'{count:,}'
         and d.find_element(By.ID,'periodComparisonValue').text.strip()=='6')
-    print('Picheolin canonical profile: 6 tracks, 12,745,528 total, +38,566 daily',flush=True)
+    print('Picheolin canonical profile: 6 tracks,',f'{count:,}',flush=True)
     # The stream history inspector must use the same canonical total.
     click(driver,'#total')
     WebDriverWait(driver,30).until(lambda d:
