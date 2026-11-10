@@ -344,6 +344,32 @@ def main():
                 assert driver.find_element(By.ID,'svtPrimaryStats').get_attribute('hidden') is not None
                 assert driver.find_element(By.CSS_SELECTOR,'#tabs [data-tab="all"]').get_attribute('class').find('active')>=0
                 assert len(driver.find_elements(By.CSS_SELECTOR,'main .hero h1'))==1,'All lost the original site hero'
+                assert len(driver.find_elements(By.CSS_SELECTOR,'#all-rankCategory [data-all-rank]'))==6,                    'All should offer six distinct ranking choices'
+                assert driver.find_element(By.CSS_SELECTOR,'#all-rankCategory [data-all-rank="tracks"]').get_attribute('class').find('active')>=0
+                WebDriverWait(driver,40).until(lambda d:
+                    d.find_element(By.ID,'all-summaryTracks').text.strip() not in ('','—') and
+                    d.find_element(By.ID,'all-summaryGrowth').text.strip() not in ('','—'))
+                assert len(driver.find_elements(By.CSS_SELECTOR,'#svtAllView .svt-all-stats > .stat'))==4
+                current_group=json.loads((ROOT/'data/group.json').read_text(encoding='utf-8'))
+                current_solo=json.loads((ROOT/'data/solo.json').read_text(encoding='utf-8'))
+                if current_group['date']=='2026-11-08' and current_solo['date']=='2026-11-08':
+                    observed=driver.execute_script("""
+                       return [document.getElementById('all-summaryStreams').textContent,
+                          document.getElementById('all-summaryGrowth').textContent,
+                          document.getElementById('all-summaryTracks').textContent,
+                          document.getElementById('all-summaryDate').textContent]
+                    """)
+                    assert observed[0]=='10,315,463,577',f'Combined total double-counted source recordings: {observed}'
+                    assert observed[1]=='+2,493,721',f'Combined daily gains double-counted recordings: {observed}'
+                    assert observed[2]=='406',f'Expected 406 canonical recordings, not {observed}'
+                    assert 'Nov 8, 2026' in observed[3],f'Combined date missing: {observed}'
+                    print('Verified combined total 10,315,463,577 · daily +2,493,721 · 406 tracks',flush=True)
+                # Original and All use the same light-colored stat cards.
+                assert driver.execute_script("""
+                    return getComputedStyle(document.querySelector('#all-summaryStreams').closest('.stat'))
+                      .backgroundImage.includes('linear-gradient')
+                """),'Combined summary cards lost the original design'
+
                 assert driver.execute_script("""
                     return document.documentElement.scrollWidth<=window.innerWidth+5
                 """),f'All overflowed the viewport at {width}px'
@@ -362,21 +388,22 @@ def main():
                 for metric,label in [('followers','HIGHEST FOLLOWERS'),
                                      ('listeners','HIGHEST MONTHLY LISTENERS'),
                                      ('streams','HIGHEST STREAMS')]:
-                    driver.execute_script("""
-                        const el=document.getElementById('all-artistMetric');
-                        el.value=arguments[0];el.dispatchEvent(new Event('change',{bubbles:true}));
-                    """,metric)
+                    click(driver,f'#all-rankCategory [data-all-rank="{metric}"]')
+                    assert not driver.find_element(By.ID,'all-audienceSection').get_attribute('hidden')
+                    assert driver.find_element(By.ID,'all-catalogSection').get_attribute('hidden') is not None
                     assert driver.find_element(By.ID,'all-artistMetricHeading').text==label
                     scores=driver.execute_script("""
                         return [...document.querySelectorAll('#all-artists tbody tr')]
-                          .map(r=>Number(r.querySelectorAll('td')[1]?.textContent.replace(/,/g,'')))
-                          .filter(Number.isFinite);
+                         .map(r=>Number(r.querySelectorAll('td')[1]?.textContent.replace(/,/g,'')))
+                         .filter(Number.isFinite);
                     """)
                     assert scores==sorted(scores,reverse=True),(
                         f'All artist {metric} ranking is not highest-first: {scores[:8]}')
                     assert driver.execute_script("""
-                        return [...document.querySelectorAll('#all-artists tr')].every(r=>r.querySelectorAll('td').length===2);
+                        return [...document.querySelectorAll('#all-artists tr')]
+                         .every(r=>r.querySelectorAll('td').length===2);
                     """),'Artist metric switch exposed irrelevant columns'
+                click(driver,'#all-rankCategory [data-all-rank="tracks"]')
                 assert driver.execute_script("""
                     const titles=[...document.querySelectorAll('#all-artists .svt-all-song')].map(x=>x.textContent);
                     return titles.includes('Picheolin');
@@ -393,9 +420,8 @@ def main():
                 """)
                 assert len(sources)==6 and all(v.startswith('image:assets/solo-track-covers/') for v in sources),(
                     f'All tracks did not reuse original solo covers: {sources}')
+                click(driver,'#all-rankCategory [data-all-rank="albums"]')
                 driver.execute_script("""
-                    document.getElementById('all-viewType').value='albums';
-                    document.getElementById('all-viewType').dispatchEvent(new Event('change',{bubbles:true}));
                     document.getElementById('all-owner').value='JxJ';
                     document.getElementById('all-owner').dispatchEvent(new Event('change',{bubbles:true}));
                 """)
@@ -407,11 +433,16 @@ def main():
                 """)
                 assert any('solo-album-covers/jxj_dreamscape.jpg' in x for x in album_sources),(
                     f'All Albums did not reuse JxJ album sleeve: {album_sources}')
+                click(driver,'#all-rankCategory [data-all-rank="discography"]')
+                assert not driver.find_element(By.ID,'all-catalogSection').get_attribute('hidden')
+                assert 'discography' in driver.find_element(By.ID,'all-recordCount').text
+                assert len(driver.find_elements(By.CSS_SELECTOR,'#all-recordings .svt-all-release-row'))>0,                    'Discography release headers missing'
+                click(driver,'#all-rankCategory [data-all-rank="tracks"]')
                 # A legacy workbook reused Water's current Spotify ID for Candy;
                 # All must look up Water's actual archive recording by name.
                 driver.execute_script("""
                     for(const [id,value] of [
-                        ['all-viewType','tracks'],['all-owner','SEVENTEEN'],
+                        ['all-owner','SEVENTEEN'],
                         ['all-period','weekly'],['all-sort','streams'],['all-search','Water']]){
                         const el=document.getElementById(id);el.value=value;
                         el.dispatchEvent(new Event(id==='all-search'?'input':'change',{bubbles:true}));
@@ -447,12 +478,43 @@ def main():
                     return [...document.querySelectorAll('#all-milestoneRows img')]
                       .every(img=>img.dataset.coverTrack&&img.dataset.coverTrack!=='missing');
                 """),'All reached milestones lost source track artwork'
+                assert len(driver.find_elements(By.CSS_SELECTOR,'#all-milestoneRows .svt-all-song'))>0
                 click(driver,'#all-milestoneUpcoming')
+                assert driver.find_element(By.ID,'all-milestoneThreshold').get_attribute('value')=='0',                    'Upcoming should default to all next milestones, not only 100M'
+                assert '1M' in driver.find_element(By.ID,'all-milestoneThreshold').text
                 WebDriverWait(driver,25).until(lambda d:
                     'upcoming milestone' in d.find_element(By.ID,'all-milestoneStatus').text)
                 assert len(driver.find_elements(By.CSS_SELECTOR,'#all-milestoneRows .svt-all-song'))>0
                 click(driver,'#all-milestoneReached')
                 assert 'MILESTONE REACHED'==driver.find_element(By.ID,'all-milestoneValueHeading').text
+                # Cross-catalog Joshua tracks count once, with The8's
+                # independently released Love Is Gone still included.
+                driver.execute_script("""
+                    for(const [id,value] of [
+                        ['all-owner','all'],['all-period','overall'],['all-search','Love Is Gone']]){
+                         const el=document.getElementById(id);el.value=value;
+                         el.dispatchEvent(new Event(id==='all-search'?'input':'change',{bubbles:true}));
+                    }
+                """)
+                WebDriverWait(driver,30).until(lambda d:
+                    '3 recordings' in d.find_element(By.ID,'all-recordCount').text)
+                matching=driver.execute_script("""
+                    return [...document.querySelectorAll('#all-recordings a[href*="spotify.com/track"]')]
+                     .map(a=>a.getAttribute('href').split('/').pop());
+                """)
+                assert len(matching)==len(set(matching))==3,                    f'Joshua cross-catalog doubles or The8 missing: {matching}'
+                assert '4iIx4KfhlrkWBw1nTBo313' not in matching,                    'Duplicate Joshua recording ID still included'
+                assert '4FTcJ9B6S2QXObqRr9UG8U' in matching and '6kkFC7qnkFNpd6zv31mVdU' in matching,                    f'Canonical Joshua or distinct The8 song missing: {matching}'
+                # A refresh in the All tab must preserve both the main section
+                # and the selected All ranking category.
+                click(driver,'#all-rankCategory [data-all-rank="followers"]')
+                driver.refresh()
+                WebDriverWait(driver,55).until(lambda d:
+                    d.execute_script("return document.body.classList.contains('svt-all-view')") and
+                    d.execute_script("return document.querySelector('#all-rankCategory [data-all-rank=followers]')?.classList.contains('active')"))
+                assert '?view=all' in driver.current_url,                    'All tab URL was lost after refresh'
+                assert not driver.find_element(By.ID,'all-audienceSection').get_attribute('hidden')
+                click(driver,'#all-rankCategory [data-all-rank="tracks"]')
                 click(driver,'#tabs button[data-tab="group"]')
                 read_layout(driver,f'OT13 after All {width}px')
                 assert not driver.execute_script("return document.body.classList.contains('svt-all-view')")
