@@ -6,6 +6,19 @@ let soloAlbums=[],soloMedia={tracks:{},albums:{}},soloLegacyLinks={byIndex:{}},s
 let artworkMap={tracks:{},albums:{}};let sortOrder='most';let tab='group',rank='tracks-daily',rankType='tracks',catalog={},current={},history={},dates=[],groupDates=[],soloDates=[],soloHistoricalDates=new Set(),selection='latest',period='week';
 // To keep the selected view after refresh.
 const viewStateKey='svt-dashboard-view-v2';
+const activeDashboardModeKey='svt-dashboard-active-section-v1';
+let activeDashboardMode='dashboard';
+try{
+ const requested=new URLSearchParams(location.search).get('view');
+ if(requested==='all')activeDashboardMode='all';
+ else if(requested==='group'||requested==='solo')activeDashboardMode='dashboard';
+ else{
+  const remembered=JSON.parse(sessionStorage.getItem(viewStateKey)||'null');
+  const last=remembered?.activeView||sessionStorage.getItem(activeDashboardModeKey);
+  if(last==='all')activeDashboardMode='all';
+ }
+}catch(e){console.warn('Unable to restore the active dashboard section',e)}
+
 const savedArchiveKey='svt-selected-archive-date-v1';
 try{selectedSoloArtist=sessionStorage.getItem('svt-selected-solo-artist')||null}catch{}
 try{const remembered=localStorage.getItem(savedArchiveKey);if(remembered&&/^\d{4}-\d{2}-\d{2}$/.test(remembered))selection=remembered}catch{}
@@ -34,7 +47,7 @@ try{savedScroll=Number(JSON.parse(sessionStorage.getItem(viewStateKey)||'{}').sc
 function saveView(){
  try{if(selectedSoloArtist)sessionStorage.setItem('svt-selected-solo-artist',selectedSoloArtist);else sessionStorage.removeItem('svt-selected-solo-artist')}catch{}
  try{if(selection==='latest')localStorage.removeItem(savedArchiveKey);else localStorage.setItem(savedArchiveKey,selection)}catch{}
- try{sessionStorage.setItem(viewStateKey,JSON.stringify({tab,rankType,period:$('#rankPeriod')?.value||'daily',sortOrder,selection,selectedPeriodKey,search:$('#search')?.value||'',scrollY:window.scrollY}))}catch{}
+ try{sessionStorage.setItem(viewStateKey,JSON.stringify({tab,rankType,period:$('#rankPeriod')?.value||'daily',sortOrder,selection,selectedPeriodKey,search:$('#search')?.value||'',activeView:activeDashboardMode,scrollY:window.scrollY}))}catch{}
 }
 window.addEventListener('pagehide',saveView);
 let scrollSavePending=false;
@@ -3264,6 +3277,8 @@ async function render(){const token=++renderToken;
  $('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}" data-history-id="${escapeHtml(r.id||'')}" data-history-release="${escapeHtml(r.artworkRelease||r.releaseKey||r.key||r.albumKey||'')}" data-history-releases="${escapeHtml((r.historyReleases||((r.kind==='album'&&/17 IS RIGHT HERE/i.test(r.name||''))?['g49','g50','g51','g52','g53','g54']:[])).join(','))}"><div class="track"><span class="rank-position"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${!discography?`<span class="rank-trend ${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'rank-up':rankMovements.get(positionKeyForDisplay(r))<0?'rank-down':'rank-same':'rank-unknown'}" title="${rankMovements.has(positionKeyForDisplay(r))?'Streaming rank change versus previous '+(daily?'day':rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'period'):'Previous streaming rank unavailable'}">${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'↑ '+rankMovements.get(positionKeyForDisplay(r)):rankMovements.get(positionKeyForDisplay(r))<0?'↓ '+Math.abs(rankMovements.get(positionKeyForDisplay(r))):'=':'—'}</span>`:''}</span>${`<span class="cover-slot">${true?`<img class="cover" data-cover-track="${artworkTrack(r)||'missing'}" data-cover-name="${escapeHtml(r.name)}" data-cover-kind="${r.kind==='album'?'album':'track'}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden></span>`:`<span class="cover-placeholder"></span>`}</span>`}<span class="track-copy">${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}${(rankType==="albums"||rankType==="tracks"||discography||r.kind==="album")&&originalReleaseDate(r)?`<span class="release-date">Released ${formatOriginalRelease(originalReleaseDate(r))}</span>`:""}</span></div>${renderRankMetrics(r,s?.date||'')}</div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork();scheduleMobileRankingNameFit()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
 function selectDashboardMode(view){
  const isAll=view==='all';
+ activeDashboardMode=isAll?'all':'dashboard';
+ try{sessionStorage.setItem(activeDashboardModeKey,activeDashboardMode)}catch{}
  const main=$('#svtPrimaryStats'),all=$('#svtAllView');
  if(main)main.hidden=isAll;
  if(all)all.hidden=!isAll;
@@ -3279,8 +3294,12 @@ function selectDashboardMode(view){
   else if(url.searchParams.get('view')==='all')url.searchParams.delete('view');
   history.replaceState(null,'',url.pathname+url.search+url.hash);
  }catch{}
+ saveView();
  if(isAll)window.svtAllShown?.();
 }
+// Select All immediately on reload, rather than waiting for Spotify data
+// fetches and first rendering OT13 underneath a saved All tab.
+selectDashboardMode(activeDashboardMode);
 $('#tabs').addEventListener('click',e=>{
  const button=e.target.closest('button[data-tab]');if(!button)return;
  if(button.dataset.tab==='all'){selectDashboardMode('all');return}
@@ -3389,7 +3408,7 @@ $('#archiveDate').addEventListener('change',e=>{
    $('#rankPeriod').value=['daily','weekly','monthly','yearly','overall'].includes(saved.period)?saved.period:'daily';
    $('#order').value=sortOrder;
    $('#search').value=saved.search||'';
-   $('#tabs').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.tab===tab));
+   $('#tabs').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.tab===(activeDashboardMode==='all'?'all':tab)));
    $('#rankCategory').querySelectorAll('button').forEach(b=>b.classList.toggle('active',b.dataset.type===rankType));
   }
  }catch{}
@@ -3462,7 +3481,7 @@ $('#archiveDate').addEventListener('change',e=>{
  useDatesForTab();syncCalendar();await render();
  // Make the originals' exact album-cover and profile lookups available to All.
  window.dispatchEvent(new Event('svt-media-ready'));
- if(new URLSearchParams(location.search).get('view')==='all')selectDashboardMode('all');
+ selectDashboardMode(activeDashboardMode);
  requestAnimationFrame(()=>requestAnimationFrame(()=>window.scrollTo(0,savedScroll)));
  // Refresh only while the page is visible, and never interrupt a historical view.
  // Daily snapshots update far less often than every five minutes.
