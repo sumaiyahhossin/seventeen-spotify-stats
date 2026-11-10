@@ -148,6 +148,7 @@ for(const [song,threshold,date] of [
 // Use the original release artwork from the same artwork-map as the Tracks view.
 const milestoneCoverCache=new Map();
 let milestoneArtwork={tracks:{}};
+let verifiedMilestoneCovers={albums:{}};
 const coverKey=s=>String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,' ').trim();
 const releaseAliases={'fml album':'FML','al1 album':'Al1','you make my day album':'YOU MAKE MY DAY','you made my dawn album':'YOU MADE MY DAWN','an ode album':'An Ode','seventeenth heaven album':'SEVENTEENTH HEAVEN','17 is right here best album':'17 IS RIGHT HERE','spill the feels album':'SPILL THE FEELS','happy burstday album':'HAPPY BURSTDAY','love & letter album':'LOVE & LETTER','attacca album':'Attacca','face the sun album':'Face the Sun','your choice album':'Your Choice','heng garae album':'Heng:garæ','you make my dawn':'YOU MADE MY DAWN'};
 async function originalArtwork(name){
@@ -214,6 +215,10 @@ function loadMilestoneCovers(){
     if(original&&img.isConnected){img.src=original;return}
    }
    const entry=milestoneArtwork.tracks[coverKey(name)];
+   // Prefer the exact recording's verified cover URL from the OT13 archive.
+   // iTunes album search can return a different SEVENTEEN release (e.g. Darl+ing for HOT).
+   const verified=verifiedMilestoneCovers.albums?.[entry?.id]||verifiedMilestoneCovers.albums?.[id];
+   if(verified){img.src=verified;continue}
    const fallback=async()=>await spotifyArtwork(entry?.id||id)||await trackArtwork(name);
    let url=await originalArtwork(name);
    if(!url)url=await fallback();
@@ -456,17 +461,18 @@ async function start(){
  // Older history is an optional enhancement, never a loading prerequisite.
  let latest;
  try{
-  const [catalog,group,artwork,unitLinks,unitCovers,reference]=await Promise.all([
+  const [catalog,group,artwork,unitLinks,unitCovers,reference,groupCovers]=await Promise.all([
    jsonWithTimeout('data/catalog.json',12000).catch(()=>({group:[],solo:[]})),
    jsonWithTimeout('data/'+milestoneMode+'.json',15000),
    jsonWithTimeout('data/artwork-map.json',12000).catch(()=>({tracks:{}})),
    inSoloMilestones?jsonWithTimeout('data/solo-legacy-track-links.json',12000).catch(()=>({byIndex:{}})):Promise.resolve({byIndex:{}}),
    inSoloMilestones?jsonWithTimeout('data/solo-media.json',12000).catch(()=>({tracks:{}})):Promise.resolve({tracks:{}}),
-   inSoloMilestones?jsonWithTimeout('solo-2026-11-06.json',12000).catch(()=>({names:{}})):Promise.resolve({names:{}})
+   inSoloMilestones?jsonWithTimeout('solo-2026-11-06.json',12000).catch(()=>({names:{}})):Promise.resolve({names:{}}),
+   jsonWithTimeout('data/group-cover-urls.json',12000).catch(()=>({albums:{}}))
   ]);
   unitTrackLinks=unitLinks;unitMedia=unitCovers;
   if(inSoloMilestones)indexOriginalSoloNames(reference);
-  milestoneArtwork=artwork;
+  milestoneArtwork=artwork;verifiedMilestoneCovers=groupCovers;
   latest=group;
   currentSnapshot=group;
   buildReleases(catalog);
