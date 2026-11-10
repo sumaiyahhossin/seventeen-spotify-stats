@@ -633,6 +633,7 @@ window.addEventListener('svt-media-ready',()=>{if(state.rows.length){renderSumma
 for(const [id,mode] of [['milestoneReached','reached'],['milestoneUpcoming','upcoming']]){
  $(id).addEventListener('click',()=>{
   state.milestoneMode=mode;state.milestonePage=0;
+  $('milestoneThreshold').value=mode==='reached'?'100000000':'0';
   setupMilestoneOptions();renderMilestones();
  });
 }
