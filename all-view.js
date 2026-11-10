@@ -226,7 +226,7 @@ function buildDiscography(){
 
    for(const id of ids){
     const row=canonical.get(id);
-    const title=scope==='group'?(latestArchives?.group?.names?.[id]||row?.title||nameFromRelease(release,id,ids.indexOf(id))):state.media.tracks?.[id]?.title;
+    const title=scope==='group'?(window.svtSharedMedia?.trackTitle?.(latestArchives?.group?.names?.[id]||row?.title||nameFromRelease(release,id,ids.indexOf(id)),scope,id)||latestArchives?.group?.names?.[id]||row?.title):state.media.tracks?.[id]?.title;
     all.push({id,title:originalAllTrackTitle(title||row?.title||id,scope,id),kind:'track',scope,
      owners:row?.owners?.length?row.owners:[owner],releaseNames:[name],date:release.track_release_dates?.[id]||date,
      releaseKey:scope==='group'&&anthologyKeys.has(release.key)?'g49':release.key,streams:archivedTrackValue(scope,id,title||row?.title||''),
@@ -236,7 +236,7 @@ function buildDiscography(){
     if(release.key==='g54'){
      const totalValues=all.filter(row=>row.scope==='group'&&row.releaseKey==='g49'&&row.kind==='track').map(row=>row.streams);
      const total=totalValues.length===anthologyIds.length&&totalValues.every(Number.isFinite)?totalValues.reduce((sum,n)=>sum+n,0):null;
-     all.push({kind:'album',title:'17 IS RIGHT HERE — All Tracks',scope,releaseKey:'g49',
+     all.push({kind:'album',title:'1st Best Album - 17 IS RIGHT HERE',scope,releaseKey:'g49',
       owners:[owner],releaseNames:['17 IS RIGHT HERE'],date,sortDate:date,streams:total,
       ids:anthologyIds,releaseOrder:all.length,discographyHeader:true});
     }
