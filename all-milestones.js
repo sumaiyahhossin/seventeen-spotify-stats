@@ -27,7 +27,7 @@ const milestoneAlias={
 };
 const groupDates={"g3":"2015-12-04","g4":"2016-02-12","g14":"2018-08-13","g17":"2019-05-19","g19":"2019-08-05","g21":"2019-12-01","g26":"2020-09-15","g30":"2021-07-30","g31":"2021-06-30","g34":"2022-04-15","g38":"2022-08-26","g40":"2022-12-08","g42":"2023-08-16","g45":"2023-09-01","g47":"2023-12-25","g48":"2024-02-16","g55":"2024-05-03","g57":"2024-10-18","g60":"2025-06-30","g61":"2025-07-14","g62":"2025-07-25","g63":"2025-10-10","g64":"2026-02-27","g7":"2016-07-04","g23":"2020-06-22","g24":"2020-08-24","g37":"2022-07-18","g44":"2023-08-23","g50":"2024-04-29","g51":"2024-04-29","g52":"2024-04-29","g53":"2024-04-29","g54":"2024-04-29","g1":"2015-05-29","g2":"2015-09-10","g5":"2016-04-25","g6":"2016-07-04","g8":"2016-12-05","g9":"2017-05-22","g10":"2017-11-06","g11":"2018-02-05","g12":"2018-05-30","g13":"2018-07-16","g16":"2019-01-21","g18":"2019-05-29","g20":"2019-09-16","g22":"2020-04-01","g25":"2020-09-09","g27":"2020-10-19","g28":"2021-04-21","g29":"2021-06-18","g32":"2021-10-22","g33":"2021-12-08","g35":"2022-05-27","g36":"2022-07-18","g39":"2022-11-09","g41":"2023-04-24","g43":"2023-08-23","g46":"2023-10-23","g49":"2024-04-29","g56":"2024-10-14","g58":"2024-11-27","g59":"2025-05-26"};
 const state={rows:[],group:null,solo:null,previousGroup:null,previousSolo:null,
- evidence:{byName:{},byTrack:{}},media:{tracks:{},albums:{}},
+ evidence:{byName:{},byTrack:{}},media:{tracks:{},albums:{}},groupCovers:{albums:{}},
  art:{tracks:{}},releaseDates:new Map(),owners:new Map(),view:'reached',
  covers:new Map(),viewReady:false};
 const fetchJson=async path=>{const r=await fetch(path,{cache:'no-cache'});if(!r.ok)throw Error(path+' HTTP '+r.status);return r.json()};
@@ -153,6 +153,11 @@ async function coverUrl(row){
  const local=state.media.tracks?.[row.id]?.local;
  if(local&&row.scope==='solo')return local;
  const entry=state.art.tracks?.[coverKey(row.name)];
+ // Resolve to the exact same Spotify album IDs used by the original OT13
+ // artwork map; cache CDN image URLs at build time so visitors never need
+ // the blocked Spotify/Apple lookup endpoints when a URL is saved.
+ const savedAlbumCover=entry?.id?state.groupCovers.albums?.[entry.id]:null;
+ if(savedAlbumCover)return savedAlbumCover;
  const alias=releaseArtworkAliases[coverKey(entry?.release)]||
   String(entry?.release||'').replace(/\s+(?:album|single|mini album|ep)$/i,'').trim();
  const identity=alias?'album:'+artworkName(alias):'track:'+artworkName(row.name);
@@ -326,13 +331,15 @@ for(const id of ['threshold','sort','search','upcomingThreshold','upcomingSort',
 setView(state.view);
 async function init(){
  try{
-  const [group,solo,catalog,media,art,evidence]=await Promise.all([
+  const [group,solo,catalog,media,art,evidence,groupCovers]=await Promise.all([
    fetchJson('data/group.json'),fetchJson('data/solo.json'),fetchJson('data/catalog.json'),
    fetchJson('data/solo-media.json'),safeFetch('data/artwork-map.json'),
-   safeFetch('data/all-milestone-evidence.json')
+   safeFetch('data/all-milestone-evidence.json'),
+    safeFetch('data/group-cover-urls.json')
   ]);
   state.group=group;state.solo=solo;state.media=media;
   state.art=art||{tracks:{}};state.evidence=evidence||{byName:{},byTrack:{}};
+   state.groupCovers=groupCovers||{albums:{}};
   makeCatalog(catalog);buildNow();
   updateThresholds();state.viewReady=true;
   reachedRows();upcomingRows();setView(state.view);
