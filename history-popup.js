@@ -23,7 +23,7 @@
  .svt-history-table th{color:#d1b6ed;background:#22223e;text-transform:uppercase;letter-spacing:.035em;font-size:10px}
  .svt-history-table td:first-child,.svt-history-table th:first-child{text-align:left}
  .svt-history-table tr:last-child td{border-bottom:0}
- .svt-history-table tr:first-child td{font-weight:800}
+ .svt-history-table tbody tr td{font-weight:400}
  .svt-history-table .unavailable{color:#a9a6c1}
  .svt-history-table .negative{color:#ffb0d5;font-weight:700}
  .svt-history-table .positive{color:#a9caff;font-weight:700}
