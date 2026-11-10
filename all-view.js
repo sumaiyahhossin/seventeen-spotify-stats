@@ -234,7 +234,7 @@ function buildDiscography(){
     if(release.key==='g54'){
      const totalValues=all.filter(row=>row.scope==='group'&&anthologyKeys.has(row.releaseKey)&&row.kind==='track').map(row=>row.streams);
      const total=totalValues.length===anthologyIds.length&&totalValues.every(Number.isFinite)?totalValues.reduce((sum,n)=>sum+n,0):null;
-     all.push({kind:'album',title:'17 IS RIGHT HERE — All Tracks',scope,releaseKey:'g49',
+     all.push({kind:'album',title:'17 IS RIGHT HERE — All Tracks',scope,releaseKey:'g54',
       owners:[owner],releaseNames:['17 IS RIGHT HERE'],date,sortDate:date,streams:total,
       ids:anthologyIds,releaseOrder:all.length,discographyHeader:true});
     }
