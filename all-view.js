@@ -100,6 +100,24 @@ function buildRows(){
    album.date=single.date;
   byId.delete(singleId);
  }
+ // Cross-catalog identity audit (Nov 6, 7 and 8): Joshua's original
+ // "Love Is Gone (with JOSHUA)" is the SAME recording in two catalogues
+ // but was assigned two different Spotify IDs. The other Dylan Matthew
+ // version already shares its exact Spotify ID and is merged by byId.
+ // The8's own "Love is gone" is a different song and is not merged.
+ const crossCatalogAliases=[
+  ['4iIx4KfhlrkWBw1nTBo313','4FTcJ9B6S2QXObqRr9UG8U']
+ ];
+ for(const [soloId,groupId] of crossCatalogAliases){
+  const duplicate=byId.get(soloId),canonical=byId.get(groupId);
+  if(!duplicate||!canonical)continue;
+  for(const owner of duplicate.owners)canonical.owners.add(owner);
+  for(const release of duplicate.releaseNames)canonical.releaseNames.add(release);
+  if(duplicate.date&&(!canonical.date||duplicate.date<canonical.date))
+   canonical.date=duplicate.date;
+  // Use one verified recording count, never sum the mirrored observations.
+  byId.delete(soloId);
+ }
  // Jeonghan's six DREAMSCAPE credits are already represented by jeonghan_g2.
  // Avoid assigning Joshua's separate solo recording to Jeonghan.
  state.rows=[...byId.values()].map(r=>({...r,owners:[...r.owners],releaseNames:[...r.releaseNames]}));
