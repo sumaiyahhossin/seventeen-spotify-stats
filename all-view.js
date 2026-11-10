@@ -534,7 +534,7 @@ async function init(){
   const [prevGroup,prevSolo]=await Promise.all([
    snapshot('group',dayBefore(group.date)),snapshot('solo',dayBefore(solo.date))]);
   state.milestonePrevious={group:prevGroup,solo:prevSolo};
-  renderSummary();
+  renderSummary();syncAllDatePicker();
  }catch(error){
   console.error('All view could not load saved sources',error);
   $('artists').innerHTML='<tr><td colspan="2" class="svt-all-status">Artist data unavailable. Please try refreshing.</td></tr>';
@@ -555,6 +555,31 @@ for(const id of ['search','owner','sort','viewType'])$(id).addEventListener(id==
 window.svtAllShown=()=>{selectAllCategory(state.mode);if(state.rows.length){renderSummary();renderArtists();renderTracks();}};
 window.addEventListener('svt-media-ready',()=>{if(state.rows.length){renderSummary();renderArtists();renderTracks();}});
 const allArchiveDate=document.getElementById('all-archiveDate');
+function syncAllDatePicker(){
+ if(!allArchiveDate)return;
+ const date=state.group?.date===state.solo?.date?state.group.date:null;
+ const button=document.getElementById('all-dateButton');
+ if(button)button.textContent=date?new Date(date+'T12:00:00Z').toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric',timeZone:'UTC'}):'Choose saved date';
+ if(date)allArchiveDate.value=date;
+ const dates=(state.manifest?.dates||[]).filter(d=>(state.manifest?.solo_dates||[]).includes(d)||(state.manifest?.solo_legacy_dates||[]).includes(d)).sort();
+ const pos=dates.indexOf(date);
+ for(const [id,disabled] of [['all-datePrev',pos<=0],['all-dateNext',pos<0||pos>=dates.length-1]]){
+  const btn=document.getElementById(id);if(btn)btn.disabled=disabled;
+ }
+}
+document.getElementById('all-dateButton')?.addEventListener('click',()=>{if(allArchiveDate.showPicker)allArchiveDate.showPicker();else allArchiveDate.focus()});
+for(const [id,step] of [['all-datePrev',-1],['all-dateNext',1]]){
+ document.getElementById(id)?.addEventListener('click',()=>{
+  const dates=(state.manifest?.dates||[]).filter(d=>(state.manifest?.solo_dates||[]).includes(d)||(state.manifest?.solo_legacy_dates||[]).includes(d)).sort();
+  const index=dates.indexOf(allArchiveDate.value);
+  if(index>=0&&dates[index+step]){allArchiveDate.value=dates[index+step];allArchiveDate.dispatchEvent(new Event('change'))}
+ });
+}
+document.getElementById('all-dateLatest')?.addEventListener('click',()=>{
+ const dates=(state.manifest?.dates||[]).filter(d=>(state.manifest?.solo_dates||[]).includes(d)||(state.manifest?.solo_legacy_dates||[]).includes(d)).sort();
+ if(dates.length){allArchiveDate.value=dates.at(-1);allArchiveDate.dispatchEvent(new Event('change'))}
+});
+
 if(allArchiveDate)allArchiveDate.addEventListener('change',async()=>{
  const date=allArchiveDate.value;
  if(!date||!latestArchives)return;
@@ -568,7 +593,7 @@ if(allArchiveDate)allArchiveDate.addEventListener('change',async()=>{
   await applyPeriod();
   const [prevGroup,prevSolo]=await Promise.all([snapshot('group',dayBefore(date)),snapshot('solo',dayBefore(date))]);
   state.milestonePrevious={group:prevGroup,solo:prevSolo};
-  renderSummary();selectAllCategory(state.mode);renderArtists();renderTracks();
+  renderSummary();selectAllCategory(state.mode);renderArtists();renderTracks();syncAllDatePicker();
  }catch(error){console.warn('Combined archive date',error);$('coverage').textContent='Could not load that archived date.'}
  finally{allArchiveDate.disabled=false}
 });
