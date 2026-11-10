@@ -177,7 +177,8 @@ function buildDiscography(){
  for(const scope of ['group','solo']){
   const snap=state[scope],valid=scope==='group'?validGroup:validSolo;
   const releases=(state.catalog[scope]||[]).filter(item=>
-   item.key!=='sharedTracks'&&item.key!=='gilboard'&&!item.is_placeholder);
+   item.key!=='sharedTracks'&&item.key!=='gilboard'&&
+   !['jeonghan_g2','joshua_g8','jxj_dreamscape','the8_g12','vernon_g9','v8'].includes(item.key)&&!item.is_placeholder);
   const seenReleases=new Set();
   for(const release of releases){
    const key=scope+':'+release.key;
@@ -218,7 +219,7 @@ function buildDiscography(){
   if(!['jxj_dreamscape','v8','gilboard'].includes(spec.key))continue;
   const ids=unique((spec.tracks||[]).filter(id=>validId(id)&&validSolo.has(id)));
   if(!ids.length)continue;
-  const owners=spec.owners||[],name=spec.displayName||spec.key;
+  const owners=['jxj_dreamscape','v8'].includes(spec.key)?[spec.key==='v8'?'V8':'JxJ']:(spec.owners||[]),name=spec.displayName||spec.key;
   const date=spec.releaseDate||spec.release_date||null,begin=all.length;
   const streams=ids.every(id=>Number.isFinite(state.solo.tracks?.[id]))?
    ids.reduce((sum,id)=>sum+state.solo.tracks[id],0):null;
@@ -366,7 +367,7 @@ function renderSummary(){
 function artworkFor(row){
  // HIT's pre-release single uses its own sleeve, not the later An Ode cover.
  if(row.scope==='group'&&row.id==='0uIw1c0E2nyFWWwEVzhl30'&&row.releaseKey==='g19')return 'release:HIT';
- try{const source=window.svtSharedMedia?.coverFor(row);if(source)return source}catch(e){console.warn('Shared cover not ready',e)}
+ try{const source=window.svtSharedMedia?.coverFor({...row,discographyAppearance:state.mode==='discography'});if(source)return source}catch(e){console.warn('Shared cover not ready',e)}
  if(row.scope==='solo'){
   const localAlbum=row.kind==='album'?state.media.albums?.[row.releaseKey]:null;
   const localTrack=state.media.tracks?.[row.id]?.local;
@@ -515,9 +516,11 @@ function renderTracks(){
   if(!Number.isFinite(y))return -1;
   return (effectiveOrder==='least'?x-y:y-x)||String(a.title).localeCompare(String(b.title));
  });
- const totalPages=Math.max(1,Math.ceil(rows.length/state.limit));
- state.page=Math.min(state.page,totalPages-1);
- const shown=rows.slice(state.page*state.limit,(state.page+1)*state.limit);
+ const totalPages=isDiscography?1:Math.max(1,Math.ceil(rows.length/state.limit));
+ state.page=isDiscography?0:Math.min(state.page,totalPages-1);
+ const shown=isDiscography?rows:rows.slice(state.page*state.limit,(state.page+1)*state.limit);
+ const pagination=document.querySelector('#svtAllView .svt-all-pagination');
+ if(pagination)pagination.hidden=isDiscography;
  const verified=rows.filter(r=>Number.isFinite(score(r))).length;
  $('recordHeading').textContent=isDiscography?'Every release · Group + Units & Solo':
   isAlbum?'Every saved album':'Every saved recording';
