@@ -344,6 +344,16 @@ def main():
                 assert driver.find_element(By.ID,'svtPrimaryStats').get_attribute('hidden') is not None
                 assert driver.find_element(By.CSS_SELECTOR,'#tabs [data-tab="all"]').get_attribute('class').find('active')>=0
                 assert len(driver.find_elements(By.CSS_SELECTOR,'main .hero h1'))==1,'All lost the original site hero'
+                assert driver.execute_script("""
+                    const nav=document.getElementById('tabs');
+                    const items=[...nav.querySelectorAll('button[data-tab]')];
+                    const rects=items.map(el=>el.getBoundingClientRect());
+                    return items.length===3 &&
+                      Math.max(...rects.map(r=>r.top))-Math.min(...rects.map(r=>r.top))<2 &&
+                      rects.every(r=>r.right<=nav.getBoundingClientRect().right+2) &&
+                      items.every(el=>el.scrollWidth<=el.clientWidth+3);
+                """),f'OT13, Units & Solo and All did not fit in one row at {width}px'
+
                 assert len(driver.find_elements(By.CSS_SELECTOR,'#all-rankCategory [data-all-rank]'))==6,                    'All should offer six distinct ranking choices'
                 assert driver.find_element(By.CSS_SELECTOR,'#all-rankCategory [data-all-rank="tracks"]').get_attribute('class').find('active')>=0
                 WebDriverWait(driver,40).until(lambda d:
@@ -476,6 +486,41 @@ def main():
                     assert water['value']=='+66,556',f'Water weekly gained an unrelated song: {water}'
                 else:
                     assert water['value'] not in ('+9,749,826','—'),f'Water weekly archive identity error: {water}'
+                # All must never display lowercase raw collector release labels.
+                display=driver.execute_script("""
+                    const row=[...document.querySelectorAll('#all-recordings tr')]
+                     .find(tr=>tr.querySelector('.svt-all-song')?.textContent==='Water');
+                    return row?.querySelector('.svt-all-sub')?.textContent||'';
+                """)
+                assert 'spill the feels album' not in display.lower(),(
+                    f'All displayed an unformatted raw album name: {display}')
+                # These are documented OT13 casing corrections, not guesses.
+                for query,expected in [('Mansae','MANSAE'),('Rock with you','Rock with You'),
+                                       ('GOM','God of Music'),('To you','To You')]:
+                    driver.execute_script("""
+                        const el=document.getElementById('all-search');
+                        el.value=arguments[0];el.dispatchEvent(new Event('input',{bubbles:true}));
+                    """,query)
+                    WebDriverWait(driver,15).until(lambda d:
+                        len(d.find_elements(By.CSS_SELECTOR,'#all-recordings .svt-all-song'))>0)
+                    titles=driver.execute_script("""
+                        return [...document.querySelectorAll('#all-recordings .svt-all-song')]
+                         .map(e=>e.textContent.trim());
+                    """)
+                    assert expected in titles,f'All title case not identical to original: {query} -> {titles[:10]}'
+                driver.execute_script("""
+                    const el=document.getElementById('all-search');
+                    el.value='girlsnboys';el.dispatchEvent(new Event('input',{bubbles:true}));
+                    document.getElementById('all-owner').value='all';
+                    document.getElementById('all-owner').dispatchEvent(new Event('change',{bubbles:true}));
+                """)
+                WebDriverWait(driver,15).until(lambda d:
+                    'girlsnboys' in d.find_element(By.ID,'all-recordings').text)
+                assert 'girlsnboys' in driver.find_element(By.ID,'all-recordings').text,                    'Intentionally lowercase original solo titles must remain unchanged'
+                driver.execute_script("""
+                    document.getElementById('all-search').value='';
+                    document.getElementById('all-search').dispatchEvent(new Event('input',{bubbles:true}));
+                """)
                 assert driver.find_element(By.ID,'all-gainTitle').text=='WEEKLY GAIN'
                 assert driver.execute_script("""
                     return [...document.querySelectorAll('#all-recordings tr')].every(
@@ -518,6 +563,21 @@ def main():
                 read_layout(driver,f'OT13 after All {width}px')
                 assert not driver.execute_script("return document.body.classList.contains('svt-all-view')")
                 print('In-page All photo, song cover, album sleeve and navigation verified:',width,flush=True)
+            # Verify the smallest practical phone width, not just 390px.
+            driver.set_window_size(320,850)
+            driver.get(f'http://127.0.0.1:{PORT}/index.html?view=all')
+            WebDriverWait(driver,40).until(lambda d:
+                d.execute_script("return document.body.classList.contains('svt-all-view')"))
+            assert driver.execute_script("""
+                const nav=document.getElementById('tabs');
+                const items=[...nav.querySelectorAll('button[data-tab]')];
+                const bounds=items.map(el=>el.getBoundingClientRect());
+                return bounds.length===3 &&
+                  Math.max(...bounds.map(b=>b.top))-Math.min(...bounds.map(b=>b.top))<2 &&
+                  bounds.every(b=>b.right<=nav.getBoundingClientRect().right+2) &&
+                  items.every(el=>el.scrollWidth<=el.clientWidth+3);
+            """),'Three archive tabs wrapped or were clipped at 320px'
+            print('Archive navigation stayed on one row at 320px mobile',flush=True)
             # Legacy All links should land on this same in-page view.
             driver.get(f'http://127.0.0.1:{PORT}/all.html')
             WebDriverWait(driver,40).until(lambda d:
