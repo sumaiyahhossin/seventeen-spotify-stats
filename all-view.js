@@ -987,6 +987,16 @@ document.getElementById('all-recordings')?.addEventListener('click',event=>{
  if(row)showAllHistory(row).catch(console.error);
 });
 
+// Public-data diagnostic for the automated browser checks: identify exactly
+// which dated recordings still lack a verified like-for-like comparison.
+window.svtAllAudit=()=>({
+ date:state.group?.date,soloDate:state.solo?.date,period:state.period,
+ tracks:state.rows.length,
+ verified:state.rows.filter(row=>Number.isFinite(row.gain)).length,
+ missing:state.rows.filter(row=>!Number.isFinite(row.gain)).map(row=>({
+  id:row.id,title:row.title,scope:row.scope,release:row.date,total:row.streams
+ }))
+});
 selectAllCategory(state.mode);
 init();
 
