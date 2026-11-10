@@ -237,6 +237,42 @@ function artistStats(){
   return {...a,listeners:Number.isFinite(listeners)?listeners:null,followers,streams};
  });
 }
+// Combined headline figures use the same canonical recording list as All's
+// track ranking: no summing artist cards (whose member/unit credits overlap).
+function renderSummary(){
+ const rows=state.rows||[];
+ const observed=rows.filter(row=>Number.isFinite(row.streams)&&row.streams>=0);
+ const streams=observed.reduce((sum,row)=>sum+row.streams,0);
+ const allComplete=rows.length>0&&observed.length===rows.length;
+ $('summaryStreams').textContent=allComplete?fmt(streams):'—';
+ $('summaryTracks').textContent=rows.length?fmt(rows.length):'—';
+ const groupDate=state.group?.date,soloDate=state.solo?.date;
+ const dateFormat=date=>/^\\d{4}-\\d{2}-\\d{2}$/.test(date||'')?
+  new Date(date+'T12:00:00Z').toLocaleDateString('en-US',
+   {timeZone:'UTC',year:'numeric',month:'short',day:'numeric'}):'—';
+ const sameDay=!!groupDate&&groupDate===soloDate;
+ $('summaryDate').textContent=sameDay?dateFormat(groupDate):'See dates below';
+ $('summaryDateNote').textContent=sameDay?'Both archives · '+groupDate:
+  'OT13 '+(groupDate||'—')+' · Unit/Solo '+(soloDate||'—');
+ const prev=state.milestonePrevious||{};
+ const deltas=rows.map(row=>{
+  const source=prev[row.scope];
+  if(!source||!Number.isFinite(row.streams)||source.date!==dayBefore(state[row.scope]?.date))
+   return null;
+  const older=verifiedBaselineValue(row.scope,row.id,source);
+  return Number.isFinite(older)&&row.streams>=older?row.streams-older:null;
+ });
+ const valid=deltas.filter(Number.isFinite);
+ const complete=sameDay&&rows.length>0&&valid.length===rows.length;
+ $('summaryGrowth').textContent=complete?'+'+fmt(valid.reduce((a,b)=>a+b,0)):'—';
+ $('summaryGrowthNote').textContent=complete?'From '+dayBefore(groupDate)+' to '+groupDate:
+  'Daily growth requires full consecutive snapshots for both categories';
+ $('summaryCoverage').textContent=allComplete?
+  fmt(rows.length)+' distinct Spotify recordings · group, members and units combined without duplicate editions or shared recording IDs. '+
+  (complete?'All '+fmt(rows.length)+' recordings have verified previous-day comparisons.':
+   'The daily change is withheld where comparable snapshots are missing.'):
+  'Some unique recordings lack verified totals; no combined number is displayed until all totals are available.';
+}
 function artworkFor(row){
  try{const source=window.svtSharedMedia?.coverFor(row);if(source)return source}catch(e){console.warn('Shared cover not ready',e)}
  if(row.scope==='solo'){
@@ -482,6 +518,7 @@ async function init(){
   const [prevGroup,prevSolo]=await Promise.all([
    snapshot('group',dayBefore(group.date)),snapshot('solo',dayBefore(solo.date))]);
   state.milestonePrevious={group:prevGroup,solo:prevSolo};
+  renderSummary();
   setupMilestoneOptions();renderMilestones();
  }catch(error){
   console.error('All view could not load saved sources',error);
@@ -492,8 +529,8 @@ async function init(){
 }
 for(const id of ['artistMetric','artistScope'])$(id).addEventListener('change',renderArtists);
 for(const id of ['search','owner','sort','viewType'])$(id).addEventListener(id==='search'?'input':'change',()=>{state.page=0;renderTracks()});
-window.svtAllShown=()=>{if(state.rows.length){renderArtists();renderTracks();if(state.milestonePrevious.group||state.milestonePrevious.solo)renderMilestones()}};
-window.addEventListener('svt-media-ready',()=>{if(state.rows.length){renderArtists();renderTracks();if(state.milestonePrevious.group||state.milestonePrevious.solo)renderMilestones()}});
+window.svtAllShown=()=>{if(state.rows.length){renderSummary();renderArtists();renderTracks();if(state.milestonePrevious.group||state.milestonePrevious.solo)renderMilestones()}};
+window.addEventListener('svt-media-ready',()=>{if(state.rows.length){renderSummary();renderArtists();renderTracks();if(state.milestonePrevious.group||state.milestonePrevious.solo)renderMilestones()}});
 for(const [id,mode] of [['milestoneReached','reached'],['milestoneUpcoming','upcoming']]){
  $(id).addEventListener('click',()=>{
   state.milestoneMode=mode;state.milestonePage=0;
