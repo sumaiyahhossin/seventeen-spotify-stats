@@ -196,7 +196,21 @@ function buildAlbums(){
  state.albums=result;
 }
 // Compare older spreadsheets by confirmed recording identity, not recycled row IDs.
+// Historical workbooks are expensive to cross-check by artist and duplicate
+// edition. Resolve each snapshot/Spotify ID once, then reuse that verified
+// observation throughout tracks, albums, discography and history.
+const archivedValueCache=new WeakMap();
 function archivedSnapshotValue(snap,scope,id,title){
+ if(!snap||!id)return null;
+ let values=archivedValueCache.get(snap);
+ if(!values){values=new Map();archivedValueCache.set(snap,values)}
+ const key=scope+'|'+id+'|'+sameTitle(title);
+ if(values.has(key))return values.get(key);
+ const verified=uncachedArchivedSnapshotValue(snap,scope,id,title);
+ values.set(key,verified);
+ return verified;
+}
+function uncachedArchivedSnapshotValue(snap,scope,id,title){
  if(!snap||!id)return null;
  const referenceName=(scope==='group'?latestArchives?.group?.names?.[id]:state.media?.tracks?.[id]?.title)||title||'';
  const direct=snap.tracks?.[id];
