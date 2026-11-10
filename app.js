@@ -2005,6 +2005,8 @@ function renderArtistProfiles(){
 }
 // The All tab calls the same image resolver as the original artist and ranking views.
 window.svtSharedMedia={
+ // Expose the same workbook-aware matching used by Units & Solo history.
+ verifiedSoloLegacyValue(snapshot,spotifyId){return verifiedSoloLegacyValue(snapshot,spotifyId)},
  // Match the original OT13 and Units/Solo naming rules. Raw collector
  // catalog labels are lower-case and should never be printed verbatim in All.
  trackTitle(name,scope,id){
