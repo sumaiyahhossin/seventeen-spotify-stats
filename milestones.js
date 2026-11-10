@@ -218,7 +218,7 @@ function loadMilestoneCovers(){
    // Prefer the exact recording's verified cover URL from the OT13 archive.
    // iTunes album search can return a different SEVENTEEN release (e.g. Darl+ing for HOT).
    const verified=verifiedMilestoneCovers.albums?.[entry?.id]||verifiedMilestoneCovers.albums?.[id];
-   if(verified){img.src=verified;continue}
+   if(verified){img.src=verified;return}
    const fallback=async()=>await spotifyArtwork(entry?.id||id)||await trackArtwork(name);
    let url=await originalArtwork(name);
    if(!url)url=await fallback();
