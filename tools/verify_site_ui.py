@@ -539,6 +539,34 @@ def main():
                                 'November month-to-date change should use Oct 1–8',records)
                         assert len(records)==expected,(mode,len(records),records)
                         assert all(len(record)==4 for record in records),(mode,records)
+                        # Independently verify the popup arithmetic across
+                        # consecutive complete saved totals. Missing and partial
+                        # observations must never be promoted to full gains.
+                        def exact(cell):
+                            if not cell or cell=='—' or '*' in cell or cell=='Not recorded':
+                                return None
+                            try:
+                                return int(cell.replace(',','').replace('−','-').replace('+',''))
+                            except ValueError:
+                                return None
+                        checked_gains=checked_changes=0
+                        for position in range(1,len(records)):
+                            yesterday,today=records[position-1],records[position]
+                            previous_total,actual_total=exact(yesterday[1]),exact(today[1])
+                            current_gain=exact(today[2])
+                            if previous_total is not None and actual_total is not None and current_gain is not None:
+                                assert current_gain==actual_total-previous_total,(
+                                  'Saved totals disagree with period gain',mode,today,yesterday)
+                                checked_gains+=1
+                            if position>1:
+                                prior_gain,change=exact(yesterday[2]),exact(today[3])
+                                if prior_gain is not None and current_gain is not None and change is not None:
+                                    assert change==current_gain-prior_gain,(
+                                      'Change in increase disagrees with saved period gains',mode,today,yesterday)
+                                    checked_changes+=1
+                        assert checked_gains>=3,(mode,'Too few fully comparable gains',checked_gains,records)
+                        assert checked_changes>=2,(mode,'Too few verified gain changes',checked_changes,records)
+                        print('Verified historical arithmetic',mode,checked_gains,'gains and',checked_changes,'changes',flush=True)
                         valid=sum(any(character.isdigit() for character in record[1])
                                   for record in records)
                         if mode in ('daily','weekly'):
