@@ -582,6 +582,39 @@ def main():
                         WebDriverWait(driver,15).until(lambda d:d.execute_script("""
                             return !document.getElementById('svt-all-history-dialog')?.open;
                         """))
+                    # The visible All track ranking must actually render
+                    # Total, Increase, and Change as three separate numeric
+                    # columns in daily, weekly and monthly modes.
+                    click(driver,'#all-rankCategory [data-all-rank="tracks"]')
+                    for ranking_period in ('daily','weekly','monthly'):
+                        driver.execute_script("""
+                            const p=document.getElementById('all-period');
+                            p.value=arguments[0];p.dispatchEvent(new Event('change',{bubbles:true}));
+                        """,ranking_period)
+                        WebDriverWait(driver,35).until(lambda d:d.execute_script("""
+                            const rows=[...document.querySelectorAll('#all-recordings tr')]
+                              .filter(row=>row.querySelectorAll('td').length===4);
+                            return document.getElementById('all-gainTitle')?.textContent?.includes(arguments[0].toUpperCase()) &&
+                                   !document.getElementById('all-gainTitle')?.hidden &&
+                                   !document.getElementById('all-changeTitle')?.hidden &&
+                                   rows.length>=25;
+                        """,ranking_period))
+                        table_counts=driver.execute_script("""
+                            const rows=[...document.querySelectorAll('#all-recordings tr')]
+                              .filter(row=>row.querySelectorAll('td').length===4);
+                            const numeric=td=>td&&/[0-9]/.test(td.textContent)&&!td.textContent.includes('—');
+                            return {
+                                rows:rows.length,
+                                total:rows.filter(r=>numeric(r.querySelectorAll('td')[1])).length,
+                                gain:rows.filter(r=>numeric(r.querySelectorAll('td')[2])).length,
+                                change:rows.filter(r=>numeric(r.querySelectorAll('td')[3])).length
+                            };
+                        """)
+                        assert table_counts['total']>=25,(ranking_period,table_counts)
+                        assert table_counts['gain']>=20,(ranking_period,table_counts)
+                        assert table_counts['change']>=10,(ranking_period,table_counts)
+                        print('All visible',ranking_period,'totals/gains/changes:',table_counts,flush=True)
+                    click(driver,'#all-rankCategory [data-all-rank="streams"]')
                     driver.execute_script("""
                         const p=document.getElementById('all-period');
                         p.value='overall';p.dispatchEvent(new Event('change',{bubbles:true}));
