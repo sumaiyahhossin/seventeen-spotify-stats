@@ -997,20 +997,28 @@ async function showAllHistory(row){
   if(isCombined&&present)present.date=current.date;
   if(isCombined&&previous)previous.date=prev.date;
   if(isCombined&&older&&before)older.date=before.date;
+  const alignedPrevious=current.alignedPriorDate?byDate.get(current.alignedPriorDate):null;
+  // Monthly/weekly "Change" on a partial period compares the exact
+  // same elapsed days of the prior period, NOT a complete previous month.
+  const oldReference=mode!=='daily'&&current.partial?alignedPrevious:previous;
+  if(isCombined&&oldReference&&current.alignedPriorDate)oldReference.date=current.alignedPriorDate;
   const pair=isCombined?comparable(present,previous):null;
-  const oldPair=isCombined?comparable(previous,older):null;
+  const oldPair=isCombined?comparable(oldReference,older):null;
   const releasedNow=!isCombined&&row.date&&current.date>=row.date&&prev.date<row.date;
   const gain=isCombined?pair.gain:
    Number.isFinite(total)&&(releasedNow?total:Number.isFinite(previous)?total-previous:null);
   const oldGain=isCombined?oldPair.gain:
-   Number.isFinite(previous)&&Number.isFinite(older)?previous-older:null;
-  const change=(!isCombined||pair.complete&&oldPair.complete)&&
+   Number.isFinite(oldReference)&&Number.isFinite(older)?oldReference-older:null;
+  const exactPeriodChange=mode==='daily'||Boolean(before&&
+   prev.date===prev.last&&before.date===before.last&&
+   (!current.partial||!!current.alignedPriorDate));
+  const change=exactPeriodChange&&(!isCombined||pair.complete&&oldPair.complete)&&
    Number.isFinite(gain)&&Number.isFinite(oldGain)?gain-oldGain:null;
   const partial=(mode!=='daily'&&(current.partial||prev.partial))||
    (isCombined&&!pair.complete);
   const label=current.label;
   const recorded=hasSavedDate(row.scope,current.date);
-  const totalLabel=!recorded?'Not recorded':fmt(total)+(!completeTotal&&Number.isFinite(total)?'*':'');
+  const totalLabel=!recorded?'Not recorded':fmt(total)+((current.partial||!completeTotal)&&Number.isFinite(total)?'*':'');
   output.push('<tr><td>'+esc(label)+'</td><td>'+totalLabel+
    '</td><td class="'+tone(gain)+'">'+signed(gain)+(partial&&Number.isFinite(gain)?'*':'')+
    '</td><td class="'+tone(change)+'">'+signed(change)+(partial&&Number.isFinite(change)?'*':'')+'</td></tr>');
