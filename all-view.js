@@ -604,7 +604,10 @@ function renderTracks(){
    (row.date?' · '+row.date:'');
   const ranked=isDiscography?(row.discographyHeader?'◆':'·'):
    Number.isFinite(value)?String(state.page*state.limit+i+1).padStart(2,'0'):'—';
-  const printed=Number.isFinite(value)?(period==='overall'?'':'+')+fmt(value):'—';
+  const printTotal=fmt(row.streams);
+  const added=row.gain;
+  const printGain=Number.isFinite(added)?(added>0?'+':'')+fmt(added):'—';
+  const gainColor=Number.isFinite(added)?(added>0?'svt-gain-positive':added<0?'svt-gain-negative':'svt-gain-neutral'):'svt-gain-neutral';
   return '<tr'+(isDiscography&&row.discographyHeader?' class="svt-all-release-row"':'')+
    '><td><div class="svt-all-record"><span class="svt-all-rank">'+ranked+'</span>'+
    '<span class="svt-all-art-holder"><img class="svt-all-cover cover" data-cover-track="'+artwork+
