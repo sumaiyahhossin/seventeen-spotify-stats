@@ -409,17 +409,20 @@ function renderSummary(){
  const period=state.period;
  const heading=document.getElementById('all-summaryGrowthHeading');
  if(heading)heading.textContent=period==='overall'?'STREAM GROWTH · OVERALL':period.toUpperCase()+' STREAM GROWTH';
+ const verifiedGains=rows.map(row=>row.gain);
+ const allVerified=period!=='overall'&&rows.length>0&&sameDay&&verifiedGains.every(Number.isFinite);
+ const totalGrowth=allVerified?verifiedGains.reduce((sum,n)=>sum+n,0):null;
  if(period==='overall'){
   $('summaryGrowth').textContent='—';
-  $('summaryGrowthNote').textContent='Overall shows cumulative streams. Select Daily, Weekly, Monthly or Yearly for growth.';
- }else if(period==='daily'){
-  $('summaryGrowth').textContent=complete?'+'+fmt(valid.reduce((a,b)=>a+b,0)):'—';
-  $('summaryGrowthNote').textContent=complete?'From '+dayBefore(groupDate)+' to '+groupDate:
-   'Daily growth requires full consecutive snapshots for both categories';
+  $('summaryGrowthNote').textContent='Cumulative streams shown on the left. Choose a time period to see growth.';
  }else{
-  $('summaryGrowth').textContent='—';
-  $('summaryGrowthNote').textContent='See verified '+period+' gains in the track and album rankings below';
+  $('summaryGrowth').textContent=allVerified?(totalGrowth>0?'+':'')+fmt(totalGrowth):'—';
+  $('summaryGrowthNote').textContent=allVerified?
+   (period==='daily'?'From '+dayBefore(groupDate)+' to '+groupDate:'Verified '+period+' increase ending '+groupDate):
+   'Incomplete or unmatched '+period+' archive boundaries — no estimated total';
  }
+ $('summaryGrowth').classList.toggle('svt-gain-positive',Number.isFinite(totalGrowth)&&totalGrowth>0);
+ $('summaryGrowth').classList.toggle('svt-gain-negative',Number.isFinite(totalGrowth)&&totalGrowth<0);
  $('summaryCoverage').textContent=allComplete?
   fmt(rows.length)+' distinct Spotify recordings · group, members and units combined without duplicate editions or shared recording IDs. '+
   (complete?'All '+fmt(rows.length)+' recordings have verified previous-day comparisons.':
@@ -666,7 +669,7 @@ async function init(){
   if(names.includes(allRemembered.owner))$('owner').value=allRemembered.owner;
   await applyPeriod();selectAllCategory(state.mode);renderArtists();renderTracks();
   const [prevGroup,prevSolo]=await Promise.all([
-   snapshot('group',dayBefore(group.date)),snapshot('solo',dayBefore(solo.date))]);
+   snapshot('group',dayBefore(state.group.date)),snapshot('solo',dayBefore(state.solo.date))]);
   state.milestonePrevious={group:prevGroup,solo:prevSolo};
   renderSummary();syncAllDatePicker();
   saveAllViewState();
