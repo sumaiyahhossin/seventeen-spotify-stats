@@ -354,35 +354,54 @@ function verifiedBaselineValue(scope,id,baseline){
  const title=scope==='group'?latestArchives?.group?.names?.[id]:state.media?.tracks?.[id]?.title;
  return archivedSnapshotValue(baseline,scope,id,title||'');
 }
+function earlierBoundary(scope,period){
+ const current=boundaryDate(scope,period);
+ if(!current)return null;
+ if(period==='daily')return dayBefore(current);
+ if(period==='weekly')return dayBefore(monday(current));
+ if(period==='monthly')return dayBefore(firstOfMonth(current));
+ if(period==='yearly')return dayBefore(firstOfYear(current));
+ return null;
+}
+function verifiedGainBetween(scope,id,newer,older,title){
+ if(!newer||!older)return null;
+ const a=archivedSnapshotValue(newer,scope,id,title);
+ const b=archivedSnapshotValue(older,scope,id,title);
+ if(!Number.isFinite(a)||!Number.isFinite(b)||a<b)return null;
+ const gain=a-b;
+ if(older.source==='historical spreadsheet'&&newer.source!=='historical spreadsheet'){
+  const days=Math.max(1,Math.round((Date.parse(newer.date)-Date.parse(older.date))/86400000));
+  if(gain>Math.max(100000*days,a*.05))return null;
+ }
+ return gain;
+}
 async function applyPeriod(){
- const metricBaselines=await Promise.all(['group','solo'].map(scope=>state.period==='overall'?Promise.resolve(null):snapshot(scope,boundaryDate(scope,state.period))));
- state.metricBaseline={group:metricBaselines[0],solo:metricBaselines[1]};
- const rows=[...state.rows,...state.albums,...state.discography],period=state.period;
- if(period==='overall'){rows.forEach(row=>row.gain=null);return}
- const boundaries=await Promise.all(['group','solo'].map(async scope=>
-  snapshot(scope,boundaryDate(scope,period))));
- const baselines={group:boundaries[0],solo:boundaries[1]};
- for(const row of rows){
-  const ids=row.ids||[row.id],now=state[row.scope].tracks,old=baselines[row.scope];
+ const period=state.period,scopes=['group','solo'];
+ if(period==='overall'){
+  state.metricBaseline={group:null,solo:null};
+  [...state.rows,...state.albums,...state.discography].forEach(row=>{row.gain=null;row.change=null});
+  return;
+ }
+ const [currentBoundaries,olderBoundaries]=await Promise.all([
+  Promise.all(scopes.map(scope=>snapshot(scope,boundaryDate(scope,period)))),
+  Promise.all(scopes.map(scope=>snapshot(scope,earlierBoundary(scope,period))))
+ ]);
+ const baseline={group:currentBoundaries[0],solo:currentBoundaries[1]};
+ const older={group:olderBoundaries[0],solo:olderBoundaries[1]};
+ state.metricBaseline=baseline;
+ for(const row of [...state.rows,...state.albums,...state.discography]){
+  const ids=row.ids||[row.id],scope=row.scope;
   const deltas=ids.map(id=>{
-   const title=row.kind==='track'?row.title:(row.scope==='group'?latestArchives?.group?.names?.[id]:state.media.tracks?.[id]?.title);
-   const a=row.kind==='track'&&row.discographyTrack?row.streams:archivedTrackValue(row.scope,id,title||'');
-   let b=verifiedBaselineValue(row.scope,id,old);
-   if(!Number.isFinite(b)&&old?.names&&title){
-    const matches=Object.entries(old.names).filter(([key,name])=>sameTitle(name)===sameTitle(title)&&Number.isFinite(old.tracks?.[key])&&
-     (row.scope==='group'||state.legacyLinks?.byIndex?.[Number(key.split(':').at(-1))]?.id===id));
-    if(matches.length===1||matches.length&&matches.every(([key])=>old.tracks[key]===old.tracks[matches[0][0]]))b=old.tracks[matches[0][0]];
-   }
-   if(!Number.isFinite(a)||!Number.isFinite(b)||a<b)return null;
-   const gained=a-b;
-   if(old?.source==='historical spreadsheet'){
-    const elapsed=Math.max(1,Math.round((Date.parse(state[row.scope].date)-Date.parse(old.date))/86400000));
-    // Reject implausible workbook-to-current edition jumps, not real streams.
-    if(gained>Math.max(100000*elapsed,a*.05))return null;
-   }
-   return gained;
+   const title=scope==='group'?latestArchives?.group?.names?.[id]:state.media?.tracks?.[id]?.title;
+   return verifiedGainBetween(scope,id,state[scope],baseline[scope],title||row.title);
   });
-  row.gain=deltas.length&&deltas.every(Number.isFinite)?deltas.reduce((a,b)=>a+b,0):null;
+  row.gain=deltas.length&&deltas.every(Number.isFinite)?deltas.reduce((sum,v)=>sum+v,0):null;
+  const prior=ids.map(id=>{
+   const title=scope==='group'?latestArchives?.group?.names?.[id]:state.media?.tracks?.[id]?.title;
+   return verifiedGainBetween(scope,id,baseline[scope],older[scope],title||row.title);
+  });
+  const priorGain=prior.length&&prior.every(Number.isFinite)?prior.reduce((sum,v)=>sum+v,0):null;
+  row.change=Number.isFinite(row.gain)&&Number.isFinite(priorGain)?row.gain-priorGain:null;
  }
 }
 function artistStats(){
