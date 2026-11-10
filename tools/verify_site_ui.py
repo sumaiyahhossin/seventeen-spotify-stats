@@ -395,6 +395,50 @@ def main():
                     assert observed[2]=='406',f'Expected 406 canonical recordings, not {observed}'
                     assert 'Nov 8, 2026' in observed[3],f'Combined date missing: {observed}'
                     print('Verified combined total 10,315,463,577 · daily +2,493,721 · 406 tracks',flush=True)
+                    # All must fully bridge the November 6 legacy workbook
+                    # to November 7's Spotify-ID snapshots for ALL 406 canonical
+                    # recordings: group 227 + solo 183, net of mirrored editions.
+                    driver.execute_script("""
+                        const picker=document.getElementById('all-archiveDate');
+                        picker.value='2026-11-07';
+                        picker.dispatchEvent(new Event('change',{bubbles:true}));
+                        const period=document.getElementById('all-period');
+                        period.value='daily';period.dispatchEvent(new Event('change',{bubbles:true}));
+                    """)
+                    WebDriverWait(driver,45).until(lambda d:
+                        'Nov 7, 2026' in d.find_element(By.ID,'all-summaryDate').text and
+                        d.find_element(By.ID,'all-summaryGrowth').text.strip() not in ('','—') and
+                        '*' not in d.find_element(By.ID,'all-summaryGrowth').text)
+                    click(driver,'#all-rankCategory [data-all-rank="streams"]')
+                    assert driver.execute_script("""
+                        const names=new Set(['SEVENTEEN','JxJ','Joshua','Jeonghan','V8']);
+                        const rows=[...document.querySelectorAll('#all-artists tr')]
+                          .filter(r=>names.has(r.querySelector('.svt-all-song')?.textContent?.trim()));
+                        return rows.length===5&&rows.every(r=>
+                          !r.textContent.includes('Verified subset') &&
+                          !r.querySelectorAll('td')[1].textContent.includes('*'));
+                    """), 'All daily artist gains still have missing canonical recordings'
+                    for metric in ('weekly','monthly'):
+                        driver.execute_script("""
+                            const period=document.getElementById('all-period');
+                            period.value=arguments[0];
+                            period.dispatchEvent(new Event('change',{bubbles:true}));
+                        """,metric)
+                        WebDriverWait(driver,45).until(lambda d:
+                            d.find_element(By.ID,'all-summaryGrowthHeading').text.upper().startswith(metric.upper())
+                            and d.find_element(By.ID,'all-summaryGrowth').text.strip() not in ('','—')
+                            and '*' not in d.find_element(By.ID,'all-summaryGrowth').text)
+                    driver.execute_script("""
+                        const picker=document.getElementById('all-archiveDate');
+                        picker.value='2026-11-08';
+                        picker.dispatchEvent(new Event('change',{bubbles:true}));
+                        const period=document.getElementById('all-period');
+                        period.value='overall';period.dispatchEvent(new Event('change',{bubbles:true}));
+                    """)
+                    WebDriverWait(driver,45).until(lambda d:
+                        'Nov 8, 2026' in d.find_element(By.ID,'all-summaryDate').text
+                        and d.find_element(By.ID,'all-summaryStreams').text.strip()=='10,315,463,577')
+
                 # Original and All use the same light-colored stat cards.
                 assert driver.execute_script("""
                     return getComputedStyle(document.querySelector('#all-summaryStreams').closest('.stat'))
@@ -546,10 +590,11 @@ def main():
                     document.getElementById('all-search').value='';
                     document.getElementById('all-search').dispatchEvent(new Event('input',{bubbles:true}));
                 """)
-                assert driver.find_element(By.ID,'all-gainTitle').text=='WEEKLY STREAMS ADDED'
+                assert driver.find_element(By.ID,'all-gainTitle').text=='WEEKLY INCREASE'
+                assert driver.find_element(By.ID,'all-changeTitle').text=='CHANGE'
                 assert driver.execute_script("""
                     return [...document.querySelectorAll('#all-recordings tr')].every(
-                        row=>row.querySelectorAll('td').length===3);
+                        row=>row.querySelectorAll('td').length===4);
                 """),'All period rankings should display total streams and streams added'
                 # The compact combined ranking matches OG's dense track layout.
                 assert driver.execute_script("""
