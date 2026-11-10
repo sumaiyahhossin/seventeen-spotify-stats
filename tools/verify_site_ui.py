@@ -455,7 +455,7 @@ def main():
                 assert not driver.execute_script("""
                     return !!document.getElementById('svtAllMilestones');
                 """),'All milestones should live on a separate page, not the dashboard'
-                assert driver.find_element(By.CSS_SELECTOR,'#svtAllView a.milestone-nav-link').get_attribute('href').endswith('/all-milestones.html')
+                assert driver.find_element(By.CSS_SELECTOR,'#svtAllView a.milestone-nav-link').get_attribute('href').endswith('/streaming-milestones.html?view=all')
                 assert driver.execute_script("""
                     return getComputedStyle(document.querySelector('#all-catalogSection')).color !== 'rgb(35, 52, 82)'
                 """),'All is still using the incorrect white theme'
