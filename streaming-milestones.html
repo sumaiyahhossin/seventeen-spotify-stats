@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SEVENTEEN · Streaming Milestones</title>
+<style>
+:root{color-scheme:dark}*{box-sizing:border-box}body{margin:0;background:#101526;color:#fff8fc;font-family:system-ui,sans-serif}
+header{max-width:1180px;margin:0 auto;padding:20px 22px 10px;display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap}
+a{color:#ffb8d7;text-decoration:none;font-weight:700}h1{font-size:clamp(20px,3vw,32px);margin:0}nav{display:flex;gap:9px;flex-wrap:wrap}
+nav button{cursor:pointer;border:1px solid #777398;border-radius:999px;padding:12px 20px;color:#fff;background:#292c50;font:700 13px system-ui}
+nav button[aria-selected=true]{background:linear-gradient(115deg,#ffb8d7,#b9d8ff);color:#182039;border-color:transparent}
+iframe{display:block;width:100%;height:calc(100vh - 130px);min-height:650px;border:0}
+@media(max-width:650px){header{padding:16px 12px 8px}nav{width:100%}nav button{flex:1;padding:12px 7px;font-size:12px}iframe{height:calc(100vh - 170px)}}
+</style></head><body>
+<header><a href="index.html">‹ Back to archive</a><h1>✦ Streaming Milestones</h1><nav aria-label="Choose milestone archive">
+<button type="button" data-mode="group" aria-selected="true">OT13</button>
+<button type="button" data-mode="solo" aria-selected="false">Units &amp; Solo</button>
+<button type="button" data-mode="all" aria-selected="false">All ✦</button></nav></header>
+<iframe id="archive" title="Streaming milestones archive" loading="eager"></iframe>
+<script>
+const pages={group:'milestones.html',solo:'milestones.html?type=solo',all:'all-milestones.html'};
+const frame=document.getElementById('archive');
+function setMode(mode){if(!pages[mode])mode='group';document.querySelectorAll('[data-mode]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.mode===mode)));frame.src=pages[mode];history.replaceState(null,'','?view='+mode);}
+document.querySelectorAll('[data-mode]').forEach(b=>b.addEventListener('click',()=>setMode(b.dataset.mode)));
+setMode(new URLSearchParams(location.search).get('view')||'group');
+</script></body></html>
