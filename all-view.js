@@ -491,43 +491,43 @@ function renderSummary(){
  $('summaryDateNote').textContent=sameDay?'Both archives · '+displayDate(groupDate):
   'OT13 '+displayDate(groupDate)+' · Unit/Solo '+displayDate(soloDate);
  const prev=state.milestonePrevious||{};
- const deltas=rows.map(row=>{
-  const source=prev[row.scope];
-  if(!source||!Number.isFinite(row.streams)||source.date!==dayBefore(state[row.scope]?.date))
-   return null;
-  const older=verifiedBaselineValue(row.scope,row.id,source);
-  return Number.isFinite(older)&&row.streams>=older?row.streams-older:null;
+ // Always provide the most recent verified one-day growth in Overall,
+ // even while the rankings below display cumulative streams.
+ const dailyDeltas=rows.map(row=>{
+  const current=state[row.scope],source=prev[row.scope];
+  if(!current||!source||source.date!==dayBefore(current.date))return null;
+  const title=row.scope==='group'?latestArchives?.group?.names?.[row.id]:
+   state.media?.tracks?.[row.id]?.title;
+  return verifiedGainBetween(row.scope,row.id,current,source,title||row.title,row.date);
  });
- const valid=deltas.filter(Number.isFinite);
- const complete=sameDay&&rows.length>0&&valid.length===rows.length;
+ const verifiedDaily=dailyDeltas.filter(Number.isFinite);
+ const dailyComplete=sameDay&&rows.length>0&&verifiedDaily.length===rows.length;
  const period=state.period;
  const heading=document.getElementById('all-summaryGrowthHeading');
- if(heading)heading.textContent=period==='overall'?'STREAM GROWTH · OVERALL':period.toUpperCase()+' STREAM GROWTH';
- const verifiedGains=rows.map(row=>row.gain);
- const allVerified=period!=='overall'&&rows.length>0&&sameDay&&verifiedGains.every(Number.isFinite);
- const totalGrowth=allVerified?verifiedGains.reduce((sum,n)=>sum+n,0):null;
- if(period==='overall'){
-  $('summaryGrowth').textContent='—';
-  $('summaryGrowthNote').textContent='Cumulative streams shown on the left. Choose a time period to see growth.';
- }else{
-  const observedGains=verifiedGains.filter(Number.isFinite);
-  const verifiedSubset=observedGains.length?observedGains.reduce((sum,n)=>sum+n,0):null;
-  const figure=allVerified?totalGrowth:verifiedSubset;
-  $('summaryGrowth').textContent=Number.isFinite(figure)?
-   (figure>0?'+':'')+fmt(figure)+(allVerified?'':'*'):'—';
-  const corrections=observedGains.filter(n=>n<0).length;
-  const note=allVerified?
-   (period==='daily'?'From '+displayDate(dayBefore(groupDate))+' to '+displayDate(groupDate):'Verified '+period+' net counter change ending '+displayDate(groupDate)):
-   observedGains.length?observedGains.length+' of '+rows.length+' recordings verified · partial '+period+' change only (*)':
-    'No comparable '+period+' archive observations — no estimated growth';
-  $('summaryGrowthNote').textContent=note+(corrections?' · '+corrections+' saved counter decrease'+(corrections===1?'':'s')+' included':'');
- }
- $('summaryGrowth').classList.toggle('svt-gain-positive',Number.isFinite(totalGrowth)&&totalGrowth>0);
- $('summaryGrowth').classList.toggle('svt-gain-negative',Number.isFinite(totalGrowth)&&totalGrowth<0);
+ if(heading)heading.textContent=period==='overall'||period==='daily'?
+  'DAILY STREAM GROWTH':period.toUpperCase()+' STREAM GROWTH';
+ const selectedGains=period==='overall'?dailyDeltas:rows.map(row=>row.gain);
+ const observedGains=selectedGains.filter(Number.isFinite);
+ const fullyVerified=period==='overall'?dailyComplete:
+  rows.length>0&&sameDay&&observedGains.length===rows.length;
+ const net=observedGains.length?observedGains.reduce((sum,n)=>sum+n,0):null;
+ $('summaryGrowth').textContent=Number.isFinite(net)?
+  (net>0?'+':'')+fmt(net)+(fullyVerified?'':'*'):'—';
+ const counterCorrections=observedGains.filter(n=>n<0).length;
+ const datesNote=period==='overall'||period==='daily'?
+  'From '+displayDate(dayBefore(groupDate))+' to '+displayDate(groupDate):
+  'Verified '+period+' net change ending '+displayDate(groupDate);
+ const missingNote=observedGains.length?
+  observedGains.length+' / '+rows.length+' recordings verified · partial '+(period==='overall'?'daily':period)+' growth (*)':
+  'No comparable '+(period==='overall'?'daily':period)+' archived snapshots';
+ $('summaryGrowthNote').textContent=(fullyVerified?datesNote:missingNote)+
+  (counterCorrections?' · '+counterCorrections+' recorded counter decrease'+(counterCorrections===1?'':'s'):'');
+ $('summaryGrowth').classList.toggle('svt-gain-positive',Number.isFinite(net)&&net>0);
+ $('summaryGrowth').classList.toggle('svt-gain-negative',Number.isFinite(net)&&net<0);
  $('summaryCoverage').textContent=allComplete?
   fmt(rows.length)+' distinct Spotify recordings · group, members and units combined without duplicate editions or shared recording IDs. '+
-  (complete?'All '+fmt(rows.length)+' recordings have verified previous-day comparisons.':
-   'The daily change is withheld where comparable snapshots are missing.'):
+  (dailyComplete?'All '+fmt(rows.length)+' recordings have verified previous-day comparisons.':
+   verifiedDaily.length+' / '+rows.length+' recordings have verified previous-day comparisons.'):
   'Some unique recordings lack verified totals; no combined number is displayed until all totals are available.';
 }
 function artworkFor(row){
