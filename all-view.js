@@ -194,6 +194,7 @@ function buildDiscography(){
    const date=scope==='group'?
     (groupOriginalReleaseDates[release.key]||groupStandaloneReleaseDates[release.key]||release.release_date||null):
     (release.release_date||release.releaseDate||null);
+   if(/^\d{4}-\d{2}-\d{2}$/.test(date||'')&&date>snap.date)continue;
    const streams=ids.every(id=>Number.isFinite(snap.tracks?.[id]))?
     ids.reduce((sum,id)=>sum+snap.tracks[id],0):null;
    const isAlbum=/\b(album|mini|ep|repackage|best|compilation)\b/i.test(String(release.title||''));
@@ -224,6 +225,7 @@ function buildDiscography(){
   if(!ids.length)continue;
   const owners=['jxj_dreamscape','v8'].includes(spec.key)?[spec.key==='v8'?'V8':'JxJ']:(spec.owners||[]),name=spec.displayName||spec.key;
   const date=spec.releaseDate||spec.release_date||null,begin=all.length;
+  if(/^\d{4}-\d{2}-\d{2}$/.test(date||'')&&date>state.solo.date)continue;
   const streams=ids.every(id=>Number.isFinite(state.solo.tracks?.[id]))?
    ids.reduce((sum,id)=>sum+state.solo.tracks[id],0):null;
 
