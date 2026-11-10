@@ -16,6 +16,10 @@ let rememberedMode='tracks';
 try{const saved=sessionStorage.getItem(allModeStorage);if(allModes.has(saved))rememberedMode=saved}catch{}
 
 const fmt=n=>Number.isFinite(n)?Math.round(n).toLocaleString('en-US'):'—';
+const displayDate=date=>/^\d{4}-\d{2}-\d{2}$/.test(String(date||''))?
+ new Date(date+'T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'short',day:'numeric',year:'numeric'}):String(date||'—');
+const displayMonth=date=>/^\d{4}-\d{2}/.test(String(date||''))?
+ new Date(date.slice(0,7)+'-01T12:00:00Z').toLocaleDateString('en-US',{timeZone:'UTC',month:'short',year:'numeric'}):String(date||'—');
 const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
 const dayBefore=date=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-1);return d.toISOString().slice(0,10)};
 const monday=date=>{const d=new Date(date+'T12:00:00Z');d.setUTCDate(d.getUTCDate()-(d.getUTCDay()+6)%7);return d.toISOString().slice(0,10)};
@@ -91,8 +95,8 @@ function buildRows(){
     if(/^\d{4}-\d{2}-\d{2}$/.test(released||'')&&released>snapshot.date)return;
     // Exclude known legacy aliases from the group catalog. The current
     // collector's canonical IDs are the authoritative recording population.
-    if(scope==='group'&&Array.isArray(snapshot.canonical_track_ids)&&
-       !snapshot.canonical_track_ids.includes(id))return;
+    if(scope==='group'&&Array.isArray(latestArchives?.group?.canonical_track_ids)&&
+       !latestArchives.group.canonical_track_ids.includes(id))return;
     let row=byId.get(id);
     if(!row){row={id,scope,owners:new Set(),releaseNames:new Set(),date:null,title:null,streams:null,releaseKey:release.key};byId.set(id,row)}
     if(artist)row.owners.add(artist);
@@ -113,7 +117,7 @@ function buildRows(){
   for(const [id,count] of Object.entries(snapshot.tracks||{})){
    if(!validId(id)||!Number.isFinite(count))continue;
    if(snapshot.source==='historical spreadsheet'&&!byId.has(id))continue;
-   if(scope==='group'&&Array.isArray(snapshot.canonical_track_ids)&&!snapshot.canonical_track_ids.includes(id))continue;
+   if(scope==='group'&&Array.isArray(latestArchives?.group?.canonical_track_ids)&&!latestArchives.group.canonical_track_ids.includes(id))continue;
    let row=byId.get(id);
    if(!row){row={id,scope,owners:new Set([scope==='group'?'SEVENTEEN':'Unassigned solo/unit']),releaseNames:new Set(),date:null,title:null,streams:null};byId.set(id,row)}
    if(row.streams==null&&(!snapshot.source||snapshot.source!=='historical spreadsheet'))row.streams=count;
@@ -208,8 +212,20 @@ function archivedSnapshotValue(snap,scope,id,title){
  const normalized=sameTitle(referenceName);
  if(!normalized)return null;
  const mapped=latestArchives?.group?.baseline_ids_2026_11_05?.[id];
- if(mapped&&Number.isFinite(snap.tracks?.[mapped])&&sameTitle(snap.names?.[mapped])===normalized)
-  return snap.tracks[mapped];
+ // Confirmed workbook spellings differ from their canonical Spotify names.
+ // Explicit ID-to-row aliases: never equate unrelated similarly named editions.
+ const verifiedNames={
+  '2kDrUAONMhG6CbDGBkhdrY':'worldfeatannemarrie',
+  '6KfYVOicblNB8CaDZwbxiT':'dirtydancingfearjoshuadkdino',
+  '3oTDi9MWC0JB39FcsLRon3':'sosprodmarshmello',
+  '0xZ4WU5UfctiSeETi6pMEo':'golm',
+  '2B0l8kFr4PzxH6gqX3NIoi':'badinfluence',
+  '3ESkEsiPkaXl0CCRUMGkIk':'damagehoshisolo'
+ };
+ const mappedName=sameTitle(snap.names?.[mapped]);
+ if(mapped&&Number.isFinite(snap.tracks?.[mapped])&&
+  (mappedName===normalized||verifiedNames[id]===mappedName))
+   return snap.tracks[mapped];
  const matches=Object.entries(snap.names||{}).filter(([key,name])=>
   sameTitle(name)===normalized&&Number.isFinite(snap.tracks?.[key])&&
   // The saved group archive's legacy keys ending in total are album subtotals.
@@ -512,7 +528,7 @@ function renderArtists(){
   'monthly listener observations':'verified follower snapshots';
  $('artistNote').textContent=rows.length+' profiles with saved '+source+
   ' · ranked from highest to lowest · profiles with unavailable values are hidden. '+
-  'Group: '+state.group.date+' · Solo/Unit: '+state.solo.date+'. '+
+  'Group: '+displayDate(state.group.date)+' · Solo/Unit: '+displayDate(state.solo.date)+'. '+
   'Streams on member and unit profiles may overlap; the combined track catalog counts distinct recordings once.'+
   (metric==='streams'&&period!=='overall'?' * Indicates only a verified subset of '+period+' streams, not a complete period total.':'');
  $('artists').innerHTML=rows.map((a,i)=>
@@ -628,9 +644,9 @@ function renderTracks(){
  const periodRange=period==='overall'?'all-time totals':
   (from&&date?dayBefore(date)>from?dayBefore(date):date:date);
  const periodText=period==='overall'?'Cumulative Spotify observations':
-  'Verified '+period+' gains from '+(from||'—')+' to '+date+
+  'Verified '+period+' gains from '+displayDate(from)+' to '+displayDate(date)+
   ' (beginning after the baseline date)';
- $('coverage').textContent='Latest saved: Group '+state.group.date+' · Unit/Solo '+state.solo.date+
+ $('coverage').textContent='Latest saved: Group '+displayDate(state.group.date)+' · Unit/Solo '+displayDate(state.solo.date)+
   ' · '+periodText;
  $('recordCount').textContent=isDiscography?
   rows.length.toLocaleString()+' discography entries · source release appearances (not added to All totals)':
@@ -644,7 +660,7 @@ function renderTracks(){
   const sub=row.owners.join(' · ')+
    ' · '+(isAlbum?'Album':(row.releaseNames[0]||'Release not documented'))+
    (!isAlbum&&row.releaseNames.length>1?' · '+row.releaseNames.length+' releases':'')+
-   (row.date?' · '+row.date:'');
+   (row.date?' · '+displayDate(row.date):'');
   const ranked=isDiscography?(row.discographyHeader?'◆':'·'):
    Number.isFinite(value)?String(state.page*state.limit+i+1).padStart(2,'0'):'—';
   const printTotal=fmt(row.streams);
