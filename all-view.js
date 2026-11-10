@@ -172,6 +172,20 @@ function buildAlbums(){
  }
  state.albums=result;
 }
+function archivedTrackValue(scope,id,title){
+ const snap=state[scope];
+ const direct=snap.tracks?.[id];
+ if(Number.isFinite(direct)&&(!snap.source||snap.source!=='historical spreadsheet'||
+    !snap.names?.[id]||sameTitle(snap.names[id])===sameTitle(title)))return direct;
+ const normalized=sameTitle(title);
+ if(!normalized)return null;
+ const candidates=Object.entries(snap.names||{}).filter(([key,name])=>
+  sameTitle(name)===normalized&&Number.isFinite(snap.tracks?.[key])&&
+  (scope==='group'||state.legacyLinks?.byIndex?.[Number(key.split(':').at(-1))]?.id===id));
+ return candidates.length===1? snap.tracks[candidates[0][0]]:
+  candidates.length&&candidates.every(([key])=>snap.tracks[key]===snap.tracks[candidates[0][0]])?
+  snap.tracks[candidates[0][0]]:null;
+}
 function buildDiscography(){
  const all=[];
  const anthologyKeys=new Set(['g49','g50','g51','g52','g53','g54']);
@@ -202,8 +216,8 @@ function buildDiscography(){
     (groupOriginalReleaseDates[release.key]||groupStandaloneReleaseDates[release.key]||release.release_date||null):
     (release.release_date||release.releaseDate||null);
    if(/^\d{4}-\d{2}-\d{2}$/.test(date||'')&&date>snap.date)continue;
-   const streams=ids.every(id=>Number.isFinite(snap.tracks?.[id]))?
-    ids.reduce((sum,id)=>sum+snap.tracks[id],0):null;
+   const releaseValues=ids.map((id,i)=>archivedTrackValue(scope,id,scope==='group'?(snap.names?.[id]||nameFromRelease(release,id,i)||state.group.names?.[id]||''):(state.media.tracks?.[id]?.title||'')));
+   const streams=releaseValues.every(Number.isFinite)?releaseValues.reduce((sum,n)=>sum+n,0):null;
    const isAlbum=/\b(album|mini|ep|repackage|best|compilation)\b/i.test(String(release.title||''));
    // A header separates release editions in the same order as OT13/solo Discography.
    const displayOrder=all.length;
@@ -213,13 +227,13 @@ function buildDiscography(){
     const title=scope==='group'?snap.names?.[id]:state.media.tracks?.[id]?.title;
     all.push({id,title:originalAllTrackTitle(title||row?.title||id,scope,id),kind:'track',scope,
      owners:row?.owners?.length?row.owners:[owner],releaseNames:[name],date:release.track_release_dates?.[id]||date,
-     releaseKey:release.key,streams:snap.tracks?.[id]??null,
+     releaseKey:release.key,streams:archivedTrackValue(scope,id,title||row?.title||''),
      sortDate:date,releaseOrder:all.length,discographyTrack:true});
    }
    if(scope==='group'&&anthologyKeys.has(release.key)){
     if(release.key==='g54'){
-     const total=anthologyIds.every(id=>Number.isFinite(snap.tracks?.[id]))?
-      anthologyIds.reduce((sum,id)=>sum+snap.tracks[id],0):null;
+     const totalValues=all.filter(row=>row.scope==='group'&&anthologyKeys.has(row.releaseKey)&&row.kind==='track').map(row=>row.streams);
+     const total=totalValues.length===anthologyIds.length&&totalValues.every(Number.isFinite)?totalValues.reduce((sum,n)=>sum+n,0):null;
      all.push({kind:'album',title:'17 IS RIGHT HERE — All Tracks',scope,releaseKey:'g49',
       owners:[owner],releaseNames:['17 IS RIGHT HERE'],date,sortDate:date,streams:total,
       ids:anthologyIds,releaseOrder:all.length,discographyHeader:true});
@@ -241,15 +255,15 @@ function buildDiscography(){
   const owners=['jxj_dreamscape','v8'].includes(spec.key)?[spec.key==='v8'?'V8':'JxJ']:(spec.owners||[]),name=spec.displayName||spec.key;
   const date=spec.releaseDate||spec.release_date||null,begin=all.length;
   if(/^\d{4}-\d{2}-\d{2}$/.test(date||'')&&date>state.solo.date)continue;
-  const streams=ids.every(id=>Number.isFinite(state.solo.tracks?.[id]))?
-   ids.reduce((sum,id)=>sum+state.solo.tracks[id],0):null;
+  const streams=ids.every(id=>Number.isFinite(archivedTrackValue('solo',id,state.media.tracks?.[id]?.title||'')))?
+   ids.reduce((sum,id)=>sum+archivedTrackValue('solo',id,state.media.tracks?.[id]?.title||''),0):null;
 
   for(const id of ids){
    const main=canonical.get(id),name=state.media.tracks?.[id]?.title||main?.title||id;
    all.push({id,title:originalAllTrackTitle(name,'solo',id),kind:'track',scope:'solo',
     owners:main?.owners?.length?main.owners:owners,releaseNames:[spec.displayName||spec.key],
     date,sortDate:date,releaseKey:spec.key,releaseOrder:all.length,
-    streams:state.solo.tracks[id],discographyTrack:true});
+    streams:archivedTrackValue('solo',id,name),discographyTrack:true});
   }
   all.push({kind:'album',title:name,scope:'solo',releaseKey:spec.key,
    owners,releaseNames:[name],date,sortDate:date,streams,ids,
