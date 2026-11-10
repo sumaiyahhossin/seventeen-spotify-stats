@@ -118,14 +118,14 @@ async function itunesArtwork(term,kind,expected){
  const res=await fetch('https://itunes.apple.com/search?'+params.toString());
  if(!res.ok)return '';
  const data=await res.json();
- const clean=s=>artworkName(s).replace(/\\b(album|single|ep|mini)\\b/g,'').trim();
+ const clean=s=>artworkName(s).replace(/\b(album|single|ep|mini)\b/g,'').trim();
  const matches=(data.results||[]).filter(item=>{
   if(!/seventeen/i.test(item.artistName||''))return false;
   const title=kind==='album'?item.collectionName:item.trackName;
   return clean(title)===clean(expected);
  });
  const selected=matches.find(item=>String(item.artistName).toLowerCase()==='seventeen')||matches[0];
- return selected?.artworkUrl100?.replace(/\\d+x\\d+bb/,'600x600bb')||'';
+ return selected?.artworkUrl100?.replace(/\d+x\d+bb/,'600x600bb')||'';
 }
 async function coverUrl(row){
  // The original Units & Solo archive already saves the correct track covers.
@@ -133,7 +133,7 @@ async function coverUrl(row){
  if(local&&row.scope==='solo')return local;
  const entry=state.art.tracks?.[coverKey(row.name)];
  const alias=releaseArtworkAliases[coverKey(entry?.release)]||
-  String(entry?.release||'').replace(/\\s+(?:album|single|mini album|ep)$/i,'').trim();
+  String(entry?.release||'').replace(/\s+(?:album|single|mini album|ep)$/i,'').trim();
  const identity=alias?'album:'+artworkName(alias):'track:'+artworkName(row.name);
  if(!state.covers.has(identity)){
   state.covers.set(identity,(async()=>{
