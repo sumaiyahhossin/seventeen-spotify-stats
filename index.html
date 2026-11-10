@@ -705,6 +705,10 @@ body.svt-all-view #yearlyStreamsHistory{display:none!important}
  box-shadow:0 5px 16px #e6b2cf26;
 }
 #svtAllView .svt-all-section[hidden]{display:none!important}
+#svtAllView .svt-all-section label[hidden]{display:none!important}
+#svtAllView .svt-all-release-row td{background:linear-gradient(125deg,#fff1fa,#f6faff)!important;font-weight:800}
+#svtAllView .svt-all-release-row .svt-all-song{font-weight:900}
+#svtAllView .svt-all-release-row .svt-all-rank{color:#c972a7;font-size:15px}
 #svtAllView .svt-all-section-heading{align-items:center}
 #svtAllView .svt-all-toolbar label{
  color:#8995ab!important;letter-spacing:1px;text-transform:uppercase;
@@ -784,7 +788,7 @@ body.svt-all-view #yearlyStreamsHistory{display:none!important}
  <select id="all-viewType" hidden aria-label="Current combined discography view"><option value="tracks">Tracks</option><option value="albums">Albums</option><option value="discography">Discography</option></select>
 </div>
 <section class="svt-all-section" id="all-audienceSection" aria-label="All artists ranking" hidden>
- <div class="svt-all-section-heading"><div><div class="eyebrow">ARTISTS & UNITS ✦</div><h3>Across the artists</h3></div><div class="svt-all-toolbar"><label>Rank by<select id="all-artistMetric"><option value="streams">Highest streams</option><option value="listeners">Highest monthly listeners</option><option value="followers">Highest followers</option></select></label><label>Show<select id="all-artistScope"><option value="all">All artists</option><option value="members">Members</option><option value="units">Units</option></select></label></div></div>
+ <div class="svt-all-section-heading"><div><div class="eyebrow">ARTISTS & UNITS ✦</div><h3 id="all-artistSectionTitle">Across the artists</h3></div><div class="svt-all-toolbar"><label hidden>Rank by<select id="all-artistMetric"><option value="streams">Highest streams</option><option value="listeners">Highest monthly listeners</option><option value="followers">Highest followers</option></select></label><label>Show<select id="all-artistScope"><option value="all">All artists</option><option value="members">Members</option><option value="units">Units</option></select></label></div></div>
  <p class="svt-all-note" id="all-artistNote">Only saved, verified observations — missing metrics are not zero.</p>
  <div class="svt-all-tablewrap"><table class="svt-all-table svt-all-artists-table"><thead><tr><th>RANK · ARTIST</th><th class="svt-all-num" id="all-artistMetricHeading">HIGHEST STREAMS</th></tr></thead><tbody id="all-artists"><tr><td colspan="2" class="svt-all-status">Loading artists…</td></tr></tbody></table></div>
 </section>
