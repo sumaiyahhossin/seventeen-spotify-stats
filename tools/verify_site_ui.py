@@ -492,6 +492,54 @@ def main():
                           document.getElementById('all-summaryStreams')?.textContent?.trim()==='10,315,463,577';
                     """))
 
+                # Full history inspector: prove the last 10 saved daily rows,
+                # 10 weekly periods and 12 calendar months render as actual
+                # numbers or explicit absence, not empty/stuck loading states.
+                if width>=1200:
+                    for mode,expected in (('daily',10),('weekly',10),('monthly',12)):
+                        driver.execute_script("""
+                            const p=document.getElementById('all-period');
+                            p.value=arguments[0];
+                            p.dispatchEvent(new Event('change',{bubbles:true}));
+                        """,mode)
+                        WebDriverWait(driver,30).until(lambda d:d.execute_script("""
+                            return document.getElementById('all-period')?.value===arguments[0] &&
+                              document.getElementById('all-summaryGrowthHeading')?.textContent
+                                .toLowerCase().startsWith(arguments[0]);
+                        """,mode))
+                        driver.execute_script("document.getElementById('all-summaryStreams').closest('.stat').click()")
+                        WebDriverWait(driver,65).until(lambda d:d.execute_script("""
+                            const dialog=document.getElementById('svt-all-history-dialog');
+                            const rows=[...document.querySelectorAll('#all-history-body tr')];
+                            return dialog?.open && rows.length===arguments[0] &&
+                              rows.every(row=>!row.textContent.includes('Loading saved history'));
+                        """,expected))
+                        records=driver.execute_script("""
+                            return [...document.querySelectorAll('#all-history-body tr')].map(
+                              row=>[...row.querySelectorAll('td')].map(cell=>cell.textContent.trim()));
+                        """)
+                        assert len(records)==expected,(mode,len(records),records)
+                        assert all(len(record)==4 for record in records),(mode,records)
+                        valid=sum(bool(__import__('re').search(r'\\d',record[1]))
+                                  for record in records)
+                        if mode in ('daily','weekly'):
+                            assert valid>=9,(mode,valid,records)
+                        else:
+                            assert valid>=8,(mode,valid,records)
+                            assert any('Dec 2025' in record[0] for record in records),records
+                        print('All history verified:',mode,expected,'rows,',
+                              valid,'with saved totals',flush=True)
+                        driver.execute_script("""
+                            document.querySelector('#svt-all-history-dialog .all-history-head button').click()
+                        """)
+                        WebDriverWait(driver,15).until(lambda d:d.execute_script("""
+                            return !document.getElementById('svt-all-history-dialog')?.open;
+                        """))
+                    driver.execute_script("""
+                        const p=document.getElementById('all-period');
+                        p.value='overall';p.dispatchEvent(new Event('change',{bubbles:true}));
+                    """)
+
                 # Original and All use the same light-colored stat cards.
                 assert driver.execute_script("""
                     return getComputedStyle(document.querySelector('#all-summaryStreams').closest('.stat'))
