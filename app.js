@@ -3151,7 +3151,15 @@ async function render(){const token=++renderToken;
  const discography=rank.startsWith('discography');
  const orderSelect=$('#order');
  const orderPicker=orderSelect.closest('.order-picker');
- orderPicker.hidden=discography;
+ // Discography keeps the same release order by default, but can be flipped.
+ orderPicker.hidden=false;
+ for(const option of orderSelect.options)option.hidden=discography&&!['oldest','newest'].includes(option.value);
+ if(discography){
+  if(!['oldest','newest'].includes(sortOrder))sortOrder='oldest';
+  orderSelect.value=sortOrder;
+ }else{
+  orderSelect.value=sortOrder;
+ }
  const metricPeriod=rank.endsWith('daily')?'daily':rank.endsWith('weekly')?'weekly':rank.endsWith('monthly')?'monthly':'yearly';
  orderSelect.querySelector('option[value="most"]').textContent=tab==='solo'&&!rank.endsWith('overall')?'Highest '+metricPeriod+' gain':'Most streamed';
  orderSelect.querySelector('option[value="least"]').textContent=tab==='solo'&&!rank.endsWith('overall')?'Lowest '+metricPeriod+' gain':'Least streamed';
@@ -3345,7 +3353,7 @@ $('#rankPeriod').addEventListener('change',()=>{
 });
 $('#periodPicker').addEventListener('change',e=>{selectedPeriodKey=e.target.value;saveView();render()});
 
-$('#order').addEventListener('change',e=>{sortOrder=e.target.value;render()});
+$('#order').addEventListener('change',e=>{sortOrder=e.target.value;saveView();render()});
 $('#search').addEventListener('input',render);function availableDates(){return [...new Set([...(tab==='solo'?soloDates:groupDates),current[tab]?.date].filter(Boolean))].filter(d=>/^20\d{2}-\d{2}-\d{2}$/.test(d)&&d>='2025-01-01').sort()}
 function navigateDate(step){
  const periodic=['weekly','monthly','yearly'].some(p=>rank.endsWith(p));
