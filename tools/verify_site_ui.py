@@ -39,10 +39,25 @@ def click(driver,selector):
     element=WebDriverWait(driver,30).until(lambda d:d.find_element(By.CSS_SELECTOR,selector))
     driver.execute_script('arguments[0].click()',element)
 
+def check_column_dividers(driver, section):
+    checked=driver.execute_script("""
+        const header=[...document.querySelectorAll('#svtPrimaryStats .table-head>span')]
+          .filter(el=>getComputedStyle(el).display!=='none').slice(1);
+        const metrics=[...document.querySelectorAll('#svtPrimaryStats #ranking .rank-row:first-child>.rank-metric')]
+          .filter(el=>getComputedStyle(el).display!=='none');
+        return {headings:header.length,metrics:metrics.length,
+          borderedHeadings:header.filter(el=>getComputedStyle(el).borderLeftWidth==='1px').length,
+          borderedMetrics:metrics.filter(el=>getComputedStyle(el).borderLeftWidth==='1px').length};
+    """)
+    assert checked['headings']>=2 and checked['borderedHeadings']==checked['headings'],(section,checked)
+    assert checked['metrics']>=2 and checked['borderedMetrics']==checked['metrics'],(section,checked)
+    print(section,'ranking column dividers:',checked,flush=True)
+
 def check_viewport(driver,width,height):
     driver.set_window_size(width,height)
     driver.get(f'http://127.0.0.1:{PORT}/')
     read_layout(driver,f'OT13 {width}px')
+    check_column_dividers(driver,f'OT13 {width}px')
     # The history inspector must open on metric click and close without leaving
     # the page covered by an invisible blocking overlay.
     click(driver,'#total')
@@ -64,6 +79,7 @@ def check_viewport(driver,width,height):
         "return document.querySelector('.svt-history-dialog')?.hidden===true"))
     click(driver,'#tabs button[data-tab="solo"]')
     read_layout(driver,f'Units & Solo {width}px')
+    check_column_dividers(driver,f'Units & Solo {width}px')
     # Regression: a saved count of zero is not a missing song. The main
     # combined total must include all distinct Spotify IDs exactly once.
     latest=json.loads((ROOT/'data/solo.json').read_text(encoding='utf-8'))
@@ -373,8 +389,18 @@ def main():
 
                 assert len(driver.find_elements(By.CSS_SELECTOR,'#all-rankCategory [data-all-rank]'))==6,                    'All should offer six distinct ranking choices'
                 assert driver.find_element(By.CSS_SELECTOR,'#all-rankCategory [data-all-rank="tracks"]').get_attribute('class').find('active')>=0
-                # Overall shows cumulative streams, not a one-day growth value.
-                # Verify both the overall figure and the Daily comparison separately.
+                # The combined period selector must behave like the primary
+                # OT13/solo dropdown, with an actual visible chevron.
+                assert driver.execute_script("""
+                    const el=document.getElementById('all-period');
+                    const style=getComputedStyle(el);
+                    const choices=[...el.options].map(o=>o.value);
+                    return !el.disabled && el.getBoundingClientRect().width>=100 &&
+                      style.backgroundImage.includes('svg') &&
+                      ['overall','daily','weekly','monthly','yearly'].every(x=>choices.includes(x));
+                """),'All period dropdown arrow, clickability or time-period options missing'
+                # Overall keeps cumulative track ranking while the growth
+                # summary always shows the latest verified one-day difference.
                 driver.execute_script("""
                     const period=document.getElementById('all-period');
                     period.value='overall';period.dispatchEvent(new Event('change',{bubbles:true}));
@@ -398,7 +424,11 @@ def main():
                           document.getElementById('all-summaryDate').textContent]
                     """)
                     assert observed[0]=='10,315,463,577',f'Combined total double-counted source recordings: {observed}'
-                    assert observed[1]=='—',f'Overall should not display one-day growth: {observed}'
+                    assert observed[1]=='+2,493,721',f'Overall must show latest verified daily stream growth: {observed}'
+                    assert driver.execute_script("""
+                        return document.getElementById('all-summaryGrowthHeading').textContent==='DAILY STREAM GROWTH' &&
+                          document.getElementById('all-summaryGrowthNote').textContent.includes('Nov 7, 2026');
+                    """),'Overall daily growth label/period did not match saved archive'
                     driver.execute_script("""
                         const period=document.getElementById('all-period');
                         period.value='daily';period.dispatchEvent(new Event('change',{bubbles:true}));
