@@ -9,6 +9,7 @@ const groupStandaloneReleaseDates={
 };
 const groupOriginalReleaseDates={"g7":"2016-07-04","g23":"2020-06-22","g24":"2020-08-24","g37":"2022-07-18","g44":"2023-08-23","g50":"2024-04-29","g51":"2024-04-29","g52":"2024-04-29","g53":"2024-04-29","g54":"2024-04-29","g1":"2015-05-29","g2":"2015-09-10","g5":"2016-04-25","g6":"2016-07-04","g8":"2016-12-05","g9":"2017-05-22","g10":"2017-11-06","g11":"2018-02-05","g12":"2018-05-30","g13":"2018-07-16","g16":"2019-01-21","g18":"2019-05-29","g20":"2019-09-16","g22":"2020-04-01","g23":"2020-06-22","g25":"2020-09-09","g27":"2020-10-19","g28":"2021-04-21","g29":"2021-06-18","g32":"2021-10-22","g33":"2021-12-08","g35":"2022-05-27","g36":"2022-07-18","g39":"2022-11-09","g41":"2023-04-24","g43":"2023-08-23","g46":"2023-10-23","g49":"2024-04-29","g56":"2024-10-14","g58":"2024-11-27","g59":"2025-05-26"};
 const $=id=>document.getElementById('all-'+id);
+let latestArchives=null;
 const allModes=new Set(['tracks','albums','discography','followers','listeners','streams']);
 const allModeStorage='svt-all-six-category-v1';
 let rememberedMode='tracks';
@@ -512,8 +513,12 @@ async function init(){
    read('data/manifest.json'),read('data/admin-releases.json').catch(()=>({releases:[]})),
    read('data/solo-albums.json'),read('data/solo-legacy-track-links.json')
   ]);
+  latestArchives={group,solo};
   state.catalog=catalog;state.group=group;state.solo=solo;state.media=media;state.followers=followers.followers||{};state.manifest=manifest;state.albumSpecs=soloAlbumSpecs;state.legacyLinks=legacyLinks;
   for(const release of admin.releases||[]){const list=catalog[release.scope];if(list&&!list.some(r=>r.key===release.key))list.push(release)}
+  const picker=document.getElementById('all-archiveDate');
+  const sharedDates=(manifest.dates||[]).filter(d=>(manifest.solo_dates||[]).includes(d)||(manifest.solo_legacy_dates||[]).includes(d)).sort();
+  if(picker){picker.min=sharedDates[0]||group.date;picker.max=sharedDates.at(-1)||group.date;picker.value=group.date===solo.date?group.date:'';picker.title='Choose a day with saved OT13 and Units & Solo snapshots';}
   buildRows();
   for(const extra of admin.releases||[])if(extra.scope==='solo'&&extra.release_type==='album')
    state.albumSpecs.push({key:extra.key,displayName:extra.title,releaseDate:extra.release_date,owners:[extra.artist],tracks:extra.tracks});
@@ -544,6 +549,24 @@ for(const id of ['artistMetric','artistScope'])$(id).addEventListener('change',(
 for(const id of ['search','owner','sort','viewType'])$(id).addEventListener(id==='search'?'input':'change',()=>{state.page=0;renderTracks()});
 window.svtAllShown=()=>{selectAllCategory(state.mode);if(state.rows.length){renderSummary();renderArtists();renderTracks();}};
 window.addEventListener('svt-media-ready',()=>{if(state.rows.length){renderSummary();renderArtists();renderTracks();}});
+const allArchiveDate=document.getElementById('all-archiveDate');
+if(allArchiveDate)allArchiveDate.addEventListener('change',async()=>{
+ const date=allArchiveDate.value;
+ if(!date||!latestArchives)return;
+ allArchiveDate.disabled=true;
+ try{
+  const [group,solo]=await Promise.all(['group','solo'].map(scope=>date===latestArchives[scope].date?latestArchives[scope]:snapshot(scope,date)));
+  if(!group||!solo){$('coverage').textContent='No matching saved snapshots for both OT13 and Units & Solo on '+date+'.';return}
+  state.group=group;state.solo=solo;
+  buildRows();buildAlbums();buildDiscography();
+  state.page=0;
+  await applyPeriod();
+  const [prevGroup,prevSolo]=await Promise.all([snapshot('group',dayBefore(date)),snapshot('solo',dayBefore(date))]);
+  state.milestonePrevious={group:prevGroup,solo:prevSolo};
+  renderSummary();selectAllCategory(state.mode);renderArtists();renderTracks();
+ }catch(error){console.warn('Combined archive date',error);$('coverage').textContent='Could not load that archived date.'}
+ finally{allArchiveDate.disabled=false}
+});
 $('period').addEventListener('change',async()=>{state.period=$('period').value;state.page=0;$('coverage').textContent='Checking saved calendar boundaries…';await applyPeriod();renderTracks()});
 $('prev').addEventListener('click',()=>{state.page--;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
 $('next').addEventListener('click',()=>{state.page++;renderTracks();$('recordings').scrollIntoView({block:'nearest'})});
