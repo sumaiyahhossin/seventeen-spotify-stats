@@ -48,6 +48,17 @@ def check_viewport(driver,width,height):
     click(driver,'#total')
     WebDriverWait(driver,15).until(lambda d:d.execute_script(
         "return !document.querySelector('.svt-history-dialog')?.hidden"))
+    WebDriverWait(driver,30).until(lambda d:d.execute_script("""
+        return document.querySelectorAll('#svtHistoryRows tr').length===10 &&
+          !!document.querySelector('#svtHistoryRows tr:first-child td:first-child');
+    """))
+    # Every date uses the same weight. The earliest date must not be
+    # arbitrarily emphasized just because it is the first table row.
+    first_weight=driver.execute_script("""
+        return Number.parseInt(getComputedStyle(document.querySelector(
+          '#svtHistoryRows tr:first-child td:first-child')).fontWeight,10);
+    """)
+    assert first_weight<=500,f'Oldest history date was unexpectedly bold: {first_weight}'
     click(driver,'.svt-history-close')
     WebDriverWait(driver,15).until(lambda d:d.execute_script(
         "return document.querySelector('.svt-history-dialog')?.hidden===true"))
@@ -518,6 +529,14 @@ def main():
                             return [...document.querySelectorAll('#all-history-body tr')].map(
                               row=>[...row.querySelectorAll('td')].map(cell=>cell.textContent.trim()));
                         """)
+                        if mode=='monthly':
+                            # November is a partial month. Never show a
+                            # comparison with all of October as its "Change".
+                            november=next((row for row in records if row[0]=='Nov 2026'),None)
+                            assert november and '*' in november[1],(
+                                'November month-to-date total must be marked partial',records)
+                            assert november[3]!='—',(
+                                'November month-to-date change should use Oct 1–8',records)
                         assert len(records)==expected,(mode,len(records),records)
                         assert all(len(record)==4 for record in records),(mode,records)
                         valid=sum(any(character.isdigit() for character in record[1])
