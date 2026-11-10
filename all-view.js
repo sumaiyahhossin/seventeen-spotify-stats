@@ -388,10 +388,9 @@ function verifiedGainBetween(scope,id,newer,older,title,releaseDate){
  // A verified counter can decrease after Spotify revises its statistics.
  // Preserve the recorded signed change; do not call it missing streams.
  const gain=a-b;
- if(older.source==='historical spreadsheet'&&newer.source!=='historical spreadsheet'){
-  const days=Math.max(1,Math.round((Date.parse(newer.date)-Date.parse(older.date))/86400000));
-  if(Math.abs(gain)>Math.max(100000*days,a*.05))return null;
- }
+ // The values above are already matched to the exact saved recording.
+ // Do not silently discard real changes because they exceed an arbitrary
+ // daily-growth threshold (particularly a newly released track).
  return gain;
 }
 let periodEpoch=0;
