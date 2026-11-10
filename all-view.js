@@ -657,6 +657,14 @@ async function init(){
    if(savedGroup&&savedSolo){state.group=savedGroup;state.solo=savedSolo;}
   }
   if(picker){picker.min=sharedDates[0]||group.date;picker.max=sharedDates.at(-1)||group.date;picker.value=state.group.date===state.solo.date?state.group.date:'';picker.title='Choose a day with saved OT13 and Units & Solo snapshots';}
+  // Old spreadsheet IDs need the canonical matcher loaded by the OT13/solo app.
+  // A race between the two scripts previously left All with blank historical rows.
+  if(!window.svtSharedMedia?.verifiedSoloLegacyValue){
+   await Promise.race([
+    new Promise(resolve=>window.addEventListener('svt-media-ready',resolve,{once:true})),
+    new Promise(resolve=>setTimeout(resolve,6000))
+   ]);
+  }
   $('period').value=state.period;
   if(typeof allRemembered.query==='string')$('search').value=allRemembered.query;
   if(['streams','least','newest','oldest','title'].includes(allRemembered.sort))$('sort').value=allRemembered.sort;
@@ -692,7 +700,13 @@ for(const id of ['artistMetric','artistScope'])$(id).addEventListener('change',(
 });
 for(const id of ['search','owner','sort','viewType'])$(id).addEventListener(id==='search'?'input':'change',()=>{state.page=0;renderTracks();saveAllViewState()});
 window.svtAllShown=()=>{selectAllCategory(state.mode);if(state.rows.length){renderSummary();renderArtists();renderTracks();}};
-window.addEventListener('svt-media-ready',()=>{if(state.rows.length){renderSummary();renderArtists();renderTracks();}});
+window.addEventListener('svt-media-ready',async()=>{
+ if(!state.rows.length)return;
+ // Rebuild archived values after original history identity metadata becomes ready.
+ buildRows();buildAlbums();buildDiscography();
+ await applyPeriod();
+ renderSummary();renderArtists();renderTracks();
+});
 const allArchiveDate=document.getElementById('all-archiveDate');
 function syncAllDatePicker(){
  if(!allArchiveDate)return;
