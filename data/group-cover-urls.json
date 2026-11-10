@@ -1,4 +1,30 @@
 {
-  "source": "Generated URL cache for Spotify album artwork; may be refreshed by GitHub Actions.",
-  "albums": {}
+  "source": "Spotify album oEmbed thumbnail URLs, with exact-album iTunes fallback. Metadata URLs only; no image downloads.",
+  "albums": {
+    "0fK4XOE0TjcXOcMezZtncZ": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/2e/c0/94/2ec09415-c432-03b6-d032-8854f11dc379/COVER-.jpg/600x600bb.jpg",
+    "0r4WKpapZS9Fit7iJr3XM1": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/f4/ec/96/f4ec9661-c3bf-d38e-2e57-9e63e3d86870/26UMGIM16378.rgb.jpg/600x600bb.jpg",
+    "0uIw1c0E2nyFWWwEVzhl30": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/6b/81/e2/6b81e219-f989-9138-96be-629474d2e843/08809658315175_Cover.jpg/600x600bb.jpg",
+    "1DI66g4SmYOnZQVdZd51Oa": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/d1/66/eb/d166eb7e-7210-b3ff-be39-638cd37bfc89/196922401282_Cover.jpg/600x600bb.jpg",
+    "1WEk8mX0loccWCAcTZqVH8": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/7e/93/76/7e937672-f339-eda1-8d7b-708a0c16acc4/cover-.jpg/600x600bb.jpg",
+    "1pHCzbRvRFg59Kvc7WHckN": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/9b/f6/2d/9bf62d34-9f48-6dbc-082f-7c6fbce89137/COVER-_DS.jpg/600x600bb.jpg",
+    "25osmdhvjltPlN7gI2Javd": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/dd/d4/d4/ddd4d456-4696-06b8-2054-6d1bb6ae6718/192641682551_Cover.jpg/600x600bb.jpg",
+    "2Q4D2Pz1HDt1x4NukBID5Q": "https://is1-ssl.mzstatic.com/image/thumb/Music115/v4/a5/4c/16/a54c1600-09f4-74f1-f12a-e5bae364ca42/192641604041_Cover.jpg/600x600bb.jpg",
+    "2UE9XGbAzicJIyo4bB6sqM": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/f0/69/16/f0691679-835f-8b9b-5baa-292b7e49423f/196922894992_Cover.jpg/600x600bb.jpg",
+    "2dWiIeBifOmLN3r74JwqJ2": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/c0/09/88/c0098841-830a-2f47-7dfc-93342429db56/24UM1IM21475.rgb.jpg/600x600bb.jpg",
+    "2j1Es5qEl4pD8GEe2WsYgP": "https://is1-ssl.mzstatic.com/image/thumb/Music112/v4/9f/26/fa/9f26fae1-c93e-0d47-a0a6-b8543e2a28aa/192641997679_Cover.jpg/600x600bb.jpg",
+    "2kDrUAONMhG6CbDGBkhdrY": "https://is1-ssl.mzstatic.com/image/thumb/Music122/v4/63/26/4d/63264d9a-39a6-f9ce-54a3-3dea0f000b80/192641873812_Cover.jpg/600x600bb.jpg",
+    "2oGLTWJpqJxr1oM8yM5pwO": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/bb/52/bc/bb52bcfc-f885-8fc8-0a86-6f8b132f5df6/cover-.jpg/600x600bb.jpg",
+    "31d4AK9HwMELTaoTZKVz5v": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/75/72/11/757211ee-e2df-e6a9-38a8-2d927f0743e8/20UMGIM18432.rgb.jpg/600x600bb.jpg",
+    "3I5W8iA8iZAyO62UVceK3F": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/3a/e3/00/3ae30006-1988-f65f-03e4-dbdf1d21d12c/21UM1IM47039.rgb.jpg/600x600bb.jpg",
+    "3oTDi9MWC0JB39FcsLRon3": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/e3/76/df/e376df28-c05b-00fd-72de-9d42377a306b/196922628580_Cover.jpg/600x600bb.jpg",
+    "4BHThgh4ODCszIJ6e4YGGw": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/75/7d/b9/757db928-7365-3af7-4a95-22c430d2c10d/cover-.jpg/600x600bb.jpg",
+    "4RWbyug0n12hOVHDxRAj5y": "https://is1-ssl.mzstatic.com/image/thumb/Music126/v4/d3/c9/4c/d3c94ccd-6c20-af5a-403e-40a14b9f3df5/8804775120695_Cover.jpg/600x600bb.jpg",
+    "4ldXW2srmZMpwqy5SayT6i": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/8c/67/da/8c67dae9-2134-d43a-a332-ccd4b9e55ccb/192641597718_Cover.jpg/600x600bb.jpg",
+    "4r08Zd72ZYPcPTOZ8CqPyH": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/32/cb/c4/32cbc434-82b9-6b8e-8cc8-752b554b49f9/cover-.jpg/600x600bb.jpg",
+    "4w25m2448QReLEsiuqhpLt": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/55/6a/d1/556ad1b3-31e5-fe56-1219-84bdc0c9ee34/192641581199_Cover.jpg/600x600bb.jpg",
+    "5jXlUt3NS0iu7pHYPqpK2O": "https://is1-ssl.mzstatic.com/image/thumb/Music114/v4/7a/d5/62/7ad562cd-163b-5658-2258-07b51fc08d8e/20UMGIM66048.rgb.jpg/600x600bb.jpg",
+    "6bk9pQwgyR4ihccicvOL9L": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/05/48/5f/05485f2e-7491-cb2e-6759-4f0620d066c8/20UMGIM18430.rgb.jpg/600x600bb.jpg",
+    "6qEtE4d5SpNuxSPcuFQpno": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/71/f1/26/71f1269f-be8a-dafd-b732-a84c58136d06/cover-.jpg/600x600bb.jpg",
+    "7ppRZp3i4KpK7UHeNLAHrJ": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/15/c3/c5/15c3c59b-22ce-699e-dcb1-23f006cf8410/cover-.jpg/600x600bb.jpg"
+  }
 }
