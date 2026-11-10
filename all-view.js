@@ -738,7 +738,8 @@ async function showAllHistory(row){
  tbody.innerHTML='<tr><td colspan="4">Loading saved history…</td></tr>';
  if(!allHistoryDialog.open)allHistoryDialog.showModal();
  const dates=[];
- if(mode==='daily')for(let i=count-1;i>=-2;i--)dates.push(historyDay(end,-i));
+ if(mode==='daily')for(let i=count-1;i>=0;i--)dates.push(historyDay(end,-i));
+ if(mode==='daily'){dates.push(historyDay(end,-count));dates.push(historyDay(end,-count-1));}
  else{
   const first=historyPeriodStart(end,mode);
   for(let i=count;i>=0;i--){
@@ -765,6 +766,7 @@ async function showAllHistory(row){
  }
  tbody.innerHTML=output.join('');
 }
+document.getElementById('all-recordings')?.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){const element=event.target.closest('[data-all-history]');if(element){event.preventDefault();element.click();}}});
 document.getElementById('all-recordings')?.addEventListener('click',event=>{
  const element=event.target.closest('[data-all-history]');
  if(!element)return;
