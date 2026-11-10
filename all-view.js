@@ -72,6 +72,8 @@ function buildRows(){
    if(/^\d{4}-\d{2}-\d{2}$/.test(releaseDate||'')&&releaseDate>snapshot.date)continue;
    (release.tracks||[]).forEach((id,index)=>{
     if(!validId(id))return;
+    const released=release.track_release_dates?.[id]||releaseDate;
+    if(/^\d{4}-\d{2}-\d{2}$/.test(released||'')&&released>snapshot.date)return;
     // Exclude known legacy aliases from the group catalog. The current
     // collector's canonical IDs are the authoritative recording population.
     if(scope==='group'&&Array.isArray(snapshot.canonical_track_ids)&&
@@ -174,19 +176,34 @@ function buildAlbums(){
  }
  state.albums=result;
 }
-function archivedTrackValue(scope,id,title){
- const snap=state[scope];
+// Compare older spreadsheets by confirmed recording identity, not recycled row IDs.
+function archivedSnapshotValue(snap,scope,id,title){
+ if(!snap||!id)return null;
+ const referenceName=(scope==='group'?latestArchives?.group?.names?.[id]:state.media?.tracks?.[id]?.title)||title||'';
  const direct=snap.tracks?.[id];
- if(Number.isFinite(direct)&&(!snap.source||snap.source!=='historical spreadsheet'||
-    !snap.names?.[id]||sameTitle(snap.names[id])===sameTitle(title)))return direct;
- const normalized=sameTitle(title);
+ const historical=snap.source==='historical spreadsheet';
+ if(Number.isFinite(direct)&&(!historical||
+   (snap.names?.[id]&&sameTitle(snap.names[id])===sameTitle(referenceName))))return direct;
+ if(!historical)return null;
+ if(scope==='solo'){
+  // Original Units & Solo checks workbook owner, song, and duplicate ordinal.
+  const matched=window.svtSharedMedia?.verifiedSoloLegacyValue?.(snap,id);
+  return matched&&Number.isFinite(matched.value)?matched.value:null;
+ }
+ const normalized=sameTitle(referenceName);
  if(!normalized)return null;
- const candidates=Object.entries(snap.names||{}).filter(([key,name])=>
+ const mapped=latestArchives?.group?.baseline_ids_2026_11_05?.[id];
+ if(mapped&&Number.isFinite(snap.tracks?.[mapped])&&sameTitle(snap.names?.[mapped])===normalized)
+  return snap.tracks[mapped];
+ const matches=Object.entries(snap.names||{}).filter(([key,name])=>
   sameTitle(name)===normalized&&Number.isFinite(snap.tracks?.[key])&&
-  (scope==='group'||key===id||state.legacyLinks?.byIndex?.[Number(key.split(':').at(-1))]?.id===id));
- return candidates.length===1? snap.tracks[candidates[0][0]]:
-  candidates.length&&candidates.every(([key])=>snap.tracks[key]===snap.tracks[candidates[0][0]])?
-  snap.tracks[candidates[0][0]]:null;
+  // The saved group archive's legacy keys ending in total are album subtotals.
+  !/\btotal\b/i.test(name));
+ return matches.length&&(matches.length===1||matches.every(([key])=>snap.tracks[key]===snap.tracks[matches[0][0]]))?
+  snap.tracks[matches[0][0]]:null;
+}
+function archivedTrackValue(scope,id,title){
+ return archivedSnapshotValue(state[scope],scope,id,title);
 }
 function buildDiscography(){
  const all=[];
@@ -303,32 +320,8 @@ function boundaryDate(scope,period){
 // the actual song under a separate legacy key (e.g. Water vs Candy).
 // Never subtract two songs merely because their dictionary keys match.
 function verifiedBaselineValue(scope,id,baseline){
- if(!baseline?.tracks)return null;
- const currentName=scope==='group'?(latestArchives?.group?.names?.[id]||state.rows.find(r=>r.id===id)?.title):
-  (state.media.tracks?.[id]?.title||state.rows.find(r=>r.id===id)?.title);
- const title=sameTitle(currentName);
- if(!title)return null;
- const recorded=baseline.tracks[id],recordedName=baseline.names?.[id];
- // Modern Spotify snapshots have stable ID identities. Older imported
- // archives require a title match, not just a key match.
- if(Number.isFinite(recorded)&&
-    ((!baseline.names&&!baseline.source)||
-     (recordedName&&sameTitle(recordedName)===title)))
-  return recorded;
- const candidates=[];
- for(const [oldId,oldName] of Object.entries(baseline.names||{})){
-  if(sameTitle(oldName)!==title||!Number.isFinite(baseline.tracks[oldId]))continue;
-  if(scope==='solo'){
-   const index=Number(oldId.split(':').at(-1));
-   const linked=state.legacyLinks?.byIndex?.[index]?.id;
-   // Shared solo titles are ambiguous without an explicit workbook mapping.
-   if(linked!==id)continue;
-  }
-  candidates.push(baseline.tracks[oldId]);
- }
- // Multiple keys for identical values are a verified duplicate edition;
- // distinct values with the same title may represent different recordings.
- return candidates.length&&candidates.every(n=>n===candidates[0])?candidates[0]:null;
+ const title=scope==='group'?latestArchives?.group?.names?.[id]:state.media?.tracks?.[id]?.title;
+ return archivedSnapshotValue(baseline,scope,id,title||'');
 }
 async function applyPeriod(){
  const metricBaselines=await Promise.all(['group','solo'].map(scope=>state.period==='overall'?Promise.resolve(null):snapshot(scope,boundaryDate(scope,state.period))));
@@ -728,13 +721,8 @@ const historyPeriodShift=(date,mode,offset)=>{const d=new Date(date+'T12:00:00Z'
 function historySnapshotValue(snap,row){
  if(!snap)return null;
  const ids=row.ids||[row.id];
- const values=ids.map(id=>{
-  const name=id===row.id?row.title:(row.scope==='group'?latestArchives?.group?.names?.[id]:state.media.tracks?.[id]?.title);
-  const direct=snap.tracks?.[id];
-  if(Number.isFinite(direct)&&(!snap.source||snap.source!=='historical spreadsheet'||(snap.names?.[id]&&sameTitle(snap.names[id])===sameTitle(name))))return direct;
-  const matches=Object.entries(snap.names||{}).filter(([key,title])=>sameTitle(title)===sameTitle(name)&&Number.isFinite(snap.tracks?.[key])&&(row.scope==='group'||key===id||state.legacyLinks?.byIndex?.[Number(key.split(':').at(-1))]?.id===id));
-  return matches.length===1||matches.length&&matches.every(([key])=>snap.tracks[key]===snap.tracks[matches[0][0]])?snap.tracks[matches[0][0]]:null;
- });
+ const values=ids.map(id=>archivedSnapshotValue(snap,row.scope,id,
+  id===row.id?row.title:row.scope==='group'?latestArchives?.group?.names?.[id]:state.media?.tracks?.[id]?.title));
  return values.length&&values.every(Number.isFinite)?values.reduce((a,b)=>a+b,0):null;
 }
 let historyRequest=0;
