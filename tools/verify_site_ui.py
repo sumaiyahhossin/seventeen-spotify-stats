@@ -411,8 +411,19 @@ def main():
                         picker.value='2026-11-07';
                         picker.dispatchEvent(new Event('change',{bubbles:true}));
                     """)
-                    WebDriverWait(driver,45).until(lambda d:
-                        'Nov 7, 2026' in d.find_element(By.ID,'all-summaryDate').text)
+                    try:
+                        WebDriverWait(driver,25).until(lambda d:
+                            'Nov 7, 2026' in d.find_element(By.ID,'all-summaryDate').text)
+                    except Exception:
+                        print('Archive date loading diagnosis:',driver.execute_script("""
+                            return {summary:document.getElementById('all-summaryDate')?.textContent,
+                             selected:document.getElementById('all-archiveDate')?.value,
+                             period:document.getElementById('all-period')?.value,
+                             coverage:document.getElementById('all-coverage')?.textContent,
+                             state:window.svtAllAudit?.(),
+                             url:location.href};
+                        """),flush=True)
+                        raise
                     driver.execute_script("""
                         const period=document.getElementById('all-period');
                         period.value='daily';period.dispatchEvent(new Event('change',{bubbles:true}));
