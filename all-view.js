@@ -578,7 +578,9 @@ function renderTracks(){
   isAlbum?'Every saved album':'Every saved recording';
  $('catalogModeLabel').textContent=isDiscography?'Discography · Group, Members & Units':
   isAlbum?'Album Rankings · All Artists':'Track Rankings · All Artists';
- $('gainTitle').textContent=period==='overall'?'TOTAL STREAMS':period.toUpperCase()+' GAIN';
+ $('totalTitle').textContent='TOTAL STREAMS';
+ $('gainTitle').hidden=period==='overall';
+ $('gainTitle').textContent=period.toUpperCase()+' STREAMS ADDED';
  const date=state.group.date,from=boundaryDate('group',period);
  const periodRange=period==='overall'?'all-time totals':
   (from&&date?dayBefore(date)>from?dayBefore(date):date:date);
@@ -609,7 +611,8 @@ function renderTracks(){
    '" data-cover-name="'+name+'" data-cover-kind="'+(isAlbum?'album':'track')+
    '" alt="'+name+' cover" loading="lazy"><span class="cover-placeholder" hidden></span></span>'+
    '<div class="svt-all-record-copy">'+link+'<div class="svt-all-sub">'+esc(sub)+
-   '</div></div></div></td><td class="svt-all-num" data-all-history="'+sourceRows.indexOf(row)+'" tabindex="0" role="button" title="View saved stream history">'+printed+'</td></tr>';
+   '</div></div></div></td><td class="svt-all-num svt-all-stream-total" data-all-history="'+sourceRows.indexOf(row)+'" tabindex="0" role="button" title="View saved stream history">'+printTotal+'</td>'+
+   (period==='overall'?'':'<td class="svt-all-num '+gainColor+'" data-all-history="'+sourceRows.indexOf(row)+'" tabindex="0" role="button" title="View saved stream history">'+printGain+'</td>')+'</tr>';
  }).join('')||'<tr><td colspan="2" class="svt-all-status">No matching '+(isDiscography?'releases':isAlbum?'albums':'recordings')+'.</td></tr>';
  $('pageInfo').textContent=(state.page+1)+' / '+totalPages;
  $('prev').disabled=state.page===0;$('next').disabled=state.page+1>=totalPages;
