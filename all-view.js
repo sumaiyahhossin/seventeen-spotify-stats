@@ -20,7 +20,7 @@ const unique=arr=>[...new Set(arr)];
 const artistIds=[['SEVENTEEN','7nqOGRxlXj7N2JYbgNEjYH'],['S.Coups',null],['Jeonghan','6KDLlQYeeqUe5OQ2JrdNzF'],['Joshua','74AwWFYdjQ3ER5vHO4H7b0'],['Jun','38Gn0ZVC8TQwuaMxBK1yRV'],['Hoshi','6nWKAdMv1BDq1zHfZzkdbR'],['Wonwoo','3rHcBT06Vb1XGVUWhDALZt'],['Woozi','4TdiASPlU3QdZvGQBothcQ'],['Dokyeom','7G1kUsPtQCdolV6CPwHmh2'],['Mingyu','5gUpo0BRmo6EOTbyU3z5Ay'],['The8','4DqFd6XE3dX4LWXHJVVpLk'],['Seungkwan','0Vb2DjojEYsasFpc3aTZb6'],['Vernon','2Y34b9AOK30zXgL7cAH4NG'],['Dino','5YaeXxzvqGNBCguELlKo6G'],['BSS','1uAT5bTSp6dWbNmixIUP5t'],['JxW','7GvlsjcgBrsE578yghOq7D'],['HxW','1EReYiseDwE51FzGm7EK9n'],['CxM','7kjuLdYbtTkWBToMu2ebZN'],['DxS','4wBjmEkWhY4T22q00CiF5V'],['V8',null],['Picheolin','3V2EC4dPYLgtbi0TtrB1RA'],['JxJ',null]];
 const members=new Set(artistIds.slice(1,14).map(x=>x[0]));
 const units=new Set(artistIds.slice(14).map(x=>x[0]));
-const state={catalog:null,group:null,solo:null,media:null,followers:{},manifest:null,rows:[],albums:[],albumSpecs:[],legacyLinks:null,milestoneEvidence:{byName:{},byTrack:{}},milestonePrevious:{},milestoneMode:'reached',milestonePage:0,snapshots:new Map(),page:0,limit:50,period:'overall'};
+const state={catalog:null,group:null,solo:null,media:null,followers:{},manifest:null,rows:[],albums:[],discography:[],mode:'tracks',albumSpecs:[],legacyLinks:null,milestoneEvidence:{byName:{},byTrack:{}},milestonePrevious:{},milestoneMode:'reached',milestonePage:0,snapshots:new Map(),page:0,limit:50,period:'overall'};
 async function read(path){const r=await fetch(path,{cache:'no-cache'});if(!r.ok)throw new Error(path+' returned '+r.status);return r.json()}
 function nameFromRelease(release,id,index){
  const official=release.track_titles?.[id];
@@ -150,6 +150,49 @@ function buildAlbums(){
  }
  state.albums=result;
 }
+function buildDiscography(){
+ const all=[];
+ // Each official release and track appearance stays visible. This catalog
+ // is a list of release appearances, never the source for combined totals.
+ const validSolo=new Set(Object.keys(state.solo.tracks||{}));
+ const validGroup=new Set(state.group.canonical_track_ids||Object.keys(state.group.tracks||{}));
+ const canonical=new Map(state.rows.map(row=>[row.id,row]));
+ for(const scope of ['group','solo']){
+  const snap=state[scope],valid=scope==='group'?validGroup:validSolo;
+  const releases=(state.catalog[scope]||[]).filter(item=>
+   item.key!=='sharedTracks'&&item.key!=='gilboard'&&!item.is_placeholder);
+  const seenReleases=new Set();
+  for(const release of releases){
+   const key=scope+':'+release.key;
+   if(seenReleases.has(key))continue;
+   seenReleases.add(key);
+   const ids=unique((release.tracks||[]).filter(id=>validId(id)&&valid.has(id)));
+   if(!ids.length)continue;
+   const owner=scope==='group'?'SEVENTEEN':
+    artistIds.find(([name])=>name.toLowerCase()===String(release.artist||'').toLowerCase())?.[0]||
+    release.artist||'Unassigned solo/unit';
+   const name=typeof catalogReleaseLabel==='function'?
+    catalogReleaseLabel(release):String(release.title||release.key);
+   const date=scope==='group'?
+    (groupOriginalReleaseDates[release.key]||groupStandaloneReleaseDates[release.key]||release.release_date||null):
+    (release.release_date||release.releaseDate||null);
+   const streams=ids.every(id=>Number.isFinite(snap.tracks?.[id]))?
+    ids.reduce((sum,id)=>sum+snap.tracks[id],0):null;
+   const isAlbum=/\b(album|mini|ep|repackage|best|compilation)\b/i.test(String(release.title||''));
+   // A header separates release editions in the same order as OT13/solo Discography.
+   all.push({kind:'album',title:name,scope,releaseKey:release.key,
+    owners:[owner],releaseNames:[name],date,streams,ids,discographyHeader:true});
+   for(const id of ids){
+    const row=canonical.get(id);
+    const title=scope==='group'?snap.names?.[id]:state.media.tracks?.[id]?.title;
+    all.push({id,title:normalizeTitle(title||row?.title||id),kind:'track',scope,
+     owners:row?.owners?.length?row.owners:[owner],releaseNames:[name],date:release.track_release_dates?.[id]||date,
+     releaseKey:release.key,streams:snap.tracks?.[id]??null,discographyTrack:true});
+   }
+  }
+ }
+ state.discography=all;
+}
 async function snapshot(scope,date){
  const key=scope+'-'+date;
  if(state.snapshots.has(key))return state.snapshots.get(key);
@@ -208,7 +251,7 @@ function verifiedBaselineValue(scope,id,baseline){
  return candidates.length&&candidates.every(n=>n===candidates[0])?candidates[0]:null;
 }
 async function applyPeriod(){
- const rows=[...state.rows,...state.albums],period=state.period;
+ const rows=[...state.rows,...state.albums,...state.discography],period=state.period;
  if(period==='overall'){rows.forEach(row=>row.gain=null);return}
  const boundaries=await Promise.all(['group','solo'].map(async scope=>
   snapshot(scope,boundaryDate(scope,period))));
@@ -252,6 +295,8 @@ function renderSummary(){
    {timeZone:'UTC',year:'numeric',month:'short',day:'numeric'}):'—';
  const sameDay=!!groupDate&&groupDate===soloDate;
  $('summaryDate').textContent=sameDay?dateFormat(groupDate):'See dates below';
+ $('toolbarDate').textContent=sameDay?dateFormat(groupDate):
+  'OT13 '+(groupDate||'—')+' · Solo '+(soloDate||'—');
  $('summaryDateNote').textContent=sameDay?'Both archives · '+groupDate:
   'OT13 '+(groupDate||'—')+' · Unit/Solo '+(soloDate||'—');
  const prev=state.milestonePrevious||{};
@@ -511,7 +556,7 @@ async function init(){
   buildRows();
   for(const extra of admin.releases||[])if(extra.scope==='solo'&&extra.release_type==='album')
    state.albumSpecs.push({key:extra.key,displayName:extra.title,releaseDate:extra.release_date,owners:[extra.artist],tracks:extra.tracks});
-  buildAlbums();
+  buildAlbums();buildDiscography();
   const names=unique(state.rows.flatMap(r=>r.owners)).filter(x=>x!=='Unassigned solo/unit').sort((a,b)=>a.localeCompare(b));
   $('owner').innerHTML='<option value="all">All recordings</option>'+names.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('');
   await applyPeriod();renderArtists();renderTracks();
