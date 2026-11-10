@@ -194,6 +194,13 @@
         "source": "ChartMasters Spotify streams milestone",
         "url": "https://chartmasters.org/artist/seventeen/"
       }
+    },
+    "name:lovemoneyfame": {
+      "100000000": {
+        "date": "2026-02-06",
+        "source": "ChartMasters, 100M Spotify threshold on February 6, 2026; independently confirmed by February 8 reports citing the February 6 total",
+        "url": "https://chartmasters.org/artist/seventeen/"
+      }
     }
   },
   "byTrack": {
