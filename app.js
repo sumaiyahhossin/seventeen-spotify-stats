@@ -901,6 +901,21 @@ function discographyRows(s,p,pp,baseline){
    }
   }else rows.push(albumTotalRow);
  }
+ // Discography rows are built in oldest-first release order. Reverse entire
+ // release groups for newest-first; do not reverse songs within an album.
+ if(sortOrder==='newest'){
+  const blocks=[];
+  let currentBlock=null;
+  for(const row of rows){
+   const release=row.artworkRelease||'unknown';
+   if(!currentBlock||currentBlock.key!==release){
+    currentBlock={key:release,rows:[]};
+    blocks.push(currentBlock);
+   }
+   currentBlock.rows.push(row);
+  }
+  return blocks.reverse().flatMap(block=>block.rows);
+ }
  return rows;
 }
 const requestedGroupAlbums=[{"name":"1st Best Album - 17 IS RIGHT HERE","keys":["g49","g50","g51","g52","g53","g54"]},{"name":"Repackage Album - SECTOR 17","keys":["g36","g37"]},{"name":"4th Full Album - Face the Sun","keys":["g35"]},{"name":"1st Full Repackage Album - LOVE & LETTER","keys":["g6","g7"]},{"name":"10th Mini Album - FML","keys":["g41"]},{"name":"9th Mini Album - Attacca","keys":["g32"]},{"name":"2nd Full Album - TEEN, AGE","keys":["g10"]},{"name":"3rd Full Album - An Ode","keys":["g20"]},{"name":"7th Mini Album - Heng:garæ","keys":["g23"]},{"name":"1st Japanese Best Album - ALWAYS YOURS","keys":["g43","g44"]},{"name":"4th Mini Album - Al1","keys":["g9"]},{"name":"6th Mini Album - YOU MADE MY DAWN","keys":["g16"]},{"name":"8th Mini Album - Your Choice","keys":["g29"]},{"name":"5th Full Album - HAPPY BURSTDAY","keys":["g59"]},{"name":"1st Full Album - LOVE & LETTER","keys":["g5"]},{"name":"3rd Mini Album - Going Seventeen","keys":["g8"]},{"name":"11th Mini Album - SEVENTEENTH HEAVEN","keys":["g46"]},{"name":"2nd Special Album - ; [Semicolon]","keys":["g27"]},{"name":"5th Mini Album - YOU MAKE MY DAY","keys":["g13"]},{"name":"12th Mini Album - SPILL THE FEELS","keys":["g56"]},{"name":"1st Special Album - DIRECTOR'S CUT","keys":["g11"]},{"name":"1st Mini Album - 17 CARAT","keys":["g1"]},{"name":"2nd Mini Album - BOYS BE","keys":["g2"]},{"name":"2nd Japanese Single Album - Fallin' Flower","keys":["g22"]},{"name":"1st Japanese Mini Album - WE MAKE YOU","keys":["g12"]},{"name":"2nd Japanese Mini Album - 24H","keys":["g25"]},{"name":"3rd Japanese Single Album - Hitorijanai","keys":["g28"]},{"name":"1st Japanese Single Album - Happy Ending","keys":["g18"]},{"name":"1st Japanese EP Album - DREAM","keys":["g39"]},{"name":"4th Japanese Single Album - Power of Love","keys":["g33"]},{"name":"5th Japanese Single Album - Shohikigen","keys":["g58"]}];
