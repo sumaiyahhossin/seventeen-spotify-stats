@@ -908,7 +908,7 @@ async function showAllHistory(row){
  const end=row.scope==='all'?(state.group.date===state.solo.date?state.group.date:state.group.date<state.solo.date?state.group.date:state.solo.date):state[row.scope].date;
  const tbody=document.getElementById('all-history-body');
  document.getElementById('all-history-title').textContent=row.title||'Combined streams';
- document.getElementById('all-history-note').textContent='Last '+count+' '+(mode==='monthly'?'months':mode==='weekly'?'weeks':'days')+' through '+displayDate(end)+' · verified saved observations only. * means a verified subset or incomplete period, not a full historical total. Missing values are —.';
+ document.getElementById('all-history-note').textContent='Last '+count+' '+(mode==='monthly'?'months':mode==='weekly'?'weeks':'days')+' through '+displayDate(end)+' · verified saved observations only. * means a verified subset or incomplete period, not a full historical total. Unrecorded dates are labeled; missing comparisons show —.';
  tbody.innerHTML='<tr><td colspan="4">Loading saved history…</td></tr>';
  if(!allHistoryDialog.open)allHistoryDialog.showModal();
  const periods=[];
@@ -940,6 +940,11 @@ async function showAllHistory(row){
  const signed=n=>Number.isFinite(n)?(n>0?'+':'')+fmt(n):'—';
  const tone=n=>Number.isFinite(n)?n>0?'svt-gain-positive':n<0?'svt-gain-negative':'svt-gain-neutral':'svt-gain-neutral';
  const output=[];
+ const hasSavedDate=(scope,date)=>!!date&&(scope==='group'?
+  (state.manifest?.dates||[]).includes(date):
+  scope==='solo'?[...(state.manifest?.solo_dates||[]),...(state.manifest?.solo_legacy_dates||[])].includes(date):
+  (state.manifest?.dates||[]).includes(date)&&
+   [...(state.manifest?.solo_dates||[]),...(state.manifest?.solo_legacy_dates||[])].includes(date));
  for(let i=0;i<count;i++){
   const current=mode==='daily'?periods[i+2]:periods[i+1];
   const prev=mode==='daily'?periods[i+1]:periods[i];
@@ -985,7 +990,9 @@ async function showAllHistory(row){
   const partial=(mode!=='daily'&&(current.partial||prev.partial))||
    (isCombined&&!pair.complete);
   const label=current.label;
-  output.push('<tr><td>'+esc(label)+'</td><td>'+fmt(total)+(!completeTotal&&Number.isFinite(total)?'*':'')+
+  const recorded=hasSavedDate(row.scope,current.date);
+  const totalLabel=!recorded?'Not recorded':fmt(total)+(!completeTotal&&Number.isFinite(total)?'*':'');
+  output.push('<tr><td>'+esc(label)+'</td><td>'+totalLabel+
    '</td><td class="'+tone(gain)+'">'+signed(gain)+(partial&&Number.isFinite(gain)?'*':'')+
    '</td><td class="'+tone(change)+'">'+signed(change)+(partial&&Number.isFinite(change)?'*':'')+'</td></tr>');
  }
