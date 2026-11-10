@@ -41,7 +41,21 @@ subprocess.run(['javac','-cp',os.environ['COLLECTOR_CLASSPATH'],'-d',str(ROOT/'b
 # Only the first catalog track determines whether to start the full group scan.
 # A missing baseline falls back to the normal full collection.
 collector_env=os.environ.copy()
-if kind in ('group','solo') and previous:
+# Fast single-song probes save hours of scanning, but they can miss a partial
+# Spotify refresh when that particular song stays unchanged. Cross-check the
+# entire catalog at least every four hours while a date remains pending.
+last_full_scan=entry.get('last_full_scan')
+try:
+    last_full_at=datetime.datetime.fromisoformat(last_full_scan) if last_full_scan else None
+    last_full_age=now-last_full_at.astimezone(TZ) if last_full_at else None
+except (ValueError,TypeError):
+    last_full_age=None
+full_scan=force_collect or last_full_age is None or last_full_age>=datetime.timedelta(hours=4)
+if full_scan:
+    collector_env.pop('SVT_FIRST_TRACK_PREVIOUS',None)
+    entry['last_full_scan']=now.isoformat()
+    print(f'{kind}: full catalog verification (force={force_collect}, fallback for partial Spotify updates)',flush=True)
+elif kind in ('group','solo') and previous:
     first_id='4BHThgh4ODCszIJ6e4YGGw' if kind=='group' else '1beUALLSloBEvYre65QiW6'
     first_old=previous.get('tracks',{}).get(first_id)
     if first_old is None and kind=='solo' and previous.get('source')=='historical spreadsheet':
@@ -50,7 +64,7 @@ if kind in ('group','solo') and previous:
         collector_env['SVT_FIRST_TRACK_PREVIOUS']=str(first_old)
 result=subprocess.run(['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],classname],capture_output=True,text=True,timeout=18000,env=collector_env)
 if 'STAT_FIRST_UNCHANGED|' in result.stdout or 'STAT_FIRST_PROBE_FAILED|' in result.stdout:
-    print(kind,': first song has not refreshed (or probe failed); retry next hour')
+    print(kind,': fast probe has not refreshed (or failed); periodic full scan remains scheduled')
     entry['last_attempt']=now.isoformat()
     state_path.write_text(json.dumps(state,indent=2))
     sys.exit(0)
