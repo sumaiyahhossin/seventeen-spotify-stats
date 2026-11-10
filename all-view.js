@@ -219,9 +219,35 @@ function uncachedArchivedSnapshotValue(snap,scope,id,title){
    (snap.names?.[id]&&sameTitle(snap.names[id])===sameTitle(referenceName))))return direct;
  if(!historical)return null;
  if(scope==='solo'){
-  // Original Units & Solo checks workbook owner, song, and duplicate ordinal.
-  const matched=window.svtSharedMedia?.verifiedSoloLegacyValue?.(snap,id);
-  return matched&&Number.isFinite(matched.value)?matched.value:null;
+  // Original Units & Solo checks workbook owner, title and duplicate ordinal.
+  const verified=window.svtSharedMedia?.verifiedSoloLegacyValue;
+  const matched=verified?.(snap,id);
+  if(matched&&Number.isFinite(matched.value))return matched.value;
+
+  // Pre-August GILBOARD singles are the same two Spotify recordings as
+  // the album edition (confirmed equal cumulative counts and catalog IDs).
+  // Earlier workbooks contain only their single-edition identifiers.
+  const prereleaseSingle={
+   '34wTGQ1yV5XtrSMR5dMLWY':'594CTGIIVVTitwRhQJcWgM',
+   '5W1bn5PzFgKok4GAZ1JUAw':'3Y0ZwgYVHuwbW0JGjsYodR'
+  }[id];
+  if(prereleaseSingle&&snap.date<'2026-08-03'){
+   const earlier=verified?.(snap,prereleaseSingle);
+   if(earlier&&Number.isFinite(earlier.value))return earlier.value;
+  }
+
+  // Early BSS workbooks (through April 2026) accidentally wrote the
+  // Good Day track and its subtotal under TWO identical track labels.
+  // Both saved observations have the same exact number. Use that verified
+  // number once; never sum duplicate rows or infer missing tracks.
+  if(id==='4SinziOMDPR58wWHakWP9v'&&snap.date<'2026-05-01'){
+   const matches=Object.entries(snap.names||{}).filter(([key,name])=>
+    sameTitle(name)==='goodday2025telepathybythemoonlightwindow'&&
+    Number.isFinite(snap.tracks?.[key]));
+   if(matches.length===2&&snap.tracks[matches[0][0]]===snap.tracks[matches[1][0]])
+    return snap.tracks[matches[0][0]];
+  }
+  return null;
  }
  const normalized=sameTitle(referenceName);
  if(!normalized)return null;
