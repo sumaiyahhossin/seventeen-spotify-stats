@@ -83,10 +83,10 @@ function buildRows(){
     if(release.title)row.releaseNames.add(originalAllReleaseTitle(release));
     const date=release.track_release_dates?.[id]||releaseDate;
     if(/^\d{4}-\d{2}-\d{2}$/.test(date||'')&&(!row.date||date<row.date))row.date=date;
-    const title=scope==='group'?snapshot.names?.[id]:state.media.tracks?.[id]?.title;
+    const title=scope==='group'?(latestArchives?.group?.names?.[id]||nameFromRelease(release,id,index)||snapshot.names?.[id]):state.media.tracks?.[id]?.title;
     const candidate=title||nameFromRelease(release,id,index);
     if(candidate&&(!row.title||(scope===row.scope&&title)))row.title=originalAllTrackTitle(candidate,scope,id);
-    const count=snapshot.tracks?.[id];
+    const count=archivedTrackValue(scope,id,candidate||'');
     if(Number.isFinite(count)&&count>=0)row.streams=count;
    });
   }
@@ -97,8 +97,8 @@ function buildRows(){
    if(scope==='group'&&Array.isArray(snapshot.canonical_track_ids)&&!snapshot.canonical_track_ids.includes(id))continue;
    let row=byId.get(id);
    if(!row){row={id,scope,owners:new Set([scope==='group'?'SEVENTEEN':'Unassigned solo/unit']),releaseNames:new Set(),date:null,title:null,streams:null};byId.set(id,row)}
-   if(row.streams==null)row.streams=count;
-   if(!row.title)row.title=originalAllTrackTitle(snapshot.names?.[id]||state.media.tracks?.[id]?.title||'',scope,id);
+   if(row.streams==null&&(!snapshot.source||snapshot.source!=='historical spreadsheet'))row.streams=count;
+   if(!row.title)row.title=originalAllTrackTitle((scope==='group'?latestArchives?.group?.names?.[id]:state.media.tracks?.[id]?.title)||snapshot.names?.[id]||'',scope,id);
   }
  }
  // Shared unit tracks can belong to multiple artist views, without
@@ -181,7 +181,7 @@ function archivedTrackValue(scope,id,title){
  if(!normalized)return null;
  const candidates=Object.entries(snap.names||{}).filter(([key,name])=>
   sameTitle(name)===normalized&&Number.isFinite(snap.tracks?.[key])&&
-  (scope==='group'||state.legacyLinks?.byIndex?.[Number(key.split(':').at(-1))]?.id===id));
+  (scope==='group'||key===id||state.legacyLinks?.byIndex?.[Number(key.split(':').at(-1))]?.id===id));
  return candidates.length===1? snap.tracks[candidates[0][0]]:
   candidates.length&&candidates.every(([key])=>snap.tracks[key]===snap.tracks[candidates[0][0]])?
   snap.tracks[candidates[0][0]]:null;
@@ -216,7 +216,7 @@ function buildDiscography(){
     (groupOriginalReleaseDates[release.key]||groupStandaloneReleaseDates[release.key]||release.release_date||null):
     (release.release_date||release.releaseDate||null);
    if(/^\d{4}-\d{2}-\d{2}$/.test(date||'')&&date>snap.date)continue;
-   const releaseValues=ids.map((id,i)=>archivedTrackValue(scope,id,scope==='group'?(snap.names?.[id]||nameFromRelease(release,id,i)||state.group.names?.[id]||''):(state.media.tracks?.[id]?.title||'')));
+   const releaseValues=ids.map((id,i)=>archivedTrackValue(scope,id,scope==='group'?(latestArchives?.group?.names?.[id]||nameFromRelease(release,id,i)||''):(state.media.tracks?.[id]?.title||'')));
    const streams=releaseValues.every(Number.isFinite)?releaseValues.reduce((sum,n)=>sum+n,0):null;
    const isAlbum=/\b(album|mini|ep|repackage|best|compilation)\b/i.test(String(release.title||''));
    // A header separates release editions in the same order as OT13/solo Discography.
@@ -224,7 +224,7 @@ function buildDiscography(){
 
    for(const id of ids){
     const row=canonical.get(id);
-    const title=scope==='group'?(snap.names?.[id]||state.group.names?.[id]||row?.title):state.media.tracks?.[id]?.title;
+    const title=scope==='group'?(latestArchives?.group?.names?.[id]||row?.title||nameFromRelease(release,id,ids.indexOf(id))):state.media.tracks?.[id]?.title;
     all.push({id,title:originalAllTrackTitle(title||row?.title||id,scope,id),kind:'track',scope,
      owners:row?.owners?.length?row.owners:[owner],releaseNames:[name],date:release.track_release_dates?.[id]||date,
      releaseKey:release.key,streams:archivedTrackValue(scope,id,title||row?.title||''),
@@ -302,7 +302,7 @@ function boundaryDate(scope,period){
 // Never subtract two songs merely because their dictionary keys match.
 function verifiedBaselineValue(scope,id,baseline){
  if(!baseline?.tracks)return null;
- const currentName=scope==='group'?state.group.names?.[id]:
+ const currentName=scope==='group'?(latestArchives?.group?.names?.[id]||state.rows.find(r=>r.id===id)?.title):
   (state.media.tracks?.[id]?.title||state.rows.find(r=>r.id===id)?.title);
  const title=sameTitle(currentName);
  if(!title)return null;
@@ -339,8 +339,8 @@ async function applyPeriod(){
  for(const row of rows){
   const ids=row.ids||[row.id],now=state[row.scope].tracks,old=baselines[row.scope];
   const deltas=ids.map(id=>{
-   const title=row.kind==='track'?row.title:(row.scope==='group'?state.group.names?.[id]:state.media.tracks?.[id]?.title);
-   const a=row.kind==='track'&&row.discographyTrack?row.streams:now?.[id];
+   const title=row.kind==='track'?row.title:(row.scope==='group'?latestArchives?.group?.names?.[id]:state.media.tracks?.[id]?.title);
+   const a=row.kind==='track'&&row.discographyTrack?row.streams:archivedTrackValue(row.scope,id,title||'');
    let b=verifiedBaselineValue(row.scope,id,old);
    if(!Number.isFinite(b)&&old?.names&&title){
     const matches=Object.entries(old.names).filter(([key,name])=>sameTitle(name)===sameTitle(title)&&Number.isFinite(old.tracks?.[key])&&
