@@ -384,11 +384,13 @@ function verifiedGainBetween(scope,id,newer,older,title,releaseDate){
  // Only use zero when its verified release date is later than the baseline.
  const a=released&&newer.date<releaseDate?0:archivedSnapshotValue(newer,scope,id,title);
  const b=released&&older.date<releaseDate?0:archivedSnapshotValue(older,scope,id,title);
- if(!Number.isFinite(a)||!Number.isFinite(b)||a<b)return null;
+ if(!Number.isFinite(a)||!Number.isFinite(b))return null;
+ // A verified counter can decrease after Spotify revises its statistics.
+ // Preserve the recorded signed change; do not call it missing streams.
  const gain=a-b;
  if(older.source==='historical spreadsheet'&&newer.source!=='historical spreadsheet'){
   const days=Math.max(1,Math.round((Date.parse(newer.date)-Date.parse(older.date))/86400000));
-  if(gain>Math.max(100000*days,a*.05))return null;
+  if(Math.abs(gain)>Math.max(100000*days,a*.05))return null;
  }
  return gain;
 }
@@ -908,7 +910,7 @@ async function showAllHistory(row){
  const end=row.scope==='all'?(state.group.date===state.solo.date?state.group.date:state.group.date<state.solo.date?state.group.date:state.solo.date):state[row.scope].date;
  const tbody=document.getElementById('all-history-body');
  document.getElementById('all-history-title').textContent=row.title||'Combined streams';
- document.getElementById('all-history-note').textContent='Last '+count+' '+(mode==='monthly'?'months':mode==='weekly'?'weeks':'days')+' through '+displayDate(end)+' · verified saved observations only. * means a verified subset or incomplete period, not a full historical total. Unrecorded dates are labeled; missing comparisons show —.';
+ document.getElementById('all-history-note').textContent='Last '+count+' '+(mode==='monthly'?'months':mode==='weekly'?'weeks':'days')+' through '+displayDate(end)+' · verified saved observations only. * means a verified subset or incomplete period, not a full historical total. Unrecorded dates are labeled; missing comparisons show —. Pink negative changes reflect recorded counter decreases or revisions.';
  tbody.innerHTML='<tr><td colspan="4">Loading saved history…</td></tr>';
  if(!allHistoryDialog.open)allHistoryDialog.showModal();
  const periods=[];
@@ -967,10 +969,10 @@ async function showAllHistory(row){
      else continue;
     }
     const difference=value-earlier;
-    if(difference<0)continue;
+    // Preserve verified downward corrections rather than dropping the date.
     // An edition swap or workbook mapping jump is not a streaming increase.
     const elapsed=a.date&&b.date?Math.max(1,Math.round((Date.parse(a.date)-Date.parse(b.date))/86400000)):1;
-    if(difference>Math.max(100000*elapsed,value*.05))continue;
+    if(Math.abs(difference)>Math.max(100000*elapsed,value*.05))continue;
     gain+=difference;count++;
    }
    return {gain:count?gain:null,complete:a.complete&&b.complete&&count===a.eligible};
@@ -982,9 +984,9 @@ async function showAllHistory(row){
   const oldPair=isCombined?comparable(previous,older):null;
   const releasedNow=!isCombined&&row.date&&current.date>=row.date&&prev.date<row.date;
   const gain=isCombined?pair.gain:
-   Number.isFinite(total)&&(releasedNow?total:Number.isFinite(previous)&&total>=previous?total-previous:null);
+   Number.isFinite(total)&&(releasedNow?total:Number.isFinite(previous)?total-previous:null);
   const oldGain=isCombined?oldPair.gain:
-   Number.isFinite(previous)&&Number.isFinite(older)&&previous>=older?previous-older:null;
+   Number.isFinite(previous)&&Number.isFinite(older)?previous-older:null;
   const change=(!isCombined||pair.complete&&oldPair.complete)&&
    Number.isFinite(gain)&&Number.isFinite(oldGain)?gain-oldGain:null;
   const partial=(mode!=='daily'&&(current.partial||prev.partial))||
