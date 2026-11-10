@@ -796,14 +796,18 @@ async function historyValueAt(date,row){
  if(row.scope==='all'){
   const [group,solo]=await Promise.all(['group','solo'].map(scope=>snapshot(scope,date)));
   if(!group||!solo)return null;
-  let total=0,matched=0;
+  let total=0,matched=0,eligible=0;
+  const values=Object.create(null);
   for(const track of state.rows){
    if(track.date&&track.date>date)continue;
+   eligible++;
    const value=historySnapshotValue(track.scope==='group'?group:solo,track);
-   if(!Number.isFinite(value))return null;
-   total+=value;matched++;
+   if(!Number.isFinite(value))continue;
+   total+=value;matched++;values[track.id]=value;
   }
-  return matched?total:null;
+  // Historical workbook mismatches should not erase every known observation.
+  // A partial total is visibly marked and never described as the complete total.
+  return matched?{total,matched,eligible,complete:matched===eligible,values}:null;
  }
  if(row.date&&date<row.date)return null;
  return historySnapshotValue(await snapshot(row.scope,date),row);
@@ -815,7 +819,7 @@ async function showAllHistory(row){
  const end=row.scope==='all'?(state.group.date===state.solo.date?state.group.date:state.group.date<state.solo.date?state.group.date:state.solo.date):state[row.scope].date;
  const tbody=document.getElementById('all-history-body');
  document.getElementById('all-history-title').textContent=row.title||'Combined streams';
- document.getElementById('all-history-note').textContent='Last '+count+' '+(mode==='monthly'?'months':mode==='weekly'?'weeks':'days')+' through '+end+' · verified saved observations only. Incomplete periods are marked *; missing values are —.';
+ document.getElementById('all-history-note').textContent='Last '+count+' '+(mode==='monthly'?'months':mode==='weekly'?'weeks':'days')+' through '+end+' · verified saved observations only. * means a verified subset or incomplete period, not a full historical total. Missing values are —.';
  tbody.innerHTML='<tr><td colspan="4">Loading saved history…</td></tr>';
  if(!allHistoryDialog.open)allHistoryDialog.showModal();
  const periods=[];
@@ -851,15 +855,40 @@ async function showAllHistory(row){
   const current=mode==='daily'?periods[i+2]:periods[i+1];
   const prev=mode==='daily'?periods[i+1]:periods[i];
   const before=mode==='daily'?periods[i]:i>0?periods[i-1]:null;
-  const total=byDate.get(current.date);
-  const previous=byDate.get(prev.date);
+  const present=byDate.get(current.date),previous=byDate.get(prev.date);
   const older=before?byDate.get(before.date):null;
-  const gain=Number.isFinite(total)&&Number.isFinite(previous)&&total>=previous?total-previous:null;
-  const oldGain=Number.isFinite(previous)&&Number.isFinite(older)&&previous>=older?previous-older:null;
-  const change=Number.isFinite(gain)&&Number.isFinite(oldGain)?gain-oldGain:null;
-  const partial=mode!=='daily'&&(current.partial||prev.partial);
+  const isCombined=row.scope==='all';
+  const total=isCombined?present?.total:present;
+  const completeTotal=isCombined?present?.complete:Number.isFinite(total);
+  const comparable=(a,b)=>{
+   if(!a?.values||!b?.values)return {gain:null,complete:false};
+   let gain=0,count=0;
+   for(const [trackId,value] of Object.entries(a.values)){
+    if(!Number.isFinite(b.values[trackId]))continue;
+    const difference=value-b.values[trackId];
+    if(difference<0)continue;
+    // An edition swap or workbook mapping jump is not a streaming increase.
+    const elapsed=a.date&&b.date?Math.max(1,Math.round((Date.parse(a.date)-Date.parse(b.date))/86400000)):1;
+    if(difference>Math.max(100000*elapsed,value*.05))continue;
+    gain+=difference;count++;
+   }
+   return {gain:count?gain:null,complete:a.complete&&b.complete&&count===a.eligible};
+  };
+  if(isCombined&&present)present.date=current.date;
+  if(isCombined&&previous)previous.date=prev.date;
+  if(isCombined&&older&&before)older.date=before.date;
+  const pair=isCombined?comparable(present,previous):null;
+  const oldPair=isCombined?comparable(previous,older):null;
+  const gain=isCombined?pair.gain:
+   Number.isFinite(total)&&Number.isFinite(previous)&&total>=previous?total-previous:null;
+  const oldGain=isCombined?oldPair.gain:
+   Number.isFinite(previous)&&Number.isFinite(older)&&previous>=older?previous-older:null;
+  const change=(!isCombined||pair.complete&&oldPair.complete)&&
+   Number.isFinite(gain)&&Number.isFinite(oldGain)?gain-oldGain:null;
+  const partial=(mode!=='daily'&&(current.partial||prev.partial))||
+   (isCombined&&!pair.complete);
   const label=current.label;
-  output.push('<tr><td>'+esc(label)+'</td><td>'+fmt(total)+(current.partial&&Number.isFinite(total)?'*':'')+
+  output.push('<tr><td>'+esc(label)+'</td><td>'+fmt(total)+(!completeTotal&&Number.isFinite(total)?'*':'')+
    '</td><td class="'+tone(gain)+'">'+signed(gain)+(partial&&Number.isFinite(gain)?'*':'')+
    '</td><td class="'+tone(change)+'">'+signed(change)+(partial&&Number.isFinite(change)?'*':'')+'</td></tr>');
  }
