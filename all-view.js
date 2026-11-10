@@ -774,44 +774,86 @@ function historySnapshotValue(snap,row){
  return values.length&&values.every(Number.isFinite)?values.reduce((a,b)=>a+b,0):null;
 }
 let historyRequest=0;
+async function historyValueAt(date,row){
+ if(row.scope==='all'){
+  const [group,solo]=await Promise.all(['group','solo'].map(scope=>snapshot(scope,date)));
+  if(!group||!solo)return null;
+  let total=0,matched=0;
+  for(const track of state.rows){
+   if(track.date&&track.date>date)continue;
+   const value=historySnapshotValue(track.scope==='group'?group:solo,track);
+   if(!Number.isFinite(value))return null;
+   total+=value;matched++;
+  }
+  return matched?total:null;
+ }
+ if(row.date&&date<row.date)return null;
+ return historySnapshotValue(await snapshot(row.scope,date),row);
+}
 async function showAllHistory(row){
  const request=++historyRequest;
- const mode=state.period==='monthly'||state.period==='yearly'?'monthly':state.period==='weekly'?'weekly':'daily';
+ const mode=['monthly','yearly'].includes(state.period)?'monthly':state.period==='weekly'?'weekly':'daily';
  const count=mode==='monthly'?12:10;
- const end=state[row.scope].date;
+ const end=row.scope==='all'?(state.group.date===state.solo.date?state.group.date:state.group.date<state.solo.date?state.group.date:state.solo.date):state[row.scope].date;
  const tbody=document.getElementById('all-history-body');
  document.getElementById('all-history-title').textContent=row.title||'Combined streams';
- document.getElementById('all-history-note').textContent='Last '+count+' '+(mode==='monthly'?'months':mode==='weekly'?'weeks':'days')+' through '+end+' · '+row.scope+' · verified snapshots only. Missing or unmatched data appears as —.';
+ document.getElementById('all-history-note').textContent='Last '+count+' '+(mode==='monthly'?'months':mode==='weekly'?'weeks':'days')+' through '+end+' · verified saved observations only. Incomplete periods are marked *; missing values are —.';
  tbody.innerHTML='<tr><td colspan="4">Loading saved history…</td></tr>';
  if(!allHistoryDialog.open)allHistoryDialog.showModal();
- const dates=[];
- if(mode==='daily')for(let i=count-1;i>=0;i--)dates.push(historyDay(end,-i));
- if(mode==='daily'){dates.push(historyDay(end,-count));dates.push(historyDay(end,-count-1));}
- else{
+ const periods=[];
+ if(mode==='daily'){
+  for(let i=count+1;i>=0;i--){
+   const date=historyDay(end,-i);
+   periods.push({date,label:date,partial:false});
+  }
+ }else{
   const first=historyPeriodStart(end,mode);
+  const eligible=state.manifest?.dates||[];
+  const soloEligible=new Set([...(state.manifest?.solo_dates||[]),...(state.manifest?.solo_legacy_dates||[])]);
+  const known=(row.scope==='solo'?Array.from(soloEligible):row.scope==='all'?eligible.filter(d=>soloEligible.has(d)):eligible).sort();
   for(let i=count;i>=0;i--){
    const start=historyPeriodShift(first,mode,-i);
-   const next=historyPeriodShift(start,mode,1);
-   const last=historyDay(next,-1);
-   dates.push(last>end?end:last);
+   const last=historyDay(historyPeriodShift(start,mode,1),-1);
+   const cutoff=last<end?last:end;
+   const candidates=known.filter(d=>d>=start&&d<=cutoff);
+   const observation=candidates.at(-1)||null;
+   periods.push({date:observation,label:mode==='monthly'?start.slice(0,7):start+' – '+last,
+    partial:observation!==cutoff});
   }
  }
- const values=await Promise.all([...new Set(dates)].map(async date=>({date,value:historySnapshotValue(await snapshot(row.scope,date),row)})));
+ const observations=await Promise.all([...new Set(periods.map(p=>p.date).filter(Boolean))].map(async date=>{
+  try{return [date,await historyValueAt(date,row)]}catch(error){console.warn('All history observation',date,error);return [date,null]}
+ }));
  if(request!==historyRequest)return;
- const byDate=new Map(values.map(item=>[item.date,item.value]));
+ const byDate=new Map(observations);
+ const signed=n=>Number.isFinite(n)?(n>0?'+':'')+fmt(n):'—';
+ const tone=n=>Number.isFinite(n)?n>0?'svt-gain-positive':n<0?'svt-gain-negative':'svt-gain-neutral':'svt-gain-neutral';
  const output=[];
  for(let i=0;i<count;i++){
-  const date=mode==='daily'?dates[i]:dates[i+1];
-  const prior=mode==='daily'?historyDay(date,-1):dates[i];
-  const before=mode==='daily'?historyDay(date,-2):i>0?dates[i-1]:null;
-  const total=byDate.get(date),previous=byDate.get(prior),older=before?byDate.get(before):null;
+  const current=mode==='daily'?periods[i+2]:periods[i+1];
+  const prev=mode==='daily'?periods[i+1]:periods[i];
+  const before=mode==='daily'?periods[i]:i>0?periods[i-1]:null;
+  const total=byDate.get(current.date);
+  const previous=byDate.get(prev.date);
+  const older=before?byDate.get(before.date):null;
   const gain=Number.isFinite(total)&&Number.isFinite(previous)&&total>=previous?total-previous:null;
   const oldGain=Number.isFinite(previous)&&Number.isFinite(older)&&previous>=older?previous-older:null;
   const change=Number.isFinite(gain)&&Number.isFinite(oldGain)?gain-oldGain:null;
-  const label=mode==='monthly'?date.slice(0,7):mode==='weekly'?prior+' – '+date:date;
-  output.push('<tr><td>'+esc(label)+'</td><td>'+fmt(total)+'</td><td>'+(Number.isFinite(gain)?'+'+fmt(gain):'—')+'</td><td>'+(Number.isFinite(change)?(change>=0?'+':'')+fmt(change):'—')+'</td></tr>');
+  const partial=mode!=='daily'&&(current.partial||prev.partial);
+  const label=current.label;
+  output.push('<tr><td>'+esc(label)+'</td><td>'+fmt(total)+(current.partial&&Number.isFinite(total)?'*':'')+
+   '</td><td class="'+tone(gain)+'">'+signed(gain)+(partial&&Number.isFinite(gain)?'*':'')+
+   '</td><td class="'+tone(change)+'">'+signed(change)+(partial&&Number.isFinite(change)?'*':'')+'</td></tr>');
  }
  tbody.innerHTML=output.join('');
+}
+for(const [id,title] of [['all-summaryStreams','All artists · Total streams'],['all-summaryGrowth','All artists · Stream growth']]){
+ const el=document.getElementById(id),card=el?.closest('.stat');
+ if(!card)continue;
+ card.tabIndex=0;card.setAttribute('role','button');card.setAttribute('aria-label','View combined saved stream history');
+ card.classList.add('svt-all-summary-history');
+ card.addEventListener('click',()=>showAllHistory({scope:'all',title}).catch(console.error));
+ card.addEventListener('keydown',e=>{if(e.key==='Enter'||e.key===' '){e.preventDefault();card.click()}});
 }
 document.getElementById('all-recordings')?.addEventListener('keydown',event=>{if(event.key==='Enter'||event.key===' '){const element=event.target.closest('[data-all-history]');if(element){event.preventDefault();element.click();}}});
 document.getElementById('all-recordings')?.addEventListener('click',event=>{
