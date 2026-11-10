@@ -421,7 +421,9 @@ function artistStats(){
   const followers=Number.isFinite(observed)?observed:null;
   const totals=[...a.recordings].map(id=>state.rows.find(r=>r.id===id)?.streams).filter(Number.isFinite);
   const streams=totals.length?totals.reduce((sum,n)=>sum+n,0):null;
-  return {...a,listeners:Number.isFinite(listeners)?listeners:null,followers,streams};
+  const releases=state.rows.filter(row=>a.recordings.has(row.id)&&row.date).map(row=>row.date).sort();
+  return {...a,listeners:Number.isFinite(listeners)?listeners:null,followers,streams,
+   earliestRelease:releases[0]||null,latestRelease:releases.at(-1)||null};
  });
 }
 // Combined headline figures use the same canonical recording list as All's
@@ -545,9 +547,18 @@ function renderArtists(){
   })
   .filter(a=>(scope==='all'||(scope==='members'?members.has(a.name):units.has(a.name)))&&
    Number.isFinite(a[metric]))
-  .sort((a,b)=>period==='overall'?b[metric]-a[metric]||a.name.localeCompare(b.name):
-   (Number.isFinite(metric==='streams'?b.observedGain:b.change)?(metric==='streams'?b.observedGain:b.change):-Infinity)-
-   (Number.isFinite(metric==='streams'?a.observedGain:a.change)?(metric==='streams'?a.observedGain:a.change):-Infinity)||a.name.localeCompare(b.name));
+  .sort((a,b)=>{
+   const sort=$('artistSort')?.value||'most';
+   if(sort==='az')return a.name.localeCompare(b.name);
+   if(sort==='za')return b.name.localeCompare(a.name);
+   if(sort==='newest')return (b.latestRelease||'').localeCompare(a.latestRelease||'')||a.name.localeCompare(b.name);
+   if(sort==='oldest')return (a.earliestRelease||'9999').localeCompare(b.earliestRelease||'9999')||a.name.localeCompare(b.name);
+   const av=metric==='streams'&&period!=='overall'?a.observedGain:period==='overall'?a[metric]:a.change;
+   const bv=metric==='streams'&&period!=='overall'?b.observedGain:period==='overall'?b[metric]:b.change;
+   const metricA=Number.isFinite(av)?av:(sort==='least'?Infinity:-Infinity);
+   const metricB=Number.isFinite(bv)?bv:(sort==='least'?Infinity:-Infinity);
+   return (sort==='least'?metricA-metricB:metricB-metricA)||a.name.localeCompare(b.name);
+  });
  const source=metric==='streams'?'recording totals':metric==='listeners'?
   'monthly listener observations':'verified follower snapshots';
  $('artistNote').textContent=rows.length+' profiles with saved '+source+
@@ -748,6 +759,7 @@ async function init(){
   const names=unique(state.rows.flatMap(r=>r.owners)).filter(x=>x!=='Unassigned solo/unit').sort((a,b)=>a.localeCompare(b));
   $('owner').innerHTML='<option value="all">All recordings</option>'+names.map(n=>'<option value="'+esc(n)+'">'+esc(n)+'</option>').join('');
   if(names.includes(allRemembered.owner))$('owner').value=allRemembered.owner;
+  if(['most','least','az','za','newest','oldest'].includes(allRemembered.artistSort))$('artistSort').value=allRemembered.artistSort;
   await applyPeriod();selectAllCategory(state.mode);renderArtists();renderTracks();
   const [prevGroup,prevSolo]=await Promise.all([
    snapshot('group',dayBefore(state.group.date)),snapshot('solo',dayBefore(state.solo.date))]);
@@ -766,7 +778,7 @@ $('rankCategory').addEventListener('click',event=>{
  const button=event.target.closest('button[data-all-rank]');
  if(button)selectAllCategory(button.dataset.allRank,{userChoice:true});
 });
-for(const id of ['artistMetric','artistScope'])$(id).addEventListener('change',()=>{
+for(const id of ['artistMetric','artistScope','artistSort'])$(id).addEventListener('change',()=>{
  if($('artistMetric').value!==state.mode&&['streams','listeners','followers'].includes($('artistMetric').value))
   selectAllCategory($('artistMetric').value);
  renderArtists();
@@ -878,14 +890,14 @@ async function showAllHistory(row){
  const end=row.scope==='all'?(state.group.date===state.solo.date?state.group.date:state.group.date<state.solo.date?state.group.date:state.solo.date):state[row.scope].date;
  const tbody=document.getElementById('all-history-body');
  document.getElementById('all-history-title').textContent=row.title||'Combined streams';
- document.getElementById('all-history-note').textContent='Last '+count+' '+(mode==='monthly'?'months':mode==='weekly'?'weeks':'days')+' through '+end+' · verified saved observations only. * means a verified subset or incomplete period, not a full historical total. Missing values are —.';
+ document.getElementById('all-history-note').textContent='Last '+count+' '+(mode==='monthly'?'months':mode==='weekly'?'weeks':'days')+' through '+displayDate(end)+' · verified saved observations only. * means a verified subset or incomplete period, not a full historical total. Missing values are —.';
  tbody.innerHTML='<tr><td colspan="4">Loading saved history…</td></tr>';
  if(!allHistoryDialog.open)allHistoryDialog.showModal();
  const periods=[];
  if(mode==='daily'){
   for(let i=count+1;i>=0;i--){
    const date=historyDay(end,-i);
-   periods.push({date,label:date,partial:false});
+   periods.push({date,label:displayDate(date),partial:false});
   }
  }else{
   const first=historyPeriodStart(end,mode);
@@ -898,8 +910,8 @@ async function showAllHistory(row){
    const cutoff=last<end?last:end;
    const candidates=known.filter(d=>d>=start&&d<=cutoff);
    const observation=candidates.at(-1)||null;
-   periods.push({date:observation,label:mode==='monthly'?start.slice(0,7):start+' – '+last,
-    partial:observation!==cutoff});
+   periods.push({date:observation,label:mode==='monthly'?displayMonth(start):displayDate(start)+' – '+displayDate(last),
+    partial:observation!==last});
   }
  }
  const observations=await Promise.all([...new Set(periods.map(p=>p.date).filter(Boolean))].map(async date=>{
