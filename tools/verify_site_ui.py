@@ -366,6 +366,11 @@ def main():
                     d.find_element(By.ID,'all-summaryTracks').text.strip() not in ('','—') and
                     d.find_element(By.ID,'all-summaryStreams').text.strip() not in ('','—'))
                 assert len(driver.find_elements(By.CSS_SELECTOR,'#svtAllView .svt-all-stats > .stat'))==4
+                assert driver.execute_script("""
+                    const grid=getComputedStyle(document.querySelector('#svtAllView .svt-all-stats'));
+                    return grid.gridTemplateColumns.split(' ').length===2 &&
+                      getComputedStyle(document.getElementById('all-summaryStreams')).textAlign==='left';
+                """),'All summary must be a 2x2 grid with left-aligned total streams'
                 current_group=json.loads((ROOT/'data/group.json').read_text(encoding='utf-8'))
                 current_solo=json.loads((ROOT/'data/solo.json').read_text(encoding='utf-8'))
                 if current_group['date']=='2026-11-08' and current_solo['date']=='2026-11-08':
