@@ -1014,35 +1014,40 @@ def main():
                            card.backdropFilter==='none';
                 """),'All summary cards are no longer flat and lightweight'
 
-                name_layout=driver.execute_script("""
-                    const names=[...document.querySelectorAll('.name-fall>.falling-name')];
+                stars=driver.execute_script("""
+                    const names=[...document.querySelectorAll('#svtNameLayer>.falling-name')];
                     const visible=names.filter(el=>getComputedStyle(el).display!=='none');
+                    const moving=visible[0];
+                    const css=getComputedStyle(moving);
                     return {total:names.length,visible:visible.length,
-                      expected:innerWidth<=680?21:63,width:innerWidth,
-                      cursor:getComputedStyle(document.body,'::after').display,
-                      sample:visible.slice(0,4).map(el=>({name:el.textContent,left:getComputedStyle(el).left,top:getComputedStyle(el).top}))};
-                """)
-                assert name_layout['total']==63 and name_layout['visible']==name_layout['expected'] and name_layout['cursor']=='none',(
-                    f'Floating names layout: {name_layout}')
-                rain_before=driver.execute_script("""
-                    const el=[...document.querySelectorAll('#svtNameLayer>.falling-name')]
-                      .find(el=>getComputedStyle(el).display!=='none');
-                    const css=getComputedStyle(el);
-                    return {y:el.getBoundingClientRect().top,
+                      expected:innerWidth<=680?23:64,
                       animation:css.animationName,direction:css.animationDirection,
-                      duration:css.animationDuration};
+                      transform:css.transform,
+                      phrases:names.filter(el=>/^(OT13|SEVENTEEN WILL CHALLENGE ETERNITY)$/.test(el.textContent.trim())).length,
+                      cursor:getComputedStyle(document.body,'::after').display};
                 """)
-                assert rain_before['animation']=='svt-name-rain-v2' and rain_before['direction']=='normal',(
-                    f'Floating names must fall downward: {rain_before}')
-                time.sleep(.32)
-                rain_after=driver.execute_script("""
-                    const el=[...document.querySelectorAll('#svtNameLayer>.falling-name')]
-                      .find(el=>getComputedStyle(el).display!=='none');
-                    return el.getBoundingClientRect().top;
+                assert stars['total']==64 and stars['visible']==stars['expected'] and stars['phrases']==2 and stars['cursor']=='none',(
+                    f'Starfield labels or layout incorrect: {stars}')
+                assert stars['animation']=='svt-starfly-v1' and stars['direction']=='normal',(
+                    f'Starfield motion is missing: {stars}')
+                time.sleep(.75)
+                moved=driver.execute_script("""
+                    return getComputedStyle([...document.querySelectorAll('#svtNameLayer>.falling-name')]
+                        .find(el=>getComputedStyle(el).display!=='none')).transform;
                 """)
-                assert abs(rain_after-rain_before['y'])>=3,(
-                    f'Floating names animation did not move: {rain_before}, {rain_after}')
-                print(f'Floating rain verified at {width}px: '+str(round(rain_after-rain_before['y'],1))+'px movement',flush=True)
+                assert moved!=stars['transform'],('Starfield labels are stationary',stars,moved)
+                hover_features=driver.execute_script("""
+                    const ot=document.querySelector('#svtNameLayer>.svt-ot13');
+                    ot.dispatchEvent(new PointerEvent('pointerenter',{pointerType:'mouse',clientX:50,clientY:80}));
+                    const groupPhoto=document.querySelector('#svt-name-photo')?.classList.contains('svt-group-preview');
+                    const phrase=document.querySelector('#svtNameLayer>.svt-eternity-tag');
+                    const shown=phrase && getComputedStyle(phrase).display!=='none';
+                    phrase?.dispatchEvent(new PointerEvent('pointerenter',{pointerType:'mouse',clientX:120,clientY:150}));
+                    return {groupPhoto,shown,shootingStar:document.querySelectorAll('.svt-shooting-star').length};
+                """)
+                assert hover_features['groupPhoto'] and hover_features['shown'] and hover_features['shootingStar']>0,(
+                    f'OT13 photo or shooting star missing: {hover_features}')
+                print(f'Starfield and hover effects verified at {width}px',flush=True)
                 assert driver.execute_script("""
                     return document.documentElement.scrollWidth<=window.innerWidth+5
                 """),f'All overflowed the viewport at {width}px'
