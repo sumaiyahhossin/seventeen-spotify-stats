@@ -38,6 +38,22 @@ class ReportingWindowTests(unittest.TestCase):
         self.assertEqual(oldest_due_date(dt.date(2026, 11, 10),
                                          moment(2026, 11, 11, 1)), None)
 
+    def test_saved_date_stops_retries_until_next_day_two_pm(self):
+        # Once Nov 10 is saved, no more collections for it overnight,
+        # and the Nov 11 report cannot open before 2 PM local time.
+        saved=dt.date(2026, 11, 10)
+        for day,hour in [(10,14),(10,23),(11,0),(11,1),(11,13)]:
+            self.assertIsNone(oldest_due_date(saved,moment(2026,11,day,hour)))
+        self.assertEqual(oldest_due_date(saved,moment(2026,11,11,14)),
+                         dt.date(2026,11,11))
+        # If Nov 10 was NOT saved, midnight does not cancel its retries.
+        self.assertEqual(oldest_due_date(dt.date(2026,11,9),
+                                         moment(2026,11,11,0)),
+                         dt.date(2026,11,10))
+        self.assertEqual(oldest_due_date(dt.date(2026,11,9),
+                                         moment(2026,11,11,13,59)),
+                         dt.date(2026,11,10))
+
     def test_dst_spring_and_fall_cutoffs(self):
         for year, month, day in [(2026, 3, 8), (2026, 11, 1)]:
             date=dt.date(year,month,day)
