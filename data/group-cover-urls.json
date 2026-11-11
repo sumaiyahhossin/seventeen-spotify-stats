@@ -1,5 +1,5 @@
 {
-  "source": "Spotify album oEmbed thumbnail URLs, with exact-album iTunes fallback. Metadata URLs only; no image downloads.",
+  "source": "Verified album-cover images, including the PLEDIS Entertainment God of Light Music single artwork published by Hankyung (2023).",
   "albums": {
     "0fK4XOE0TjcXOcMezZtncZ": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/2e/c0/94/2ec09415-c432-03b6-d032-8854f11dc379/COVER-.jpg/600x600bb.jpg",
     "0r4WKpapZS9Fit7iJr3XM1": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/f4/ec/96/f4ec9661-c3bf-d38e-2e57-9e63e3d86870/26UMGIM16378.rgb.jpg/600x600bb.jpg",
@@ -26,6 +26,9 @@
     "6bk9pQwgyR4ihccicvOL9L": "https://is1-ssl.mzstatic.com/image/thumb/Music113/v4/05/48/5f/05485f2e-7491-cb2e-6759-4f0620d066c8/20UMGIM18430.rgb.jpg/600x600bb.jpg",
     "6qEtE4d5SpNuxSPcuFQpno": "https://is1-ssl.mzstatic.com/image/thumb/Music125/v4/71/f1/26/71f1269f-be8a-dafd-b732-a84c58136d06/cover-.jpg/600x600bb.jpg",
     "7ppRZp3i4KpK7UHeNLAHrJ": "https://is1-ssl.mzstatic.com/image/thumb/Music124/v4/15/c3/c5/15c3c59b-22ce-699e-dcb1-23f006cf8410/cover-.jpg/600x600bb.jpg",
-    "4lfFgz2rD1irxf7dZhNJht": "https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02decd839dd4fef3faf64c5fd5"
+    "4lfFgz2rD1irxf7dZhNJht": "https://image-cdn-fa.spotifycdn.com/image/ab67616d00001e02decd839dd4fef3faf64c5fd5",
+    "0xZ4WU5UfctiSeETi6pMEo": "https://img.hankyung.com/photo/202312/01.35416179.1.jpg",
+    "6h13gMfEDlVlXFb8iDVaXb": "https://img.hankyung.com/photo/202312/01.35416179.1.jpg",
+    "7viNY0jOjNJuLwsgAOPsBK": "https://img.hankyung.com/photo/202312/01.35416179.1.jpg"
   }
 }
