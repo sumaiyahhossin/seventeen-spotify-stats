@@ -1286,10 +1286,10 @@ body .rank-row:hover{transform:none!important;box-shadow:none!important}
  position:absolute!important;top:-42px!important;left:var(--nx,4%)!important;right:auto!important;
  display:block!important;visibility:visible!important;max-width:230px!important;width:max-content!important;
  white-space:nowrap!important;overflow:visible!important;
- opacity:.56!important;color:#e2c6fb!important;-webkit-text-fill-color:currentColor!important;
+ opacity:.82!important;color:#ead8ff!important;-webkit-text-fill-color:currentColor!important;
  font-size:12px!important;font-weight:700!important;letter-spacing:.045em!important;
- text-shadow:0 0 12px rgba(199,174,255,.32)!important;
- animation-name:svt-name-rain-v164!important;animation-duration:var(--nr,16s)!important;
+ text-shadow:0 0 14px rgba(199,174,255,.58)!important;
+ animation-name:svt-name-rain-v164!important;animation-duration:var(--nr,38s)!important;
  animation-delay:var(--nd,0s)!important;animation-timing-function:linear!important;
  animation-iteration-count:infinite!important;animation-play-state:running!important;
  animation-fill-mode:none!important;will-change:transform,opacity!important
@@ -1299,8 +1299,8 @@ body .rank-row:hover{transform:none!important;box-shadow:none!important}
 #svtNameLayer>.falling-name:hover{animation-play-state:running!important;opacity:.72!important}
 @keyframes svt-name-rain-v164{
  0%{transform:translate3d(-5px,0,0);opacity:0}
- 9%{opacity:.58}
- 88%{opacity:.52}
+ 9%{opacity:.84}
+ 88%{opacity:.76}
  100%{transform:translate3d(30px,calc(100vh + 110px),0);opacity:0}
 }
 #svtNameLayer>.svt-unit-rain{
@@ -1677,13 +1677,13 @@ document.querySelectorAll('.name-fall>.falling-name').forEach(el=>{
  const layer=document.getElementById('svtNameLayer');
  if(!layer)return;
  const unitNames=[
-  ['BOO SEOK SOON (BSS)','부석순'],
-  ['JEONGHAN × WONWOO (JxW)','정한 × 원우'],
-  ['HOSHI × WOOZI (HxW)','호시 × 우지'],
-  ['JEONGHAN × JOSHUA (JxJ)','정한 × 조슈아'],
-  ['VERNON × THE8 (V8)','버논 × 디에잇'],
-  ['MINGYU × S.COUPS (CxM)','민규 × 에스쿱스'],
-  ['DK × SEUNGKWAN (DxS)','도겸 × 승관'],
+  ['BSS','부석순'],
+  ['JxW','정한 × 원우'],
+  ['HxW','호시 × 우지'],
+  ['JxJ','정한 × 조슈아'],
+  ['V8','버논 × 디에잇'],
+  ['CxM','민규 × 에스쿱스'],
+  ['DxS','도겸 × 승관'],
   ['PICHEOLIN','피철인'],
   ['HIP-HOP TEAM','힙합팀'],
   ['VOCAL TEAM','보컬팀'],
@@ -1692,7 +1692,7 @@ document.querySelectorAll('.name-fall>.falling-name').forEach(el=>{
  let index=0;
  unitNames.forEach(([english,korean],pairIndex)=>{
   [english,korean].forEach((label,koreanIndex)=>{
-   const duration=[14,16,18][index%3];
+   const duration=[34,40,46][index%3];
    const tag=document.createElement('span');
    tag.className='falling-name svt-unit-rain'+(koreanIndex?' svt-korean-rain':'');
    tag.textContent=label;
