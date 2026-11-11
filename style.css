@@ -142,26 +142,26 @@ header,main{position:relative;z-index:1}
  .cover-slot{width:27px;height:27px;flex-basis:27px}
 }
 
-/* Streaming links */
+
 .spotify-artist-link{display:inline-flex;align-items:center;justify-content:center;margin-top:17px;padding:11px 19px;border:1px solid rgba(255,255,255,.55);border-radius:999px;background:rgba(255,255,255,.22);color:inherit;font-weight:700;font-size:13px;text-decoration:none;transition:background .2s,transform .2s}
 .spotify-artist-link:hover,.spotify-artist-link:focus-visible{background:rgba(255,255,255,.42);transform:translateY(-1px)}
 .track-stream-link{color:inherit;text-decoration:none;cursor:pointer}
 .track-stream-link:hover,.track-stream-link:focus-visible{color:#cf5594;text-decoration:underline;text-underline-offset:3px}
 
-/* Keep the Spotify profile button visually consistent on small screens. */
+
 .spotify-artist-link{max-width:100%;box-sizing:border-box;line-height:1.4;text-align:center}
 @media(max-width:680px){
  .spotify-artist-link{display:inline-flex;width:auto;max-width:calc(100% - 24px);margin-top:17px;padding:11px 19px;font-size:13px;font-weight:700;border-radius:999px}
 }
 
-/* Daily stream declines: warm coral-pink, including album sheet rows. */
+
 .rank-row .change.negative{color:#ff8194;font-weight:800}
 @media(min-width:681px) and (max-width:800px){
  .table-head,.rank-row{grid-template-columns:minmax(0,1fr) 100px 86px}
  .table-head span:last-child,.rank-row .change{display:block}
 }
 
-/* Units & Solo: Spotify member and unit portraits. */
+
 .artist-profiles{margin:22px 0 26px}
 .artist-profiles[hidden]{display:none}
 .artist-profiles-heading{font-size:11px;font-weight:800;letter-spacing:.15em;color:#c5bfd8;margin:0 0 14px}
@@ -178,7 +178,7 @@ a.artist-profile:hover,a.artist-profile:focus-visible{background:#ffb8d72c;trans
 .artist-profile-followers.verified{color:#e6bfe0;font-weight:750}
 @media(max-width:480px){.artist-profile-grid{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.artist-profile{padding:10px 3px}.artist-profile-photo,.artist-profile-placeholder{width:48px;height:48px}.artist-profile-name{font-size:10px}.artist-profile-followers{font-size:8px;line-height:1.2}}
 
-/* Midnight CARAT archive refresh */
+
 body{background:radial-gradient(ellipse at 10% -10%,#51304955,transparent 36%),radial-gradient(ellipse at 100% 0%,#233a6655,transparent 38%),#090e1b}
 .glow{opacity:.6}
 .panel{background:linear-gradient(145deg,#192038e8,#11172be8);border:1px solid #ffffff20;box-shadow:0 26px 90px #0008,0 0 0 1px #ffb8d709}
@@ -216,18 +216,18 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #ffb8
 @media(max-width:680px){.archive-picker{width:100%}.date-navigation input{width:100%;flex:1}.period-panel{padding:16px}.period-results{gap:8px}.period-total{padding:13px}.period-total small{font-size:9px}.period-total strong{font-size:21px}.period-tabs button{padding:9px 13px}}
 @media(max-width:390px){.period-results{grid-template-columns:1fr}}
 
-/* Calm period-by-period history instead of decorative bars. */
+
 .period-chart{display:grid;gap:0;min-height:0;overflow:visible;padding:0;border:1px solid #ffffff1b;border-radius:15px;background:#ffffff05}
 .period-list-row{display:flex;align-items:center;justify-content:space-between;gap:15px;padding:12px 17px;border-bottom:1px solid #ffffff12;font-size:12px;color:#cdd1e3}
 .period-list-row:last-child{border-bottom:0}
 .period-list-row strong{color:#ffe2f0;font-size:14px;font-variant-numeric:tabular-nums}
 
-/* Period rankings show streams gained, never cumulative stream counts. */
+
 .table-head.period-ranking,.ranking.period-ranking .rank-row{grid-template-columns:minmax(0,1fr) minmax(120px,180px)}
 .table-head.period-ranking span:last-child,.ranking.period-ranking .rank-row>.num:last-child{display:none}
 @media(max-width:480px){.table-head.period-ranking,.ranking.period-ranking .rank-row{grid-template-columns:minmax(0,1fr) minmax(95px,125px)}}
 
-/* Compact ranking dropdown controls */
+
 .ranking-pickers{display:flex;align-items:end;gap:12px;flex-wrap:wrap}
 .rank-select{display:grid;gap:7px;font-size:10px;letter-spacing:.12em;font-weight:800;color:#c6c9df}
 .rank-select select{min-width:140px;min-height:44px;border:1px solid #ffffff35;border-radius:12px;padding:10px 35px 10px 14px;background:#1b2339;color:#fff8fc;font:inherit;font-size:13px;font-weight:700;letter-spacing:normal;cursor:pointer;color-scheme:dark}
@@ -235,14 +235,14 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #ffb8
 .sheet-toggle.active{background:#ffb8d72b;border-color:#ffb8d7;color:#ffe5f0}
 @media(max-width:480px){.ranking-pickers{width:100%;gap:8px}.rank-select{flex:1;min-width:0}.rank-select select{min-width:0;width:100%}.sheet-toggle{width:100%}}
 
-/* Separate, obvious Tracks / Albums sections */
+
 .ranking-category{display:inline-flex;align-items:center;gap:5px;background:#ffffff0e;border:1px solid #ffffff25;border-radius:14px;padding:5px}
 .ranking-category button{border:0;border-radius:10px;background:transparent;color:#cbd0e0;font:inherit;font-size:13px;font-weight:800;padding:11px 21px;cursor:pointer}
 .ranking-category button.active{background:linear-gradient(110deg,#ffb8d7,#b9d8ff);color:#111629;box-shadow:0 3px 12px #0003}
 .ranking-pickers{align-items:end}
 @media(max-width:480px){.ranking-category{width:100%;display:grid;grid-template-columns:1fr 1fr}.ranking-category button{width:100%}}
 
-/* Three equal ranking destinations; chronological discography stays grouped. */
+
 .ranking-category{display:grid;grid-template-columns:repeat(3,minmax(0,1fr))}
 .ranking-category button{padding:11px 15px}
 .rank-row.album-total-row{margin-top:15px;background:#ffb8d711;border-top:1px solid #ffb8d740}
@@ -250,21 +250,21 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #ffb8
 .ranking-category button[data-type="discography"]{white-space:nowrap}
 @media(max-width:480px){.ranking-category{grid-template-columns:repeat(3,minmax(0,1fr))}.ranking-category button{padding:11px 5px;font-size:12px}}
 
-/* Mobile: three independent, equal-width boxes fully contained in the control. */
+
 .ranking-category{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;width:100%;padding:0;border:0;background:transparent;box-sizing:border-box;min-width:0}
 .ranking-category button{display:flex;align-items:center;justify-content:center;min-width:0;width:100%;box-sizing:border-box;white-space:normal!important;overflow-wrap:anywhere;line-height:1.2;text-align:center;padding:13px 7px;border:1px solid #ffffff30;border-radius:12px;background:#20283f;color:#dbe1ee;font-size:clamp(10px,2.7vw,13px)}
 .ranking-category button.active{border-color:#ffd3e6}
 .ranking-pickers{min-width:0;max-width:100%;box-sizing:border-box}
 @media(max-width:480px){.ranking-category{grid-template-columns:repeat(3,minmax(0,1fr));gap:6px}.ranking-category button{font-size:11px;padding:12px 4px}.ranking-pickers{width:100%}}
 
-/* Final mobile navigation: three distinct cards spanning the full available width. */
+
 .ranking-pickers{display:grid!important;grid-template-columns:minmax(0,1fr);width:100%;flex:1 1 100%;min-width:0}
 .ranking-category{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:8px;width:100%!important;max-width:100%;min-width:0;justify-self:stretch}
 .ranking-category button{display:flex!important;justify-content:center;align-items:center;width:100%!important;min-width:0;min-height:48px;max-width:100%;white-space:nowrap!important;word-break:normal!important;overflow-wrap:normal!important;font-size:clamp(10px,2.6vw,14px);letter-spacing:-.025em;padding:10px 3px!important;border-radius:13px}
 .rank-select{width:100%;max-width:330px}
 @media(max-width:480px){.ranking-category{gap:7px}.ranking-category button{font-size:clamp(10px,2.65vw,12px);min-height:48px;padding:10px 2px!important}.rank-select{max-width:100%}}
 
-/* Mobile uses desktop proportions, not squashed columns or wrapped navigation. */
+
 @media(max-width:680px){
  main{padding-left:12px!important;padding-right:12px!important}
  .panel{padding:18px 14px!important;border-radius:20px}
@@ -292,12 +292,12 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #ffb8
  .rank-row .cover{width:30px!important;height:30px!important}
  .ranking-category button{font-size:10px!important}
 }
-/* Bright calendar icon on the dark date input, including iOS Safari. */
+
 .date-navigation input[type="date"]{color-scheme:dark!important;color:#f8f8ff!important}
 .date-navigation input[type="date"]::-webkit-calendar-picker-indicator{filter:brightness(0) invert(1)!important;opacity:1!important;cursor:pointer}
 .date-navigation input[type="date"]::-webkit-datetime-edit{color:#f8f8ff!important}
 
-/* Mobile refinement: preserve the desktop ranking grid rather than compressing text. */
+
 @media(max-width:680px){
  body{overflow-x:hidden}
  .hero{padding:44px 0 46px!important}
@@ -325,7 +325,7 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #ffb8
  .date-navigation input{min-width:0!important}
 }
 
-/* Mobile screenshot fix: no clipped rankings, no tiny category pills. */
+
 @media(max-width:680px){
  html,body{max-width:100%;overflow-x:hidden}
  main{width:100%;min-width:0;padding-inline:12px!important}
@@ -361,7 +361,7 @@ button:focus-visible,input:focus-visible,a:focus-visible{outline:2px solid #ffb8
 }
 
 
-/* Premium glass dashboard: frosted crystal surfaces and editorial hierarchy. */
+
 :root{--navy:#202641;--muted:#737c98;--rose:#d887b7;--serenity:#86a8e6;--line:rgba(255,255,255,.65)}
 html{background:#e8e9f6}
 body{
@@ -400,7 +400,7 @@ button:focus-visible,select:focus-visible,input:focus-visible{outline:2px solid 
 }
 @media(prefers-reduced-motion:reduce){button,.rank-row{transition:none!important}button:hover{transform:none!important}}
 
-/* Dark luxury glass: preserve the frosted premium finish without light mode. */
+
 :root{color-scheme:dark;--navy:#f2f3ff;--muted:#a7adc9;--rose:#f3a5cd;--serenity:#a7c6ff;--line:rgba(210,220,255,.13)}
 html{background:#080b18!important}
 body{
@@ -431,7 +431,7 @@ button,select,input{color:#f0f2ff}
 input::placeholder{color:#9ba3c4}
 @media(min-width:800px){.panel{box-shadow:0 30px 90px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.1)!important}}
 
-/* Spacious dark glass layout and precision-square album artwork. */
+
 main{max-width:1260px!important;padding-inline:clamp(16px,3vw,40px)!important}
 .stats{gap:clamp(16px,2.2vw,28px)!important;margin-block:38px 46px!important}
 .stat{padding:clamp(22px,2.4vw,32px)!important;min-width:0}
@@ -471,7 +471,7 @@ main{max-width:1260px!important;padding-inline:clamp(16px,3vw,40px)!important}
  .rank-row .cover{aspect-ratio:1 / 1!important;object-fit:cover!important;border-radius:6px!important}
 }
 
-/* Layout rhythm v23: generous separation between every major surface. */
+
 main{padding-bottom:64px!important}
 main > * + *{margin-top:clamp(28px,4vw,56px)!important}
 .stats{gap:clamp(20px,2.5vw,32px)!important;margin-top:44px!important;margin-bottom:54px!important}
@@ -507,7 +507,7 @@ footer{margin-top:64px!important;padding-block:34px!important}
 }
 
 
-/* v24: breathing room below category tabs; softly rounded ranking surfaces. */
+
 .ranking-pickers{display:flex;flex-direction:column;align-items:stretch;gap:0!important}
 .ranking-category{margin-bottom:clamp(28px,3.2vw,42px)!important}
 .rank-select{margin-top:0!important}
@@ -530,19 +530,19 @@ footer{margin-top:64px!important;padding-block:34px!important}
  .rank-row{border-radius:9px!important}
 }
 
-/* Member/units stats selector */
+
 .artist-profile{cursor:pointer;font:inherit;text-align:center;}
 .artist-profile.selected{outline:2px solid #f5a8d7;outline-offset:2px;}
 .artist-selection-heading{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:12px 0 18px;}
 .artist-selection-heading button{border:1px solid rgba(255,255,255,.3);border-radius:999px;background:rgba(255,255,255,.09);color:inherit;padding:9px 15px;cursor:pointer;font:inherit;}
 .artist-selection-heading strong{font-size:14px;letter-spacing:.04em;}
 
-/* Slightly larger portraits without resizing profile cards. */
+
 .artist-profile-photo,.artist-profile-placeholder{width:72px;height:72px}
 @media(max-width:480px){.artist-profile-photo,.artist-profile-placeholder{width:54px;height:54px}}
 
 
-/* To keep the same date navigation layout for daily, weekly, monthly and yearly. */
+
 #dailyPickerWrap{width:min(100%,520px);min-width:0;gap:8px}
 #dailyPickerWrap .date-navigation{display:flex;align-items:center;gap:8px;width:100%;min-width:0}
 #dailyPickerWrap .date-navigation input,
@@ -554,23 +554,23 @@ footer{margin-top:64px!important;padding-block:34px!important}
 #dailyPickerWrap .latest-date{justify-self:start}
 @media(max-width:480px){#dailyPickerWrap{width:100%}#dailyPickerWrap .date-navigation{gap:6px}#dailyPickerWrap .date-arrow{flex-basis:38px;min-width:38px}}
 
-/* To keep the streaming period label close to its date selector. */
+
 #dailyPickerWrap{gap:5px!important}
 #dailyPickerWrap>label{display:block;margin:0 0 2px!important;line-height:1.3}
 #dailyPickerWrap .date-navigation{margin-top:0!important;margin-bottom:10px!important;margin-block:0 10px!important}
 #dailyPickerWrap .latest-date{margin-top:0!important}
 
-/* To leave space between the stream period dropdown and the date label. */
+
 #dailyPickerWrap{margin-top:22px!important}
 
-/* v63: cool periwinkle-blue increases and soft rose-pink decreases. */
+
 .rank-row .change{color:#a9caff!important}
 .rank-row .change.negative{color:#ffb0d5!important}
 
-/* Missing values are bright white, never gain/loss colors. */
+
 .rank-row .num.missing-value,.rank-row .change.missing-value{color:#ffffff!important}
 
-/* Global date and period controls sit above the archive summary. */
+
 .archive-top-controls{display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap;margin:24px 0 26px;padding:20px 24px;border:1px solid #ffffff2b;border-radius:20px;background:linear-gradient(115deg,#f5f0ff,#edf5ff)}
 .archive-top-controls .rank-select{flex:0 0 190px;min-width:155px}
 .archive-top-controls #dailyPickerWrap{flex:1 1 300px;width:auto;max-width:570px;margin:0!important}
@@ -585,7 +585,7 @@ footer{margin-top:64px!important;padding-block:34px!important}
 @media(max-width:680px){.archive-top-controls{padding:15px;gap:14px}.archive-top-controls .rank-select,.archive-top-controls #dailyPickerWrap{flex:1 1 100%;max-width:none}}
 
 
-/* v70 — midnight diamond: rich navy, smoked glass, luminous lilac and rose. */
+
 :root{--navy:#f4f0ff;--muted:#c2bdd9;--rose:#f5a6d3;--serenity:#a8caff;--line:rgba(193,183,244,.2)}
 html{background:#090b1c!important;color-scheme:dark}
 body{
@@ -681,7 +681,7 @@ button:focus-visible,input:focus-visible,select:focus-visible,a:focus-visible{ou
 @media(max-width:680px){body{background-attachment:scroll!important}.panel{border-radius:22px!important}.stat{border-radius:17px!important}.archive-top-controls{border-radius:18px!important}.hero h1{letter-spacing:-.065em!important}}
 @media(prefers-reduced-motion:reduce){.stat,.rank-row{transition:none!important}.stat:hover{transform:none}}
 
-/* v71: deeper obsidian-lavender glass and guaranteed readable date picker. */
+
 body{
  background:radial-gradient(ellipse 60% 35% at 8% 2%,rgba(70,35,107,.23),transparent 80%),
  radial-gradient(ellipse 56% 40% at 94% 16%,rgba(29,52,115,.24),transparent 80%),
@@ -733,8 +733,7 @@ body{
 .archive-top-controls .date-arrow{background:#30284f!important;border-color:#8170b2!important;color:#fff!important}
 .archive-top-controls .latest-date{color:#f7aedc!important}
 
-/* v72: Browser-rendered date fields can remain white despite dark-mode styles.
-   Use explicit dark-purple text on a light date field for guaranteed contrast. */
+
 #dailyPickerWrap input#archiveDate,
 .archive-top-controls #archiveDate,
 .archive-top-controls .date-navigation input[type="date"]{
@@ -755,7 +754,7 @@ body{
  filter:none!important;opacity:1!important;
 }
 
-/* v77: period selector and calendar share one clean aligned row */
+
 .archive-top-controls{display:grid!important;grid-template-columns:minmax(180px,305px) minmax(0,1fr)!important;align-items:end!important;gap:24px!important}
 .archive-top-controls .rank-select{width:100%!important;min-width:0!important;align-self:end!important}
 .archive-top-controls .rank-select select{width:100%!important}
@@ -766,7 +765,7 @@ body{
 .release-date{display:block;font-size:10px;letter-spacing:.02em;color:#b6accb;opacity:.78;margin-top:4px;font-weight:500}
 @media(max-width:620px){.archive-top-controls{grid-template-columns:1fr!important;gap:15px!important}}
 
-/* v79: match period selector to calendar's top row, not its footer */
+
 @media(min-width:621px){
  .archive-top-controls{align-items:start!important}
  .archive-top-controls .rank-select{align-self:start!important;margin-top:0!important}
@@ -776,7 +775,7 @@ body{
 .archive-top-controls #latestDate{justify-self:end!important;text-align:right!important;margin-left:auto!important;display:block!important}
 .archive-top-controls #dailyPickerWrap #dateNotice{text-align:right!important;justify-self:end!important}
 
-/* v80 — midnight concert: cinematic shimmer, interactive glass, and motion-safe effects */
+
 :root{--concert-pink:#ffaddf;--concert-ice:#a9c8ff;--concert-lilac:#d3b4ff}
 body{overflow-x:hidden}
 body::after{content:"";position:fixed;pointer-events:none;z-index:0;opacity:.4;width:260px;height:260px;left:var(--cursor-x,50%);top:var(--cursor-y,20%);transform:translate(-50%,-50%);clip-path:polygon(50% 0%,100% 50%,50% 100%,0% 50%);border-radius:0;background:linear-gradient(135deg,rgba(255,178,226,.24),rgba(178,192,255,.28));filter:blur(10px);transition:opacity .35s}
@@ -806,7 +805,7 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid #f3b
 @media(max-width:680px){.concert-sound{padding:7px 10px;font-size:10px}.stat:hover,.rank-row:hover{transform:none}}
 @media(prefers-reduced-motion:reduce){.hero::before,.hero h1 em,.hero .eyebrow,.section-top .eyebrow,.hero h1,.hero p,.spotify-artist-link,.concert-reveal{animation:none!important}.stat,.rank-row,.seg button,.date-arrow{transition:none!important;transform:none!important}.concert-spark{display:none!important}}
 
-/* v82: equal-width streaming period and date controls */
+
 @media(min-width:621px){
  .archive-top-controls{
   grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
@@ -828,7 +827,7 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid #f3b
  }
 }
 
-/* v84 — compact period selector; matching elegant date-picker field */
+
 @media(min-width:621px){
  .archive-top-controls{
   grid-template-columns:minmax(220px,320px) minmax(280px,480px)!important;
@@ -874,7 +873,7 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid #f3b
  .archive-top-controls .rank-select,.archive-top-controls #dailyPickerWrap{width:100%!important}
 }
 
-/* v87: keep album titles readable on narrow screens, with release dates below */
+
 .rank-row .track{min-width:0!important;display:grid!important;grid-template-columns:26px 48px minmax(0,1fr)!important;align-items:center!important;column-gap:10px!important}
 .rank-row .track .place{grid-column:1;grid-row:1 / span 2}
 .rank-row .track .cover-slot{grid-column:2;grid-row:1 / span 2;width:48px!important;height:48px!important}
@@ -894,7 +893,7 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid #f3b
  .rank-row .track .cover-slot{width:32px!important;height:32px!important}
 }
 
-/* v88: vertically center cover, title and tiny release date as one row */
+
 .rank-row .track{
  grid-template-rows:auto auto!important;
  align-content:center!important;
@@ -929,7 +928,7 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid #f3b
  .rank-row .track .release-date{font-size:9px!important}
 }
 
-/* v89 — title and release date are one vertically centered unit beside artwork */
+
 .rank-row .track{display:grid!important;grid-template-columns:26px 48px minmax(0,1fr)!important;grid-template-rows:auto!important;align-items:center!important;align-content:center!important;column-gap:10px!important}
 .rank-row .track .place{grid-column:1!important;grid-row:1!important;align-self:center!important}
 .rank-row .track .cover-slot{grid-column:2!important;grid-row:1!important;align-self:center!important}
@@ -943,7 +942,7 @@ button:focus-visible,a:focus-visible,select:focus-visible{outline:2px solid #f3b
 }
 @media(max-width:390px){.rank-row .track{grid-template-columns:13px 32px minmax(0,1fr)!important;column-gap:5px!important}}
 
-/* v91 — single-row, balanced header at every viewport width */
+
 header{
  display:grid!important;
  grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;
@@ -971,13 +970,13 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  header .concert-sound{font-size:8px!important;padding:5px 3px!important}
 }
 
-/* Rank movement in Tracks and Albums charts */
+
 .rank-trend{display:inline-flex;align-items:center;justify-content:center;min-width:38px;margin-right:8px;padding:3px 6px;border-radius:7px;font-size:11px;font-weight:800;white-space:nowrap;background:rgba(140,155,180,.12);color:#b8c2d5}
 .rank-trend.rank-up{color:#77dfaa;background:rgba(60,190,126,.13)}
 .rank-trend.rank-down{color:#ff9ca8;background:rgba(220,78,95,.13)}
 .rank-trend.rank-same{color:#d8e1f2}
 
-/* v112 compact matching archive controls */
+
 .archive-top-controls{
  display:grid!important;
  grid-template-columns:minmax(0,285px) minmax(0,650px)!important;
@@ -1056,7 +1055,7 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  .archive-top-controls #archiveDate{font-size:13px!important;padding:0 7px!important}
 }
 
-/* v113 — number and movement share a single centered rank column */
+
 .rank-row .track{
  display:grid!important;
  grid-template-columns:56px 48px minmax(0,1fr)!important;
@@ -1100,7 +1099,7 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  .rank-row .track .cover-slot{width:44px!important;height:44px!important}
 }
 
-/* v114: unified, understated archive toolbar */
+
 .section-top{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:18px!important;flex-wrap:wrap!important}
 .archive-header-actions{display:flex;align-items:center;justify-content:flex-end;gap:14px;flex-wrap:wrap}
 .milestone-nav-link{
@@ -1176,7 +1175,7 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  .archive-top-controls #archiveDate{font-size:13px!important}
 }
 
-/* v115: one balanced toolbar for period, date, and milestones */
+
 .archive-top-controls{
  display:grid!important;
  grid-template-columns:minmax(175px,225px) minmax(360px,490px) auto!important;
@@ -1242,7 +1241,7 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
   padding:9px 12px!important;
  }
 }
-/* Rank and movement always occupy the same narrow grid column in Opera/Chrome/mobile. */
+
 .rank-row .track{
  display:grid!important;
  grid-template-columns:48px 48px minmax(0,1fr)!important;
@@ -1285,7 +1284,7 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  .rank-row .track>.cover-slot{width:42px!important;height:42px!important}
 }
 
-/* v116: rank number + trend are a single flex item, stable in Opera */
+
 .rank-row .track{
  display:grid!important;
  grid-template-columns:40px 48px minmax(0,1fr)!important;
@@ -1355,7 +1354,7 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  .rank-row .track>.cover-slot{width:42px!important;height:42px!important}
 }
 
-/* v117: gentle SEVENTEEN namefall behind content, alongside existing diamonds */
+
 .name-fall{
  position:fixed;inset:0;overflow:hidden;
  z-index:0;pointer-events:none;user-select:none;
@@ -1387,7 +1386,7 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
 }
 @media(prefers-reduced-motion:reduce){.name-fall{display:none!important}}
 
-/* v118: center the movement badge exactly under the rank numeral */
+
 .rank-row .track>.rank-position{
  display:flex!important;flex-direction:column!important;
  align-items:center!important;justify-content:center!important;
@@ -1408,7 +1407,7 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  box-sizing:border-box!important;
 }
 
-/* v119: names are background rain particles, visually matching the diamonds */
+
 .name-fall{position:fixed!important;inset:0!important;z-index:0!important;overflow:hidden!important;pointer-events:none!important}
 .name-fall>.falling-name{
  position:absolute!important;display:block!important;top:-110px!important;
@@ -1435,7 +1434,7 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
 }
 @media(prefers-reduced-motion:reduce){.name-fall{display:none!important}}
 
-/* v120: three aligned, equal-height controls, including on narrow screens */
+
 .archive-top-controls{
  display:grid!important;grid-template-columns:minmax(0,220px) minmax(0,440px) minmax(0,175px)!important;
  justify-content:center!important;align-items:start!important;
@@ -1531,7 +1530,7 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  }
 }
 
-/* v121 — final unified archive control alignment */
+
 .archive-top-controls{
  display:grid!important;
  grid-template-columns:minmax(0,1fr) minmax(0,1.8fr) minmax(0,.7fr)!important;
@@ -1619,16 +1618,16 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  }
 }
 
-/* v122: give mobile ranking tabs breathing room at the top of their panel */
+
 @media(max-width:680px){
   .controls{padding-top:28px!important}
 }
 
-/* v123: balanced top breathing room for ranking controls on every screen */
+
 .controls{padding-top:36px!important}
 @media(max-width:680px){.controls{padding-top:32px!important}}
 
-/* v124 — readable rankings with all four metrics; compact mobile cards. */
+
 .controls .order-picker[hidden]{display:none!important}
 .controls:has(.order-picker[hidden]) .search{grid-column:1/-1!important;width:100%!important}
 .table-head,.rank-row{
@@ -1722,7 +1721,7 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  .rank-row .rank-metric .metric-value{font-size:11px!important}
 }
 
-/* v126 — classic slim one-line rows for Tracks, Albums, and Discography on phones. */
+
 .rank-row .metric-compact{display:none!important}
 @media(max-width:900px){
  body.svt-compact-ranking-table .table-head,
@@ -1832,7 +1831,7 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  body.svt-compact-ranking-table .rank-row .track .track-copy .track-name{font-size:9px!important}
 }
 
-/* v126: display the entire source cover inside the smaller square, never crop/zoom. */
+
 #ranking .rank-row .track .cover-slot{background:rgba(27,29,61,.55)!important}
 #ranking .rank-row .track .cover-slot img.cover{
  object-fit:contain!important;
@@ -1841,13 +1840,13 @@ header .concert-sound{grid-column:3!important;grid-row:1!important;justify-self:
  max-width:100%!important;
  max-height:100%!important;
 }
-/* OT13 historical yearly totals belong to the group tab, not Units & Solo. */
+
 body.svt-units-solo #yearlyStreamsHistory,
 body.svt-units-solo .svt-yearly-jump{display:none!important}
 
 
-/* v128 — preserve compact rankings while restoring rank & trend indicators. */
-/* Increase = periwinkle blue; decrease = rose pink; unchanged/unknown = neutral. */
+
+
 #ranking .rank-row>.rank-metric-change.positive .metric-value,
 #ranking .rank-row>.rank-metric-change.positive .metric-compact,
 #ranking .rank-row>.rank-metric-gain.positive .metric-value,
@@ -1879,7 +1878,7 @@ body.svt-units-solo .svt-yearly-jump{display:none!important}
  color:#d1cce4!important;background:rgba(176,173,226,.08)!important;
 }
 @media(max-width:900px){
- /* Tracks and Albums: rank number above a tiny arrow, cover, then title. */
+ 
  body.svt-compact-ranking-table:not(.svt-discography-table) #ranking .rank-row>.track{
   grid-template-columns:20px 24px minmax(0,1fr)!important;
   column-gap:4px!important;
@@ -1938,8 +1937,7 @@ body.svt-units-solo .svt-yearly-jump{display:none!important}
 }
 
 
-/* v129 — Daily = Name / daily increase / change.
-   Overall = Name / overall streams / daily increase / change. */
+
 body.svt-daily-ranking .table-head .svt-total-heading{display:none!important}
 body.svt-daily-ranking .table-head,
 body.svt-daily-ranking .rank-row{
@@ -1977,7 +1975,7 @@ body.svt-daily-ranking .rank-row{
  }
 }
 
-/* v130 — softer Spotify CTA, integrated with the lavender theme. */
+
 .hero .spotify-artist-link,
 .hero .spotify-artist-link:visited{
  color:#d9c8eb!important;
@@ -1993,8 +1991,7 @@ body.svt-daily-ranking .rank-row{
  border-color:rgba(207,172,238,.52)!important;
 }
 
-/* v160 — Solo statistics: combined view needs four cards;
-   individual member and unit views retain audience cards except V8/JxJ. */
+
 body.svt-solo-all .stats>.stat:nth-child(4),
 body.svt-solo-all .stats>.stat:nth-child(5),
 body.svt-solo-without-audience .stats>.stat:nth-child(4),
@@ -2022,10 +2019,7 @@ body.svt-solo-without-audience .stats>.stat:nth-child(5){
  padding-block:10px!important;line-height:1.2!important
 }
 
-/* Portraits v162: BOTH duo faces are near the center of their original
-   landscape concept photos, so crop the sides to fill a TRUE square.
-   Never use "contain" for the V8/JxJ profile cards: it letterboxes them.
-   Keep the name-hover preview a separate component (#svt-name-photo). */
+
 .artist-profile-photo:not([data-unit-photo]){object-fit:cover!important}
 .artist-profile img.artist-profile-photo[data-unit-photo]{
  width:72px!important;height:72px!important;
@@ -2042,8 +2036,7 @@ body.svt-solo-without-audience .stats>.stat:nth-child(5){
 }
 .artist-profile-photo:not(.loaded){background:#242340!important}
 
-/* Solo/Unit ranking: non-Overall views show only gains and changes.
-   Overall keeps all four columns. OT13 keeps its existing layout. */
+
 body.svt-units-solo.svt-solo-period-only .table-head .svt-total-heading{display:none!important}
 body.svt-units-solo.svt-solo-period-only .table-head,
 body.svt-units-solo.svt-solo-period-only .rank-row{
@@ -2074,4 +2067,13 @@ body.svt-units-solo.svt-solo-period-only .rank-row{
   grid-template-columns:minmax(0,1fr) 64px 61px!important;
   column-gap:3px!important;
  }
+}
+
+.controls,.artist-profile,.period-panel,.archive-top,.period-total,.period-chart,
+#svtAllView .svt-all-archive-controls,#svtAllView .svt-all-section{
+ -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+.stat,.rank-row{transition:background-color .18s ease,border-color .18s ease!important}
+@media(prefers-reduced-motion:reduce){
+ .stat,.rank-row,.artist-profile,.panel{transition:none!important}
 }
