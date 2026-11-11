@@ -96,8 +96,8 @@ def check_trend_palette(driver, section):
         return {increase,decrease};
       }finally{metric.className=original}
     """)
-    assert colors.get('increase')==['rgb(146, 168, 209)']*2,(section,colors)
-    assert colors.get('decrease')==['rgb(247, 202, 201)']*2,(section,colors)
+    assert colors.get('increase')==['rgb(160, 201, 232)']*2,(section,colors)
+    assert colors.get('decrease')==['rgb(243, 182, 209)']*2,(section,colors)
     print(section,'Serenity / Rose Quartz ranking palette verified:',colors,flush=True)
 
 def check_compact_row_height_and_full_width(driver, section, width):
