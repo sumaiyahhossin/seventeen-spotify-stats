@@ -40,22 +40,45 @@ def click(driver,selector):
     driver.execute_script('arguments[0].click()',element)
 
 def check_column_dividers(driver, section):
-    checked=driver.execute_script("""
-        const header=[...document.querySelectorAll('#svtPrimaryStats .table-head>span')]
-          .filter(el=>getComputedStyle(el).display!=='none').slice(1);
-        const metrics=[...document.querySelectorAll('#svtPrimaryStats #ranking .rank-row:first-child>.rank-metric')]
-          .filter(el=>getComputedStyle(el).display!=='none');
-        const line=el=>{
-          const p=getComputedStyle(el,'::before');
-          return p.content!=='none' && p.width==='1px' && p.backgroundColor!=='rgba(0, 0, 0, 0)';
+    # The old test only checked for a 1px ::before in the FIRST row. That
+    # allowed visibly broken lines between rows. Check one overlay spanning
+    # from the header to the final row at the real metric column positions.
+    WebDriverWait(driver,15).until(lambda d:d.execute_script("""
+        const rules=document.querySelector('#svtPrimaryStats .svt-continuous-column-rules');
+        return rules && !rules.hidden && rules.querySelectorAll('.svt-column-rule').length>=2;
+    """))
+    result=driver.execute_script("""
+        const root=document.getElementById('svtPrimaryStats');
+        const head=root.querySelector('.table-head');
+        const ranking=document.getElementById('ranking');
+        const first=ranking.querySelector('.rank-row');
+        const last=ranking.querySelector('.rank-row:last-of-type');
+        const rules=root.querySelector('.svt-continuous-column-rules');
+        const visible=[...first.querySelectorAll(':scope>.rank-metric')]
+          .filter(el=>getComputedStyle(el).display!=='none')
+          .sort((a,b)=>a.getBoundingClientRect().left-b.getBoundingClientRect().left);
+        const lines=[...rules.querySelectorAll('.svt-column-rule')];
+        const offset=(parseFloat(getComputedStyle(first).columnGap)||0)/2;
+        const headerVisible=head&&getComputedStyle(head).display!=='none';
+        const expectedTop=headerVisible?head.getBoundingClientRect().top:ranking.getBoundingClientRect().top;
+        const rect=rules.getBoundingClientRect();
+        return {
+          metrics:visible.length,lines:lines.length,
+          maxHorizontalError:Math.max(0,...lines.map((line,i)=>
+            Math.abs(line.getBoundingClientRect().left-(visible[i].getBoundingClientRect().left-offset)))),
+          correctStart:Math.abs(rect.top-expectedTop)<2,
+          reachesBottom:Math.abs(rect.bottom-ranking.getBoundingClientRect().bottom)<2,
+          fullLastRow:rect.bottom>=last.getBoundingClientRect().bottom-2,
+          widths:lines.map(l=>l.getBoundingClientRect().width),
+          noOldPerRowLines:visible.every(v=>getComputedStyle(v,'::before').content==='none')
         };
-        return {headings:header.length,metrics:metrics.length,
-          borderedHeadings:header.filter(line).length,
-          borderedMetrics:metrics.filter(line).length};
     """)
-    assert checked['headings']>=2 and checked['borderedHeadings']==checked['headings'],(section,checked)
-    assert checked['metrics']>=2 and checked['borderedMetrics']==checked['metrics'],(section,checked)
-    print(section,'ranking column dividers:',checked,flush=True)
+    assert result['metrics']>=2 and result['lines']==result['metrics'], (section,result)
+    assert result['maxHorizontalError']<2, (section,result)
+    assert result['correctStart'] and result['reachesBottom'] and result['fullLastRow'], (section,result)
+    assert all(abs(width-1)<0.2 for width in result['widths']), (section,result)
+    assert result['noOldPerRowLines'], (section,result)
+    print(section,'continuous full-height ranking dividers:',result,flush=True)
 
 def check_viewport(driver,width,height):
     driver.set_window_size(width,height)
