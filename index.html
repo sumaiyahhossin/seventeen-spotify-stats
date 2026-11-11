@@ -1508,7 +1508,7 @@ document.querySelectorAll('.name-fall>.falling-name').forEach(el=>{
   }else if(word==='SEVENTEEN WILL CHALLENGE ETERNITY'){
    let lastShot=0;
    const shoot=e=>{
-    if(reduce.matches||performance.now()-lastShot<1200)return;
+    if(reduce.matches||(lastShot&&performance.now()-lastShot<1200))return;
     lastShot=performance.now();
     const rect=el.getBoundingClientRect(),x=rect.left+rect.width/2,y=rect.top+rect.height/2;
     const star=document.createElement('span');
