@@ -1020,15 +1020,15 @@ def main():
                     const moving=visible[0];
                     const css=getComputedStyle(moving);
                     return {total:names.length,visible:visible.length,
-                      expected:innerWidth<=680?23:64,
+                      expected:85,
                       animation:css.animationName,direction:css.animationDirection,
                       transform:css.transform,
                       phrases:names.filter(el=>/^(OT13|SEVENTEEN WILL CHALLENGE ETERNITY)$/.test(el.textContent.trim())).length,
                       cursor:getComputedStyle(document.body,'::after').display};
                 """)
-                assert stars['total']==64 and stars['visible']==stars['expected'] and stars['phrases']==2 and stars['cursor']=='none',(
+                assert stars['total']==86 and stars['visible']==stars['expected'] and stars['phrases']==2 and stars['cursor']=='none',(
                     f'Starfield labels or layout incorrect: {stars}')
-                assert stars['animation']=='svt-starfly-v1' and stars['direction']=='normal',(
+                assert stars['animation']=='svt-name-rain-v164' and stars['direction']=='normal',(
                     f'Starfield motion is missing: {stars}')
                 time.sleep(.75)
                 moved=driver.execute_script("""
@@ -1040,10 +1040,10 @@ def main():
                     const ot=document.querySelector('#svtNameLayer>.svt-ot13');
                     ot.dispatchEvent(new PointerEvent('pointerenter',{pointerType:'mouse',clientX:50,clientY:80}));
                     const groupPhoto=document.querySelector('#svt-name-photo')?.classList.contains('svt-group-preview');
-                    const phrase=document.querySelector('#svtNameLayer>.svt-eternity-tag');
-                    const shown=phrase && getComputedStyle(phrase).display!=='none';
-                    phrase?.dispatchEvent(new PointerEvent('pointerenter',{pointerType:'mouse',clientX:120,clientY:150}));
-                    return {groupPhoto,shown,shootingStar:document.querySelectorAll('.svt-shooting-star').length};
+                    const button=document.querySelector('#svt-star-trigger');
+                    const shown=button && getComputedStyle(button).display!=='none';
+                    button?.click();
+                    return {groupPhoto,shown,shootingStar:document.querySelectorAll('.svt-shooting-star.svt-user-shot').length};
                 """)
                 assert hover_features['groupPhoto'] and hover_features['shown'] and hover_features['shootingStar']>0,(
                     f'OT13 photo or shooting star missing: {hover_features}')
