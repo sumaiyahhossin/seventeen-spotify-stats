@@ -1,69 +1,37 @@
-name: Temporary full Spotify history audit (Nov 10–11)
+name: Verify saved Spotify history (manual)
+
+# A full archive audit is useful on demand, but not every ten minutes.
+# Keep saved snapshots unchanged and do not spend Actions minutes while idle.
 on:
-  schedule:
-    - cron: '*/10 * * * *'
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/history-integrity.yml'
-      - 'tools/audit_saved_history.py'
+
 permissions:
   contents: read
-  actions: write
-concurrency:
-  group: full-spotify-archive-audit
-  cancel-in-progress: true
+
 jobs:
   audit:
     name: Check every archived date and track value
     runs-on: ubuntu-24.04
     timeout-minutes: 15
     steps:
-      - name: Check New York date and stop schedule after November 11
-        id: window
-        env:
-          ACTION_EVENT: ${{ github.event_name }}
-        run: |
-          python - <<'PY'
-          import datetime
-          import os
-          from zoneinfo import ZoneInfo
-          date = datetime.datetime.now(ZoneInfo("America/New_York")).date()
-          last = datetime.date(2026, 11, 11)
-          scheduled = os.environ["ACTION_EVENT"] == "schedule"
-          expired = date > last
-          with open(os.environ["GITHUB_OUTPUT"], "a", encoding="utf-8") as output:
-              output.write(f"audit={'false' if scheduled and expired else 'true'}\n")
-              output.write(f"disable={'true' if scheduled and expired else 'false'}\n")
-          print(f"New York date: {date}; automatic ten-minute checks end Nov 11, 2026")
-          PY
-      - name: Disable this recurring workflow automatically on November 12
-        if: steps.window.outputs.disable == 'true'
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          gh api -X PUT "repos/${GITHUB_REPOSITORY}/actions/workflows/history-integrity.yml/disable"
-          echo "The temporary 10-minute audit is now disabled."
       - uses: actions/checkout@v4
-        if: steps.window.outputs.audit == 'true'
       - uses: actions/setup-python@v5
-        if: steps.window.outputs.audit == 'true'
         with:
           python-version: '3.12'
       - name: Check all saved history and create report
-        if: steps.window.outputs.audit == 'true'
         id: audit
         continue-on-error: true
         run: python tools/audit_saved_history.py --output collection-audit.json
       - name: Attach detailed audit result
-        if: steps.window.outputs.audit == 'true'
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: full-history-audit
           path: collection-audit.json
+          if-no-files-found: warn
           retention-days: 30
       - name: Mark missing or invalid archive data as failed
-        if: steps.window.outputs.audit == 'true' && steps.audit.outcome == 'failure'
+        if: steps.audit.outcome == 'failure'
         run: |
           echo "::error::Saved history audit found missing or invalid snapshot data. Check the attached full-history-audit artifact."
           exit 1
