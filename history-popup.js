@@ -15,6 +15,11 @@
  .svt-history-window{width:min(740px,100%);max-height:min(790px,92dvh);overflow:auto;border:1px solid #8d71b8;border-radius:19px;background:#181a35;color:#f8f3ff;padding:20px;box-shadow:0 20px 70px #040313}
  .svt-history-top{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}
  .svt-history-close{border:1px solid #8777a8;background:#363054;color:#fff;border-radius:10px;padding:8px 13px;font:700 18px system-ui;cursor:pointer}
+ .svt-history-actions{display:flex;align-items:center;gap:7px;flex-shrink:0}
+ .svt-history-copy{border:1px solid #99bfdf;background:rgba(160,201,232,.13);color:#f8f3ff;border-radius:10px;padding:9px 12px;font:750 12px system-ui;cursor:pointer;white-space:nowrap}
+ .svt-history-copy:disabled{opacity:.45;cursor:wait}
+ .svt-history-copy:focus-visible{outline:2px solid #f3b6d1;outline-offset:2px}
+ @media(max-width:420px){.svt-history-actions{gap:4px}.svt-history-copy{padding:8px;font-size:11px}}
  .svt-history-window h2{margin:4px 0 8px;font:800 clamp(18px,3vw,25px) system-ui}
  .svt-history-note{font:12px/1.5 system-ui;color:#c4b9de;margin:5px 0 14px}
  .svt-history-profile{margin:13px 0 0;font:12px/1.5 system-ui;color:#e9e1f4;overflow-wrap:anywhere}
@@ -55,7 +60,7 @@
  `;
  const style=document.createElement('style');style.textContent=css;document.head.append(style);
  const modal=document.createElement('div');modal.className='svt-history-dialog';modal.hidden=true;modal.setAttribute('role','presentation');
- modal.innerHTML='<section class="svt-history-window" role="dialog" aria-modal="true" aria-labelledby="svtHistoryTitle"><div class="svt-history-top"><div><div style="font:750 10px system-ui;letter-spacing:.15em;color:#d6b1f5">✦ VERIFIED STREAM HISTORY</div><h2 id="svtHistoryTitle">History</h2></div><button type="button" class="svt-history-close" aria-label="Close history">×</button></div><p class="svt-history-note" id="svtHistoryNote"></p><div class="svt-history-wrap"><table class="svt-history-table"><thead><tr><th>Date</th><th>Total</th><th>Increase</th><th>Change in increase</th></tr></thead><tbody id="svtHistoryRows"></tbody></table></div><p class="svt-history-note">A dash means comparable saved data is unavailable. Daily increases need consecutive dates. No missing dates are estimated.</p><p class="svt-history-profile" id="svtHistoryProfile" hidden><span id="svtHistoryLinkLabel">Profile Link:</span> <a id="svtHistoryProfileLink" target="_blank" rel="noopener noreferrer"></a></p></section>';
+ modal.innerHTML='<section class="svt-history-window" role="dialog" aria-modal="true" aria-labelledby="svtHistoryTitle"><div class="svt-history-top"><div><div style="font:750 10px system-ui;letter-spacing:.15em;color:#d6b1f5">✦ VERIFIED STREAM HISTORY</div><h2 id="svtHistoryTitle">History</h2></div><div class="svt-history-actions"><button type="button" class="svt-history-copy" id="svtHistoryCopy" disabled aria-label="Copy last 10 days for X">Copy for X</button><button type="button" class="svt-history-close" aria-label="Close history">×</button></div></div><p class="svt-history-note" id="svtHistoryNote"></p><div class="svt-history-wrap"><table class="svt-history-table"><thead><tr><th>Date</th><th>Total</th><th>Increase</th><th>Change in increase</th></tr></thead><tbody id="svtHistoryRows"></tbody></table></div><p class="svt-history-note">A dash means comparable saved data is unavailable. Daily increases need consecutive dates. No missing dates are estimated.</p><p class="svt-history-profile" id="svtHistoryProfile" hidden><span id="svtHistoryLinkLabel">Profile Link:</span> <a id="svtHistoryProfileLink" target="_blank" rel="noopener noreferrer"></a></p></section>';
  document.body.append(modal);
  // Keep keyboard focus inside the modal and return it to the opener.
  let historyOpener=null;
@@ -281,9 +286,75 @@
  };
  const ownerTitle=(scope,owner)=>scope==='group'?'SEVENTEEN':owner||null;
  const possessive=name=>name+(name.endsWith('s')?"'":"'s");
+ // Share only actual saved daily values. The X post always uses up to ten
+ // calendar days, even when the inspector is viewing weekly or monthly data.
+ const copyButton=$('#svtHistoryCopy');
+ let copyPayload='';
+ const numberSigned=n=>n>0?'+'+fmt(n):n<0?'-'+fmt(-n):'0';
+ const shortDate=d=>Number(d.slice(5,7))+'/'+Number(d.slice(8,10));
+ const releaseDateFor=(metric,scope)=>{
+  if(metric.kind==='album'){
+   const keys=[metric.release,...(metric.releases||[])].filter(Boolean);
+   const item=(catalog[scope]||[]).find(x=>keys.includes(x.key));
+   const spec=(soloAlbums||[]).find(x=>keys.includes(x.key));
+   return spec?.releaseDate||spec?.release_date||
+    (scope==='group'&&item&&(groupOriginalReleaseDates[item.key]||groupStandaloneReleaseDates[item.key]))||
+    item?.release_date||item?.releaseDate||null;
+  }
+  if(metric.kind!=='track')return null;
+  const candidates=(catalog[scope]||[]).filter(x=>(x.tracks||[]).includes(metric.id))
+   .map(x=>x.track_release_dates?.[metric.id]||
+    (scope==='group'&&(groupOriginalReleaseDates[x.key]||groupStandaloneReleaseDates[x.key]))||
+    x.release_date||x.releaseDate||null).filter(x=>/^\\d{4}-\\d\\d-\\d\\d$/.test(x));
+  return candidates.sort()[0]||null;
+ };
+ const makeCopyTitle=(metric,scope,owner)=>{
+  const name=scope==='group'?'SEVENTEEN':owner||'SEVENTEEN';
+  if(metric.value==='listeners')return name==='SEVENTEEN'?'#SEVENTEEN Monthly Listeners on Spotify':
+   '#SEVENTEEN '+possessive(name)+' Monthly Listeners on Spotify';
+  if(metric.value==='followers')return name==='SEVENTEEN'?'#SEVENTEEN Followers on Spotify':
+   '#SEVENTEEN '+possessive(name)+' Followers on Spotify';
+  if(metric.kind==='total')return name==='SEVENTEEN'?'#SEVENTEEN Total Streams on Spotify':
+   '#SEVENTEEN '+possessive(name)+' Total Streams on Spotify';
+  const attributed=name==='SEVENTEEN'?'':' by '+name;
+  return '#SEVENTEEN "'+(metric.title||'Untitled')+'"'+attributed+
+   (metric.kind==='album'?' Album Streams on Spotify':' Streams on Spotify');
+ };
+ const makeCopyText=(metric,scope,owner,link,dates)=>{
+  const release=releaseDateFor(metric,scope);
+  const available=dates.slice(0,10).filter(item=>
+   Number.isFinite(item.value)&&(!release||item.date>=release));
+  const rows=available.reverse().map(({date,value,gain})=>
+   shortDate(date)+' - '+fmt(value)+(Number.isFinite(gain)?' ('+numberSigned(gain)+')':''));
+  if(!rows.length)return '';
+  const url=link?.url||'';
+  return [makeCopyTitle(metric,scope,owner),rows.join('\\n'),
+   '@pledis_17 #세븐틴',url].filter(Boolean).join('\\n\\n');
+ };
+ const saveCopyText=async text=>{
+  if(navigator.clipboard?.writeText){
+   try{await navigator.clipboard.writeText(text);return}catch{}
+  }
+  const field=document.createElement('textarea');
+  field.value=text;field.setAttribute('readonly','');
+  field.style.cssText='position:fixed;left:-9999px;top:0;opacity:0';
+  document.body.append(field);field.select();
+  let success=false;
+  try{success=document.execCommand('copy')}finally{field.remove()}
+  if(!success)throw Error('Clipboard blocked');
+ };
+ copyButton.addEventListener('click',async()=>{
+  if(!copyPayload||copyButton.disabled)return;
+  const content=copyPayload;copyButton.disabled=true;
+  try{await saveCopyText(content);copyButton.textContent='Copied!'}
+  catch(error){copyButton.textContent='Select & copy';window.prompt('Copy this post:',content)}
+  setTimeout(()=>{copyButton.textContent='Copy for X';copyButton.disabled=!copyPayload},1600);
+ });
+
  let opening=0;
  async function show(metric){
   const id=++opening;
+  copyPayload='';copyButton.disabled=true;copyButton.textContent='Copy for X';
   const scope=tab,owner=selectedSoloArtist;
   modal.hidden=false;document.body.style.overflow='hidden';
   const tbody=$('#svtHistoryRows');tbody.innerHTML='<tr><td colspan="4">Loading saved snapshots…</td></tr>';
@@ -356,10 +427,12 @@
    tbody.append(tr);
   };
   tbody.replaceChildren();
+  let dailyCopyValues=null;
   if(mode==='daily'){
    const days=[];let day=ref.date;
    for(let i=0;i<12;i++){days.push(day);day=previousDate(day)}
    const values=await Promise.all(days.map(async date=>({date,value:await valueOf(date)})));
+   dailyCopyValues=values;
    if(id!==opening)return;
    for(let i=9;i>=0;i--){
     const day=values[i],prev=values[i+1],before=values[i+2];
@@ -490,6 +563,20 @@
    $('#svtHistoryNote').textContent+=' · * Partial observed dates or an in-progress period; changes compare matching elapsed calendar days.';
 
   }
+  // Precompute while the modal is open; the actual clipboard write happens
+  // directly from the user's click (needed for Safari/iOS permissions).
+  if(!dailyCopyValues){
+   const days=[];let day=ref.date;
+   for(let i=0;i<12;i++){days.push(day);day=previousDate(day)}
+   dailyCopyValues=await Promise.all(days.map(async date=>({date,value:await valueOf(date)})));
+  }
+  if(id!==opening||modal.hidden)return;
+  const withGains=dailyCopyValues.map((item,i)=>({
+   ...item,gain:Number.isFinite(item.value)&&Number.isFinite(dailyCopyValues[i+1]?.value)
+    ?item.value-dailyCopyValues[i+1].value:null
+  }));
+  copyPayload=makeCopyText(metric,scope,owner,link,withGains);
+  copyButton.disabled=!copyPayload;
   historyOpener=document.activeElement instanceof HTMLElement?document.activeElement:null;
   modal.querySelector('.svt-history-close').focus();
  }
