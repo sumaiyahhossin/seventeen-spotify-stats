@@ -37,8 +37,12 @@ def read_layout(driver, name):
     return data
 
 def click(driver,selector):
-    element=WebDriverWait(driver,30).until(lambda d:d.find_element(By.CSS_SELECTOR,selector))
-    driver.execute_script('arguments[0].click()',element)
+    WebDriverWait(driver,30).until(lambda d:d.execute_script("""
+        const el=document.querySelector(arguments[0]);
+        if(!el || el.disabled)return false;
+        el.click();
+        return true;
+    """,selector))
 
 def check_column_dividers(driver, section):
     # The old test only checked for a 1px ::before in the FIRST row. That
