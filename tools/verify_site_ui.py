@@ -174,6 +174,30 @@ def check_compact_row_height_and_full_width(driver, section, width):
       };
     """)
     limit=65 if width>900 else 58
+    if dims['rowHeight']>limit:
+        # A tab change can update its CSS class before its asynchronous rows
+        # finish repainting. Wait for the actual final layout before failing.
+        try:
+            WebDriverWait(driver,12).until(lambda d:d.execute_script("""
+              const row=document.querySelector('#ranking .rank-row');
+              return row&&row.getBoundingClientRect().height<=arguments[0];
+            """,limit))
+        except Exception:
+            debug=driver.execute_script("""
+              const row=document.querySelector('#ranking .rank-row');
+              const dims=e=>{const r=e.getBoundingClientRect();
+                const c=getComputedStyle(e);
+                return {height:r.height,width:r.width,gridRow:c.gridRow,
+                        gridColumn:c.gridColumn,display:c.display};};
+              return {row:dims(row),
+                track:dims(row.querySelector(':scope>.track')),
+                metrics:[...row.querySelectorAll(':scope>.rank-metric')].map(dims),
+                body:document.body.className,
+                text:row.textContent.slice(0,180)};
+            """)
+            raise AssertionError((section,'rows too tall after paint',dims,debug))
+        dims['rowHeight']=driver.execute_script(
+            "return document.querySelector('#ranking .rank-row').getBoundingClientRect().height")
     assert dims['rowHeight']<=limit,(section,'rows too tall',dims)
     assert abs(dims['tableWidth']-dims['parentWidth'])<=3,(section,'table width changed',dims)
     assert abs(dims['tableWidth']-dims['headWidth'])<=3,(section,'header width changed',dims)
