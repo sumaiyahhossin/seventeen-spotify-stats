@@ -1028,7 +1028,7 @@ def main():
                 """)
                 assert stars['total']==86 and stars['visible']==stars['expected'] and stars['phrases']==2 and stars['cursor']=='none',(
                     f'Starfield labels or layout incorrect: {stars}')
-                assert stars['animation']=='svt-name-rain-v164' and stars['direction']=='normal',(
+                assert stars['animation']=='svt-name-rain-v169' and stars['direction']=='normal',(
                     f'Starfield motion is missing: {stars}')
                 time.sleep(.75)
                 moved=driver.execute_script("""
