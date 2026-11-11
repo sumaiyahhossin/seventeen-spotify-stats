@@ -225,6 +225,23 @@ def check_viewport(driver,width,height):
     """)
     assert track_link and not track_link['hidden'],(width,'No Spotify song link',track_link)
     assert track_link['label']=='Track Link:' and track_link['actual']==track_link['expected'],track_link
+    WebDriverWait(driver,35).until(lambda d:d.execute_script("""
+        return !document.getElementById('svtHistoryCopy').disabled;
+    """))
+    driver.execute_script("""
+        window.__svtTestCopied='';
+        Object.defineProperty(navigator,'clipboard',{
+            configurable:true,value:{writeText:async text=>{window.__svtTestCopied=text}}
+        });
+    """)
+    click(driver,'#svtHistoryCopy')
+    WebDriverWait(driver,10).until(lambda d:
+        d.execute_script("return !!window.__svtTestCopied"))
+    song_copy=driver.execute_script("return window.__svtTestCopied")
+    song_days=[line for line in song_copy.splitlines() if re.match(r'^\\d{1,2}/\\d{1,2} - ',line)]
+    assert song_copy.startswith('#SEVENTEEN "') and track_link['expected'] in song_copy,song_copy
+    assert 1<=len(song_days)<=10 and '@pledis_17 #세븐틴' in song_copy,song_copy
+    print('OT13 Copy for X: song and exact Spotify track URL',len(song_days),flush=True)
     print('OT13 track history uses direct song link:',track_link,flush=True)
     click(driver,'.svt-history-close')
     driver.execute_script("""
@@ -250,6 +267,26 @@ def check_viewport(driver,width,height):
           '#svtHistoryRows tr:first-child td:first-child')).fontWeight,10);
     """)
     assert first_weight<=500,f'Oldest history date was unexpectedly bold: {first_weight}'
+    WebDriverWait(driver,30).until(lambda d:d.execute_script("""
+        return !document.getElementById('svtHistoryCopy').disabled;
+    """))
+    driver.execute_script("""
+        window.__svtTestCopied='';
+        Object.defineProperty(navigator,'clipboard',{
+            configurable:true,value:{writeText:async text=>{window.__svtTestCopied=text}}
+        });
+    """)
+    click(driver,'#svtHistoryCopy')
+    WebDriverWait(driver,10).until(lambda d:
+        d.execute_script("return !!window.__svtTestCopied"))
+    copied=driver.execute_script("return window.__svtTestCopied")
+    dated=[line for line in copied.splitlines() if re.match(r'^\\d{1,2}/\\d{1,2} - ',line)]
+    assert 1<=len(dated)<=10,(width,'Copy for X must use up to 10 saved dates',copied)
+    assert copied.startswith('#SEVENTEEN Total Streams on Spotify'),copied
+    assert '@pledis_17 #세븐틴' in copied,copied
+    assert 'https://open.spotify.com/artist/7nqOGRxlXj7N2JYbgNEjYH' in copied,copied
+    assert all('—' not in line and '*' not in line for line in dated),copied
+    print('OT13 Copy for X: saved days, formatting and profile link',len(dated),flush=True)
     click(driver,'.svt-history-close')
     WebDriverWait(driver,15).until(lambda d:d.execute_script(
         "return document.querySelector('.svt-history-dialog')?.hidden===true"))
