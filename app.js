@@ -2863,6 +2863,44 @@ function rankMetricHtml(value,key,label,{signed=false,estimated=false,partial=fa
   '<span class="metric-label">'+label+'</span><span class="metric-value">'+display+'</span>'+
   '<span class="metric-compact" aria-hidden="true">'+compact+'</span></div>';
 }
+/* One absolutely positioned rule per metric column, spanning the header and
+   the entire list. Per-row pseudo-borders were clipped by overflow:hidden and
+   visibly broke at every row; measuring the real grid keeps all views aligned. */
+function syncRankingColumnRules(){
+ const root=document.getElementById('svtPrimaryStats');
+ const list=document.getElementById('ranking');
+ if(!root||!list)return;
+ let rules=root.querySelector(':scope > .svt-continuous-column-rules');
+ if(!rules){
+  rules=document.createElement('div');
+  rules.className='svt-continuous-column-rules';
+  rules.setAttribute('aria-hidden','true');
+  root.appendChild(rules);
+ }
+ const first=list.querySelector('.rank-row');
+ if(!first||root.hidden){rules.hidden=true;rules.replaceChildren();return}
+ const columns=[...first.querySelectorAll(':scope > .rank-metric')].filter(el=>
+  getComputedStyle(el).display!=='none').sort((a,b)=>
+  a.getBoundingClientRect().left-b.getBoundingClientRect().left);
+ if(columns.length<2){rules.hidden=true;rules.replaceChildren();return}
+ const rootRect=root.getBoundingClientRect();
+ const listRect=list.getBoundingClientRect();
+ const head=root.querySelector('.table-head');
+ const headVisible=head&&getComputedStyle(head).display!=='none';
+ const start=headVisible?head.getBoundingClientRect().top:listRect.top;
+ const columnGap=parseFloat(getComputedStyle(first).columnGap)||0;
+ rules.style.top=(start-rootRect.top)+'px';
+ rules.style.height=Math.max(0,listRect.bottom-start)+'px';
+ rules.replaceChildren(...columns.map(metric=>{
+  const line=document.createElement('i');
+  line.className='svt-column-rule';
+  line.style.left=(metric.getBoundingClientRect().left-rootRect.left-columnGap/2)+'px';
+  return line;
+ }));
+ rules.hidden=false;
+}
+window.addEventListener('resize',()=>requestAnimationFrame(syncRankingColumnRules),{passive:true});
+
 function renderRankMetrics(row,selectedDate=''){
  const incompleteMonth=rank.endsWith('monthly')&&selectedDate&&
   Number(selectedDate.slice(8))<new Date(Date.UTC(Number(selectedDate.slice(0,4)),Number(selectedDate.slice(5,7)),0)).getUTCDate();
@@ -3346,7 +3384,7 @@ async function render(){const token=++renderToken;
    });
   }
  }
- $('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}" data-history-id="${escapeHtml(r.id||'')}" data-history-release="${escapeHtml(r.artworkRelease||r.releaseKey||r.key||r.albumKey||'')}" data-history-releases="${escapeHtml((r.historyReleases||((r.kind==='album'&&/17 IS RIGHT HERE/i.test(r.name||''))?['g49','g50','g51','g52','g53','g54']:[])).join(','))}"><div class="track"><span class="rank-position"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${!discography?`<span class="rank-trend ${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'rank-up':rankMovements.get(positionKeyForDisplay(r))<0?'rank-down':'rank-same':'rank-unknown'}" title="${rankMovements.has(positionKeyForDisplay(r))?'Streaming rank change versus previous '+(daily?'day':rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'period'):'Previous streaming rank unavailable'}">${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'↑ '+rankMovements.get(positionKeyForDisplay(r)):rankMovements.get(positionKeyForDisplay(r))<0?'↓ '+Math.abs(rankMovements.get(positionKeyForDisplay(r))):'=':'—'}</span>`:''}</span>${`<span class="cover-slot">${true?`<img class="cover" data-cover-track="${artworkTrack(r)||'missing'}" data-cover-name="${escapeHtml(r.name)}" data-cover-kind="${r.kind==='album'?'album':'track'}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden></span>`:`<span class="cover-placeholder"></span>`}</span>`}<span class="track-copy">${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}${(rankType==="albums"||rankType==="tracks"||discography||r.kind==="album")&&originalReleaseDate(r)?`<span class="release-date">Released ${formatOriginalRelease(originalReleaseDate(r))}</span>`:""}</span></div>${renderRankMetrics(r,s?.date||'')}</div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork();scheduleMobileRankingNameFit()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
+ $('#ranking').innerHTML=rows.length?rows.slice(0,discography?1000:250).map((r,i)=>`<div class="rank-row ${r.kind==='album'?'album-total-row':''}" data-history-id="${escapeHtml(r.id||'')}" data-history-release="${escapeHtml(r.artworkRelease||r.releaseKey||r.key||r.albumKey||'')}" data-history-releases="${escapeHtml((r.historyReleases||((r.kind==='album'&&/17 IS RIGHT HERE/i.test(r.name||''))?['g49','g50','g51','g52','g53','g54']:[])).join(','))}"><div class="track"><span class="rank-position"><span class="place">${discography?(r.kind==='album'?'◆':'·'):String(i+1).padStart(2,'0')}</span>${!discography?`<span class="rank-trend ${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'rank-up':rankMovements.get(positionKeyForDisplay(r))<0?'rank-down':'rank-same':'rank-unknown'}" title="${rankMovements.has(positionKeyForDisplay(r))?'Streaming rank change versus previous '+(daily?'day':rank.endsWith('weekly')?'week':rank.endsWith('monthly')?'month':rank.endsWith('yearly')?'year':'period'):'Previous streaming rank unavailable'}">${rankMovements.has(positionKeyForDisplay(r))?rankMovements.get(positionKeyForDisplay(r))>0?'↑ '+rankMovements.get(positionKeyForDisplay(r)):rankMovements.get(positionKeyForDisplay(r))<0?'↓ '+Math.abs(rankMovements.get(positionKeyForDisplay(r))):'=':'—'}</span>`:''}</span>${`<span class="cover-slot">${true?`<img class="cover" data-cover-track="${artworkTrack(r)||'missing'}" data-cover-name="${escapeHtml(r.name)}" data-cover-kind="${r.kind==='album'?'album':'track'}" data-cover-fallback="${historicalAlbumCoverFallback(r)||artworkMap.tracks[coverKey(r.name)]?.id||artworkMap.albums[coverKey(r.name)]?.id||''}" alt="" loading="lazy"><span class="cover-placeholder" hidden></span>`:`<span class="cover-placeholder"></span>`}</span>`}<span class="track-copy">${streamTrackUrl(r)?`<a class="track-name track-stream-link" data-track-name-id="${r.id||''}" href="${streamTrackUrl(r)}" target="_blank" rel="noopener noreferrer" title="Stream ${escapeHtml(r.name)} on Spotify">${escapeHtml(r.name)}</a>`:`<span class="track-name" data-track-name-id="${r.id||''}">${escapeHtml(r.name)}</span>`}${(rankType==="albums"||rankType==="tracks"||discography||r.kind==="album")&&originalReleaseDate(r)?`<span class="release-date">Released ${formatOriginalRelease(originalReleaseDate(r))}</span>`:""}</span></div>${renderRankMetrics(r,s?.date||'')}</div>`).join('') :'<div class="empty">'+(!s?'No saved data is available for this category.':periodic?'No comparable saved snapshots for this period. Try another date.':'No matching entries found.')+'</div>';fillArtwork();requestAnimationFrame(syncRankingColumnRules);scheduleMobileRankingNameFit()}catch(error){console.error('Dashboard render failed',error);if(token===renderToken)$('#ranking').innerHTML='<div class="empty">Unable to display this snapshot. Please select another saved date or refresh.</div>'}}
 function selectDashboardMode(view){
  const isAll=view==='all';
  activeDashboardMode=isAll?'all':'dashboard';
