@@ -380,6 +380,40 @@ def check_viewport(driver,width,height):
                     !document.getElementById('svtHistoryProfileLink').hasAttribute('href');
             """),'A unit without a Spotify artist account must not get a false profile link'
             click(driver,'.svt-history-close')
+            # Shared Jeonghan/Joshua recordings must be credited to JxJ,
+            # with individual member tags ordered oldest-to-youngest.
+            driver.execute_script("""
+                const search=document.getElementById('search');
+                search.value="12 o'clock";search.dispatchEvent(new Event('input',{bubbles:true}));
+            """)
+            WebDriverWait(driver,25).until(lambda d:d.execute_script("""
+                return !!document.querySelector(
+                  '#ranking .rank-row[data-history-id="1dp1GI9YcKDoxrKBpp0u9F"] .rank-metric');
+            """))
+            driver.execute_script("""
+                document.querySelector(
+                 '#ranking .rank-row[data-history-id="1dp1GI9YcKDoxrKBpp0u9F"] .rank-metric').click();
+            """)
+            WebDriverWait(driver,30).until(lambda d:d.execute_script("""
+                return !document.getElementById('svtHistoryCopy').disabled;
+            """))
+            driver.execute_script("window.__svtTestCopied='';")
+            click(driver,'#svtHistoryCopy')
+            WebDriverWait(driver,12).until(lambda d:
+                d.execute_script("return !!window.__svtTestCopied"))
+            unit_post=driver.execute_script("return window.__svtTestCopied")
+            unit_days=[line for line in unit_post.splitlines() if re.match(
+                r'^\d{1,2}/\d{1,2} - ',line)]
+            assert unit_post.startswith("JxJ's \"12 o'clock\" Streams on Spotify"),unit_post
+            assert '@pledis_17 #SEVENTEEN #JEONGHAN #JOSHUA' in unit_post,unit_post
+            assert 'https://open.spotify.com/track/1dp1GI9YcKDoxrKBpp0u9F' in unit_post,unit_post
+            assert 1<=len(unit_days)<=7,unit_post
+            print('JxJ Copy for X: age-order member hashtags, song URL,',len(unit_days),'days',flush=True)
+            click(driver,'.svt-history-close')
+            driver.execute_script("""
+                const search=document.getElementById('search');
+                search.value='';search.dispatchEvent(new Event('input',{bubbles:true}));
+            """)
 
     # Gilboard consists of six credited Picheolin recordings; its July
     # prerelease singles must not create two more distinct recordings.
