@@ -187,6 +187,37 @@ select,input{width:100%;height:47px;min-width:0;background:#292c50;border:1px so
 #upcomingRows td.svt-delta-positive{color:#A0C9E8!important}
 #upcomingRows td.svt-delta-negative{color:#F3B6D1!important}
 #upcomingRows td.svt-delta-neutral{color:#f4f0ff!important}
+
+</style><style id="svt-natural-milestone-depth-v20261110">
+/* Match the main dashboard's quiet depth: matte surfaces, directional
+   highlights and contact shadows instead of bright artificial halos. */
+body{
+ background:linear-gradient(165deg,#14182f 0%,#101229 46%,#0e1226 100%)!important;
+}
+body:before{background:none!important}
+.panel{
+ background:linear-gradient(155deg,#222440 0%,#1a1e39 56%,#151a32 100%)!important;
+ border:1px solid rgba(222,210,246,.23)!important;
+ box-shadow:0 2px 3px rgba(1,3,15,.19),0 17px 38px rgba(1,3,16,.29),
+  0 38px 65px rgba(1,3,15,.12),inset 0 1px 0 rgba(255,255,255,.105)!important;
+ -webkit-backdrop-filter:none!important;backdrop-filter:none!important;
+}
+.summary,.table{
+ background:rgba(19,23,45,.68)!important;
+ border-color:rgba(222,210,246,.16)!important;
+ box-shadow:0 2px 3px rgba(1,3,15,.12),0 10px 22px rgba(1,3,16,.14)!important;
+}
+.song-cover{
+ box-shadow:0 2px 4px rgba(2,4,16,.24),0 9px 17px rgba(2,4,16,.17)!important;
+}
+@media(max-width:650px){
+ tbody tr{
+  background:linear-gradient(155deg,#282b49 0%,#1e223e 100%)!important;
+  border-color:rgba(222,210,246,.2)!important;
+  box-shadow:0 2px 3px rgba(1,3,15,.18),0 10px 22px rgba(1,3,16,.2)!important;
+ }
+ .table{background:none!important;box-shadow:none!important}
+}
 </style></head>
 <body><main><a class="back" href="./">← Back to Spotify Stats</a><section class="hero"><div class="eyebrow">SEVENTEEN · SPOTIFY HISTORY</div><h1>Streaming <em>Milestones</em> ✦</h1><p>Browse milestone dates and how many days each song took to reach its streaming milestone.</p></section><nav class="milestone-tabs" aria-label="Milestone views"><button type="button" id="tabReached" aria-selected="true">Milestones</button><button type="button" id="tabUpcoming" aria-selected="false">Milestones to Be Reached</button></nav>
 <section id="reachedView" class="panel">
