@@ -60,7 +60,7 @@
  `;
  const style=document.createElement('style');style.textContent=css;document.head.append(style);
  const modal=document.createElement('div');modal.className='svt-history-dialog';modal.hidden=true;modal.setAttribute('role','presentation');
- modal.innerHTML='<section class="svt-history-window" role="dialog" aria-modal="true" aria-labelledby="svtHistoryTitle"><div class="svt-history-top"><div><div style="font:750 10px system-ui;letter-spacing:.15em;color:#d6b1f5">✦ VERIFIED STREAM HISTORY</div><h2 id="svtHistoryTitle">History</h2></div><div class="svt-history-actions"><button type="button" class="svt-history-copy" id="svtHistoryCopy" disabled aria-label="Copy last 10 days for X">Copy for X</button><button type="button" class="svt-history-close" aria-label="Close history">×</button></div></div><p class="svt-history-note" id="svtHistoryNote"></p><div class="svt-history-wrap"><table class="svt-history-table"><thead><tr><th>Date</th><th>Total</th><th>Increase</th><th>Change in increase</th></tr></thead><tbody id="svtHistoryRows"></tbody></table></div><p class="svt-history-note">A dash means comparable saved data is unavailable. Daily increases need consecutive dates. No missing dates are estimated.</p><p class="svt-history-profile" id="svtHistoryProfile" hidden><span id="svtHistoryLinkLabel">Profile Link:</span> <a id="svtHistoryProfileLink" target="_blank" rel="noopener noreferrer"></a></p></section>';
+ modal.innerHTML='<section class="svt-history-window" role="dialog" aria-modal="true" aria-labelledby="svtHistoryTitle"><div class="svt-history-top"><div><div style="font:750 10px system-ui;letter-spacing:.15em;color:#d6b1f5">✦ VERIFIED STREAM HISTORY</div><h2 id="svtHistoryTitle">History</h2></div><div class="svt-history-actions"><button type="button" class="svt-history-copy" id="svtHistoryCopy" disabled aria-label="Copy up to 7 saved days for X">Copy for X</button><button type="button" class="svt-history-close" aria-label="Close history">×</button></div></div><p class="svt-history-note" id="svtHistoryNote"></p><div class="svt-history-wrap"><table class="svt-history-table"><thead><tr><th>Date</th><th>Total</th><th>Increase</th><th>Change in increase</th></tr></thead><tbody id="svtHistoryRows"></tbody></table></div><p class="svt-history-note">A dash means comparable saved data is unavailable. Daily increases need consecutive dates. No missing dates are estimated.</p><p class="svt-history-profile" id="svtHistoryProfile" hidden><span id="svtHistoryLinkLabel">Profile Link:</span> <a id="svtHistoryProfileLink" target="_blank" rel="noopener noreferrer"></a></p></section>';
  document.body.append(modal);
  // Keep keyboard focus inside the modal and return it to the opener.
  let historyOpener=null;
@@ -286,8 +286,8 @@
  };
  const ownerTitle=(scope,owner)=>scope==='group'?'SEVENTEEN':owner||null;
  const possessive=name=>name+(name.endsWith('s')?"'":"'s");
- // Share only actual saved daily values. The X post always uses up to ten
- // calendar days, even when the inspector is viewing weekly or monthly data.
+ // X posts use the most recent seven calendar days of confirmed observations.
+ // Missing dates and pre-release dates are never filled or estimated.
  const copyButton=$('#svtHistoryCopy');
  let copyPayload='';
  const numberSigned=n=>n>0?'+'+fmt(n):n<0?'-'+fmt(-n):'0';
@@ -308,28 +308,48 @@
     x.release_date||x.releaseDate||null).filter(x=>/^\d{4}-\d\d-\d\d$/.test(x));
   return candidates.sort()[0]||null;
  };
+ // Artist hashtags follow the oldest-to-youngest member order of each unit.
+ const shareUnitMembers={
+  BSS:['HOSHI','DK','SEUNGKWAN'],JxW:['JEONGHAN','WONWOO'],
+  HxW:['HOSHI','WOOZI'],CxM:['SCOUPS','MINGYU'],
+  DxS:['DK','SEUNGKWAN'],V8:['THE8','VERNON'],
+  JxJ:['JEONGHAN','JOSHUA'],Picheolin:['DINO']
+ };
+ const shareSoloTags={
+  'S.Coups':'SCOUPS',Jeonghan:'JEONGHAN',Joshua:'JOSHUA',Jun:'JUN',
+  Hoshi:'HOSHI',Wonwoo:'WONWOO',Woozi:'WOOZI',Dokyeom:'DK',
+  Mingyu:'MINGYU',The8:'THE8',Seungkwan:'SEUNGKWAN',
+  Vernon:'VERNON',Dino:'DINO'
+ };
+ const copyHashtags=(scope,owner)=>{
+  if(scope==='group'||!owner)return '@pledis_17 #SEVENTEEN #세븐틴';
+  const members=shareUnitMembers[owner]||
+   (shareSoloTags[owner]?[shareSoloTags[owner]]:[]);
+  return '@pledis_17 #SEVENTEEN'+
+   (members.length?' '+members.map(x=>'#'+x).join(' '):'');
+ };
  const makeCopyTitle=(metric,scope,owner)=>{
-  const name=scope==='group'?'SEVENTEEN':owner||'SEVENTEEN';
-  if(metric.value==='listeners')return name==='SEVENTEEN'?'#SEVENTEEN Monthly Listeners on Spotify':
-   '#SEVENTEEN '+possessive(name)+' Monthly Listeners on Spotify';
-  if(metric.value==='followers')return name==='SEVENTEEN'?'#SEVENTEEN Followers on Spotify':
-   '#SEVENTEEN '+possessive(name)+' Followers on Spotify';
-  if(metric.kind==='total')return name==='SEVENTEEN'?'#SEVENTEEN Total Streams on Spotify':
-   '#SEVENTEEN '+possessive(name)+' Total Streams on Spotify';
-  const attributed=name==='SEVENTEEN'?'':' by '+name;
-  return '#SEVENTEEN "'+(metric.title||'Untitled')+'"'+attributed+
-   (metric.kind==='album'?' Album Streams on Spotify':' Streams on Spotify');
+  const group=scope==='group',name=group?'SEVENTEEN':owner||'Units & Solo';
+  if(metric.value==='listeners')return group?'#SEVENTEEN Monthly Listeners on Spotify':
+   '#'+name.toUpperCase()+' Monthly Listeners on Spotify';
+  if(metric.value==='followers')return group?'#SEVENTEEN Followers on Spotify':
+   '#'+name.toUpperCase()+' Followers on Spotify';
+  if(metric.kind==='total')return group?'#SEVENTEEN Total Streams on Spotify':
+   name+"'s Total Streams on Spotify";
+  const song='"'+(metric.title||'Untitled')+'"';
+  if(group)return song+(metric.kind==='album'?' Album Streams on Spotify':' Streams on Spotify');
+  return name+"'s "+song+(metric.kind==='album'?' Album Streams on Spotify':' Streams on Spotify');
  };
  const makeCopyText=(metric,scope,owner,link,dates)=>{
   const release=releaseDateFor(metric,scope);
-  const available=dates.slice(0,10).filter(item=>
+  const available=dates.slice(0,7).filter(item=>
    Number.isFinite(item.value)&&(!release||item.date>=release));
   const rows=available.reverse().map(({date,value,gain})=>
    shortDate(date)+' - '+fmt(value)+(Number.isFinite(gain)?' ('+numberSigned(gain)+')':''));
   if(!rows.length)return '';
   const url=link?.url||'';
   return [makeCopyTitle(metric,scope,owner),rows.join('\n'),
-   '@pledis_17 #세븐틴',url].filter(Boolean).join('\n\n');
+   copyHashtags(scope,owner),url].filter(Boolean).join('\n\n');
  };
  const saveCopyText=async text=>{
   if(navigator.clipboard?.writeText){
