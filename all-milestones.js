@@ -277,7 +277,7 @@ function upcomingRows(){
   '<tr><td>'+titleHtml(r,i)+'</td>'+
   '<td data-label="NEXT MILESTONE"><span class="reached-value">'+short(r.target)+'</span></td>'+
   '<td data-label="STREAMS LEFT">'+wide(fmt(r.remaining),compact(r.remaining))+'</td>'+
-  '<td data-label="DAILY GAIN">'+wide(r.gain==null?'—':'+'+fmt(r.gain),r.gain==null?'—':'+'+compact(r.gain))+'</td>'+
+  '<td class="'+(r.gain==null||r.gain===0?'svt-delta-neutral':r.gain>0?'svt-delta-positive':'svt-delta-negative')+'" data-label="DAILY GAIN">'+wide(r.gain==null?'—':(r.gain<0?'−':'+')+fmt(Math.abs(r.gain)),r.gain==null?'—':(r.gain<0?'−':'+')+compact(Math.abs(r.gain)))+'</td>'+
   '<td data-label="ESTIMATED ARRIVAL">'+wide(r.expected?format(r.expected):'—',
     r.expected?format(r.expected):'—')+'</td></tr>'
  ).join('')||'<tr><td colspan="5">No upcoming milestones match this filter.</td></tr>';
