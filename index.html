@@ -1732,7 +1732,7 @@ document.querySelectorAll('.name-fall>.falling-name').forEach(el=>{
   const el=originalByText.get(label)||document.createElement('span');
   originalByText.delete(label);
   el.textContent=label;el.classList.add('falling-name');
-  if(extraClass)el.classList.add(extraClass);
+  if(extraClass)el.classList.add(...extraClass.split(/\s+/));
   el.removeAttribute('style');
   return el;
  };
