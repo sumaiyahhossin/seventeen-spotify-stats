@@ -264,7 +264,7 @@
    :metric.value==='followers'
    ?'Follower totals are observed counts; daily changes require two dated readings.'
    :'Stream totals are cumulative; increases require comparable recordings.';
-  $('#svtHistoryNote').textContent='Last '+periodCount+' '+titleLabel+'s through '+dateText(ref.date)+' · '+(scope==='group'?'OT13':owner||'Units & Solo')+' · oldest first. '+historyMeasureNote;
+  $('#svtHistoryNote').textContent='Last '+periodCount+' '+titleLabel+'s through '+dateText(ref.date)+' · '+(scope==='group'?'OT13':owner||'Units & Solo')+'. '+historyMeasureNote;
   if(followerData&&profileId)
    $('#svtHistoryNote').textContent+=' · Followers are dated when collected; no November 7 count is fabricated.';
   const lookup=async date=>{
