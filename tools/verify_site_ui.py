@@ -1015,9 +1015,9 @@ def main():
                 """),'All summary cards are no longer flat and lightweight'
 
                 stars=driver.execute_script("""
-                    const names=[...document.querySelectorAll('#svtNameLayer>.falling-name')];
+                    const names=[...document.querySelectorAll('#svtNameLayer .falling-name')];
                     const visible=names.filter(el=>getComputedStyle(el).display!=='none');
-                    const moving=visible[0];
+                    const moving=document.querySelector('#svtNameLayer>.svt-name-rain-track');
                     const css=getComputedStyle(moving);
                     return {total:names.length,visible:visible.length,
                       expected:79,
@@ -1028,25 +1028,25 @@ def main():
                 """)
                 assert stars['total']==80 and stars['visible']==stars['expected'] and stars['phrases']==2 and stars['cursor']=='none',(
                     f'Starfield labels or layout incorrect: {stars}')
-                assert stars['animation']=='svt-name-rain-v169' and stars['direction']=='normal',(
+                assert stars['animation']=='svt-name-across-v170' and stars['direction']=='normal',(
                     f'Starfield motion is missing: {stars}')
                 time.sleep(.75)
                 moved=driver.execute_script("""
-                    return getComputedStyle([...document.querySelectorAll('#svtNameLayer>.falling-name')]
-                        .find(el=>getComputedStyle(el).display!=='none')).transform;
+                    return getComputedStyle(document.querySelector('#svtNameLayer>.svt-name-rain-track')).transform;
                 """)
                 assert moved!=stars['transform'],('Starfield labels are stationary',stars,moved)
                 hover_features=driver.execute_script("""
-                    const ot=document.querySelector('#svtNameLayer>.svt-ot13');
+                    const ot=document.querySelector('#svtNameLayer .svt-ot13');
                     ot.dispatchEvent(new PointerEvent('pointerenter',{pointerType:'mouse',clientX:50,clientY:80}));
                     const groupPhoto=document.querySelector('#svt-name-photo')?.classList.contains('svt-group-preview');
                     const button=document.querySelector('#svt-star-trigger');
                     const shown=button && getComputedStyle(button).display!=='none';
                     button?.click();
-                    return {groupPhoto,shown,shootingStar:document.querySelectorAll('.svt-shooting-star.svt-user-shot').length};
+                    return {groupPhoto,shown,celebrationPieces:document.querySelectorAll('.svt-celebration-piece').length,
+                      flowers:document.querySelectorAll('.svt-celebration-piece.svt-flower').length};
                 """)
-                assert hover_features['groupPhoto'] and hover_features['shown'] and hover_features['shootingStar']>0,(
-                    f'OT13 photo or shooting star missing: {hover_features}')
+                assert hover_features['groupPhoto'] and hover_features['shown'] and hover_features['celebrationPieces']>0 and hover_features['flowers']>0,(
+                    f'OT13 photo or flower celebration missing: {hover_features}')
                 print(f'Starfield and hover effects verified at {width}px',flush=True)
                 assert driver.execute_script("""
                     return document.documentElement.scrollWidth<=window.innerWidth+5
