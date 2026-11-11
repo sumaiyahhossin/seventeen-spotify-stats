@@ -1379,21 +1379,14 @@ body .rank-row:hover{transform:none!important;box-shadow:none!important}
  #svtNameLayer.name-fall,.svt-background-shooting-star{display:block!important}
  #svtNameLayer>.falling-name{animation-duration:22s!important}
 }
-</style><style id="svt-star-control-layout-v165">
-.hero{position:relative!important}
+</style><style id="svt-star-control-layout-v168">
 .hero>#svt-star-trigger{
- position:absolute!important;right:max(20px,calc((100vw - 1120px)/2 + 16px))!important;
- top:50%!important;transform:translateY(-50%)!important;
+ position:relative!important;top:auto!important;right:auto!important;bottom:auto!important;
+ transform:none!important;display:block!important;width:min(270px,82vw)!important;
+ max-width:none!important;margin:22px auto 0!important;text-align:center!important
 }
-.hero>#svt-star-trigger:active{transform:translateY(-50%) scale(.98)!important}
-@media(max-width:760px){
- .hero>#svt-star-trigger{
-  position:relative!important;top:auto!important;right:auto!important;bottom:auto!important;
-  transform:none!important;display:block!important;width:min(230px,82vw)!important;
-  max-width:none!important;margin:16px auto 0!important;text-align:center!important
- }
- .hero>#svt-star-trigger:active{transform:scale(.98)!important}
-}
+.hero>#svt-star-trigger:active{transform:scale(.98)!important}
+#svtNameLayer>.svt-unit-rain{top:var(--unit-top,-42px)!important}
 </style><style id="svt-star-duration-v166">
 .svt-shooting-star.svt-user-shot{animation-duration:2.6s!important}
 .svt-eternity-spark{animation-duration:1.05s!important}
@@ -1694,6 +1687,7 @@ document.querySelectorAll('.name-fall>.falling-name').forEach(el=>{
    tag.className='falling-name svt-unit-rain'+(koreanIndex?' svt-korean-rain':'');
    tag.textContent=label;
    tag.style.setProperty('--right-offset',[2.5,7,12.5][index%3]+'vw');
+   tag.style.setProperty('--unit-top',((index*19+5)%78+8)+'vh');
    tag.style.setProperty('--nr',duration+'s');
    tag.style.setProperty('--nd',(-((index*1.37)%duration)).toFixed(2)+'s');
    layer.appendChild(tag);
