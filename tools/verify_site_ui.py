@@ -155,6 +155,22 @@ def check_viewport(driver,width,height):
     check_trend_palette(driver,f'OT13 {width}px')
     check_summary_growth_header_white(driver,f'OT13 {width}px')
     check_compact_row_height_and_full_width(driver,f'OT13 {width}px',width)
+    # A song's history must link to its Spotify recording, never its artist.
+    track_link=driver.execute_script("""
+      const row=[...document.querySelectorAll('#ranking .rank-row')]
+        .find(r=>r.querySelector('.track-stream-link[href^="https://open.spotify.com/track/"]'));
+      if(!row)return null;
+      const expected=row.querySelector('.track-stream-link').href;
+      row.querySelector('.rank-metric').click();
+      return {expected,
+        label:document.getElementById('svtHistoryLinkLabel').textContent,
+        actual:document.getElementById('svtHistoryProfileLink').href,
+        hidden:document.getElementById('svtHistoryProfile').hidden};
+    """)
+    assert track_link and not track_link['hidden'],(width,'No Spotify song link',track_link)
+    assert track_link['label']=='Track Link:' and track_link['actual']==track_link['expected'],track_link
+    print('OT13 track history uses direct song link:',track_link,flush=True)
+    click(driver,'.svt-history-close')
     # The history inspector must open on metric click and close without leaving
     # the page covered by an invisible blocking overlay.
     click(driver,'#total')
@@ -354,6 +370,25 @@ def check_viewport(driver,width,height):
     assert len(entries)==11, f"Album view needs exactly 11 official releases, got {len(entries)}"
     for name in expected:
         assert any(name.lower() in title.lower() for title in titles),f"Missing album {name}"
+    # Album history has a real album URL where one is saved. Other albums
+    # must link to a verified song from that release, not a false album URL.
+    for name,label,prefix in [('V8','Album Link:','https://open.spotify.com/album/5HQrHtpGthJMePFhXT3jKS'),
+                               ('DREAMSCAPE','Track Link:','https://open.spotify.com/track/')]:
+        result=driver.execute_script("""
+          const [album]=arguments;
+          const row=[...document.querySelectorAll('#ranking .rank-row')]
+            .find(r=>(r.querySelector('.track-name')?.textContent||'').includes(album));
+          if(!row)return null;
+          row.querySelector('.rank-metric').click();
+          const area=document.getElementById('svtHistoryProfile');
+          return {hidden:area.hidden,
+                  label:document.getElementById('svtHistoryLinkLabel').textContent,
+                  url:document.getElementById('svtHistoryProfileLink').href};
+        """,name)
+        assert result and not result['hidden'] and result['label']==label,(width,name,result)
+        assert result['url'].startswith(prefix),(width,name,result)
+        print(name,'album history correctly linked:',result,flush=True)
+        click(driver,'.svt-history-close')
     # The album type and full dated title must be visible on every album.
     undated=[row.find_element(By.CSS_SELECTOR,'.track-copy').text for row in entries
             if 'Released ' not in row.find_element(By.CSS_SELECTOR,'.track-copy').text]
