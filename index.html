@@ -1086,6 +1086,21 @@ body.svt-compact-ranking-table #svtPrimaryStats .table-head{
 .svt-history-dialog .svt-history-table .positive{color:var(--svt-increase)!important}
 #svt-all-history-dialog td.svt-gain-negative,
 .svt-history-dialog .svt-history-table .negative{color:var(--svt-decrease)!important}
+/* Top summary cards use the same clean white values for all sections,
+   regardless of whether a gain is positive or negative. Only ranking/history
+   deltas use sky blue and rose pink. */
+#svtPrimaryStats .stats .stat #gain,
+#svtPrimaryStats .stats .stat #gain.svt-gain-positive,
+#svtPrimaryStats .stats .stat #gain.svt-gain-negative,
+#svtAllView .svt-all-stats .stat #all-summaryGrowth,
+#svtAllView .svt-all-stats .stat #all-summaryGrowth.svt-gain-positive,
+#svtAllView .svt-all-stats .stat #all-summaryGrowth.svt-gain-negative{
+ color:#fff!important;
+}
+#svtPrimaryStats .stats .stat #gain + span,
+#svtAllView .svt-all-stats .stat #all-summaryGrowthNote{
+ color:#f4f0ff!important;
+}
 /* A missing/zero comparison remains legible and never takes a sign color. */
 #svtPrimaryStats .rank-metric.missing-value .metric-value,
 #svtPrimaryStats .rank-metric.missing-value .metric-compact,
