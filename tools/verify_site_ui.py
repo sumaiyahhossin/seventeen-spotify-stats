@@ -100,6 +100,33 @@ def check_trend_palette(driver, section):
     assert colors.get('decrease')==['rgb(243, 182, 209)']*2,(section,colors)
     print(section,'Serenity / Rose Quartz ranking palette verified:',colors,flush=True)
 
+def check_summary_growth_header_white(driver, section):
+    # Header totals and explanatory text remain white in OT13, Units/Solo
+    # and All, even while the smaller ranking deltas use the two accent colors.
+    colors=driver.execute_script("""
+      const results={};
+      for(const [id,noteId] of [['gain',null],['all-summaryGrowth','all-summaryGrowthNote']]){
+        const el=document.getElementById(id);
+        const saved=el.className;
+        const note=noteId?document.getElementById(noteId):el.nextElementSibling;
+        try{
+          el.classList.remove('svt-gain-positive','svt-gain-negative');
+          const neutral=getComputedStyle(el).color;
+          el.classList.add('svt-gain-positive');
+          const positive=getComputedStyle(el).color;
+          el.classList.replace('svt-gain-positive','svt-gain-negative');
+          const negative=getComputedStyle(el).color;
+          results[id]={neutral,positive,negative,note:getComputedStyle(note).color};
+        }finally{el.className=saved}
+      }
+      return results;
+    """)
+    for metric, result in colors.items():
+        assert all(result[k]=='rgb(255, 255, 255)'
+                   for k in ('neutral','positive','negative')), (section,metric,result)
+        assert result['note']=='rgb(244, 240, 255)', (section,metric,result)
+    print(section,'white summary growth headings / comparisons:',colors,flush=True)
+
 def check_compact_row_height_and_full_width(driver, section, width):
     dims=driver.execute_script("""
       const area=document.getElementById('svtPrimaryStats');
@@ -126,6 +153,7 @@ def check_viewport(driver,width,height):
     read_layout(driver,f'OT13 {width}px')
     check_column_dividers(driver,f'OT13 {width}px')
     check_trend_palette(driver,f'OT13 {width}px')
+    check_summary_growth_header_white(driver,f'OT13 {width}px')
     check_compact_row_height_and_full_width(driver,f'OT13 {width}px',width)
     # The history inspector must open on metric click and close without leaving
     # the page covered by an invisible blocking overlay.
@@ -150,6 +178,7 @@ def check_viewport(driver,width,height):
     read_layout(driver,f'Units & Solo {width}px')
     check_column_dividers(driver,f'Units & Solo {width}px')
     check_trend_palette(driver,f'Units & Solo {width}px')
+    check_summary_growth_header_white(driver,f'Units & Solo {width}px')
     check_compact_row_height_and_full_width(driver,f'Units & Solo {width}px',width)
     # Regression: a saved count of zero is not a missing song. The main
     # combined total must include all distinct Spotify IDs exactly once.
