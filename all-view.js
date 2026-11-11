@@ -889,7 +889,7 @@ $('next').addEventListener('click',()=>{state.page++;renderTracks();saveAllViewS
 /* All archive history inspector: real dated snapshots, no interpolated values. */
 const allHistoryDialog=document.createElement('dialog');
 allHistoryDialog.id='svt-all-history-dialog';
-allHistoryDialog.innerHTML='<div class="all-history-head"><h2 id="all-history-title">Stream history</h2><div class="all-history-actions"><button type="button" class="all-history-copy" id="all-history-copy" disabled aria-label="Copy last 10 days for X">Copy for X</button><button type="button" class="all-history-close" aria-label="Close history">×</button></div></div><p id="all-history-note"></p><div class="all-history-scroll"><table><thead><tr><th>Date</th><th>Total</th><th>Increase</th><th>Change in increase</th></tr></thead><tbody id="all-history-body"></tbody></table></div>';
+allHistoryDialog.innerHTML='<div class="all-history-head"><h2 id="all-history-title">Stream history</h2><div class="all-history-actions"><button type="button" class="all-history-copy" id="all-history-copy" disabled aria-label="Copy up to 7 saved days for X">Copy for X</button><button type="button" class="all-history-close" aria-label="Close history">×</button></div></div><p id="all-history-note"></p><div class="all-history-scroll"><table><thead><tr><th>Date</th><th>Total</th><th>Increase</th><th>Change in increase</th></tr></thead><tbody id="all-history-body"></tbody></table></div>';
 document.body.append(allHistoryDialog);
 const historyCss=document.createElement('style');
 historyCss.textContent='#svt-all-history-dialog{width:min(740px,94vw);max-height:88dvh;overflow:auto;border:1px solid #8570b6;border-radius:18px;background:#191a36;color:#f8f3ff;padding:20px;box-shadow:0 20px 80px #080817}#svt-all-history-dialog::backdrop{background:#050515cc;backdrop-filter:blur(6px)}#svt-all-history-dialog .all-history-head{display:flex;justify-content:space-between;align-items:center;gap:12px}#svt-all-history-dialog h2{font:800 22px Manrope,sans-serif;margin:0}#svt-all-history-dialog button{border:1px solid #8275ad;background:#343154;color:white;border-radius:9px;padding:8px 14px;cursor:pointer}#svt-all-history-dialog .all-history-actions{display:flex;align-items:center;gap:7px}#svt-all-history-dialog .all-history-copy{border-color:#99bfdf;background:rgba(160,201,232,.13);font-size:12px;font-weight:750;white-space:nowrap}#svt-all-history-dialog .all-history-copy:disabled{opacity:.45;cursor:wait}@media(max-width:480px){#svt-all-history-dialog .all-history-actions{gap:4px}#svt-all-history-dialog .all-history-copy{padding:8px;font-size:11px}}#all-history-note{font:12px/1.5 Manrope,sans-serif;color:#c4b9de}#svt-all-history-dialog .all-history-scroll{overflow-x:auto}#svt-all-history-dialog table{width:100%;border-collapse:collapse;font:12px/1.5 Manrope,sans-serif;min-width:500px}#svt-all-history-dialog th,#svt-all-history-dialog td{padding:11px 8px;text-align:right;border-bottom:1px solid #44405e;white-space:nowrap}#svt-all-history-dialog th:first-child,#svt-all-history-dialog td:first-child{text-align:left}#svtAllView [data-all-history]{cursor:pointer;text-decoration:underline dotted transparent;text-underline-offset:4px}#svtAllView [data-all-history]:hover,#svtAllView [data-all-history]:focus-visible{text-decoration-color:#f0b6e7;outline-color:#d4a8ed}';
@@ -911,19 +911,48 @@ const allCopyUrl=row=>{
  const track=(row.ids||[]).find(id=>validId(id));
  return track?'https://open.spotify.com/track/'+track:'';
 };
+// When a recording has several credits, prioritize its named unit; every
+// unit's hashtags are ordered from oldest to youngest member.
+const allShareUnitMembers={
+ BSS:['HOSHI','DK','SEUNGKWAN'],JxW:['JEONGHAN','WONWOO'],
+ HxW:['HOSHI','WOOZI'],CxM:['SCOUPS','MINGYU'],DxS:['DK','SEUNGKWAN'],
+ V8:['THE8','VERNON'],JxJ:['JEONGHAN','JOSHUA'],Picheolin:['DINO']
+};
+const allShareSoloTags={
+ 'S.Coups':'SCOUPS',Jeonghan:'JEONGHAN',Joshua:'JOSHUA',Jun:'JUN',
+ Hoshi:'HOSHI',Wonwoo:'WONWOO',Woozi:'WOOZI',Dokyeom:'DK',
+ Mingyu:'MINGYU',The8:'THE8',Seungkwan:'SEUNGKWAN',Vernon:'VERNON',Dino:'DINO'
+};
+const allShareAgeOrder=Object.keys(allShareSoloTags);
+const allShareOwner=row=>{
+ if(row.scope==='group'||row.scope==='all')return 'SEVENTEEN';
+ const names=(row.owners||[]).filter(name=>name&&name!=='SEVENTEEN');
+ return names.find(name=>allShareUnitMembers[name])||
+  names.find(name=>allShareSoloTags[name])||names[0]||'Units & Solo';
+};
+const allShareTags=row=>{
+ const owner=allShareOwner(row);
+ if(owner==='SEVENTEEN')return '@pledis_17 #SEVENTEEN #세븐틴';
+ const members=allShareUnitMembers[owner]||
+  [...new Set((row.owners||[]).filter(name=>allShareSoloTags[name]))]
+   .sort((a,b)=>allShareAgeOrder.indexOf(a)-allShareAgeOrder.indexOf(b))
+   .map(name=>allShareSoloTags[name]);
+ return '@pledis_17 #SEVENTEEN'+
+  (members.length?' '+members.map(name=>'#'+name).join(' '):'');
+};
 const allCopyTitle=row=>{
  if(row.scope==='all')return '#SEVENTEEN Spotify Streams · OT13, Units & Solo';
- const owners=(row.owners||[]).filter(name=>name&&name!=='SEVENTEEN'&&name!=='Unassigned solo/unit');
- const by=owners.length?' by '+owners.join(', '):'';
- if(row.kind==='album')return '#SEVENTEEN "'+(row.title||'Album')+'"'+by+' Album Streams on Spotify';
- return '#SEVENTEEN "'+(row.title||'Track')+'"'+by+' Streams on Spotify';
+ const artist=allShareOwner(row),group=artist==='SEVENTEEN';
+ const song='"'+(row.title||(row.kind==='album'?'Album':'Track'))+'"';
+ if(group)return song+(row.kind==='album'?' Album Streams on Spotify':' Streams on Spotify');
+ return artist+"'s "+song+(row.kind==='album'?' Album Streams on Spotify':' Streams on Spotify');
 };
 const allCopyText=(row,dates)=>{
- const recorded=dates.slice(0,12).slice(0,10).filter(item=>Number.isFinite(item.value));
+ const recorded=dates.slice(0,7).filter(item=>Number.isFinite(item.value));
  const lines=recorded.reverse().map(item=>allCopyShortDate(item.date)+' - '+fmt(item.value)+
   (Number.isFinite(item.gain)?' ('+allCopySigned(item.gain)+')':''));
  if(!lines.length)return '';
- return [allCopyTitle(row),lines.join('\n'),'@pledis_17 #세븐틴',allCopyUrl(row)]
+ return [allCopyTitle(row),lines.join('\n'),allShareTags(row),allCopyUrl(row)]
   .filter(Boolean).join('\n\n');
 };
 const allWriteClipboard=async content=>{
@@ -1110,7 +1139,7 @@ async function showAllHistory(row){
    '</td><td class="'+tone(change)+'">'+signed(change)+(partial&&Number.isFinite(change)?'*':'')+'</td></tr>');
  }
  tbody.innerHTML=output.join('');
- // Build an X-ready daily post from at most ten calendar days. Weekly and
+ // Build an X-ready daily post from at most seven calendar days. Weekly and
  // monthly history views still copy DAILY data; gaps are never estimated.
  const dates=Array.from({length:12},(_,i)=>historyDay(end,-i));
  const recent=await Promise.all(dates.map(async date=>{
