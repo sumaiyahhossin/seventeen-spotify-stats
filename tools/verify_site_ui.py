@@ -200,6 +200,36 @@ def check_viewport(driver,width,height):
     WebDriverWait(driver,30).until(lambda d:
         d.find_element(By.ID,'total').text.strip()==f'{expected:,}')
     print('Verified all solo/unit streams:', f'{expected:,}',flush=True)
+    # Artist history captions use Korean names and real Spotify profile IDs.
+    # Check both audience and total-stream cards at desktop and mobile sizes.
+    click(driver,'#artistProfiles [data-solo-artist="Joshua"]')
+    for card, expected_title in [
+        ('#listeners',"Joshua's Monthly Listeners on Spotify"),
+        ('#total',"Joshua's Total Streams on Spotify")
+    ]:
+        click(driver,card)
+        WebDriverWait(driver,30).until(lambda d:d.execute_script("""
+            const popup=document.querySelector('.svt-history-dialog');
+            return popup&&!popup.hidden&&
+                document.getElementById('svtHistoryNote').textContent.startsWith('Last ');
+        """))
+        actual=driver.execute_script("""
+            return {
+                title:document.getElementById('svtHistoryTitle').textContent,
+                note:document.getElementById('svtHistoryNote').textContent,
+                label:document.getElementById('svtHistoryProfile').textContent,
+                hidden:document.getElementById('svtHistoryProfile').hidden,
+                url:document.getElementById('svtHistoryProfileLink').href
+            };
+        """)
+        assert actual['title']==expected_title,(width,card,actual)
+        assert '· 조슈아.' in actual['note'] and '· Joshua.' not in actual['note'],actual
+        assert not actual['hidden'] and 'Profile Link:' in actual['label'],actual
+        assert actual['url']=='https://open.spotify.com/artist/74AwWFYdjQ3ER5vHO4H7b0',actual
+        print('Joshua Spotify history title / Korean name / profile:',actual,flush=True)
+        click(driver,'.svt-history-close')
+    click(driver,'#allSoloArtists')
+
     # Test zero-count profiles and units with a separately grouped album.
     artist_releases=catalogue['solo']
     for owner in ('Hoshi','Seungkwan','JxJ','V8','Picheolin'):
@@ -215,6 +245,16 @@ def check_viewport(driver,width,height):
         WebDriverWait(driver,30).until(lambda d:
             d.find_element(By.ID,'total').text.strip()==f'{count:,}')
         print(owner,'verified solo/unit streams:',f'{count:,}',flush=True)
+        if owner=='JxJ':
+            click(driver,'#total')
+            WebDriverWait(driver,20).until(lambda d:
+                not d.execute_script("return document.querySelector('.svt-history-dialog')?.hidden"))
+            assert driver.execute_script("""
+                return document.getElementById('svtHistoryProfile').hidden &&
+                    !document.getElementById('svtHistoryProfileLink').hasAttribute('href');
+            """),'A unit without a Spotify artist account must not get a false profile link'
+            click(driver,'.svt-history-close')
+
     # Gilboard consists of six credited Picheolin recordings; its July
     # prerelease singles must not create two more distinct recordings.
     click(driver,'#artistProfiles [data-solo-artist="Picheolin"]')
