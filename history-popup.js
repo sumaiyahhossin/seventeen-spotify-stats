@@ -55,7 +55,7 @@
  `;
  const style=document.createElement('style');style.textContent=css;document.head.append(style);
  const modal=document.createElement('div');modal.className='svt-history-dialog';modal.hidden=true;modal.setAttribute('role','presentation');
- modal.innerHTML='<section class="svt-history-window" role="dialog" aria-modal="true" aria-labelledby="svtHistoryTitle"><div class="svt-history-top"><div><div style="font:750 10px system-ui;letter-spacing:.15em;color:#d6b1f5">✦ VERIFIED STREAM HISTORY</div><h2 id="svtHistoryTitle">History</h2></div><button type="button" class="svt-history-close" aria-label="Close history">×</button></div><p class="svt-history-note" id="svtHistoryNote"></p><div class="svt-history-wrap"><table class="svt-history-table"><thead><tr><th>Date</th><th>Total</th><th>Increase</th><th>Change in increase</th></tr></thead><tbody id="svtHistoryRows"></tbody></table></div><p class="svt-history-note">A dash means comparable saved data is unavailable. Daily increases need consecutive dates. No missing dates are estimated.</p><p class="svt-history-profile" id="svtHistoryProfile" hidden>Profile Link: <a id="svtHistoryProfileLink" target="_blank" rel="noopener noreferrer"></a></p></section>';
+ modal.innerHTML='<section class="svt-history-window" role="dialog" aria-modal="true" aria-labelledby="svtHistoryTitle"><div class="svt-history-top"><div><div style="font:750 10px system-ui;letter-spacing:.15em;color:#d6b1f5">✦ VERIFIED STREAM HISTORY</div><h2 id="svtHistoryTitle">History</h2></div><button type="button" class="svt-history-close" aria-label="Close history">×</button></div><p class="svt-history-note" id="svtHistoryNote"></p><div class="svt-history-wrap"><table class="svt-history-table"><thead><tr><th>Date</th><th>Total</th><th>Increase</th><th>Change in increase</th></tr></thead><tbody id="svtHistoryRows"></tbody></table></div><p class="svt-history-note">A dash means comparable saved data is unavailable. Daily increases need consecutive dates. No missing dates are estimated.</p><p class="svt-history-profile" id="svtHistoryProfile" hidden><span id="svtHistoryLinkLabel">Profile Link:</span> <a id="svtHistoryProfileLink" target="_blank" rel="noopener noreferrer"></a></p></section>';
  document.body.append(modal);
  // Keep keyboard focus inside the modal and return it to the opener.
  let historyOpener=null;
@@ -249,6 +249,36 @@
   return typeof artistId==='string'&&/^[a-zA-Z0-9]{22}$/.test(artistId)
    ?'https://open.spotify.com/artist/'+artistId:null;
  };
+ // Spotify links must identify the actual record being inspected. No artist
+ // profile links on individual tracks or album totals.
+ const validSpotifyId=id=>/^[A-Za-z0-9]{22}$/.test(String(id||''));
+ const sourceLinkFor=(metric,scope,owner)=>{
+  if(metric.kind==='audience'||metric.kind==='total'){
+   const url=profileFor(scope,owner);
+   return url?{label:'Profile Link:',url}:null;
+  }
+  if(metric.kind==='track'){
+   // The rendered track name already resolves legacy workbook IDs and
+   // duplicate-release recording IDs; reuse that verified destination.
+   const direct=String(metric.spotifyUrl||'');
+   const match=direct.match(/^https:\/\/open\.spotify\.com\/track\/([A-Za-z0-9]{22})\/?(?:[?#].*)?$/);
+   const id=match?.[1]||(validSpotifyId(metric.id)?metric.id:null);
+   return id?{label:'Track Link:',url:'https://open.spotify.com/track/'+id}:null;
+  }
+  if(metric.kind!=='album')return null;
+  const keys=[metric.release,...(metric.releases||[])].filter(Boolean);
+  const album=(soloAlbums||[]).find(item=>
+   keys.includes(item.key)||(item.releaseKeys||[]).some(key=>keys.includes(key)));
+  if(validSpotifyId(album?.albumId))
+   return {label:'Album Link:',url:'https://open.spotify.com/album/'+album.albumId};
+  // If this exact album lacks a saved Spotify album ID, link a verified
+  // recording FROM that release and label it Track Link (never Album Link).
+  const directIds=album?.tracks||[];
+  const catalogIds=keys.flatMap(key=>
+   (catalog[scope]||[]).find(item=>item.key===key)?.tracks||[]);
+  const id=[...directIds,...catalogIds].find(validSpotifyId);
+  return id?{label:'Track Link:',url:'https://open.spotify.com/track/'+id}:null;
+ };
  const ownerTitle=(scope,owner)=>scope==='group'?'SEVENTEEN':owner||null;
  const possessive=name=>name+(name.endsWith('s')?"'":"'s");
  let opening=0;
@@ -264,11 +294,12 @@
    ?possessive(artist)+' '+measure+' on Spotify'
    :measure||metric.title||'Track streams';
   $('#svtHistoryNote').textContent='Loading saved streaming history…';
-  const profile=profileFor(scope,owner);
+  const link=sourceLinkFor(metric,scope,owner);
   const profileArea=$('#svtHistoryProfile'),profileLink=$('#svtHistoryProfileLink');
-  profileArea.hidden=!profile;
-  if(profile){profileLink.href=profile;profileLink.textContent=profile}
-  else{profileLink.removeAttribute('href');profileLink.textContent=''};
+  const linkLabel=$('#svtHistoryLinkLabel');
+  profileArea.hidden=!link;
+  if(link){linkLabel.textContent=link.label;profileLink.href=link.url;profileLink.textContent=link.url}
+  else{profileLink.removeAttribute('href');profileLink.textContent='';linkLabel.textContent=''};
   let ref;
   try{ref=await selectedSnapshot()||await latest(scope)}
   catch(error){tbody.innerHTML='<tr><td colspan="4">Unable to load selected archive. Try selecting a date and reopening.</td></tr>';return}
@@ -481,7 +512,8 @@
   const release=row.dataset.historyRelease||'';
   const releases=(row.dataset.historyReleases||'').split(',').filter(Boolean);
   const id=row.dataset.historyId||'';
-  show({kind:row.classList.contains('album-total-row')?'album':'track',release,releases,id,title}).catch(console.error);
+  show({kind:row.classList.contains('album-total-row')?'album':'track',release,releases,id,title,
+   spotifyUrl:row.querySelector('.track-name[href]')?.href||null}).catch(console.error);
  });
  ranking?.addEventListener('keydown',event=>{
   if(event.key!=='Enter'&&event.key!==' ')return;
