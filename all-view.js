@@ -524,10 +524,10 @@ function renderSummary(){
   (counterCorrections?' · '+counterCorrections+' recorded counter decrease'+(counterCorrections===1?'':'s'):'');
  $('summaryGrowth').classList.toggle('svt-gain-positive',Number.isFinite(net)&&net>0);
  $('summaryGrowth').classList.toggle('svt-gain-negative',Number.isFinite(net)&&net<0);
- $('summaryCoverage').textContent=allComplete?
-  fmt(rows.length)+' distinct Spotify recordings · group, members and units combined without duplicate editions or shared recording IDs. '+
-  (dailyComplete?'All '+fmt(rows.length)+' recordings have verified previous-day comparisons.':
-   verifiedDaily.length+' / '+rows.length+' recordings have verified previous-day comparisons.'):
+ // Keep missing-data warnings, but hide the redundant verified-recording
+ // summary when the complete combined total is already visible above.
+ $('summaryCoverage').hidden=allComplete;
+ $('summaryCoverage').textContent=allComplete?'':
   'Some unique recordings lack verified totals; no combined number is displayed until all totals are available.';
 }
 function artworkFor(row){
