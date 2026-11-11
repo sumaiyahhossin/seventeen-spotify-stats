@@ -948,7 +948,7 @@ async function showAllHistory(row){
  const end=row.scope==='all'?(state.group.date===state.solo.date?state.group.date:state.group.date<state.solo.date?state.group.date:state.solo.date):state[row.scope].date;
  const tbody=document.getElementById('all-history-body');
  document.getElementById('all-history-title').textContent=row.title||'Combined streams';
- document.getElementById('all-history-note').textContent='Last '+count+' '+(mode==='monthly'?'months':mode==='weekly'?'weeks':'days')+' through '+displayDate(end)+' · verified saved observations only. * means a verified subset or incomplete period, not a full historical total. Unrecorded dates are labeled; missing comparisons show —. Pink negative changes reflect recorded counter decreases or revisions.';
+ document.getElementById('all-history-note').textContent='Last '+count+' '+(mode==='monthly'?'months':mode==='weekly'?'weeks':'days')+' through '+displayDate(end)+' · verified saved observations only. * means a verified subset or incomplete period, not a full historical total. Unrecorded dates are labeled; missing comparisons show —. Rose Quartz negative changes reflect recorded counter decreases or revisions.';
  tbody.innerHTML='<tr><td colspan="4">Loading saved history…</td></tr>';
  if(!allHistoryDialog.open)allHistoryDialog.showModal();
  // Require exact saved dates for comparisons; never interpolate records.
