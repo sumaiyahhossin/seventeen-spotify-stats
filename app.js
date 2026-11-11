@@ -2926,7 +2926,7 @@ function renderRankMetrics(row,selectedDate=''){
   rank.endsWith('yearly')?'last year':'yesterday';
  // Solo/unit charts show the selected gain and change until Overall is chosen.
  // The history inspector still exposes the verified cumulative stream count.
- const showStreams=rank.endsWith('overall')||(tab==='group'&&!rank.endsWith('daily'))||(tab==='solo'&&rank.startsWith('discography'));
+ const showStreams=rank.endsWith('overall')||(rank.endsWith('daily')&&rankType==='tracks')||(tab==='group'&&!rank.endsWith('daily'))||(tab==='solo'&&rank.startsWith('discography'));
  return (showStreams?rankMetricHtml(row.streams,'streams','Total streams'):'')+
   rankMetricHtml(row.gain,'gain',row.gainPartial?gainLabel+' (verified observed dates only)':gainLabel,{signed:true,estimated:row.estimatedGain,partial:row.gainPartial})+
   rankMetricHtml(row.change,'change','Change vs '+compareWith,{signed:true,partial:row.changePartial});
@@ -2988,6 +2988,7 @@ async function render(){const token=++renderToken;
  useDatesForTab();renderArtistProfiles();syncPeriodPicker();const s=await selectedSnapshot(),p=await prior(s),pp=await prior(p);const baseline=await periodBaseline(s);if(token!==renderToken)return;if(tab==='group')updateYear2026Streams();syncCalendar();restoreGroupNames(s,p);
  document.body.classList.toggle('svt-overall-four-cols',rank.endsWith('overall'));
  document.body.classList.toggle('svt-daily-ranking',rank.endsWith('daily')&&tab==='group');
+ document.body.classList.toggle('svt-daily-tracks',rank.endsWith('daily')&&rankType==='tracks');
  document.body.classList.toggle('svt-solo-period-only',tab==='solo'&&!rank.endsWith('overall')&&!rank.startsWith('discography'));
  document.body.classList.toggle('svt-solo-daily',tab==='solo'&&rank.endsWith('daily'));
  document.body.classList.toggle('svt-discography-table',rank.startsWith('discography'));
@@ -3062,7 +3063,7 @@ async function render(){const token=++renderToken;
   const observation=verifiedSoloFollowers[artistId];
   if(observation&&Number.isFinite(observation.count)){
    $('#followers').textContent=fmt(observation.count);
-   $('#followersChange').textContent='Verified '+new Date(observation.captured_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})+' · separate from stream snapshot';
+   $('#followersChange').textContent='';
   }
  }
 
@@ -3224,18 +3225,8 @@ async function render(){const token=++renderToken;
    const yesterday=historicalPreviousGain!=null?historicalPreviousGain:previousGrand!=null?previousGrand:previousGains.length&&previousGains.every(v=>v!=null)?previousGains.reduce((a,b)=>a+b,0):null;
    const consecutive=s&&p&&pp&&shifted(s.date,-1)===p.date&&shifted(p.date,-1)===pp.date;
    if(tab==='solo'){
-    // Match the recording across saved spreadsheet and Spotify snapshots.
-    const comparable=consecutive?dailyComparison(s,p,pp,memberIds):null;
-    if(today==null)gainNote.textContent='No comparable dated solo/unit track increases available';
-    else {
-     gainNote.textContent=completeSoloGain?'Verified daily gain':
-      '* Partial verified daily gain ('+gains.length+' of '+memberIds.length+' recordings)';
-     if(comparable?.value!=null){
-      const delta=comparable.value;
-      gainNote.textContent+=' · Change vs previous day: '+(delta>=0?'+':'−')+fmt(Math.abs(delta))+
-       (comparable.partial?'* ('+comparable.matched+' matched recordings)':'');
-     }else gainNote.textContent+=' · Previous-day change unavailable for comparable recordings';
-    }
+    // Hide the redundant summary sentence (not the verified number).
+    gainNote.textContent='';
    }else if(today!=null&&yesterday!=null&&consecutive){
     const change=today-yesterday;
     comparisonValue.textContent=(change>=0?'+':'−')+fmt(Math.abs(change));
