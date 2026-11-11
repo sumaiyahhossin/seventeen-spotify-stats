@@ -1010,12 +1010,16 @@ def main():
                            card.backdropFilter==='none';
                 """),'All summary cards are no longer flat and lightweight'
 
-                assert driver.execute_script("""
+                name_layout=driver.execute_script("""
                     const names=[...document.querySelectorAll('.name-fall>.falling-name')];
                     const visible=names.filter(el=>getComputedStyle(el).display!=='none');
-                    return names.length===63 && visible.length===(innerWidth<=680?21:63) &&
-                      getComputedStyle(document.body,'::after').display==='none';
-                """),'Floating names lost their spaced background layout'
+                    return {total:names.length,visible:visible.length,
+                      expected:innerWidth<=680?21:63,width:innerWidth,
+                      cursor:getComputedStyle(document.body,'::after').display,
+                      sample:visible.slice(0,4).map(el=>({name:el.textContent,left:getComputedStyle(el).left,top:getComputedStyle(el).top}))};
+                """)
+                assert name_layout['total']==63 and name_layout['visible']==name_layout['expected'] and name_layout['cursor']=='none',(
+                    f'Floating names layout: {name_layout}')
                 assert driver.execute_script("""
                     return document.documentElement.scrollWidth<=window.innerWidth+5
                 """),f'All overflowed the viewport at {width}px'
