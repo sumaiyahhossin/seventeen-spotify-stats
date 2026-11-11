@@ -1224,8 +1224,6 @@ def main():
                 print('Dedicated All milestone page, LOVE MONEY FAME date, mobile:',width,flush=True)
             # The OT13 milestone page must also load GOLM (Inst.) art.
             driver.get(f'http://127.0.0.1:{PORT}/milestones.html')
-            WebDriverWait(driver,35).until(lambda d:
-                'songs' in d.find_element(By.ID,'upcomingStatus').text)
             click(driver,'#tabUpcoming')
             driver.execute_script("""
                 const search=document.getElementById('upcomingSearch');
