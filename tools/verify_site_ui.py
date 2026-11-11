@@ -1024,6 +1024,25 @@ def main():
                 """)
                 assert name_layout['total']==63 and name_layout['visible']==name_layout['expected'] and name_layout['cursor']=='none',(
                     f'Floating names layout: {name_layout}')
+                rain_before=driver.execute_script("""
+                    const el=[...document.querySelectorAll('#svtNameLayer>.falling-name')]
+                      .find(el=>getComputedStyle(el).display!=='none');
+                    const css=getComputedStyle(el);
+                    return {y:el.getBoundingClientRect().top,
+                      animation:css.animationName,direction:css.animationDirection,
+                      duration:css.animationDuration};
+                """)
+                assert rain_before['animation']=='svt-name-rain-v2' and rain_before['direction']=='normal',(
+                    f'Floating names must fall downward: {rain_before}')
+                time.sleep(.32)
+                rain_after=driver.execute_script("""
+                    const el=[...document.querySelectorAll('#svtNameLayer>.falling-name')]
+                      .find(el=>getComputedStyle(el).display!=='none');
+                    return el.getBoundingClientRect().top;
+                """)
+                assert abs(rain_after-rain_before['y'])>=3,(
+                    f'Floating names animation did not move: {rain_before}, {rain_after}')
+                print(f'Floating rain verified at {width}px: '+str(round(rain_after-rain_before['y'],1))+'px movement',flush=True)
                 assert driver.execute_script("""
                     return document.documentElement.scrollWidth<=window.innerWidth+5
                 """),f'All overflowed the viewport at {width}px'
