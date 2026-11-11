@@ -1277,6 +1277,108 @@ body .rank-row:hover{transform:none!important;box-shadow:none!important}
 @media(prefers-reduced-motion:reduce){.name-fall{display:none!important}}
 #svt-name-photo.svt-group-preview{width:240px!important;height:142px!important;max-width:min(240px,70vw)!important;max-height:142px!important;aspect-ratio:12/7!important;object-fit:cover!important;object-position:center!important}
 @media(max-width:680px){#svt-name-photo.svt-group-preview{width:156px!important;height:94px!important;max-width:156px!important;max-height:94px!important}}
+</style><style id="svt-background-motion-v164">
+#svtNameLayer.name-fall{
+ position:fixed!important;inset:0!important;width:100vw!important;height:100vh!important;
+ z-index:1!important;display:block!important;overflow:hidden!important;pointer-events:none!important
+}
+#svtNameLayer>.falling-name{
+ position:absolute!important;top:-42px!important;left:var(--nx,4%)!important;right:auto!important;
+ display:block!important;visibility:visible!important;max-width:230px!important;width:max-content!important;
+ white-space:nowrap!important;overflow:visible!important;
+ opacity:.56!important;color:#e2c6fb!important;-webkit-text-fill-color:currentColor!important;
+ font-size:12px!important;font-weight:700!important;letter-spacing:.045em!important;
+ text-shadow:0 0 12px rgba(199,174,255,.32)!important;
+ animation-name:svt-name-rain-v164!important;animation-duration:var(--nr,16s)!important;
+ animation-delay:var(--nd,0s)!important;animation-timing-function:linear!important;
+ animation-iteration-count:infinite!important;animation-play-state:running!important;
+ animation-fill-mode:none!important;will-change:transform,opacity!important
+}
+#svtNameLayer>.falling-name:nth-child(3n){color:#b9d7ff!important;-webkit-text-fill-color:#b9d7ff!important}
+#svtNameLayer>.falling-name:nth-child(5n){color:#ffc2e9!important;-webkit-text-fill-color:#ffc2e9!important}
+#svtNameLayer>.falling-name:hover{animation-play-state:running!important;opacity:.72!important}
+@keyframes svt-name-rain-v164{
+ 0%{transform:translate3d(-5px,0,0);opacity:0}
+ 9%{opacity:.58}
+ 88%{opacity:.52}
+ 100%{transform:translate3d(30px,calc(100vh + 110px),0);opacity:0}
+}
+#svtNameLayer>.svt-unit-rain{
+ left:auto!important;right:var(--right-offset,2.5vw)!important;
+ max-width:min(240px,34vw)!important;text-align:right!important;
+ font-size:11px!important;font-weight:750!important;letter-spacing:.035em!important
+}
+#svtNameLayer>.svt-unit-rain.svt-korean-rain{
+ font-family:"Apple SD Gothic Neo","Noto Sans KR",sans-serif!important;font-size:12px!important
+}
+#svtNameLayer>.svt-eternity-tag{display:none!important}
+#svtNameLayer::before{opacity:.58!important;animation-duration:5s!important}
+#svt-star-trigger{
+ position:fixed;z-index:8;right:26px;top:52%;transform:translateY(-50%);
+ width:220px;max-width:19vw;padding:15px 16px;
+ border:1px solid rgba(221,190,255,.52);border-radius:16px;
+ background:linear-gradient(140deg,rgba(48,43,82,.94),rgba(31,42,75,.94));
+ color:#f8efff;font:750 11px/1.55 "Plus Jakarta Sans",sans-serif;
+ letter-spacing:.09em;text-align:left;cursor:pointer;
+ box-shadow:0 8px 28px rgba(8,9,26,.38),0 0 22px rgba(202,171,255,.13);
+ backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+ transition:border-color .2s ease,background .2s ease,box-shadow .2s ease,transform .2s ease
+}
+#svt-star-trigger span{display:block;color:#f3abd9;font-size:10px;letter-spacing:.035em;font-weight:600}
+#svt-star-trigger:hover,#svt-star-trigger:focus-visible{
+ outline:none;border-color:#ffd1ee;background:linear-gradient(140deg,rgba(65,51,103,.98),rgba(38,56,94,.98));
+ box-shadow:0 8px 32px rgba(8,9,26,.42),0 0 26px rgba(235,178,233,.3)
+}
+#svt-star-trigger:active{transform:translateY(-50%) scale(.98)}
+.svt-background-shooting-star{
+ position:fixed;z-index:2;pointer-events:none;width:155px;height:2px;
+ background:linear-gradient(90deg,transparent,rgba(181,212,255,.34),rgba(255,220,245,.96));
+ border-radius:999px;filter:drop-shadow(0 0 5px rgba(232,204,255,.92));
+ opacity:0;transform:rotate(-29deg);
+ animation:svt-background-shot-v164 var(--star-duration,8s) linear var(--star-delay,0s) infinite
+}
+.svt-background-shooting-star::after{
+ content:"";position:absolute;right:-3px;top:-3px;width:8px;height:8px;border-radius:50%;
+ background:#fff8ff;box-shadow:0 0 8px 3px rgba(255,220,248,.9),0 0 15px 5px rgba(170,207,255,.56)
+}
+@keyframes svt-background-shot-v164{
+ 0%,8%{opacity:0;transform:translate3d(0,0,0) rotate(-29deg)}
+ 11%{opacity:.9}
+ 27%{opacity:.7;transform:translate3d(240px,156px,0) rotate(-29deg)}
+ 36%,100%{opacity:0;transform:translate3d(310px,202px,0) rotate(-29deg)}
+}
+.svt-shooting-star{display:block!important}
+.svt-shooting-star.svt-user-shot{
+ z-index:90!important;font-size:34px!important;
+ filter:drop-shadow(0 0 8px #ffc4e9) drop-shadow(0 0 17px #b9d8ff)!important;
+ animation:svt-user-shot-v164 1.4s cubic-bezier(.12,.72,.25,1) forwards!important
+}
+.svt-shooting-star.svt-user-shot::after{
+ width:160px!important;height:3px!important;right:66%!important;top:72%!important;
+ background:linear-gradient(90deg,transparent,rgba(169,202,255,.34),rgba(255,211,238,1))!important
+}
+@keyframes svt-user-shot-v164{
+ 0%{opacity:0;transform:translate3d(0,0,0) scale(.2)}
+ 13%{opacity:1;transform:translate3d(0,0,0) scale(1.25)}
+ 100%{opacity:0;transform:translate3d(var(--shot-x,-360px),var(--shot-y,-240px),0) scale(.18)}
+}
+.svt-eternity-spark{display:block!important;z-index:90!important}
+@media(max-width:760px){
+ #svtNameLayer>.falling-name{font-size:10px!important;max-width:150px!important}
+ #svtNameLayer>.svt-unit-rain{font-size:9px!important;max-width:145px!important}
+ #svtNameLayer>.svt-unit-rain.svt-korean-rain{font-size:10px!important}
+ #svt-star-trigger{
+  top:auto;right:10px;bottom:14px;transform:none;width:auto;max-width:148px;
+  padding:10px 11px;font-size:9px;line-height:1.4;border-radius:13px
+ }
+ #svt-star-trigger span{font-size:9px}
+ #svt-star-trigger:active{transform:scale(.98)}
+ .svt-background-shooting-star{width:105px}
+}
+@media(prefers-reduced-motion:reduce){
+ #svtNameLayer.name-fall,.svt-background-shooting-star{display:block!important}
+ #svtNameLayer>.falling-name{animation-duration:22s!important}
+}
 </style></head><body class="svt-compact-ranking-table"><div class="name-fall" id="svtNameLayer" aria-hidden="true"><span class="falling-name" style="--nx:28.2%;--ny:90.0%;--mx:5.7%;--my:7.9%;--nt:31s;--nd:-26.20s;--md:-26.80s;--dx:-4px;--dy:-8px;--sx:-8px;--sy:-5px;--ex:19px;--ey:-9px">S.COUPS</span><span class="falling-name svt-korean-rain" style="--nx:59.8%;--ny:87.9%;--mx:4.6%;--my:6.6%;--nt:37s;--nd:-35.19s;--md:-35.79s;--dx:-8px;--dy:-7px;--sx:4px;--sy:14px;--ex:3px;--ey:-5px">에스쿱스</span><span class="falling-name" style="--nx:40.0%;--ny:91.8%;--mx:6.4%;--my:6.2%;--nt:43s;--nd:-27.89s;--md:-28.49s;--dx:-20px;--dy:10px;--sx:-3px;--sy:11px;--ex:-15px;--ey:-8px">BSS</span><span class="falling-name svt-group-rain" style="--nx:70.6%;--ny:88.1%;--mx:38.9%;--my:6.4%;--nt:32s;--nd:-27.24s;--md:-27.84s;--dx:-20px;--dy:-3px;--sx:19px;--sy:8px;--ex:-16px;--ey:-6px">SEVENTEEN</span><span class="falling-name" style="--nx:39.5%;--ny:52.8%;--mx:37.8%;--my:5.6%;--nt:36s;--nd:-2.10s;--md:-2.70s;--dx:-21px;--dy:13px;--sx:-22px;--sy:7px;--ex:5px;--ey:6px">CHOI SEUNGCHEOL</span><span class="falling-name" style="--nx:26.2%;--ny:56.3%;--mx:37.2%;--my:7.4%;--nt:46s;--nd:-42.87s;--md:-43.47s;--dx:18px;--dy:-2px;--sx:-5px;--sy:8px;--ex:-19px;--ey:20px">JEONGHAN</span><span class="falling-name svt-korean-rain" style="--nx:49.0%;--ny:88.2%;--mx:70.6%;--my:7.6%;--nt:31s;--nd:-9.86s;--md:-10.46s;--dx:-6px;--dy:-16px;--sx:-22px;--sy:-18px;--ex:-10px;--ey:4px">정한</span><span class="falling-name" style="--nx:28.9%;--ny:18.9%;--mx:70.1%;--my:6.5%;--nt:37s;--nd:-5.98s;--md:-6.58s;--dx:10px;--dy:16px;--sx:-21px;--sy:-11px;--ex:-18px;--ey:-1px">JXW</span><span class="falling-name svt-group-rain" style="--nx:49.5%;--ny:79.6%;--mx:69.8%;--my:8.2%;--nt:44s;--nd:-7.42s;--md:-8.02s;--dx:-11px;--dy:12px;--sx:27px;--sy:-11px;--ex:5px;--ey:5px">SEVENTEEN</span><span class="falling-name" style="--nx:2.8%;--ny:63.4%;--mx:6.4%;--my:20.7%;--nt:33s;--nd:-8.77s;--md:-9.37s;--dx:-11px;--dy:-15px;--sx:27px;--sy:-15px;--ex:4px;--ey:17px">YOON JEONGHAN</span><span class="falling-name" style="--nx:13.4%;--ny:67.6%;--mx:3.5%;--my:18.9%;--nt:41s;--nd:-24.26s;--md:-24.86s;--dx:6px;--dy:-11px;--sx:23px;--sy:14px;--ex:-3px;--ey:-10px">JOSHUA</span><span class="falling-name svt-korean-rain" style="--nx:15.2%;--ny:27.2%;--mx:4.8%;--my:20.5%;--nt:47s;--nd:-36.20s;--md:-36.80s;--dx:-17px;--dy:1px;--sx:-25px;--sy:1px;--ex:0px;--ey:20px">조슈아</span><span class="falling-name" style="--nx:61.5%;--ny:52.2%;--mx:38.3%;--my:20.0%;--nt:35s;--nd:-9.31s;--md:-9.91s;--dx:-4px;--dy:-12px;--sx:-19px;--sy:-9px;--ex:17px;--ey:-6px">HXW</span><span class="falling-name svt-group-rain" style="--nx:71.0%;--ny:4.1%;--mx:38.0%;--my:19.7%;--nt:42s;--nd:-35.37s;--md:-35.97s;--dx:4px;--dy:16px;--sx:16px;--sy:5px;--ex:17px;--ey:-14px">SEVENTEEN</span><span class="falling-name" style="--nx:73.9%;--ny:30.1%;--mx:37.0%;--my:19.5%;--nt:46s;--nd:-24.65s;--md:-25.25s;--dx:15px;--dy:10px;--sx:-6px;--sy:0px;--ex:15px;--ey:14px">HONG JISOO</span><span class="falling-name" style="--nx:2.7%;--ny:16.9%;--mx:70.8%;--my:20.6%;--nt:36s;--nd:-19.73s;--md:-20.33s;--dx:-22px;--dy:-15px;--sx:10px;--sy:6px;--ex:-8px;--ey:5px">JUN</span><span class="falling-name svt-korean-rain" style="--nx:39.4%;--ny:17.4%;--mx:70.7%;--my:18.7%;--nt:40s;--nd:-23.01s;--md:-23.61s;--dx:7px;--dy:3px;--sx:23px;--sy:22px;--ex:-7px;--ey:16px">준</span><span class="falling-name" style="--nx:84.3%;--ny:52.9%;--mx:69.2%;--my:18.3%;--nt:48s;--nd:-7.40s;--md:-8.00s;--dx:1px;--dy:8px;--sx:7px;--sy:-10px;--ex:-6px;--ey:14px">CXM</span><span class="falling-name svt-group-rain" style="--nx:16.2%;--ny:42.8%;--mx:5.3%;--my:32.2%;--nt:33s;--nd:-21.85s;--md:-22.45s;--dx:-9px;--dy:-2px;--sx:-18px;--sy:6px;--ex:-13px;--ey:-14px">SEVENTEEN</span><span class="falling-name" style="--nx:39.7%;--ny:65.1%;--mx:3.9%;--my:32.8%;--nt:42s;--nd:-39.65s;--md:-40.25s;--dx:5px;--dy:14px;--sx:-7px;--sy:9px;--ex:-19px;--ey:-10px">MOON JUNHWI</span><span class="falling-name" style="--nx:50.3%;--ny:30.2%;--mx:4.2%;--my:33.1%;--nt:31s;--nd:-27.12s;--md:-27.72s;--dx:19px;--dy:7px;--sx:1px;--sy:7px;--ex:-5px;--ey:10px">HOSHI</span><span class="falling-name svt-korean-rain" style="--nx:62.4%;--ny:65.7%;--mx:37.1%;--my:33.2%;--nt:39s;--nd:-17.52s;--md:-18.12s;--dx:-16px;--dy:16px;--sx:10px;--sy:11px;--ex:-8px;--ey:6px">호시</span><span class="falling-name" style="--nx:37.9%;--ny:30.2%;--mx:37.5%;--my:32.5%;--nt:42s;--nd:-36.37s;--md:-36.97s;--dx:-4px;--dy:12px;--sx:25px;--sy:19px;--ex:1px;--ey:-2px">DXS</span><span class="falling-name svt-group-rain" style="--nx:61.7%;--ny:3.1%;--mx:37.3%;--my:33.1%;--nt:33s;--nd:-30.12s;--md:-30.72s;--dx:-6px;--dy:-13px;--sx:16px;--sy:-9px;--ex:1px;--ey:13px">SEVENTEEN</span><span class="falling-name" style="--nx:25.1%;--ny:67.1%;--mx:70.6%;--my:33.5%;--nt:37s;--nd:-12.00s;--md:-12.60s;--dx:3px;--dy:-8px;--sx:-2px;--sy:2px;--ex:-11px;--ey:1px">KWON SOONYOUNG</span><span class="falling-name" style="--nx:83.8%;--ny:65.3%;--mx:70.1%;--my:31.7%;--nt:47s;--nd:-16.04s;--md:-16.64s;--dx:13px;--dy:8px;--sx:9px;--sy:-15px;--ex:-9px;--ey:-1px">WONWOO</span><span class="falling-name svt-korean-rain" style="--nx:36.6%;--ny:79.1%;--mx:69.2%;--my:31.9%;--nt:32s;--nd:-13.37s;--md:-13.97s;--dx:-4px;--dy:-9px;--sx:-26px;--sy:8px;--ex:5px;--ey:-12px">원우</span><span class="falling-name" style="--nx:84.8%;--ny:41.8%;--mx:5.7%;--my:45.8%;--nt:40s;--nd:-23.10s;--md:-23.70s;--dx:-8px;--dy:-4px;--sx:-12px;--sy:-4px;--ex:9px;--ey:12px">V8</span><span class="falling-name svt-group-rain" style="--nx:49.3%;--ny:15.2%;--mx:4.8%;--my:43.6%;--nt:46s;--nd:-31.00s;--md:-31.60s;--dx:-16px;--dy:-2px;--sx:-16px;--sy:11px;--ex:-17px;--ey:3px">SEVENTEEN</span><span class="falling-name" style="--nx:17.5%;--ny:79.0%;--mx:6.5%;--my:44.1%;--nt:30s;--nd:-27.81s;--md:-28.41s;--dx:-9px;--dy:10px;--sx:23px;--sy:-3px;--ex:-19px;--ey:13px">JEON WONWOO</span><span class="falling-name" style="--nx:3.4%;--ny:77.4%;--mx:37.9%;--my:45.8%;--nt:42s;--nd:-7.64s;--md:-8.24s;--dx:-17px;--dy:0px;--sx:17px;--sy:-13px;--ex:10px;--ey:2px">WOOZI</span><span class="falling-name svt-korean-rain" style="--nx:70.9%;--ny:54.2%;--mx:38.2%;--my:43.9%;--nt:44s;--nd:-34.86s;--md:-35.46s;--dx:0px;--dy:10px;--sx:16px;--sy:10px;--ex:-8px;--ey:10px">우지</span><span class="falling-name" style="--nx:84.0%;--ny:6.3%;--mx:37.9%;--my:46.1%;--nt:34s;--nd:-7.97s;--md:-8.57s;--dx:9px;--dy:7px;--sx:17px;--sy:15px;--ex:-1px;--ey:9px">JXJ</span><span class="falling-name svt-carat-rain" style="--nx:50.2%;--ny:7.5%;--mx:69.2%;--my:45.1%;--nt:40s;--nd:-38.22s;--md:-38.82s;--dx:4px;--dy:3px;--sx:13px;--sy:-18px;--ex:-18px;--ey:-13px">CARAT</span><span class="falling-name" style="--nx:29.0%;--ny:28.0%;--mx:70.1%;--my:44.8%;--nt:47s;--nd:-20.46s;--md:-21.06s;--dx:-19px;--dy:5px;--sx:21px;--sy:-10px;--ex:-7px;--ey:8px">LEE JIHOON</span><span class="falling-name" style="--nx:86.1%;--ny:31.8%;--mx:71.1%;--my:45.4%;--nt:33s;--nd:-7.40s;--md:-8.00s;--dx:-10px;--dy:-11px;--sx:-6px;--sy:18px;--ex:-4px;--ey:10px">DK</span><span class="falling-name svt-korean-rain" style="--nx:60.5%;--ny:27.0%;--mx:5.5%;--my:57.8%;--nt:39s;--nd:-31.16s;--md:-31.76s;--dx:-17px;--dy:6px;--sx:-19px;--sy:17px;--ex:10px;--ey:-8px">도겸</span><span class="falling-name" style="--nx:40.4%;--ny:40.7%;--mx:3.6%;--my:57.6%;--nt:46s;--nd:-24.88s;--md:-25.48s;--dx:12px;--dy:-9px;--sx:17px;--sy:22px;--ex:-10px;--ey:-17px">PICHEOLIN</span><span class="falling-name svt-carat-rain" style="--nx:60.7%;--ny:80.4%;--mx:3.5%;--my:57.1%;--nt:36s;--nd:-4.53s;--md:-5.13s;--dx:1px;--dy:5px;--sx:0px;--sy:-22px;--ex:-20px;--ey:11px">CARAT</span><span class="falling-name" style="--nx:24.9%;--ny:42.0%;--mx:38.1%;--my:56.5%;--nt:45s;--nd:-30.53s;--md:-31.13s;--dx:19px;--dy:-9px;--sx:19px;--sy:11px;--ex:-8px;--ey:-14px">LEE SEOKMIN</span><span class="falling-name" style="--nx:16.7%;--ny:18.0%;--mx:37.1%;--my:57.7%;--nt:29s;--nd:-25.42s;--md:-26.02s;--dx:-5px;--dy:-9px;--sx:-13px;--sy:0px;--ex:13px;--ey:17px">MINGYU</span><span class="falling-name svt-korean-rain" style="--nx:3.2%;--ny:31.6%;--mx:36.9%;--my:58.8%;--nt:39s;--nd:-3.08s;--md:-3.68s;--dx:18px;--dy:10px;--sx:-22px;--sy:7px;--ex:19px;--ey:3px">민규</span><span class="falling-name svt-carat-rain" style="--nx:73.7%;--ny:41.6%;--mx:69.8%;--my:57.8%;--nt:46s;--nd:-12.22s;--md:-12.82s;--dx:4px;--dy:14px;--sx:21px;--sy:-16px;--ex:-18px;--ey:-14px">CARAT</span><span class="falling-name" style="--nx:26.4%;--ny:3.8%;--mx:71.4%;--my:57.8%;--nt:30s;--nd:-19.87s;--md:-20.47s;--dx:-6px;--dy:12px;--sx:-17px;--sy:-14px;--ex:-1px;--ey:8px">KIM MINGYU</span><span class="falling-name" style="--nx:14.3%;--ny:88.0%;--mx:69.6%;--my:56.7%;--nt:40s;--nd:-7.41s;--md:-8.01s;--dx:-22px;--dy:16px;--sx:-11px;--sy:5px;--ex:-5px;--ey:16px">THE8</span><span class="falling-name svt-korean-rain" style="--nx:74.5%;--ny:18.9%;--mx:6.4%;--my:69.3%;--nt:45s;--nd:-31.61s;--md:-32.21s;--dx:22px;--dy:2px;--sx:-23px;--sy:-21px;--ex:-17px;--ey:-20px">디에잇</span><span class="falling-name svt-carat-rain" style="--nx:51.1%;--ny:42.9%;--mx:5.3%;--my:71.3%;--nt:33s;--nd:-4.53s;--md:-5.13s;--dx:-3px;--dy:4px;--sx:19px;--sy:-18px;--ex:0px;--ey:10px">CARAT</span><span class="falling-name" style="--nx:83.5%;--ny:89.3%;--mx:5.7%;--my:68.9%;--nt:37s;--nd:-14.95s;--md:-15.55s;--dx:8px;--dy:12px;--sx:-1px;--sy:-10px;--ex:16px;--ey:3px">XU MINGHAO</span><span class="falling-name" style="--nx:82.8%;--ny:75.6%;--mx:36.4%;--my:69.1%;--nt:46s;--nd:-21.99s;--md:-22.59s;--dx:-6px;--dy:-11px;--sx:-26px;--sy:6px;--ex:-10px;--ey:-17px">SEUNGKWAN</span><span class="falling-name svt-korean-rain" style="--nx:6.0%;--ny:7.0%;--mx:37.8%;--my:70.2%;--nt:33s;--nd:-19.60s;--md:-20.20s;--dx:-3px;--dy:-12px;--sx:-16px;--sy:-1px;--ex:-6px;--ey:-8px">승관</span><span class="falling-name svt-carat-rain" style="--nx:24.7%;--ny:76.3%;--mx:36.4%;--my:68.9%;--nt:40s;--nd:-29.91s;--md:-30.51s;--dx:10px;--dy:12px;--sx:-7px;--sy:-19px;--ex:-5px;--ey:17px">CARAT</span><span class="falling-name" style="--nx:2.1%;--ny:91.9%;--mx:69.2%;--my:71.3%;--nt:45s;--nd:-23.66s;--md:-24.26s;--dx:7px;--dy:6px;--sx:-10px;--sy:-5px;--ex:14px;--ey:-14px">BOO SEUNGKWAN</span><span class="falling-name" style="--nx:74.1%;--ny:64.0%;--mx:70.8%;--my:71.4%;--nt:34s;--nd:-32.02s;--md:-32.62s;--dx:1px;--dy:5px;--sx:15px;--sy:10px;--ex:-6px;--ey:-13px">VERNON</span><span class="falling-name svt-korean-rain" style="--nx:49.5%;--ny:65.5%;--mx:70.6%;--my:71.2%;--nt:40s;--nd:-19.79s;--md:-20.39s;--dx:3px;--dy:-4px;--sx:-13px;--sy:14px;--ex:2px;--ey:-10px">버논</span><span class="falling-name" style="--nx:2.0%;--ny:55.6%;--mx:5.3%;--my:83.6%;--nt:45s;--nd:-29.96s;--md:-30.56s;--dx:14px;--dy:-7px;--sx:11px;--sy:11px;--ex:-12px;--ey:5px">0526</span><span class="falling-name" style="--nx:15.7%;--ny:55.5%;--mx:4.4%;--my:81.9%;--nt:37s;--nd:-24.51s;--md:-25.11s;--dx:-11px;--dy:10px;--sx:-7px;--sy:17px;--ex:20px;--ey:0px">CHWE HANSOL</span><span class="falling-name" style="--nx:16.6%;--ny:7.3%;--mx:5.3%;--my:82.9%;--nt:41s;--nd:-31.53s;--md:-32.13s;--dx:-22px;--dy:-8px;--sx:24px;--sy:17px;--ex:-17px;--ey:17px">DINO</span><span class="falling-name svt-korean-rain" style="--nx:82.7%;--ny:18.7%;--mx:38.8%;--my:81.4%;--nt:50s;--nd:-30.51s;--md:-31.11s;--dx:-3px;--dy:-12px;--sx:5px;--sy:-8px;--ex:-5px;--ey:-5px">디노</span><span class="falling-name" style="--nx:61.1%;--ny:39.5%;--mx:38.4%;--my:81.3%;--nt:38s;--nd:-0.93s;--md:-1.53s;--dx:-4px;--dy:3px;--sx:27px;--sy:20px;--ex:0px;--ey:-18px">0214</span><span class="falling-name" style="--nx:51.2%;--ny:55.9%;--mx:36.1%;--my:82.1%;--nt:43s;--nd:-34.88s;--md:-35.48s;--dx:21px;--dy:12px;--sx:-14px;--sy:19px;--ex:-14px;--ey:20px">LEE CHAN</span><span class="falling-name svt-korean-rain" style="--nx:4.2%;--ny:40.1%;--mx:69.8%;--my:83.1%;--nt:31s;--nd:-2.32s;--md:-2.92s;--dx:-22px;--dy:-12px;--sx:1px;--sy:22px;--ex:9px;--ey:1px">세븐틴</span><span class="falling-name svt-eternity-tag" style="--nx:28.5%;--ny:16.8%;--mx:70.5%;--my:82.9%;--nt:38s;--nd:-6.59s;--md:-7.19s;--dx:22px;--dy:15px;--sx:-6px;--sy:8px;--ex:-10px;--ey:6px">SEVENTEEN WILL CHALLENGE ETERNITY</span><span class="falling-name svt-korean-rain" style="--nx:72.5%;--ny:78.1%;--mx:69.0%;--my:83.2%;--nt:43s;--nd:-8.91s;--md:-9.51s;--dx:8px;--dy:6px;--sx:9px;--sy:-7px;--ex:-6px;--ey:-18px">캐럿</span><span class="falling-name svt-ot13" style="--nx:58.5%;--ny:64.5%;--mx:5.4%;--my:94.0%;--nt:30s;--nd:-3.12s;--md:-3.72s;--dx:-10px;--dy:-6px;--sx:16px;--sy:-22px;--ex:-18px;--ey:7px">OT13</span></div><div class="diamond-fall" aria-hidden="true"><i style="--x:5%;--s:7px;--t:23s;--d:-4s;--drift:24px"></i><i style="--x:13%;--s:5px;--t:29s;--d:-13s;--drift:-21px"></i><i style="--x:24%;--s:8px;--t:25s;--d:-8s;--drift:30px"></i><i style="--x:35%;--s:5px;--t:31s;--d:-19s;--drift:-17px"></i><i style="--x:47%;--s:7px;--t:27s;--d:-5s;--drift:23px"></i><i style="--x:58%;--s:6px;--t:30s;--d:-17s;--drift:-24px"></i><i style="--x:69%;--s:9px;--t:26s;--d:-11s;--drift:19px"></i><i style="--x:80%;--s:5px;--t:33s;--d:-24s;--drift:-28px"></i><i style="--x:90%;--s:7px;--t:28s;--d:-16s;--drift:26px"></i><i style="--x:97%;--s:5px;--t:24s;--d:-6s;--drift:-20px"></i></div><div class="glow"></div><div id="lastUpdated" aria-live="polite" style="position:relative;z-index:2;text-align:center;padding:5px 12px 0;font-size:10px;letter-spacing:.035em;opacity:.72">Last update: loading…</div><header><a class="header-credit" href="https://x.com/snowkhoshi?s=20" target="_blank" rel="noopener noreferrer">snowkhoshi</a><a class="logo" href="#">✦ SEVENTEEN <span>SPOTIFY STATS</span></a><button type="button" class="concert-sound" aria-pressed="true" aria-label="Disable interface sound effects">♫ Sounds on</button></header><main><section class="hero"><div class="eyebrow">✧ ALWAYS WITH SEVENTEEN ✧</div><h1>Let’s Stream<br><em>for SEVENTEEN!!</em></h1><p>SEVENTEEN streaming stats updated daily!!</p><a class="spotify-artist-link" href="https://open.spotify.com/artist/7nqOGRxlXj7N2JYbgNEjYH" target="_blank" rel="noopener noreferrer">Stream SEVENTEEN on Spotify</a></section><section class="panel"><div class="section-top"><div><div class="eyebrow">THE STREAMING ARCHIVE</div><h2>Explore the numbers <span>✦︎</span></h2></div><div class="archive-header-actions"><div class="seg" id="tabs"><button class="active" data-tab="group">OT13 · Group</button><button data-tab="solo">Units & Solo</button><button data-tab="all" type="button" aria-controls="svtAllView" aria-selected="false">All ✦</button></div></div></div><div id="svtPrimaryStats"><div id="artistProfiles" class="artist-profiles" hidden></div><div class="archive-top-controls"><label class="rank-select"><span>VIEW STREAMS ADDED</span><select id="rankPeriod" aria-label="Ranking time period"><option value="daily" selected>Daily</option><option value="weekly">Weekly</option><option value="monthly">Monthly</option><option value="yearly">Yearly</option><option value="overall">Overall</option></select></label><div class="archive-picker" id="dailyPickerWrap"><label for="archiveDate">STREAMING DATE</label><div class="date-navigation"><button id="prevDate" class="date-arrow" type="button" aria-label="Previous saved day">‹</button><div class="pretty-date-wrap"><button id="prettyDate" type="button" aria-label="Choose streaming date">Select date</button><input id="archiveDate" type="date" min="2025-01-01" aria-label="Choose saved streaming date"></div><select id="periodPicker" aria-label="Choose saved week, month, or year" hidden></select><button id="nextDate" class="date-arrow" type="button" aria-label="Next saved day">›</button></div><div class="archive-date-footer"><span id="dateNotice" class="date-notice" aria-live="polite"></span><button id="latestDate" class="latest-date" type="button">✦ Jump to latest</button></div></div><a class="milestone-nav-link" href="streaming-milestones.html?view=group">✦ Milestones <span>100M · 200M · 300M+</span></a></div><div class="stats"><div class="stat"><small>TRACK STREAMS · TOTAL</small><strong id="total">—</strong><span>Total Spotify track streams</span></div><div class="stat"><small id="gainHeading">DAILY STREAM GROWTH</small><strong id="gain">—</strong><span>Since previous confirmed snapshot</span></div><div class="stat" id="periodComparisonCard"><small id="periodComparisonHeading">TOTAL TRACKS</small><strong id="periodComparisonValue">—</strong><span id="periodComparisonDetail">Comparison unavailable</span></div><div class="stat"><small>MONTHLY LISTENERS</small><strong id="listeners">—</strong><span id="listenersChange">Change from previous day unavailable</span></div><div class="stat"><small>FOLLOWERS</small><strong id="followers">—</strong><span id="followersChange">Change from previous day unavailable</span></div><div class="stat"><small>DATA DATE</small><strong id="date">—</strong><span id="dateDescription">Spotify updates once a day.</span></div></div><div class="svt-yearly-jump"><a href="#yearlyStreamsHistory">✦ Explore yearly Spotify streams · 2022–2026</a></div><div class="controls"><div class="ranking-pickers"><div class="ranking-category" id="rankCategory"><button type="button" class="active" data-type="tracks">Tracks</button><button type="button" data-type="albums">Albums</button><button type="button" data-type="discography">Discography</button></div></div><label class="order-picker" for="order"><span>Sort</span><select id="order" aria-label="Sort rankings"><option value="most">Most streamed</option><option value="least">Least streamed</option><option value="newest">Newest release</option><option value="oldest">Oldest release</option><option value="az">Alphabetical A–Z</option><option value="za">Alphabetical Z–A</option></select></label><label class="search"><span>⌕</span><input id="search" placeholder="Search tracks or albums"></label></div><div class="table-head"><span class="svt-track-heading">NAME</span><span class="svt-total-heading">TOTAL STREAMS</span><span class="svt-overall-daily-heading">GAIN VS YESTERDAY</span><span>CHANGE</span></div><div id="ranking" class="ranking"><div class="empty"></div></div></div><div id="svtAllView" hidden aria-label="Combined SEVENTEEN music statistics">
 <div class="svt-all-intro"><div class="eyebrow">✦ ALL ARTISTS & MUSIC</div><h3>Every artist. Every recording. <span>One archive.</span></h3><p>OT13, members and units together — using their original photos, album sleeves and song covers.</p></div><div class="stats svt-all-stats" aria-label="All artists combined streaming summary">
  <div class="stat"><small>TRACK STREAMS · TOTAL</small><strong id="all-summaryStreams">—</strong><span>Distinct recordings across OT13, units &amp; solo</span></div>
@@ -1532,6 +1634,77 @@ document.querySelectorAll('.name-fall>.falling-name').forEach(el=>{
    el.addEventListener('pointerenter',e=>{if(e.pointerType!=='touch')shoot(e)});
    el.addEventListener('click',e=>{if(window.matchMedia('(hover: none)').matches)shoot(e)});
   }
+ }
+})();
+</script><script id="svt-background-motion-v164-script">
+(()=>{
+ const layer=document.getElementById('svtNameLayer');
+ if(!layer)return;
+ const unitNames=[
+  ['BOO SEOK SOON (BSS)','부석순'],
+  ['JEONGHAN × WONWOO (JxW)','정한 × 원우'],
+  ['HOSHI × WOOZI (HxW)','호시 × 우지'],
+  ['JEONGHAN × JOSHUA (JxJ)','정한 × 조슈아'],
+  ['VERNON × THE8 (V8)','버논 × 디에잇'],
+  ['MINGYU × S.COUPS (CxM)','민규 × 에스쿱스'],
+  ['DK × SEUNGKWAN (DxS)','도겸 × 승관'],
+  ['PICHEOLIN','피철인'],
+  ['HIP-HOP TEAM','힙합팀'],
+  ['VOCAL TEAM','보컬팀'],
+  ['PERFORMANCE TEAM','퍼포먼스팀']
+ ];
+ let index=0;
+ unitNames.forEach(([english,korean],pairIndex)=>{
+  [english,korean].forEach((label,koreanIndex)=>{
+   const duration=[14,16,18][index%3];
+   const tag=document.createElement('span');
+   tag.className='falling-name svt-unit-rain'+(koreanIndex?' svt-korean-rain':'');
+   tag.textContent=label;
+   tag.style.setProperty('--right-offset',[2.5,7,12.5][index%3]+'vw');
+   tag.style.setProperty('--nr',duration+'s');
+   tag.style.setProperty('--nd',(-((index*1.37)%duration)).toFixed(2)+'s');
+   layer.appendChild(tag);
+   index++;
+  });
+ });
+ const trigger=document.createElement('button');
+ trigger.type='button';trigger.id='svt-star-trigger';
+ trigger.innerHTML='SEVENTEEN WILL CHALLENGE ETERNITY<span>Click to shoot like a star ✦</span>';
+ trigger.setAttribute('aria-label','SEVENTEEN will challenge eternity. Click to shoot like a star.');
+ document.body.appendChild(trigger);
+ let lastShot=0;
+ trigger.addEventListener('click',()=>{
+  if(performance.now()-lastShot<350)return;
+  lastShot=performance.now();
+  const rect=trigger.getBoundingClientRect();
+  const x=rect.left+rect.width/2,y=rect.top+rect.height/2;
+  const star=document.createElement('span');
+  star.className='svt-shooting-star svt-user-shot';star.textContent='✦';
+  star.setAttribute('aria-hidden','true');
+  star.style.left=x+'px';star.style.top=y+'px';
+  star.style.setProperty('--shot-x',-Math.min(innerWidth*.42,420)+'px');
+  star.style.setProperty('--shot-y',-Math.min(innerHeight*.26,270)+'px');
+  document.body.appendChild(star);
+  star.addEventListener('animationend',()=>star.remove(),{once:true});
+  for(let i=0;i<6;i++){
+   const spark=document.createElement('span');
+   spark.className='svt-eternity-spark';
+   spark.style.left=x+'px';spark.style.top=y+'px';
+   spark.style.setProperty('--spark',i%2?'#b9d8ff':'#ffd2eb');
+   spark.style.setProperty('--dx',((i-2.5)*22)+'px');
+   spark.style.setProperty('--dy',((i%2?-1:1)*(26+i*7))+'px');
+   document.body.appendChild(spark);
+   spark.addEventListener('animationend',()=>spark.remove(),{once:true});
+  }
+ });
+ for(let i=0;i<3;i++){
+  const streak=document.createElement('span');
+  streak.className='svt-background-shooting-star';
+  streak.style.left=[72,80,86][i]+'vw';
+  streak.style.top=[15,43,72][i]+'vh';
+  streak.style.setProperty('--star-duration',[8,9,7.5][i]+'s');
+  streak.style.setProperty('--star-delay',(-i*2.6)+'s');
+  document.body.appendChild(streak);
  }
 })();
 </script></body></html>
