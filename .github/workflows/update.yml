@@ -1,10 +1,13 @@
 name: Spotify stream snapshots
-# At 2 PM New York, today's reporting observation becomes eligible. If Spotify is late,
-# recheck the oldest unsaved reporting date hourly, including after midnight.
+# Trigger at each New York hour boundary (the first eligible slot is 2 PM).
+# The date gate skips collection before 2 PM and after a successful daily save.
+# If a date is still pending, recheck hourly, including after midnight.
+# GitHub may delay scheduled runs; exact-to-the-second execution is not guaranteed.
 # A date is published only when verified Spotify counters advance. Test the NY cutoff each run.
 on:
   schedule:
     - cron: '0 * * * *'
+      timezone: 'America/New_York'
   workflow_dispatch:
   # Run the collector once when this workflow is explicitly updated.
   push:
