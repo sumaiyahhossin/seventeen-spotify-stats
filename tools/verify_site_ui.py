@@ -127,6 +127,38 @@ def check_summary_growth_header_white(driver, section):
         assert result['note']=='rgb(244, 240, 255)', (section,metric,result)
     print(section,'white summary growth headings / comparisons:',colors,flush=True)
 
+def check_daily_tracks_four_columns(driver, section):
+    # Daily tracks must show the real cumulative count AND the two gains,
+    # including on the smallest supported phone viewport.
+    WebDriverWait(driver,25).until(lambda d:d.execute_script("""
+      const first=document.querySelector('#ranking .rank-row');
+      return document.body.classList.contains('svt-daily-tracks')&&first&&
+        first.querySelectorAll(':scope > .rank-metric').length===3;
+    """))
+    metrics=driver.execute_script("""
+      const row=document.querySelector('#ranking .rank-row');
+      const head=document.querySelector('#svtPrimaryStats .table-head');
+      const ranking=document.querySelector('#ranking');
+      const fields=['streams','gain','change'];
+      const rect=r=>{const a=r.getBoundingClientRect();return {x:a.x,right:a.right,width:a.width}};
+      return {
+        headerVisible:getComputedStyle(head.querySelector('.svt-total-heading')).display!=='none',
+        visibleMetrics:fields.every(k=>!!row.querySelector('.rank-metric-'+k)),
+        positions:fields.map(k=>rect(row.querySelector('.rank-metric-'+k))),
+        heading:rect(head),table:rect(ranking),
+        rules:document.querySelectorAll('#svtPrimaryStats .svt-column-rule').length,
+        note:document.getElementById('gain').nextElementSibling.textContent,
+        followersNote:document.getElementById('followersChange').textContent
+      };
+    """)
+    assert metrics['headerVisible'] and metrics['visibleMetrics'],(section,metrics)
+    positions=metrics['positions']
+    assert all(positions[i]['x']>positions[i-1]['right']-2 for i in (1,2)),(section,metrics)
+    assert positions[-1]['right']<=metrics['table']['right']+2,(section,metrics)
+    assert abs(metrics['heading']['width']-metrics['table']['width'])<2,(section,metrics)
+    assert metrics['rules']==3,(section,'Expected continuous lines at three metrics',metrics)
+    print(section,'Daily Tracks cumulative total, gain and change:',metrics,flush=True)
+
 def check_compact_row_height_and_full_width(driver, section, width):
     dims=driver.execute_script("""
       const area=document.getElementById('svtPrimaryStats');
@@ -171,6 +203,13 @@ def check_viewport(driver,width,height):
     assert track_link['label']=='Track Link:' and track_link['actual']==track_link['expected'],track_link
     print('OT13 track history uses direct song link:',track_link,flush=True)
     click(driver,'.svt-history-close')
+    driver.execute_script("""
+      const category=document.querySelector('#rankCategory button[data-type="tracks"]');
+      if(category&&!category.classList.contains('active'))category.click();
+      const period=document.getElementById('rankPeriod');
+      if(period.value!=='daily'){period.value='daily';period.dispatchEvent(new Event('change',{bubbles:true}))}
+    """)
+    check_daily_tracks_four_columns(driver,f'OT13 {width}px')
     # The history inspector must open on metric click and close without leaving
     # the page covered by an invisible blocking overlay.
     click(driver,'#total')
@@ -196,6 +235,13 @@ def check_viewport(driver,width,height):
     check_trend_palette(driver,f'Units & Solo {width}px')
     check_summary_growth_header_white(driver,f'Units & Solo {width}px')
     check_compact_row_height_and_full_width(driver,f'Units & Solo {width}px',width)
+    driver.execute_script("""
+      const category=document.querySelector('#rankCategory button[data-type="tracks"]');
+      if(category&&!category.classList.contains('active'))category.click();
+      const period=document.getElementById('rankPeriod');
+      if(period.value!=='daily'){period.value='daily';period.dispatchEvent(new Event('change',{bubbles:true}))}
+    """)
+    check_daily_tracks_four_columns(driver,f'Units & Solo {width}px')
     # Regression: a saved count of zero is not a missing song. The main
     # combined total must include all distinct Spotify IDs exactly once.
     latest=json.loads((ROOT/'data/solo.json').read_text(encoding='utf-8'))
@@ -342,8 +388,8 @@ def check_viewport(driver,width,height):
         """)
     daily_tracks=metric_snapshot()
     assert daily_tracks['rows']==daily_tracks['ids']==181, daily_tracks
-    assert daily_tracks['totals']==0 and daily_tracks['changes']==181, daily_tracks
-    assert daily_tracks['hiddenHeader'],daily_tracks
+    assert daily_tracks['totals']==181 and daily_tracks['changes']==181, daily_tracks
+    assert not daily_tracks['hiddenHeader'],daily_tracks
     gains=[g for g in daily_tracks['gains'] if g is not None]
     assert gains==sorted(gains,reverse=True), f'Daily solo tracks not ranked by gain: {gains[:12]}'
     print('Daily solo tracks: 181 unique recordings, sorted by verified gain',flush=True)
