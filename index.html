@@ -1406,12 +1406,8 @@ body .rank-row:hover{transform:none!important;box-shadow:none!important}
  #svtNameLayer>.falling-name.svt-eternity-tag{display:none!important}
 }
 </style><style id="svt-name-rain-final-v169">
-#svtNameLayer .falling-name{
- animation-name:svt-name-rain-v169!important;
- animation-duration:var(--nr,16s)!important;
- animation-timing-function:linear!important;
- animation-iteration-count:infinite!important;
- animation-play-state:running!important;
+#svtNameLayer>.falling-name.falling-name{
+ animation:svt-name-rain-v169 var(--nr,16s) linear var(--nd,0s) infinite normal none!important;
 }
 @keyframes svt-name-rain-v169{
  0%{transform:translate3d(-5px,0,0);opacity:0}
