@@ -17,6 +17,9 @@
  .svt-history-close{border:1px solid #8777a8;background:#363054;color:#fff;border-radius:10px;padding:8px 13px;font:700 18px system-ui;cursor:pointer}
  .svt-history-window h2{margin:4px 0 8px;font:800 clamp(18px,3vw,25px) system-ui}
  .svt-history-note{font:12px/1.5 system-ui;color:#c4b9de;margin:5px 0 14px}
+ .svt-history-profile{margin:13px 0 0;font:12px/1.5 system-ui;color:#e9e1f4;overflow-wrap:anywhere}
+ .svt-history-profile a{color:#A0C9E8;text-decoration:underline;text-underline-offset:3px}
+ .svt-history-profile a:focus-visible{outline:2px solid #F3B6D1;outline-offset:3px;border-radius:2px}
  .svt-history-wrap{overflow-x:auto;border:1px solid #4c476c;border-radius:12px}
  .svt-history-table{width:100%;border-collapse:collapse;min-width:540px;font:12px/1.4 system-ui;text-align:right}
  .svt-history-table th,.svt-history-table td{padding:12px 10px;border-bottom:1px solid #373755;white-space:nowrap;font-variant-numeric:tabular-nums}
@@ -52,7 +55,7 @@
  `;
  const style=document.createElement('style');style.textContent=css;document.head.append(style);
  const modal=document.createElement('div');modal.className='svt-history-dialog';modal.hidden=true;modal.setAttribute('role','presentation');
- modal.innerHTML='<section class="svt-history-window" role="dialog" aria-modal="true" aria-labelledby="svtHistoryTitle"><div class="svt-history-top"><div><div style="font:750 10px system-ui;letter-spacing:.15em;color:#d6b1f5">✦ VERIFIED STREAM HISTORY</div><h2 id="svtHistoryTitle">History</h2></div><button type="button" class="svt-history-close" aria-label="Close history">×</button></div><p class="svt-history-note" id="svtHistoryNote"></p><div class="svt-history-wrap"><table class="svt-history-table"><thead><tr><th>Date</th><th>Total</th><th>Increase</th><th>Change in increase</th></tr></thead><tbody id="svtHistoryRows"></tbody></table></div><p class="svt-history-note">A dash means comparable saved data is unavailable. Daily increases need consecutive dates. No missing dates are estimated.</p></section>';
+ modal.innerHTML='<section class="svt-history-window" role="dialog" aria-modal="true" aria-labelledby="svtHistoryTitle"><div class="svt-history-top"><div><div style="font:750 10px system-ui;letter-spacing:.15em;color:#d6b1f5">✦ VERIFIED STREAM HISTORY</div><h2 id="svtHistoryTitle">History</h2></div><button type="button" class="svt-history-close" aria-label="Close history">×</button></div><p class="svt-history-note" id="svtHistoryNote"></p><div class="svt-history-wrap"><table class="svt-history-table"><thead><tr><th>Date</th><th>Total</th><th>Increase</th><th>Change in increase</th></tr></thead><tbody id="svtHistoryRows"></tbody></table></div><p class="svt-history-note">A dash means comparable saved data is unavailable. Daily increases need consecutive dates. No missing dates are estimated.</p><p class="svt-history-profile" id="svtHistoryProfile" hidden>Profile Link: <a id="svtHistoryProfileLink" target="_blank" rel="noopener noreferrer"></a></p></section>';
  document.body.append(modal);
  // Keep keyboard focus inside the modal and return it to the opener.
  let historyOpener=null;
@@ -229,14 +232,43 @@
   const ids=uniqueSoloSpotifyIds([...new Set((catalog.solo||[]).flatMap(item=>item.tracks||[]))],snapshot);
   return ids.length?exactIds(snapshot,ids,reference):null;
  }
+ // Use official Korean member names in the history description while
+ // retaining recognizable English names in dialog titles. Units without a
+ // separate Spotify artist account intentionally have no profile link.
+ const koreanNames={
+  'S.Coups':'에스쿱스',Jeonghan:'정한',Joshua:'조슈아',Jun:'준',Hoshi:'호시',
+  Wonwoo:'원우',Woozi:'우지',Dokyeom:'도겸',Mingyu:'민규',The8:'디에잇',
+  Seungkwan:'승관',Vernon:'버논',Dino:'디노',BSS:'부석순',
+  JxW:'정한 X 원우',HxW:'호시 X 우지',CxM:'에스쿱스 X 민규',
+  DxS:'도겸 X 승관',V8:'버논 X 디에잇',JxJ:'정한 X 조슈아',
+  Picheolin:'피철인'
+ };
+ const profileFor=(scope,owner)=>{
+  const artistId=scope==='group'?'7nqOGRxlXj7N2JYbgNEjYH':
+   scope==='solo'&&owner?soloArtists.find(([name])=>name===owner)?.[1]:null;
+  return typeof artistId==='string'&&/^[a-zA-Z0-9]{22}$/.test(artistId)
+   ?'https://open.spotify.com/artist/'+artistId:null;
+ };
+ const ownerTitle=(scope,owner)=>scope==='group'?'SEVENTEEN':owner||null;
+ const possessive=name=>name+(name.endsWith('s')?"'":"'s");
  let opening=0;
  async function show(metric){
   const id=++opening;
   const scope=tab,owner=selectedSoloArtist;
   modal.hidden=false;document.body.style.overflow='hidden';
   const tbody=$('#svtHistoryRows');tbody.innerHTML='<tr><td colspan="4">Loading saved snapshots…</td></tr>';
-  $('#svtHistoryTitle').textContent=metric.value==='listeners'?'Monthly Listeners ('+(rank.endsWith('monthly')?'Monthly':rank.endsWith('weekly')?'Weekly':'Daily')+')':metric.title||'Track streams';
+  const artist=ownerTitle(scope,owner);
+  const measure=metric.value==='listeners'?'Monthly Listeners':
+   metric.value==='followers'?'Followers':metric.kind==='total'?'Total Streams':null;
+  $('#svtHistoryTitle').textContent=artist&&measure
+   ?possessive(artist)+' '+measure+' on Spotify'
+   :measure||metric.title||'Track streams';
   $('#svtHistoryNote').textContent='Loading saved streaming history…';
+  const profile=profileFor(scope,owner);
+  const profileArea=$('#svtHistoryProfile'),profileLink=$('#svtHistoryProfileLink');
+  profileArea.hidden=!profile;
+  if(profile){profileLink.href=profile;profileLink.textContent=profile}
+  else{profileLink.removeAttribute('href');profileLink.textContent=''};
   let ref;
   try{ref=await selectedSnapshot()||await latest(scope)}
   catch(error){tbody.innerHTML='<tr><td colspan="4">Unable to load selected archive. Try selecting a date and reopening.</td></tr>';return}
@@ -264,7 +296,7 @@
    :metric.value==='followers'
    ?'Follower totals are observed counts; daily changes require two dated readings.'
    :'Stream totals are cumulative; increases require comparable recordings.';
-  $('#svtHistoryNote').textContent='Last '+periodCount+' '+titleLabel+'s through '+dateText(ref.date)+' · '+(scope==='group'?'OT13':owner||'Units & Solo')+'. '+historyMeasureNote;
+  $('#svtHistoryNote').textContent='Last '+periodCount+' '+titleLabel+'s through '+dateText(ref.date)+' · '+(scope==='group'?'세븐틴':koreanNames[owner]||owner||'Units & Solo')+'. '+historyMeasureNote;
   if(followerData&&profileId)
    $('#svtHistoryNote').textContent+=' · Followers are dated when collected; no November 7 count is fabricated.';
   const lookup=async date=>{
