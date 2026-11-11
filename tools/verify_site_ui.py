@@ -684,7 +684,17 @@ def main():
                      .filter(row=>/Picheolin/i.test(row.querySelector('.svt-all-song')?.textContent||''))
                      .map(row=>row.querySelectorAll('td')[1]?.textContent.trim());
                 """)
-                assert picheolin==['12,745,528'],f'All Artists doubled Picheolin streams: {picheolin}'
+                # Daily stream totals change; the test must compare against
+                # the current canonical snapshot instead of a frozen number.
+                solo_snap=json.loads((ROOT/'data/solo.json').read_text(encoding='utf-8'))
+                solo_catalog=json.loads((ROOT/'data/catalog.json').read_text(encoding='utf-8'))['solo']
+                picheolin_ids={track for release in solo_catalog if release.get('artist')=='Picheolin'
+                               for track in release['tracks']}
+                picheolin_duplicates={'3Y0ZwgYVHuwbW0JGjsYodR','594CTGIIVVTitwRhQJcWgM'}
+                expected_picheolin=sum(solo_snap['tracks'][tid] for tid in picheolin_ids
+                                       if tid not in picheolin_duplicates)
+                assert picheolin==[f'{expected_picheolin:,}'],(
+                    f'All Artists Picheolin total not canonical: {picheolin}; expected {expected_picheolin:,}')
                 assert driver.execute_script("""
                     return [...document.querySelectorAll('#all-artists tr')].every(row=>row.querySelectorAll('td').length===2);
                 """),'Across all artists must show only the currently selected metric'
