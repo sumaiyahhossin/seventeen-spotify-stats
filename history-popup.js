@@ -305,7 +305,7 @@
   const candidates=(catalog[scope]||[]).filter(x=>(x.tracks||[]).includes(metric.id))
    .map(x=>x.track_release_dates?.[metric.id]||
     (scope==='group'&&(groupOriginalReleaseDates[x.key]||groupStandaloneReleaseDates[x.key]))||
-    x.release_date||x.releaseDate||null).filter(x=>/^\\d{4}-\\d\\d-\\d\\d$/.test(x));
+    x.release_date||x.releaseDate||null).filter(x=>/^\d{4}-\d\d-\d\d$/.test(x));
   return candidates.sort()[0]||null;
  };
  const makeCopyTitle=(metric,scope,owner)=>{
@@ -328,8 +328,8 @@
    shortDate(date)+' - '+fmt(value)+(Number.isFinite(gain)?' ('+numberSigned(gain)+')':''));
   if(!rows.length)return '';
   const url=link?.url||'';
-  return [makeCopyTitle(metric,scope,owner),rows.join('\\n'),
-   '@pledis_17 #세븐틴',url].filter(Boolean).join('\\n\\n');
+  return [makeCopyTitle(metric,scope,owner),rows.join('\n'),
+   '@pledis_17 #세븐틴',url].filter(Boolean).join('\n\n');
  };
  const saveCopyText=async text=>{
   if(navigator.clipboard?.writeText){
