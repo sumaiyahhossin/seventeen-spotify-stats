@@ -902,8 +902,29 @@ def main():
                             assert any('Dec 2025' in record[0] for record in records),records
                         print('All history verified:',mode,expected,'rows,',
                               valid,'with saved totals',flush=True)
+                        if mode=='daily':
+                            WebDriverWait(driver,40).until(lambda d:d.execute_script("""
+                                return !document.getElementById('all-history-copy').disabled;
+                            """))
+                            driver.execute_script("""
+                                window.__svtAllCopied='';
+                                Object.defineProperty(navigator,'clipboard',{
+                                    configurable:true,value:{writeText:async text=>{
+                                        window.__svtAllCopied=text;
+                                    }}
+                                });
+                            """)
+                            click(driver,'#all-history-copy')
+                            WebDriverWait(driver,12).until(lambda d:
+                                d.execute_script("return !!window.__svtAllCopied"))
+                            post=driver.execute_script("return window.__svtAllCopied")
+                            days=[line for line in post.splitlines()
+                                  if re.match(r'^\d{1,2}/\d{1,2} - ',line)]
+                            assert post.startswith('#SEVENTEEN Spotify Streams') and 1<=len(days)<=10,post
+                            assert '@pledis_17 #세븐틴' in post,post
+                            print('All Copy for X: ten or fewer verified days',len(days),flush=True)
                         driver.execute_script("""
-                            document.querySelector('#svt-all-history-dialog .all-history-head button').click()
+                            document.querySelector('#svt-all-history-dialog .all-history-close').click()
                         """)
                         WebDriverWait(driver,15).until(lambda d:d.execute_script("""
                             return !document.getElementById('svt-all-history-dialog')?.open;
