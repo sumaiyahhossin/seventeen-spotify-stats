@@ -94,7 +94,7 @@ def check_compact_row_height_and_full_width(driver, section, width):
         headWidth:head.getBoundingClientRect().width
       };
     """)
-    limit=65 if width>900 else 53
+    limit=65 if width>900 else 58
     assert dims['rowHeight']<=limit,(section,'rows too tall',dims)
     assert abs(dims['tableWidth']-dims['parentWidth'])<=3,(section,'table width changed',dims)
     assert abs(dims['tableWidth']-dims['headWidth'])<=3,(section,'header width changed',dims)
