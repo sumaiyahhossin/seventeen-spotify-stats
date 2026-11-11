@@ -1003,12 +1003,19 @@ def main():
                         p.value='overall';p.dispatchEvent(new Event('change',{bubbles:true}));
                     """)
 
-                # Original and All use the same light-colored stat cards.
                 assert driver.execute_script("""
-                    return getComputedStyle(document.querySelector('#all-summaryStreams').closest('.stat'))
-                      .backgroundImage.includes('linear-gradient')
-                """),'Combined summary cards lost the original design'
+                    const card=getComputedStyle(document.querySelector('#all-summaryStreams').closest('.stat'));
+                    return card.backgroundImage==='none' &&
+                           card.backgroundColor==='rgb(37, 41, 67)' &&
+                           card.backdropFilter==='none';
+                """),'All summary cards are no longer flat and lightweight'
 
+                assert driver.execute_script("""
+                    const names=[...document.querySelectorAll('.name-fall>.falling-name')];
+                    const visible=names.filter(el=>getComputedStyle(el).display!=='none');
+                    return names.length===63 && visible.length===(innerWidth<=680?21:63) &&
+                      getComputedStyle(document.body,'::after').display==='none';
+                """),'Floating names lost their spaced background layout'
                 assert driver.execute_script("""
                     return document.documentElement.scrollWidth<=window.innerWidth+5
                 """),f'All overflowed the viewport at {width}px'
@@ -1243,8 +1250,9 @@ def main():
                 click(driver,'#tabReached')
                 assert driver.find_element(By.CSS_SELECTOR,'a.back').get_attribute('href').endswith('index.html?view=all')
                 assert driver.execute_script("""
-                    return getComputedStyle(document.body).backgroundImage.includes('radial-gradient')
-                """),'All milestone page does not match the original dark milestone design'
+                    const bg=getComputedStyle(document.body);
+                    return bg.backgroundImage==='none' && bg.backgroundColor==='rgb(16, 18, 41)';
+                """),'All milestone page background is no longer flat navy'
                 driver.execute_script("""
                     const el=document.getElementById('search');
                     el.value='LOVE, MONEY, FAME';el.dispatchEvent(new Event('input',{bubbles:true}));
