@@ -2,6 +2,7 @@
 from __future__ import annotations
 import contextlib
 import json
+import re
 import datetime
 import http.server
 import pathlib
@@ -238,7 +239,7 @@ def check_viewport(driver,width,height):
     WebDriverWait(driver,10).until(lambda d:
         d.execute_script("return !!window.__svtTestCopied"))
     song_copy=driver.execute_script("return window.__svtTestCopied")
-    song_days=[line for line in song_copy.splitlines() if re.match(r'^\\d{1,2}/\\d{1,2} - ',line)]
+    song_days=[line for line in song_copy.splitlines() if re.match(r'^\d{1,2}/\d{1,2} - ',line)]
     assert song_copy.startswith('#SEVENTEEN "') and track_link['expected'] in song_copy,song_copy
     assert 1<=len(song_days)<=10 and '@pledis_17 #세븐틴' in song_copy,song_copy
     print('OT13 Copy for X: song and exact Spotify track URL',len(song_days),flush=True)
@@ -280,7 +281,7 @@ def check_viewport(driver,width,height):
     WebDriverWait(driver,10).until(lambda d:
         d.execute_script("return !!window.__svtTestCopied"))
     copied=driver.execute_script("return window.__svtTestCopied")
-    dated=[line for line in copied.splitlines() if re.match(r'^\\d{1,2}/\\d{1,2} - ',line)]
+    dated=[line for line in copied.splitlines() if re.match(r'^\d{1,2}/\d{1,2} - ',line)]
     assert 1<=len(dated)<=10,(width,'Copy for X must use up to 10 saved dates',copied)
     assert copied.startswith('#SEVENTEEN Total Streams on Spotify'),copied
     assert '@pledis_17 #세븐틴' in copied,copied
