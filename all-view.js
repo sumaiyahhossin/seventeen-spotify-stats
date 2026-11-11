@@ -927,8 +927,12 @@ const allShareAgeOrder=Object.keys(allShareSoloTags);
 const allShareOwner=row=>{
  if(row.scope==='group'||row.scope==='all')return 'SEVENTEEN';
  const names=(row.owners||[]).filter(name=>name&&name!=='SEVENTEEN');
- return names.find(name=>allShareUnitMembers[name])||
-  names.find(name=>allShareSoloTags[name])||names[0]||'Units & Solo';
+ const namedUnit=names.find(name=>allShareUnitMembers[name]);
+ if(namedUnit)return namedUnit;
+ // Some shared JxJ recordings appear as both Jeonghan and Joshua credits
+ // without the JxJ label in the source catalog; keep the correct duo.
+ if(names.includes('Jeonghan')&&names.includes('Joshua'))return 'JxJ';
+ return names.find(name=>allShareSoloTags[name])||names[0]||'Units & Solo';
 };
 const allShareTags=row=>{
  const owner=allShareOwner(row);
