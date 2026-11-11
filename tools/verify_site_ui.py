@@ -80,6 +80,26 @@ def check_column_dividers(driver, section):
     assert result['noOldPerRowLines'], (section,result)
     print(section,'continuous full-height ranking dividers:',result,flush=True)
 
+def check_trend_palette(driver, section):
+    colors=driver.execute_script("""
+      const metric=document.querySelector('#svtPrimaryStats #ranking .rank-row>.rank-metric');
+      if(!metric)return {error:'No visible metric'};
+      const original=metric.className;
+      try{
+        const value=metric.querySelector('.metric-value');
+        const compact=metric.querySelector('.metric-compact');
+        metric.classList.remove('positive','negative','unchanged','missing-value');
+        metric.classList.add('positive');
+        const increase=[getComputedStyle(value).color,getComputedStyle(compact).color];
+        metric.classList.replace('positive','negative');
+        const decrease=[getComputedStyle(value).color,getComputedStyle(compact).color];
+        return {increase,decrease};
+      }finally{metric.className=original}
+    """)
+    assert colors.get('increase')==['rgb(146, 168, 209)']*2,(section,colors)
+    assert colors.get('decrease')==['rgb(247, 202, 201)']*2,(section,colors)
+    print(section,'Serenity / Rose Quartz ranking palette verified:',colors,flush=True)
+
 def check_compact_row_height_and_full_width(driver, section, width):
     dims=driver.execute_script("""
       const area=document.getElementById('svtPrimaryStats');
@@ -105,6 +125,7 @@ def check_viewport(driver,width,height):
     driver.get(f'http://127.0.0.1:{PORT}/')
     read_layout(driver,f'OT13 {width}px')
     check_column_dividers(driver,f'OT13 {width}px')
+    check_trend_palette(driver,f'OT13 {width}px')
     check_compact_row_height_and_full_width(driver,f'OT13 {width}px',width)
     # The history inspector must open on metric click and close without leaving
     # the page covered by an invisible blocking overlay.
@@ -128,6 +149,7 @@ def check_viewport(driver,width,height):
     click(driver,'#tabs button[data-tab="solo"]')
     read_layout(driver,f'Units & Solo {width}px')
     check_column_dividers(driver,f'Units & Solo {width}px')
+    check_trend_palette(driver,f'Units & Solo {width}px')
     check_compact_row_height_and_full_width(driver,f'Units & Solo {width}px',width)
     # Regression: a saved count of zero is not a missing song. The main
     # combined total must include all distinct Spotify IDs exactly once.
