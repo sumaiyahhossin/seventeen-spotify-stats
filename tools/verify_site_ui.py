@@ -206,7 +206,9 @@ def check_compact_row_height_and_full_width(driver, section, width):
 
 def check_viewport(driver,width,height):
     driver.set_window_size(width,height)
-    driver.get(f'http://127.0.0.1:{PORT}/')
+    driver.get(f'http://127.0.0.1:{PORT}/?view=group')
+    WebDriverWait(driver,30).until(lambda d:
+        d.execute_script("return document.body.classList.contains('svt-units-solo')===false"))
     read_layout(driver,f'OT13 {width}px')
     check_column_dividers(driver,f'OT13 {width}px')
     check_trend_palette(driver,f'OT13 {width}px')
@@ -240,8 +242,8 @@ def check_viewport(driver,width,height):
         d.execute_script("return !!window.__svtTestCopied"))
     song_copy=driver.execute_script("return window.__svtTestCopied")
     song_days=[line for line in song_copy.splitlines() if re.match(r'^\d{1,2}/\d{1,2} - ',line)]
-    assert song_copy.startswith('#SEVENTEEN "') and track_link['expected'] in song_copy,song_copy
-    assert 1<=len(song_days)<=10 and '@pledis_17 #세븐틴' in song_copy,song_copy
+    assert song_copy.startswith('"') and ' Streams on Spotify' in song_copy and track_link['expected'] in song_copy,song_copy
+    assert 1<=len(song_days)<=7 and '@pledis_17 #SEVENTEEN #세븐틴' in song_copy,song_copy
     print('OT13 Copy for X: song and exact Spotify track URL',len(song_days),flush=True)
     print('OT13 track history uses direct song link:',track_link,flush=True)
     click(driver,'.svt-history-close')
@@ -282,9 +284,9 @@ def check_viewport(driver,width,height):
         d.execute_script("return !!window.__svtTestCopied"))
     copied=driver.execute_script("return window.__svtTestCopied")
     dated=[line for line in copied.splitlines() if re.match(r'^\d{1,2}/\d{1,2} - ',line)]
-    assert 1<=len(dated)<=10,(width,'Copy for X must use up to 10 saved dates',copied)
+    assert 1<=len(dated)<=7,(width,'Copy for X must use up to 7 saved dates',copied)
     assert copied.startswith('#SEVENTEEN Total Streams on Spotify'),copied
-    assert '@pledis_17 #세븐틴' in copied,copied
+    assert '@pledis_17 #SEVENTEEN #세븐틴' in copied,copied
     assert 'https://open.spotify.com/artist/7nqOGRxlXj7N2JYbgNEjYH' in copied,copied
     assert all('—' not in line and '*' not in line for line in dated),copied
     print('OT13 Copy for X: saved days, formatting and profile link',len(dated),flush=True)
@@ -920,9 +922,9 @@ def main():
                             post=driver.execute_script("return window.__svtAllCopied")
                             days=[line for line in post.splitlines()
                                   if re.match(r'^\d{1,2}/\d{1,2} - ',line)]
-                            assert post.startswith('#SEVENTEEN Spotify Streams') and 1<=len(days)<=10,post
-                            assert '@pledis_17 #세븐틴' in post,post
-                            print('All Copy for X: ten or fewer verified days',len(days),flush=True)
+                            assert post.startswith('#SEVENTEEN Spotify Streams') and 1<=len(days)<=7,post
+                            assert '@pledis_17 #SEVENTEEN #세븐틴' in post,post
+                            print('All Copy for X: seven or fewer verified days',len(days),flush=True)
                         driver.execute_script("""
                             document.querySelector('#svt-all-history-dialog .all-history-close').click()
                         """)
