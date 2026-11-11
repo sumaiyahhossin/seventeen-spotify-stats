@@ -80,11 +80,32 @@ def check_column_dividers(driver, section):
     assert result['noOldPerRowLines'], (section,result)
     print(section,'continuous full-height ranking dividers:',result,flush=True)
 
+def check_compact_row_height_and_full_width(driver, section, width):
+    dims=driver.execute_script("""
+      const area=document.getElementById('svtPrimaryStats');
+      const ranking=area.querySelector('#ranking');
+      const row=ranking.querySelector('.rank-row');
+      const head=area.querySelector('.table-head');
+      const parent=ranking.parentElement;
+      return {
+        rowHeight:row.getBoundingClientRect().height,
+        tableWidth:ranking.getBoundingClientRect().width,
+        parentWidth:parent.getBoundingClientRect().width,
+        headWidth:head.getBoundingClientRect().width
+      };
+    """)
+    limit=65 if width>900 else 53
+    assert dims['rowHeight']<=limit,(section,'rows too tall',dims)
+    assert abs(dims['tableWidth']-dims['parentWidth'])<=3,(section,'table width changed',dims)
+    assert abs(dims['tableWidth']-dims['headWidth'])<=3,(section,'header width changed',dims)
+    print(section,'compact row height / original full width:',dims,flush=True)
+
 def check_viewport(driver,width,height):
     driver.set_window_size(width,height)
     driver.get(f'http://127.0.0.1:{PORT}/')
     read_layout(driver,f'OT13 {width}px')
     check_column_dividers(driver,f'OT13 {width}px')
+    check_compact_row_height_and_full_width(driver,f'OT13 {width}px',width)
     # The history inspector must open on metric click and close without leaving
     # the page covered by an invisible blocking overlay.
     click(driver,'#total')
@@ -107,6 +128,7 @@ def check_viewport(driver,width,height):
     click(driver,'#tabs button[data-tab="solo"]')
     read_layout(driver,f'Units & Solo {width}px')
     check_column_dividers(driver,f'Units & Solo {width}px')
+    check_compact_row_height_and_full_width(driver,f'Units & Solo {width}px',width)
     # Regression: a saved count of zero is not a missing song. The main
     # combined total must include all distinct Spotify IDs exactly once.
     latest=json.loads((ROOT/'data/solo.json').read_text(encoding='utf-8'))
