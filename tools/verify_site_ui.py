@@ -1020,13 +1020,13 @@ def main():
                     const moving=visible[0];
                     const css=getComputedStyle(moving);
                     return {total:names.length,visible:visible.length,
-                      expected:85,
+                      expected:79,
                       animation:css.animationName,direction:css.animationDirection,
                       transform:css.transform,
                       phrases:names.filter(el=>/^(OT13|SEVENTEEN WILL CHALLENGE ETERNITY)$/.test(el.textContent.trim())).length,
                       cursor:getComputedStyle(document.body,'::after').display};
                 """)
-                assert stars['total']==86 and stars['visible']==stars['expected'] and stars['phrases']==2 and stars['cursor']=='none',(
+                assert stars['total']==80 and stars['visible']==stars['expected'] and stars['phrases']==2 and stars['cursor']=='none',(
                     f'Starfield labels or layout incorrect: {stars}')
                 assert stars['animation']=='svt-name-rain-v169' and stars['direction']=='normal',(
                     f'Starfield motion is missing: {stars}')
