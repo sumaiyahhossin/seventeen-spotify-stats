@@ -1173,6 +1173,40 @@ def main():
                     el.value='';el.dispatchEvent(new Event('input',{bubbles:true}));
                 """)
                 assert len(driver.find_elements(By.CSS_SELECTOR,'#upcomingRows .song-title'))>=390,                    'Combined upcoming milestones omitted many unit/solo songs'
+                # The combined reached history should have dates, not external
+                # Source buttons. Historical evidence remains in its data file.
+                click(driver,'#tabReached')
+                assert driver.execute_script("""
+                    return document.querySelectorAll('#rows .milestone-source').length===0;
+                """),'Unexpected Source link in reached milestones'
+                click(driver,'#tabUpcoming')
+                # GOLM (Inst.) and the rest of its 2023 single use the shared
+                # verified cover rather than CORS-blocked Spotify requests.
+                driver.execute_script("""
+                    const search=document.getElementById('upcomingSearch');
+                    search.value='GOLM (Inst.)';search.dispatchEvent(new Event('input',{bubbles:true}));
+                """)
+                WebDriverWait(driver,20).until(lambda d:d.execute_script("""
+                    return [...document.querySelectorAll('#upcomingRows tr')].some(r=>
+                        (r.querySelector('.song-title')?.textContent||'').includes('GOLM (Inst.)'));
+                """))
+                driver.execute_script("""
+                    const r=[...document.querySelectorAll('#upcomingRows tr')].find(x=>
+                        (x.querySelector('.song-title')?.textContent||'').includes('GOLM (Inst.)'));
+                    r?.scrollIntoView({block:'center'});
+                """)
+                WebDriverWait(driver,18).until(lambda d:d.execute_script("""
+                    const r=[...document.querySelectorAll('#upcomingRows tr')].find(x=>
+                        (x.querySelector('.song-title')?.textContent||'').includes('GOLM (Inst.)'));
+                    const img=r?.querySelector('img.song-cover');
+                    return Boolean(img?.complete&&img.naturalWidth>0);
+                """))
+                print('All milestones GOLM (Inst.) cover loads:',width,flush=True)
+                driver.execute_script("""
+                    const search=document.getElementById('upcomingSearch');
+                    search.value='';search.dispatchEvent(new Event('input',{bubbles:true}));
+                """)
+
                 # The page must not send hundreds of CORS-blocked Spotify
                 # oEmbed calls when showing the full upcoming list.
                 assert driver.execute_script("""
@@ -1188,6 +1222,23 @@ def main():
                     return document.documentElement.scrollWidth<=window.innerWidth+5
                 """),f'All milestone page horizontal overflow at {width}px'
                 print('Dedicated All milestone page, LOVE MONEY FAME date, mobile:',width,flush=True)
+            # The OT13 milestone page must also load GOLM (Inst.) art.
+            driver.get(f'http://127.0.0.1:{PORT}/milestones.html')
+            WebDriverWait(driver,35).until(lambda d:
+                'songs' in d.find_element(By.ID,'upcomingStatus').text)
+            click(driver,'#tabUpcoming')
+            driver.execute_script("""
+                const search=document.getElementById('upcomingSearch');
+                search.value='GOLM (Inst.)';search.dispatchEvent(new Event('input',{bubbles:true}));
+            """)
+            WebDriverWait(driver,18).until(lambda d:d.execute_script("""
+                const row=[...document.querySelectorAll('#upcomingRows tr')].find(x=>
+                    (x.querySelector('.song-title')?.textContent||'').includes('GOLM (Inst.)'));
+                const img=row?.querySelector('img.song-cover');
+                if(row)row.scrollIntoView({block:'center'});
+                return Boolean(img?.complete&&img.naturalWidth>0);
+            """))
+            print('OT13 milestones GOLM (Inst.) cover loads',flush=True)
             driver.get(f'http://127.0.0.1:{PORT}/milestones.html?type=solo')
             WebDriverWait(driver,40).until(lambda d:'UNITS & SOLO' in d.find_element(By.CSS_SELECTOR,'.eyebrow').text)
             # Selenium .text is empty inside the hidden Upcoming panel unless
