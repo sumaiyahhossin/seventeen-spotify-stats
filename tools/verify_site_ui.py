@@ -1017,22 +1017,22 @@ def main():
                 stars=driver.execute_script("""
                     const names=[...document.querySelectorAll('#svtNameLayer .falling-name')];
                     const visible=names.filter(el=>getComputedStyle(el).display!=='none');
-                    const moving=document.querySelector('#svtNameLayer>.svt-name-rain-track');
+                    const moving=visible.find(el=>!el.classList.contains('svt-eternity-tag'));
                     const css=getComputedStyle(moving);
                     return {total:names.length,visible:visible.length,
-                      expected:79,
+                      expected:43,
                       animation:css.animationName,direction:css.animationDirection,
                       transform:css.transform,
                       phrases:names.filter(el=>/^(OT13|SEVENTEEN WILL CHALLENGE ETERNITY)$/.test(el.textContent.trim())).length,
                       cursor:getComputedStyle(document.body,'::after').display};
                 """)
-                assert stars['total']==80 and stars['visible']==stars['expected'] and stars['phrases']==2 and stars['cursor']=='none',(
+                assert stars['total']==44 and stars['visible']==stars['expected'] and stars['phrases']==2 and stars['cursor']=='none',(
                     f'Starfield labels or layout incorrect: {stars}')
-                assert stars['animation']=='svt-name-across-v170' and stars['direction']=='normal',(
+                assert stars['animation']=='svt-name-diagonal-v171' and stars['direction']=='normal',(
                     f'Starfield motion is missing: {stars}')
                 time.sleep(.75)
                 moved=driver.execute_script("""
-                    return getComputedStyle(document.querySelector('#svtNameLayer>.svt-name-rain-track')).transform;
+                    return getComputedStyle([...document.querySelectorAll('#svtNameLayer .falling-name')].find(el=>getComputedStyle(el).display!=='none'&&!el.classList.contains('svt-eternity-tag'))).transform;
                 """)
                 assert moved!=stars['transform'],('Starfield labels are stationary',stars,moved)
                 hover_features=driver.execute_script("""
