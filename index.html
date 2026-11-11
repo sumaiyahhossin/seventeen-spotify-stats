@@ -1635,7 +1635,7 @@ body .rank-row:hover{transform:none!important;box-shadow:none!important}
   '피철인':'PICHEOLIN','S.COUPS':'SCOUPS','OT13':'SEVENTEEN'
  };
  const unitPhoto={
-  SCOUPS:'https://koreanindo.net/wp-content/uploads/2025/09/seventeen-scoups-mingyu-cxm-scoups-5-scaled.jpeg',
+  SCOUPS:['https://koreanindo.net/wp-content/uploads/2025/09/seventeen-scoups-mingyu-cxm-scoups-5-scaled.jpeg','assets/solo-album-covers/cxm_g1.jpg'],
   V8:'assets/profile-photos/v8.jpg',JXJ:'assets/profile-photos/jxj.jpg'
  };
  const layer=document.getElementById('svtNameLayer'),image=document.createElement('img');
@@ -1691,15 +1691,21 @@ body .rank-row:hover{transform:none!important;box-shadow:none!important}
  async function photoCandidates(key){
   if(cache.has(key))return cache.get(key);
   const id=ids[key],candidates=[];
-  if(unitPhoto[key])candidates.push(new URL(unitPhoto[key],location.href).href);
+  if(unitPhoto[key])for(const photo of (Array.isArray(unitPhoto[key])?unitPhoto[key]:[unitPhoto[key]]))candidates.push(new URL(photo,location.href).href);
   if(id){
    const profiles=await profilesReady;
    if(profiles[id])candidates.push(profiles[id]);
    const onPage=[...document.querySelectorAll('[data-artist-photo]')]
     .find(el=>el.dataset.artistPhoto===id&&el.getAttribute('src'));
    if(onPage?.src)candidates.push(onPage.src);
-   candidates.push('https://open.spotify.com/oembed?url='+
-    encodeURIComponent('https://open.spotify.com/artist/'+id));
+   try{
+    const response=await fetch('https://open.spotify.com/oembed?url='+
+     encodeURIComponent('https://open.spotify.com/artist/'+id));
+    if(response.ok){
+     const fallback=(await response.json()).thumbnail_url;
+     if(fallback)candidates.push(fallback);
+    }
+   }catch(error){}
   }
   const urls=[...new Set(candidates.filter(Boolean))];
   cache.set(key,urls);return urls;
