@@ -238,11 +238,11 @@ function reachedRows(){
  });
  $('rows').innerHTML=rows.map((r,i)=>{
   const reached=r.date?format(r.date):'Date not verified';
-  const source=r.url?'<a class="milestone-source" target="_blank" rel="noopener noreferrer" href="'+esc(r.url)+'">Source</a>':'';
+  // Source citations are retained in evidence data, but not displayed as a separate link.
   const span=r.duration==null?'—':fmt(r.duration)+' days';
   return '<tr><td>'+titleHtml(r,i)+'</td>'+
    '<td data-label="MILESTONE REACHED"><span class="reached-value">'+wide(reached,r.date?format(r.date):'—')+'</span>'+
-   (source?'<div class="song-release">'+source+'</div>':'')+'</td>'+
+   '</td>'+
    '<td data-label="DAYS TO REACH"><span class="days-value">'+span+'</span></td></tr>';
  }).join('')||'<tr><td colspan="3">No combined recordings have reached this threshold.</td></tr>';
  const dated=rows.filter(r=>r.date).length;
