@@ -1853,10 +1853,12 @@ body .stats .stat,body #svtAllView .svt-all-stats .stat{
   if(el.classList.contains('svt-hover-popping'))return;
   if(active)cancelActive();
   active=el;el.classList.add('svt-hover-active');image.style.display='none';position(el);
+  const label=el.textContent.trim().toUpperCase();
+  image.classList.toggle('svt-group-preview',label==='OT13');
   window.clearTimeout(popTimer);
   glowTimer=window.setTimeout(async()=>{
    if(active!==el)return;
-   const label=el.textContent.trim().toUpperCase(),key=alias[label]||label;
+   const key=alias[label]||label;
    const urls=await photoCandidates(key);
    showImageFrom(urls,0,el);
   },500);
@@ -2044,14 +2046,14 @@ body .stats .stat,body #svtAllView .svt-all-stats .stat{
   bouquet.style.setProperty('--bouquet-x',centerX+'px');
   bouquet.style.setProperty('--bouquet-y',centerY+'px');
   document.body.appendChild(bouquet);activeBouquet=bouquet;
-  const spinDuration=5;
+  const spinDuration=3;
   bouquet.style.setProperty('--bouquet-spin-time',spinDuration.toFixed(2)+'s');
   bouquetTimer=window.setTimeout(()=>{
    bouquet.remove();if(activeBouquet===bouquet)activeBouquet=null;
    const overlay=document.createElement('div');
    overlay.className='svt-celebration-overlay';overlay.setAttribute('aria-hidden','true');
    const width=window.innerWidth,height=window.innerHeight;
-   const count=Math.min(560,Math.max(320,Math.round(width/3.6)));
+   const count=Math.min(260,Math.max(160,Math.round(width/5.5)));
    for(let i=0;i<count;i++){
     const flower=i%2===0;
     const piece=document.createElement('span');
