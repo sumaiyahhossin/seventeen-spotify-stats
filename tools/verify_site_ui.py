@@ -1020,13 +1020,13 @@ def main():
                     const moving=visible.find(el=>!el.classList.contains('svt-eternity-tag'));
                     const css=getComputedStyle(moving);
                     return {total:names.length,visible:visible.length,
-                      expected:43,
+                      expected:50,
                       animation:css.animationName,direction:css.animationDirection,
                       transform:css.transform,
                       phrases:names.filter(el=>/^(OT13|SEVENTEEN WILL CHALLENGE ETERNITY)$/.test(el.textContent.trim())).length,
-                      cursor:getComputedStyle(document.body,'::after').display};
+                      color:css.color,cursor:getComputedStyle(document.body,'::after').display};
                 """)
-                assert stars['total']==44 and stars['visible']==stars['expected'] and stars['phrases']==2 and stars['cursor']=='none',(
+                assert stars['total']==51 and stars['visible']==stars['expected'] and stars['phrases']==2 and stars['color']=='rgb(255, 255, 255)' and stars['cursor']=='none',(
                     f'Starfield labels or layout incorrect: {stars}')
                 assert stars['animation']=='svt-name-diagonal-v171' and stars['direction']=='normal',(
                     f'Starfield motion is missing: {stars}')
