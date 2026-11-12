@@ -1,7 +1,7 @@
 """Shared New York reporting-date rules for the Spotify collectors.
 
-A same-day observation becomes eligible at 2 PM New York time.
-Publishing still requires a verified change in Spotify's actual counters.
+Spotify reporting dates trail the New York collection date by one day.
+A reporting date first becomes eligible at 2 PM on the following calendar day.
 Earlier pending dates are never skipped.
 """
 import datetime as dt
@@ -15,7 +15,8 @@ def available_reporting_date(at: dt.datetime) -> dt.date:
     if at.tzinfo is None or at.utcoffset() is None:
         raise ValueError("Reporting time must have a timezone")
     local = at.astimezone(NEW_YORK)
-    return local.date() if local.hour >= CUTOFF_HOUR else local.date() - dt.timedelta(days=1)
+    lag = 1 if local.hour >= CUTOFF_HOUR else 2
+    return local.date() - dt.timedelta(days=lag)
 
 
 def oldest_due_date(latest: dt.date | None, at: dt.datetime) -> dt.date | None:
