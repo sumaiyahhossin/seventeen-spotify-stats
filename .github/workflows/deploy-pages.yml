@@ -12,6 +12,14 @@ on:
       - '**/*.md'
       - 'pom.xml'
   workflow_dispatch:
+  # Actions bot commits do not start push-triggered workflows. Deploy after
+  # collectors finish, and skip the deployment when they made no new commit.
+  workflow_run:
+    workflows:
+      - Spotify stream snapshots
+      - Spotify followers — all 18 solo and unit profiles
+    types: [completed]
+    branches: [main]
 
 permissions:
   contents: read
@@ -24,6 +32,7 @@ concurrency:
 
 jobs:
   deploy:
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
@@ -31,15 +40,33 @@ jobs:
     steps:
       - name: Check out site
         uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Check whether collector data changed
+        id: changed
+        if: github.event_name == 'workflow_run'
+        env:
+          WORKFLOW_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        run: |
+          if [ "$(git rev-parse HEAD)" = "$WORKFLOW_HEAD_SHA" ]; then
+            echo "deploy=false" >> "$GITHUB_OUTPUT"
+            echo "No repository commit was made by this collector run; skipping deployment."
+          else
+            echo "deploy=true" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Set up GitHub Pages
+        if: github.event_name != 'workflow_run' || steps.changed.outputs.deploy == 'true'
         uses: actions/configure-pages@v5
 
       - name: Upload static site
+        if: github.event_name != 'workflow_run' || steps.changed.outputs.deploy == 'true'
         uses: actions/upload-pages-artifact@v3
         with:
           path: .
 
       - name: Deploy site
         id: deployment
+        if: github.event_name != 'workflow_run' || steps.changed.outputs.deploy == 'true'
         uses: actions/deploy-pages@v4
