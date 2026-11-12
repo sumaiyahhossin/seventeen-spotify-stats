@@ -298,6 +298,12 @@ def check_viewport(driver,width,height):
     WebDriverWait(driver,15).until(lambda d:d.execute_script(
         "return document.querySelector('.svt-history-dialog')?.hidden===true"))
     click(driver,'#tabs button[data-tab="solo"]')
+    follower_snapshot=json.loads((ROOT/'data/solo-followers.json').read_text(encoding='utf-8'))
+    assert len(follower_snapshot.get('followers',{}))==18, 'Expected verified follower readings for all 18 tracked profiles'
+    WebDriverWait(driver,20).until(lambda d:d.execute_script("return document.querySelectorAll('#artistProfiles .artist-profile-followers.verified').length===18"))
+    visible_followers=driver.execute_script("return [...document.querySelectorAll('#artistProfiles .artist-profile-followers.verified')].map(el=>el.textContent)")
+    assert all(re.search(r'\d',value) and 'followers' in value.lower() for value in visible_followers), visible_followers
+    print('All 18 current follower counts are visible in the profile list',flush=True)
     read_layout(driver,f'Units & Solo {width}px')
     check_column_dividers(driver,f'Units & Solo {width}px')
     check_trend_palette(driver,f'Units & Solo {width}px')
