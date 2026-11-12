@@ -2,8 +2,8 @@
 even after midnight until the oldest missing reporting date is published.
 
 Each dataset has independent progress determined by its last saved date.
-Once 2 PM NY arrives, probe the current date. Publishing still requires fresh
-Spotify counters; do not fill a date with yesterday's unchanged observations.
+At 2 PM NY, the previous calendar day's Spotify report becomes eligible.
+Publishing still requires fresh Spotify counters; do not fill a date with unchanged observations.
 """
 import datetime
 import json
@@ -29,8 +29,7 @@ for kind in ("group","solo"):
         pending_date=last_date+datetime.timedelta(days=1)
     except (KeyError,ValueError,TypeError):
         pending_date=eligible_date
-    # Retry when the previous reporting date is still pending, even at
-    # 12 AM, 4 AM, or 1 PM the following day.
+    # Retry the oldest due reporting date hourly, including across midnight.
     enabled=oldest_due_date(pending_date-datetime.timedelta(days=1),now) is not None
     any_enabled=any_enabled or enabled
     print(f"{kind}={str(enabled).lower()}")
