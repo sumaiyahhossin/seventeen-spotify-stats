@@ -1535,13 +1535,14 @@ body .stats .stat,body #svtAllView .svt-all-stats .stat{
 @media(max-width:760px){
  .hero>#svt-star-trigger{width:min(330px,calc(100vw - 20px))!important;max-width:calc(100vw - 20px)!important}
 }
-</style><style id="svt-white-profile-delta-and-shooting-photo-v186">
+</style><style id="svt-white-profile-delta-and-shooting-photo-v187">
 #svtPrimaryStats #listenersChange,
 #svtPrimaryStats #followersChange{color:#fff!important}
+#svtNameLayer .falling-name.svt-hover-active{animation-play-state:paused!important}
 .svt-member-shoot{
  position:fixed;z-index:10005;width:180px;height:140px;
  pointer-events:none;will-change:transform,opacity;
- animation:svt-member-shoot-away-v186 1.25s cubic-bezier(.2,.72,.28,1) forwards;
+ animation:svt-member-shoot-away-v187 1.55s cubic-bezier(.22,.61,.36,1) forwards;
 }
 .svt-member-shoot-photo{
  position:absolute;left:22px;top:22px;display:block!important;
@@ -1562,15 +1563,15 @@ body .stats .stat,body #svtAllView .svt-all-stats .stat{
 .svt-member-floating-star{
  position:fixed;z-index:2;pointer-events:none;color:rgba(255,255,255,.86);
  font:700 24px/1 serif;text-shadow:0 0 7px #fff,0 0 16px #b9d8ff,0 0 22px #ffb8d7;
- animation:svt-member-star-float-v186 18s ease-in-out infinite alternate;
+ animation:svt-member-star-float-v187 18s ease-in-out infinite alternate;
 }
-@keyframes svt-member-shoot-away-v186{
+@keyframes svt-member-shoot-away-v187{
  0%{opacity:0;transform:translate3d(12px,8px,0) scale(.8)}
  12%{opacity:1;transform:translate3d(0,0,0) scale(1)}
- 72%{opacity:1}
+ 68%{opacity:1;transform:translate3d(calc(var(--shot-dx,-350px)*.72),calc(var(--shot-dy,-230px)*.72),0) scale(.76)}
  100%{opacity:0;transform:translate3d(var(--shot-dx,-350px),var(--shot-dy,-230px),0) scale(.22)}
 }
-@keyframes svt-member-star-float-v186{
+@keyframes svt-member-star-float-v187{
  0%{opacity:.42;transform:translate3d(0,0,0) scale(.72) rotate(0deg)}
  50%{opacity:.9;transform:translate3d(14px,-17px,0) scale(1) rotate(18deg)}
  100%{opacity:.54;transform:translate3d(28px,5px,0) scale(.8) rotate(40deg)}
@@ -1745,11 +1746,15 @@ body .stats .stat,body #svtAllView .svt-all-stats .stat{
  const cache=new Map();let active=null,popTimer=0,glowTimer=0;
  const profilesReady=fetch('data/profile-images.json',{cache:'force-cache'})
   .then(response=>response.ok?response.json():{}).catch(()=>({}));
- function position(e,el){
-  const rect=el.getBoundingClientRect(),px=Number.isFinite(e?.clientX)?e.clientX:rect.right,
-   py=Number.isFinite(e?.clientY)?e.clientY:rect.bottom;
-  image.style.left=Math.max(5,Math.min(px+14,innerWidth-101))+'px';
-  image.style.top=Math.max(5,Math.min(py+14,innerHeight-101))+'px';
+ function position(el){
+  const rect=el.getBoundingClientRect();
+  const mobile=matchMedia('(max-width:680px)').matches;
+  const width=mobile?74:100,height=mobile?86:116;
+  let left=rect.right+14;
+  if(left+width>innerWidth-8)left=rect.left-width-14;
+  if(left<8)left=Math.max(8,Math.min(innerWidth-width-8,rect.left+(rect.width-width)/2));
+  const top=Math.max(8,Math.min(innerHeight-height-8,rect.top+rect.height/2-height/2));
+  image.style.left=left+'px';image.style.top=top+'px';
  }
  function cancelActive(){
   if(active)active.classList.remove('svt-hover-active','svt-hover-popping');
@@ -1828,33 +1833,32 @@ body .stats .stat,body #svtAllView .svt-all-stats .stat{
   const urls=[...new Set(candidates.filter(Boolean))];
   cache.set(key,urls);return urls;
  }
- function showImageFrom(urls,index,el,e){
-  if(active!==el)return;
-  if(index>=urls.length){
-   popTimer=window.setTimeout(()=>pop(el),1500);return;
-  }
+ function showImageFrom(urls,index,el){
+  if(active!==el||index>=urls.length)return;
   image.onload=()=>{
    if(active!==el)return;
-   image.style.display='block';position(e,el);
-   popTimer=window.setTimeout(()=>pop(el),1500);
+   image.style.display='block';position(el);
   };
-  image.onerror=()=>showImageFrom(urls,index+1,el,e);
+  image.onerror=()=>showImageFrom(urls,index+1,el);
   image.src=urls[index];
   if(image.complete&&image.naturalWidth){
-   image.style.display='block';position(e,el);
-   popTimer=window.setTimeout(()=>pop(el),1500);
+   image.style.display='block';position(el);
   }
  }
  function show(el,e){
-  if(active===el||el.classList.contains('svt-hover-popping'))return;
+  if(active===el){
+   window.clearTimeout(popTimer);
+   return;
+  }
+  if(el.classList.contains('svt-hover-popping'))return;
   if(active)cancelActive();
-  active=el;el.classList.add('svt-hover-active');image.style.display='none';position(e,el);
-  popTimer=window.setTimeout(()=>pop(el),7000);
+  active=el;el.classList.add('svt-hover-active');image.style.display='none';position(el);
+  window.clearTimeout(popTimer);
   glowTimer=window.setTimeout(async()=>{
    if(active!==el)return;
    const label=el.textContent.trim().toUpperCase(),key=alias[label]||label;
    const urls=await photoCandidates(key);
-   showImageFrom(urls,0,el,e);
+   showImageFrom(urls,0,el);
   },500);
  }
  function target(e){return e.target?.closest?.('.falling-name')||null}
@@ -1863,9 +1867,12 @@ body .stats .stat,body #svtAllView .svt-all-stats .stat{
   if(!el||!layer.contains(el)||el.contains(e.relatedTarget)||e.pointerType==='touch')return;
   show(el,e);
  });
- layer?.addEventListener('pointermove',e=>{
-  const el=target(e);if(el&&active===el)position(e,el);
- },{passive:true});
+ layer?.addEventListener('pointerout',e=>{
+  const el=target(e);
+  if(!el||active!==el||el.contains(e.relatedTarget))return;
+  window.clearTimeout(popTimer);
+  popTimer=window.setTimeout(()=>pop(el),1600);
+ });
  layer?.addEventListener('click',e=>{
   if(!matchMedia('(hover: none)').matches)return;
   const el=target(e);if(!el||!layer.contains(el))return;
