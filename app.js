@@ -1,5 +1,5 @@
 const $=s=>document.querySelector(s),fmt=n=>n==null?'—':Number(n).toLocaleString('en-US');
-let selectedSoloArtist=null;
+function followerCapturedLabel(observation){const captured=observation?.captured_at?new Date(observation.captured_at):null;return captured&&Number.isFinite(captured.getTime())?'Updated '+new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',timeZone:'America/New_York'}).format(captured):'Latest saved follower count'} let selectedSoloArtist=null;
 let addedUnitArtistOrder=[];
 let verifiedSoloFollowers={};
 let soloAlbums=[],soloMedia={tracks:{},albums:{}},soloLegacyLinks={byIndex:{}},soloHistoryReference=null;
@@ -1986,7 +1986,7 @@ function renderArtistProfiles(){
  if(tab!=='solo')return;
  area.innerHTML='<div class="artist-profiles-heading">SOLOS & UNITS <span>✦</span></div>'+(selectedSoloArtist?'<div class="artist-selection-heading"><button type="button" id="allSoloArtists">← All units & solos</button><strong>'+escapeHtml(selectedSoloArtist)+' · STREAMING STATS</strong></div>':'')+'<div class="artist-profile-grid">'+soloArtists.map(([name,id])=>{
   const photo=name==='V8'||name==='JxJ'||name==='S.Coups'?'<img class="artist-profile-photo" data-unit-photo="'+name+'" alt="'+name+' full unit concept photo" loading="lazy">':id?'<img class="artist-profile-photo" data-artist-photo="'+id+'" alt="'+name+' artist photo" loading="lazy">':'';
-  return '<button type="button" class="artist-profile'+(selectedSoloArtist===name?' selected':'')+'" data-solo-artist="'+escapeHtml(name)+'" aria-pressed="'+(selectedSoloArtist===name)+'" title="View '+escapeHtml(name)+' statistics">'+photo+'<span class="artist-profile-name">'+escapeHtml(name)+'</span></button>';
+  const observation=id?verifiedSoloFollowers[id]:null;const followerCount=observation&&Number.isFinite(Number(observation.count))?fmt(Number(observation.count)):null;const captured=observation?.captured_at?new Date(observation.captured_at):null;const capturedLabel=captured&&Number.isFinite(captured.getTime())?new Intl.DateTimeFormat('en-US',{month:'short',day:'numeric',timeZone:'America/New_York'}).format(captured):'';const followerMarkup=followerCount!==null?'<span class="artist-profile-followers verified"><strong>'+followerCount+'</strong><small>followers'+(capturedLabel?' · '+capturedLabel:'')+'</small></span>':'<span class="artist-profile-followers">'+(id?'Today follower count unavailable':'No Spotify follower profile')+'</span>';return '<button type="button" class="artist-profile'+(selectedSoloArtist===name?' selected':'')+'" data-solo-artist="'+escapeHtml(name)+'" aria-pressed="'+(selectedSoloArtist===name)+'" title="View '+escapeHtml(name)+' statistics">'+photo+'<span class="artist-profile-name">'+escapeHtml(name)+'</span>'+followerMarkup+'</button>';
  }).join('')+'</div>';
  area.querySelector('#allSoloArtists')?.addEventListener('click',()=>{selectedSoloArtist=null;saveView();render()});
  area.querySelectorAll('[data-solo-artist]').forEach(button=>button.addEventListener('click',()=>{selectedSoloArtist=button.dataset.soloArtist;saveView();render()}));
@@ -3057,13 +3057,12 @@ async function render(){const token=++renderToken;
  setAudience('followers','#followers','#followersChange');
  // An independent follower scan is timestamped when collected. Show its
  // real observation date only in the latest view, never backdate to an archive.
- if(tab==='solo'&&selectedSoloArtist&&!['JxJ','V8'].includes(selectedSoloArtist)&&
-    selection==='latest'&&s?.date===current.solo?.date){
+ if(tab==='solo'&&selectedSoloArtist&&selection==='latest'){
   const artistId=soloArtists.find(([name])=>name===selectedSoloArtist)?.[1];
-  const observation=verifiedSoloFollowers[artistId];
-  if(observation&&Number.isFinite(observation.count)){
-   $('#followers').textContent=fmt(observation.count);
-   $('#followersChange').textContent='';
+  const observation=artistId?verifiedSoloFollowers[artistId]:null;
+  if(observation&&Number.isFinite(Number(observation.count))){
+   $('#followers').textContent=fmt(Number(observation.count));
+   $('#followersChange').textContent=followerCapturedLabel(observation);
   }
  }
 
