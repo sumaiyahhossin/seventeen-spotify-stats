@@ -1043,14 +1043,19 @@ def main():
                 assert moved!=stars['transform'],('Starfield labels are stationary',stars,moved)
                 hover_features=driver.execute_script("""
                     const ot=document.querySelector('#svtNameLayer .svt-ot13');
-                    ot.dispatchEvent(new PointerEvent('pointerenter',{pointerType:'mouse',clientX:50,clientY:80}));
+                    ot.dispatchEvent(new PointerEvent('pointerover',{bubbles:true,pointerType:'mouse',clientX:50,clientY:80}));
                     const groupPhoto=document.querySelector('#svt-name-photo')?.classList.contains('svt-group-preview');
                     const button=document.querySelector('#svt-star-trigger');
                     const shown=button && getComputedStyle(button).display!=='none';
                     button?.click();
-                    return {groupPhoto,shown,celebrationPieces:document.querySelectorAll('.svt-celebration-piece').length,
-                      flowers:document.querySelectorAll('.svt-celebration-piece.svt-flower').length};
+                    return {groupPhoto,shown};
                 """)
+                WebDriverWait(driver,8).until(lambda d:d.execute_script(
+                    "return document.querySelectorAll('.svt-celebration-piece.svt-flower').length>0"))
+                hover_features.update(driver.execute_script("""
+                    return {celebrationPieces:document.querySelectorAll('.svt-celebration-piece').length,
+                      flowers:document.querySelectorAll('.svt-celebration-piece.svt-flower').length};
+                """))
                 assert hover_features['groupPhoto'] and hover_features['shown'] and hover_features['celebrationPieces']>0 and hover_features['flowers']>0,(
                     f'OT13 photo or flower celebration missing: {hover_features}')
                 print(f'Starfield and hover effects verified at {width}px',flush=True)
