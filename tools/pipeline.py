@@ -69,9 +69,12 @@ if 'STAT_FIRST_UNCHANGED|' in result.stdout or 'STAT_FIRST_PROBE_FAILED|' in res
 
 (ROOT/'build'/f'{kind}.log').write_text(result.stdout+'\n'+result.stderr)
 tracks={};listeners={};followers=None;solo_followers={}
+unavailable_tracks=set()
 for line in result.stdout.splitlines():
     m=re.match(r'STAT_TRACK\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|(\d+)',line)
     if m: tracks[m.group(1)]=int(m.group(2))
+    missing=re.match(r'STAT_TRACK_UNAVAILABLE\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|',line)
+    if missing: unavailable_tracks.add(missing.group(1))
     m=re.match(r'STAT_LISTENERS\|([A-Za-z0-9]+)\|(\d+)',line)
     if m: listeners[m.group(1)]=int(m.group(2))
     m=re.match(r'STAT_FOLLOWERS\|(\d+)',line)
@@ -156,6 +159,7 @@ if admin_ids:
     print(f'{kind}: scanned {len(admin_ids)} admin-added recordings',flush=True)
 expected={tid for item in cat for tid in item['tracks']}
 by_id={tid:(item.get('artist'),item.get('title')) for item in cat for tid in item['tracks']}
+confirmed_zero_tracks={tid for tid in expected if tracks.get(tid,0)==0 and tid not in unavailable_tracks}
 # A zero from Spotify is a failed lookup, not a successful number. The initial
 # full scan is attempt one; make at most two additional targeted passes. This
 # applies to every group, unit, and solo track, not just selected songs.
@@ -197,19 +201,37 @@ for attempt in (2,3):
         ['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],classname],
         capture_output=True,text=True,timeout=2400,env=retry_env)
     print(f'{kind}: scan {attempt} exit={retry_result.returncode}',flush=True)
+    retry_values={}
+    retry_unavailable=set()
     for line in retry_result.stdout.splitlines():
         match=re.match(r'STAT_TRACK\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|(\d+)',line)
-        if match and match.group(1) in unresolved and int(match.group(2))>0:
-            tracks[match.group(1)]=int(match.group(2))
+        if match and match.group(1) in unresolved:
+            retry_values[match.group(1)]=int(match.group(2))
         elif line.startswith('STAT_TRACK_UNAVAILABLE|'):
+            missing=re.match(r'STAT_TRACK_UNAVAILABLE\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|',line)
+            if missing: retry_unavailable.add(missing.group(1))
             print(f'{kind}: {line}',flush=True)
+    for tid,value in retry_values.items():
+        tracks[tid]=value
+        if value>0:
+            confirmed_zero_tracks.discard(tid)
+        elif tid not in retry_unavailable:
+            confirmed_zero_tracks.add(tid)
     unresolved={tid for tid in expected if tracks.get(tid,0)<=0}
 
-# After all three scans, persist genuine zero results explicitly; never
-# substitute old counts or create fake positive values.
+# Only save zero when Spotify returned a clean zero, not after a page timeout.
+# A timed-out or missing track keeps this reporting date pending for retry.
+unverified=sorted(unresolved-confirmed_zero_tracks)
+if unverified:
+    print(f'{kind}: refusing to publish; {len(unverified)} tracks were never fetched successfully',flush=True)
+    for tid in unverified:
+        print(f'  unresolved: {tid}: {by_id.get(tid)}',flush=True)
+    entry['last_attempt']=now.isoformat()
+    state_path.write_text(json.dumps(state,indent=2))
+    raise SystemExit(1)
 for tid in sorted(unresolved):
     tracks[tid]=0
-    print(f'{kind}: zero after 3 scans: {tid} {by_id.get(tid)}',flush=True)
+    print(f'{kind}: confirmed zero after 3 scans: {tid} {by_id.get(tid)}',flush=True)
 if unresolved:
     print(f'{kind}: accepting {len(unresolved)} confirmed zero tracks; all expected IDs included',flush=True)
 
