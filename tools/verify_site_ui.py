@@ -1026,7 +1026,7 @@ def main():
                     const moving=visible.find(el=>!el.classList.contains('svt-eternity-tag'));
                     const css=getComputedStyle(moving);
                     return {total:names.length,visible:visible.length,
-                      expected:50,
+                      expected:51,
                       animation:css.animationName,direction:css.animationDirection,
                       transform:css.transform,
                       phrases:names.filter(el=>/^(OT13|SEVENTEEN WILL CHALLENGE ETERNITY)$/.test(el.textContent.trim())).length,
