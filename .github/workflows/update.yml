@@ -4,6 +4,7 @@ name: Spotify stream snapshots
 # If a date is still pending, recheck hourly, including after midnight.
 # GitHub may delay scheduled runs; exact-to-the-second execution is not guaranteed.
 # A date is published only when verified Spotify counters advance. Test the NY cutoff each run.
+# Retry unavailable solo tracks using verified album-row playcounts before failing.
 on:
   schedule:
     - cron: '0 * * * *'
