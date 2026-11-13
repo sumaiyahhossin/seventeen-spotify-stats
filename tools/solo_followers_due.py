@@ -20,11 +20,11 @@ try:
 except (OSError,ValueError):
     manifest={}
 records=data.get('followers',{})
-# Spotify reporting resets at 2 PM America/New_York, including daylight
-# saving transitions. Before 2 PM, finish yesterday's missing observations;
-# at/after 2 PM begin today's, retrying only missing profiles hourly.
-target_date=(now.date() if now.hour>=14 else (now.date()-dt.timedelta(days=1)))
-cutoff=dt.datetime.combine(target_date,dt.time(14,0),tzinfo=ZoneInfo('America/New_York'))
+# Spotify reporting resets at 6 PM America/New_York, including daylight
+# saving transitions. Before 6 PM, finish yesterday's missing observations;
+# at/after 6 PM begin today's, retrying only missing profiles hourly.
+target_date=(now.date() if now.hour>=18 else (now.date()-dt.timedelta(days=1)))
+cutoff=dt.datetime.combine(target_date,dt.time(18,0),tzinfo=ZoneInfo('America/New_York'))
 due=[]
 for artist_id in manifest:
     record=records.get(artist_id,{})
