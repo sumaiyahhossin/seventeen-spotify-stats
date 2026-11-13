@@ -405,6 +405,10 @@ function earlierBoundary(scope,period){
 }
 function verifiedGainBetween(scope,id,newer,older,title,releaseDate){
  if(!newer||!older)return null;
+ // Three-attempt zero means Spotify could not report a count; it is not
+ // evidence of zero cumulative streams and must never create a huge daily gain.
+ if((newer.unavailable_tracks||[]).includes(id)||(older.unavailable_tracks||[]).includes(id)||
+    newer.tracks?.[id]===0||older.tracks?.[id]===0)return null;
  const released=/^\d{4}-\d{2}-\d{2}$/.test(releaseDate||'');
  // A recording released during this period had zero pre-release streams.
  // Only use zero when its verified release date is later than the baseline.
@@ -477,8 +481,10 @@ function renderSummary(){
  const rows=state.rows||[];
  const observed=rows.filter(row=>Number.isFinite(row.streams)&&row.streams>=0);
  const streams=observed.reduce((sum,row)=>sum+row.streams,0);
- const allComplete=rows.length>0&&observed.length===rows.length;
- $('summaryStreams').textContent=allComplete?fmt(streams):'—';
+ const unavailableCount=(state.group?.unavailable_tracks?.length||0)+(state.solo?.unavailable_tracks?.length||0);
+ const allComplete=rows.length>0&&observed.length===rows.length&&unavailableCount===0;
+ // Show a flagged partial total; zero placeholders never count as verified streams.
+ $('summaryStreams').textContent=observed.length?fmt(streams)+(allComplete?'':'*'):'—';
  $('summaryTracks').textContent=rows.length?fmt(rows.length):'—';
  const groupDate=state.group?.date,soloDate=state.solo?.date;
  const dateFormat=date=>/^\d{4}-\d{2}-\d{2}$/.test(date||'')?
@@ -488,8 +494,9 @@ function renderSummary(){
  $('summaryDate').textContent=sameDay?dateFormat(groupDate):'See dates below';
  $('toolbarDate').textContent=sameDay?dateFormat(groupDate):
   'OT13 '+displayDate(groupDate)+' · Solo '+displayDate(soloDate);
- $('summaryDateNote').textContent=sameDay?'Both archives · '+displayDate(groupDate):
-  'OT13 '+displayDate(groupDate)+' · Unit/Solo '+displayDate(soloDate);
+ $('summaryDateNote').textContent=(sameDay?'Both archives · '+displayDate(groupDate):
+  'OT13 '+displayDate(groupDate)+' · Unit/Solo '+displayDate(soloDate))+
+  (unavailableCount?' · '+unavailableCount+' Spotify track counts unavailable (shown as 0); stream total is partial (*)':'');
  const prev=state.milestonePrevious||{};
  // Always provide the most recent verified one-day growth in Overall,
  // even while the rankings below display cumulative streams.
