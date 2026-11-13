@@ -27,9 +27,13 @@ def check(kind):
         raise ValueError(f"{path}: invalid/duplicate unavailable track IDs")
     if any(track_id not in tracks or tracks[track_id] != 0 for track_id in unavailable):
         raise ValueError(f"{path}: unavailable IDs must exist as zero-valued tracks")
-    if any(v == 0 and track_id not in unavailable for track_id, v in tracks.items()):
-        raise ValueError(f"{path}: every zero must be labeled unavailable")
     date = latest.get("date")
+    # Pre-policy snapshots have legacy zeros without metadata. Do not rewrite
+    # history; require explicit annotations for all newly collected dates.
+    if date and date >= "2026-11-12" and any(
+        v == 0 and track_id not in unavailable for track_id, v in tracks.items()
+    ):
+        raise ValueError(f"{path}: every new zero must be labeled unavailable")
     if not date:
         raise ValueError(f"{path}: missing snapshot date")
     archived = DATA / "history" / f"{kind}-{date}.json"
