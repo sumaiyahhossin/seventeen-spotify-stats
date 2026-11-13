@@ -3,7 +3,7 @@ ROOT=pathlib.Path(__file__).resolve().parents[1]
 DATA=ROOT/'data'; TZ=zoneinfo.ZoneInfo('America/New_York')
 now=datetime.datetime.now(TZ)
 today=now.date().isoformat()
-# After 2 PM, the previous day's Spotify report becomes eligible.
+# After 6 PM, the previous day's Spotify report becomes eligible.
 # An unfinished report remains pending across midnight and later cutoffs.
 # Never derive the target exclusively from today's calendar date.
 from reporting_window import available_reporting_date
