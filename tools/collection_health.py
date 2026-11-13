@@ -10,7 +10,7 @@ import os
 import pathlib
 import sys
 from zoneinfo import ZoneInfo
-from reporting_window import available_reporting_date
+from reporting_window import available_reporting_date, publishing_alert_due
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 TZ = ZoneInfo("America/New_York")
@@ -41,7 +41,20 @@ def main():
     if saved == "none" or not count:
         print("::warning::No valid published Spotify track snapshot found")
     elif saved < eligible:
-        print("::notice::Spotify reporting date remains pending; next scheduled check will retry. A green check is not proof of new counters.")
+        print("::warning::Spotify reporting date remains pending; the next scheduled check will retry. A green check is not proof of new counters.")
+    try:
+        published_date = dt.date.fromisoformat(saved)
+    except (TypeError, ValueError):
+        published_date = None
+    if publishing_alert_due(published_date, now):
+        message = (f"{kind.upper()} is overdue: latest saved reporting date {saved}, "
+                   f"latest eligible {eligible}. Collection has not published by "
+                   "10 PM New York. Review STAT_TRACK_UNAVAILABLE and publishing logs.")
+        print("::error::" + message, flush=True)
+        if summary:
+            with open(summary, "a", encoding="utf-8") as file:
+                file.write("- **Overdue:** " + message + "\n")
+        raise SystemExit(1)
 
 if __name__ == "__main__":
     main()
