@@ -2,10 +2,12 @@ name: Verify artist follower collector and website code
 on:
   push:
     paths:
+      - 'src/Stream_Stats.java'
       - 'src/Stream_Stats_Units_Duos.java'
       - 'src/Admin_Track_Collector.java'
       - 'tools/catalog.py'
       - 'tools/pipeline.py'
+      - 'tools/validate_song_data.py'
       - 'tools/instrument.py'
       - 'tools/gate.py'
       - 'tools/reporting_window.py'
@@ -46,7 +48,8 @@ jobs:
       - name: Verify unit and solo follower reader and retry collector compile
         run: |
           python tools/instrument.py solo
-          javac -cp "$(cat classpath.txt)" -d build build/Stream_Stats_Units_Duos.java src/Admin_Track_Collector.java
+          python tools/instrument.py group
+          javac -cp "$(cat classpath.txt)" -d build build/Stream_Stats_Units_Duos.java build/Stream_Stats.java src/Admin_Track_Collector.java
           echo "Selenium collector compiles and instrumentation succeeds"
       - name: Verify all exact cover/link mappings exist
         run: |
