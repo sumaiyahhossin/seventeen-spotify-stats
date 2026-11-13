@@ -46,7 +46,7 @@ function saveAllViewState(){
  }))}catch{}
 }
 window.addEventListener('pagehide',saveAllViewState);
-async function read(path){const live=/^data\/(?:group|solo|manifest)\.json$/.test(path);const r=await fetch(path,{cache:live?'no-store':'no-cache'});if(!r.ok)throw new Error(path+' returned '+r.status);return r.json()}
+async function read(path){const r=await fetch(path,{cache:'no-cache'});if(!r.ok)throw new Error(path+' returned '+r.status);return r.json()}
 function nameFromRelease(release,id,index){
  const official=release.track_titles?.[id];
  if(official)return official;
