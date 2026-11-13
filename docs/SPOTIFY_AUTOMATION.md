@@ -22,6 +22,10 @@ The 18 solo/unit Spotify artist-profile followers are a separate, independently 
 
 Before uploading, it checks saved JSON and JavaScript syntax. **After** GitHub Pages reports a deployment, `tools/verify_published_site.py` checks the live website, not just the repository, for both exact group/solo track data and the history manifest. A live mismatch makes the deployment workflow fail visibly.
 
+## Automatic overdue warning
+
+If the previous day's report is still missing at **10:00 PM New York time** (four hours after the 6 PM cutoff), the collection freshness check turns red and identifies the affected dataset. The overdue signal remains active across midnight until the missing reporting date is saved; it never fills the gap with invented counters.
+
 ## If the latest date is missing
 
 - Inspect **Spotify stream snapshots** and expand the affected group or solo collection job.
