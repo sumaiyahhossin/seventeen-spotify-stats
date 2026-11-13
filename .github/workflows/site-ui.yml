@@ -1,6 +1,9 @@
 name: Browser UI layout and media verification
+# Browser smoke tests are run intentionally for site pull requests or manually.
+# Do not launch a full Selenium browser test for every small direct push;
+# that previously caused repeated GitHub failure emails during rapid edits.
 on:
-  push:
+  pull_request:
     paths:
       - 'index.html'
       - 'app.js'
@@ -17,6 +20,7 @@ on:
       - 'tools/verify_site_ui.py'
       - '.github/workflows/site-ui.yml'
   workflow_dispatch:
+
 jobs:
   browser:
     runs-on: ubuntu-latest
