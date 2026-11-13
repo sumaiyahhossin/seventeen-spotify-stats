@@ -57,6 +57,17 @@ jobs:
             echo "deploy=true" >> "$GITHUB_OUTPUT"
           fi
 
+      - name: Validate both JSON datasets before deployment
+        if: github.event_name != 'workflow_run' || steps.changed.outputs.deploy == 'true'
+        run: python tools/validate_song_data.py
+
+      - name: Verify dashboard JavaScript syntax
+        if: github.event_name != 'workflow_run' || steps.changed.outputs.deploy == 'true'
+        run: |
+          node --check app.js
+          node --check all-view.js
+          node --check history-popup.js
+
       - name: Set up GitHub Pages
         if: github.event_name != 'workflow_run' || steps.changed.outputs.deploy == 'true'
         uses: actions/configure-pages@v5
@@ -71,3 +82,9 @@ jobs:
         id: deployment
         if: github.event_name != 'workflow_run' || steps.changed.outputs.deploy == 'true'
         uses: actions/deploy-pages@v4
+
+      - name: Verify GitHub Pages actually serves the new Spotify stats
+        if: github.event_name != 'workflow_run' || steps.changed.outputs.deploy == 'true'
+        env:
+          SITE_URL: ${{ steps.deployment.outputs.page_url }}
+        run: python tools/verify_published_site.py
