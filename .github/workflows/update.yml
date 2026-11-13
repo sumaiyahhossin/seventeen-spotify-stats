@@ -7,9 +7,6 @@ on:
     - cron: '0 * * * *'
       timezone: 'America/New_York'
   workflow_dispatch:
-  push:
-    paths:
-      - '.github/workflows/update.yml'
 
 permissions:
   contents: write
