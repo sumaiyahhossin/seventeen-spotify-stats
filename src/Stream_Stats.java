@@ -495,7 +495,7 @@ public class Stream_Stats {
 
         String text = "0";
         int attempts = 0;
-        final int MAX_ATTEMPTS = 6;
+        final int MAX_ATTEMPTS = 3;
 
 
         while (attempts < MAX_ATTEMPTS) {
@@ -521,27 +521,14 @@ public class Stream_Stats {
                 attempts++;
             } catch (Exception e) {
                 attempts++;
-                if (attempts >= 4) restartDriver();
                 Thread.sleep(8000);
             }
         }
 
 
-        // Final aggressive try
-        try {
-            driver.get(songUrl);
-            Thread.sleep(4500);
-            WebElement el = driver.findElement(By.xpath("//span[@data-testid='playcount']"));
-            text = el.getText().trim();
-        } catch (Exception ignored) {}
-
-
+        // Three visits exhausted: record 0 for this reporting date.
         long parsedValue = 0;
-        try {
-            parsedValue = Long.parseLong(text.replaceAll("[^\\d]", ""));
-        } catch (Exception ignored) {}
-
-
+        System.out.println("STAT_TRACK_UNAVAILABLE|" + songUrl + "|ThreeAttempts");
         System.out.println(nf.format(parsedValue));
         return parsedValue;
     }
