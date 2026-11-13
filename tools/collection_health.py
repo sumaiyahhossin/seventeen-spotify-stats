@@ -34,7 +34,7 @@ def main():
         with open(summary, "a", encoding="utf-8") as file:
             file.write(f"### {kind.upper()} Spotify snapshot freshness\n\n")
             file.write(f"- Latest saved reporting date: **{saved}**\n")
-            file.write(f"- Collection date eligible through: **{eligible}** (2 PM New York)\n")
+            file.write(f"- Collection date eligible through: **{eligible}** (6 PM New York)\n")
             file.write(f"- Saved track IDs: **{count}**\n")
             file.write("- Status: **Pending verified new counters; retry next hour**\n\n"
                        if unchanged else "- Status: **Reporting date saved**\n\n")
