@@ -1,8 +1,8 @@
-"""Schedule Spotify collections from 2 PM New York daily, with hourly retries
+"""Schedule Spotify collections from 6 PM New York daily, with hourly retries
 even after midnight until the oldest missing reporting date is published.
 
 Each dataset has independent progress determined by its last saved date.
-At 2 PM NY, the previous calendar day's Spotify report becomes eligible.
+At 6 PM NY, the previous calendar day's Spotify report becomes eligible.
 Publishing still requires fresh Spotify counters; do not fill a date with unchanged observations.
 """
 import datetime
