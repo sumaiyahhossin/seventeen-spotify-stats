@@ -1086,7 +1086,69 @@ public class Stream_Stats_Units_Duos {
             }
         }
 
+        // Some Spotify track pages omit their play count even when their album
+        // still shows an exact count for that recording. Try that strict fallback
+        // before declaring the track unavailable. Never guess a value.
+        long parsedValue = fetchTrackCountFromAlbum(driver, songUrl);
+        if (parsedValue > 0) {
+            streamCache.put(songUrl, Long.toString(parsedValue));
+            System.out.println(nf.format(parsedValue));
+            return parsedValue;
+        }
+
         System.out.println("0");
+        return 0;
+    }
+
+    private static long fetchTrackCountFromAlbum(WebDriver driver, String songUrl) {
+        final String trackId = songUrl.replace("https://open.spotify.com/track/", "").split("\\?")[0];
+        java.util.LinkedHashSet<String> albums = new java.util.LinkedHashSet<>();
+        try {
+            for (WebElement link : driver.findElements(By.cssSelector("a[href*='/album/']"))) {
+                String href = link.getAttribute("href");
+                if (href != null && href.matches("https://open\\.spotify\\.com/album/[A-Za-z0-9]{22}.*")) {
+                    albums.add(href.split("\\?")[0]);
+                }
+                if (albums.size() >= 2) break;
+            }
+        } catch (Exception ignored) {}
+        for (String album : albums) {
+            try {
+                driver.get(album);
+                String exact = new WebDriverWait(driver, Duration.ofSeconds(18)).until(d -> {
+                    for (WebElement row : d.findElements(By.cssSelector(
+                            "[data-testid='tracklist-row'], [role='row']"))) {
+                        boolean matchingTrack = false;
+                        for (WebElement link : row.findElements(By.cssSelector("a[href*='/track/']"))) {
+                            String href = link.getAttribute("href");
+                            if (href != null && href.contains("/track/" + trackId)) {
+                                matchingTrack = true;
+                                break;
+                            }
+                        }
+                        if (!matchingTrack) continue;
+                        for (WebElement count : row.findElements(By.cssSelector(
+                                "[data-testid='playcount'], [aria-label*=' plays'], [aria-label*=' streams']"))) {
+                            String candidate = count.getText().trim();
+                            if (candidate.isEmpty()) candidate = count.getAttribute("aria-label");
+                            if (candidate == null) continue;
+                            java.util.regex.Matcher number = java.util.regex.Pattern.compile(
+                                    "(?<![0-9])([0-9]{1,3}(?:[,\\s][0-9]{3})+|[0-9]{4,15})(?![0-9])")
+                                    .matcher(candidate);
+                            if (number.find()) return number.group(1);
+                        }
+                    }
+                    return null;
+                });
+                long value = Long.parseLong(exact.replaceAll("[^0-9]", ""));
+                if (value > 0) {
+                    System.out.println("STAT_ALBUM_FALLBACK|" + songUrl + "|" + album);
+                    return value;
+                }
+            } catch (Exception ignored) {
+                // A failed fallback remains unverified and must not be published.
+            }
+        }
         return 0;
     }
 
