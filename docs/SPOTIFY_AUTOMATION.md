@@ -24,7 +24,7 @@ Before uploading, it checks saved JSON and JavaScript syntax. **After** GitHub P
 
 ## Automatic overdue warning
 
-If the previous day's report is still missing at **10:00 PM New York time** (four hours after the 6 PM cutoff), the collection freshness check turns red and identifies the affected dataset. The overdue signal remains active across midnight until the reporting date is saved. Track-level missing values are explicitly marked zero placeholders after three unsuccessful attempts, not claimed as measured streams.
+If the previous day's report is still missing at **10:00 PM New York time** (four hours after the 6 PM cutoff), the collection freshness check writes a prominent **warning** and identifies the affected dataset. It does not fail every hourly workflow or send repeated failure emails merely because Spotify is late. It keeps retrying across midnight. Track-level missing values are explicitly marked zero placeholders after three unsuccessful attempts, not claimed as measured streams.
 
 ## If the latest date is missing
 
@@ -35,3 +35,10 @@ If the previous day's report is still missing at **10:00 PM New York time** (fou
 - The latest dates can differ between group and solo while an individual dataset is retrying.
 
 Never copy yesterday's count into a new day. A failed track is saved as **0 with unavailable metadata** after three attempts; exclude it from stream-growth calculations and flag totals as partial.
+
+## Avoiding notification spam and duplicate scans
+
+- The full desktop/mobile **Browser UI layout and media verification** test runs for pull requests or manual dispatch, not for each direct push to `main`. The deployment workflow continues to check JavaScript syntax and verify that the live website serves the committed JSON.
+- Stream and follower collectors run from their hourly schedule or manual dispatch, not whenever a workflow YAML file changes.
+- Recoverable Spotify-collection failures are recorded as warnings. When collection cannot safely publish a snapshot, the existing website data is preserved and the oldest pending date is retried the next hour.
+- Real code, validation, and deployment problems still fail and should be investigated; they are not disguised as successful data updates.
