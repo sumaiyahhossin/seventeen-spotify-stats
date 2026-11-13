@@ -10,6 +10,11 @@ on:
       - 'tools/gate.py'
       - 'tools/reporting_window.py'
       - 'tools/test_reporting_window.py'
+      - 'tools/solo_followers_due.py'
+      - 'tools/collect_solo_followers.py'
+      - 'tools/collection_health.py'
+      - '.github/workflows/update.yml'
+      - '.github/workflows/followers.yml'
       - '.github/workflows/collector-check.yml'
   workflow_dispatch:
 jobs:
@@ -29,7 +34,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Test 2 PM New York reporting, DST and midnight retries
+      - name: Test 6 PM New York reporting, DST and midnight retries
         run: python tools/test_reporting_window.py
       - name: Check Python and JavaScript syntax
         run: |
