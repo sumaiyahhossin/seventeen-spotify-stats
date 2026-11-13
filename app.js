@@ -55,7 +55,9 @@ window.addEventListener('scroll',()=>{if(!scrollSavePending){scrollSavePending=t
 // Cache static history files instead of forcing new URLs for every visit.
 const load=async p=>{
  const controller=new AbortController(),timer=setTimeout(()=>controller.abort(),12000);
- try{const r=await fetch(p,{signal:controller.signal});return r.ok?await r.json():null}
+ // Always refresh live snapshots; history files may stay cached.
+ const live=/^data\/(?:group|solo|manifest)\.json$/.test(p);
+ try{const r=await fetch(p,{signal:controller.signal,cache:live?'no-store':'default'});return r.ok?await r.json():null}
  catch{return null}finally{clearTimeout(timer)}
 };
 const idName={};
