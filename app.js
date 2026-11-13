@@ -3034,6 +3034,9 @@ async function render(){const token=++renderToken;
  if(baseline?.partialMonth==='2025-12'){
   $('#dateDescription').textContent+=' · Versus November 2025: comparison uses only saved consecutive-day gains in each month; missing days are not estimated.';
  }
+ if(s?.unavailable_tracks?.length){
+  $('#dateDescription').textContent+=' · '+s.unavailable_tracks.length+' track count(s) saved as 0 after three failed Spotify attempts; totals are partial.';
+ }
  $('#gainHeading').textContent=(isPeriod?periodName.toUpperCase():rank.endsWith('overall')?'TOTAL':'DAILY')+' STREAM GROWTH';
  const ids=s?(tab==='solo'&&isHistorical(s)?soloLegacyTrackIds(s,null):trackIds(s)):[];
  const memberIds=tab==='solo'&&selectedSoloArtist&&s?soloArtistTrackIds(s):ids;
