@@ -1,14 +1,14 @@
 """Shared New York reporting-date rules for the Spotify collectors.
 
 Spotify reporting dates trail the New York collection date by one day.
-A reporting date first becomes eligible at 2 PM on the following calendar day.
+A reporting date first becomes eligible at 6 PM on the following calendar day.
 Earlier pending dates are never skipped.
 """
 import datetime as dt
 from zoneinfo import ZoneInfo
 
 NEW_YORK = ZoneInfo("America/New_York")
-CUTOFF_HOUR = 14
+CUTOFF_HOUR = 18
 
 
 def available_reporting_date(at: dt.datetime) -> dt.date:
