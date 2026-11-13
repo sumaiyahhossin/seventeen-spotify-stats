@@ -2,11 +2,12 @@ name: Spotify followers — all 18 solo and unit profiles
 
 # This full-scan run enables browser network recording before each artist check.
 # Check every hour; the gate only runs profiles missing a verified reading
-# since the latest 2 PM America/New_York reporting cutoff. After all 18
+# since the latest 6 PM America/New_York reporting cutoff. After all 18
 # have an observation, checks pause until the next cutoff.
 on:
   schedule:
     - cron: '0 * * * *'
+      timezone: 'America/New_York'
   workflow_dispatch:
   # Full 18-artist scan with browser-loaded artist stats response fallback; each result is verified against its Spotify ID.
   # A change to this workflow starts one full due-profile collection.
@@ -31,7 +32,7 @@ jobs:
       - uses: actions/checkout@v5
         with:
           persist-credentials: true
-      - name: Check 2 PM New York reporting period and 18-profile coverage
+      - name: Check 6 PM New York reporting period and 18-profile coverage
         id: follower_gate
         run: python tools/solo_followers_due.py >> "$GITHUB_OUTPUT"
       - uses: actions/setup-java@v5
