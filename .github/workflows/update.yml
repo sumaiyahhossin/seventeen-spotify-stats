@@ -81,8 +81,12 @@ jobs:
       - name: Generate track catalog
         if: steps.due.outputs.due == 'true'
         run: python tools/catalog.py
-      - name: Collect only verified Spotify counters
+      - name: Collect Spotify counters (3 attempts; unavailable tracks saved as 0)
+        id: collection
         if: steps.due.outputs.due == 'true'
+        # Spotify page/network outages should retry on the next hourly run,
+        # not cause an hourly failure-email storm.
+        continue-on-error: true
         env:
           DATASET: ${{ matrix.kind }}
           FORCE_COLLECT: ${{ github.event_name == 'workflow_dispatch' }}
@@ -92,15 +96,20 @@ jobs:
           export COLLECTOR_CLASSPATH="$(cat classpath.txt)"
           python tools/pipeline.py "$DATASET"
       - name: Test collected JSON before publishing
-        if: steps.due.outputs.due == 'true'
+        if: steps.due.outputs.due == 'true' && steps.collection.outcome == 'success'
         run: python tools/validate_song_data.py
       - name: Publish verified JSON with conflict-safe retries
-        if: steps.due.outputs.due == 'true'
+        if: steps.due.outputs.due == 'true' && steps.collection.outcome == 'success'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/
           python tools/publish_snapshots.py
+      - name: Explain retry for an unsuccessful Spotify scan
+        if: steps.due.outputs.due == 'true' && steps.collection.outcome == 'failure'
+        run: |
+          echo "::warning::Spotify collection was interrupted; preserving previous site data and retrying automatically on the next hourly schedule."
+          echo "Spotify collection did not complete; no incomplete data was published. The next hourly run retries the pending reporting date." >> "$GITHUB_STEP_SUMMARY"
       - name: Record freshness and pending reasons
         if: always()
         env:
