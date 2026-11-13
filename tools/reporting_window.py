@@ -23,3 +23,19 @@ def oldest_due_date(latest: dt.date | None, at: dt.datetime) -> dt.date | None:
     eligible = available_reporting_date(at)
     pending = latest + dt.timedelta(days=1) if latest is not None else eligible
     return pending if pending <= eligible else None
+
+
+def publishing_alert_due(latest: dt.date | None, at: dt.datetime) -> bool:
+    """Alert if a reporting date is still missing four hours after 6 PM.
+
+    The deadline for date D is 10 PM New York on D+1. Unlike a simple
+    hour-of-day check, alerts remain active after midnight until a new
+    verified snapshot closes that date's gap.
+    """
+    pending = oldest_due_date(latest, at)
+    if pending is None:
+        return False
+    deadline = dt.datetime.combine(
+        pending + dt.timedelta(days=1), dt.time(22, 0), tzinfo=NEW_YORK
+    )
+    return at.astimezone(NEW_YORK) >= deadline
