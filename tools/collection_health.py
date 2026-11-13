@@ -50,11 +50,12 @@ def main():
         message = (f"{kind.upper()} is overdue: latest saved reporting date {saved}, "
                    f"latest eligible {eligible}. Collection has not published by "
                    "10 PM New York. Review STAT_TRACK_UNAVAILABLE and publishing logs.")
-        print("::error::" + message, flush=True)
+        print("::warning::" + message + " Retrying on the next hourly run.", flush=True)
         if summary:
             with open(summary, "a", encoding="utf-8") as file:
                 file.write("- **Overdue:** " + message + "\n")
-        raise SystemExit(1)
+        # Missing upstream Spotify stats is a pending observation, not a CI code failure.
+        # The scheduler will retry; do not send recurring failure emails for lateness.
 
 if __name__ == "__main__":
     main()
