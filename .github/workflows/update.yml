@@ -1,16 +1,11 @@
 name: Spotify stream snapshots
-# Trigger at each New York hour boundary (the first eligible slot is 2 PM).
-# The date gate skips collection before 2 PM and after a successful daily save.
-# If a date is still pending, recheck hourly, including after midnight.
-# GitHub may delay scheduled runs; exact-to-the-second execution is not guaranteed.
-# A date is published only when verified Spotify counters advance. Test the NY cutoff each run.
-# Retry unavailable solo tracks using verified album-row playcounts before failing.
+# 6 PM New York is the first collection window for yesterday's Spotify counts.
+# Check hourly: overdue reports retry across midnight; verified dates stop scanning.
 on:
   schedule:
     - cron: '0 * * * *'
       timezone: 'America/New_York'
   workflow_dispatch:
-  # Run the collector once when this workflow is explicitly updated.
   push:
     paths:
       - '.github/workflows/update.yml'
@@ -18,15 +13,38 @@ on:
 permissions:
   contents: write
 
-# Prevent different scheduled runs from overlapping, while the two
-# independent collectors in one run can operate at the same time.
 concurrency:
   group: spotify-stats
   cancel-in-progress: false
 
 jobs:
+  preflight:
+    name: 1. Confirm due dates and test reporting rules
+    runs-on: ubuntu-24.04
+    outputs:
+      group: ${{ steps.gate.outputs.group }}
+      solo: ${{ steps.gate.outputs.solo }}
+      run: ${{ steps.gate.outputs.run }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Check independent 6 PM New York reporting windows
+        id: gate
+        run: python tools/gate.py >> "$GITHUB_OUTPUT"
+      - name: Test cutoff, DST, and cross-midnight retries
+        if: steps.gate.outputs.run == 'true'
+        run: python tools/test_reporting_window.py
+      - name: Check collector Python syntax
+        if: steps.gate.outputs.run == 'true'
+        run: |
+          python -m py_compile tools/pipeline.py tools/gate.py tools/reporting_window.py tools/instrument.py tools/catalog.py tools/validate_song_data.py tools/publish_snapshots.py
+      - name: Validate saved source snapshots
+        if: steps.gate.outputs.run == 'true'
+        run: python tools/validate_song_data.py
+
   collect:
-    name: Collect ${{ matrix.kind }} streams
+    name: 2. Collect and validate ${{ matrix.kind }}
+    needs: preflight
+    if: needs.preflight.outputs.run == 'true'
     runs-on: ubuntu-24.04
     timeout-minutes: 330
     strategy:
@@ -38,31 +56,31 @@ jobs:
         with:
           persist-credentials: true
           fetch-depth: 1
-      - name: Protect the 2 PM New York cutoff and midnight rollover
-        run: python tools/test_reporting_window.py
-      - name: Check independent 2 PM schedule
-        id: gate
-        run: python tools/gate.py >> "$GITHUB_OUTPUT"
+      - name: Check whether this dataset needs an update
+        id: due
+        env:
+          DATASET_DUE: ${{ needs.preflight.outputs[matrix.kind] }}
+        run: echo "due=$DATASET_DUE" >> "$GITHUB_OUTPUT"
       - uses: actions/setup-java@v5
-        if: steps.gate.outputs[matrix.kind] == 'true'
+        if: steps.due.outputs.due == 'true'
         with:
           distribution: temurin
           java-version: '17'
           cache: maven
       - uses: actions/setup-python@v6
-        if: steps.gate.outputs[matrix.kind] == 'true'
+        if: steps.due.outputs.due == 'true'
         with:
           python-version: '3.12'
       - uses: browser-actions/setup-chrome@v2
-        if: steps.gate.outputs[matrix.kind] == 'true'
-      - name: Install dependencies
-        if: steps.gate.outputs[matrix.kind] == 'true'
+        if: steps.due.outputs.due == 'true'
+      - name: Install Selenium dependencies
+        if: steps.due.outputs.due == 'true'
         run: mvn -q dependency:build-classpath -Dmdep.outputFile=classpath.txt
-      - name: Generate track catalog and prepare collector
-        if: steps.gate.outputs[matrix.kind] == 'true'
+      - name: Generate track catalog
+        if: steps.due.outputs.due == 'true'
         run: python tools/catalog.py
-      - name: Collect changed streams only
-        if: steps.gate.outputs[matrix.kind] == 'true'
+      - name: Collect only verified Spotify counters
+        if: steps.due.outputs.due == 'true'
         env:
           DATASET: ${{ matrix.kind }}
           FORCE_COLLECT: ${{ github.event_name == 'workflow_dispatch' }}
@@ -71,22 +89,33 @@ jobs:
         run: |
           export COLLECTOR_CLASSPATH="$(cat classpath.txt)"
           python tools/pipeline.py "$DATASET"
-      - name: Validate saved snapshots
-        if: steps.gate.outputs[matrix.kind] == 'true'
-        env:
-          DATASET: ${{ matrix.kind }}
-        run: python tools/validate_song_data.py "$DATASET"
-      - name: Publish changed JSON safely
-        if: steps.gate.outputs[matrix.kind] == 'true'
-        env:
-          DATASET: ${{ matrix.kind }}
+      - name: Test collected JSON before publishing
+        if: steps.due.outputs.due == 'true'
+        run: python tools/validate_song_data.py
+      - name: Publish verified JSON with conflict-safe retries
+        if: steps.due.outputs.due == 'true'
         run: |
           git config user.name 'github-actions[bot]'
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git add data/
           python tools/publish_snapshots.py
-      - name: Show whether Spotify data actually advanced
+      - name: Record freshness and pending reasons
         if: always()
         env:
           DATASET: ${{ matrix.kind }}
         run: python tools/collection_health.py "$DATASET"
+
+  health:
+    name: 3. Summarize what actually reached GitHub
+    if: ${{ always() && needs.preflight.outputs.run == 'true' }}
+    needs: [preflight, collect]
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: main
+      - name: Read latest published snapshots
+        run: |
+          python tools/collection_health.py group
+          python tools/collection_health.py solo
+          echo "A verified GitHub commit is not the same as a live Pages deployment; the Pages workflow checks the actual website." >> "$GITHUB_STEP_SUMMARY"
