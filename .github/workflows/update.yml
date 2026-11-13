@@ -1,5 +1,6 @@
 name: Spotify stream snapshots
 # 6 PM New York is the first collection window for yesterday's Spotify counts.
+# Each recording has three page attempts; missing counts save as labeled zero for that day.
 # Check hourly: overdue reports retry across midnight; verified dates stop scanning.
 on:
   schedule:
