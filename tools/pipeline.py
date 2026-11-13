@@ -155,85 +155,29 @@ if admin_ids:
         m=re.match(r'STAT_TRACK\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|(\d+)',line)
         if m: tracks[m.group(1)]=int(m.group(2))
     if admin_result.returncode:
-        raise SystemExit('Admin-added track scan failed; retry later instead of publishing incomplete data')
+        raise SystemExit('Admin-added track collector crashed; a crashed scan is not a completed 3-attempt track check')
     print(f'{kind}: scanned {len(admin_ids)} admin-added recordings',flush=True)
 expected={tid for item in cat for tid in item['tracks']}
 by_id={tid:(item.get('artist'),item.get('title')) for item in cat for tid in item['tracks']}
-confirmed_zero_tracks={tid for tid in expected if tracks.get(tid,0)==0 and tid not in unavailable_tracks}
-# A zero from Spotify is a failed lookup, not a successful number. The initial
-# full scan is attempt one; make at most two additional targeted passes. This
-# applies to every group, unit, and solo track, not just selected songs.
-unresolved={tid for tid in expected if tracks.get(tid,0)<=0}
-if unresolved:
-    print(f'{kind}: {len(unresolved)} zero/missing tracks after scan 1 of 3',flush=True)
-    for tid in sorted(unresolved):
-        print(f'  {tid}: {by_id.get(tid)}',flush=True)
+# Each Java track reader makes at most three page attempts. A failed
+# track gets a zero in THIS day's snapshot; it never prevents other tracks
+# from being published. Record which zeros were unavailable, so dashboards
+# can exclude them from growth and completeness calculations.
+#
+# Do not run two more full/targeted passes here: that previously meant up to
+# nine fetches per recording and still blocked the entire reporting day.
+unresolved=sorted(tid for tid in expected if tracks.get(tid,0)<=0)
 if result.returncode:
-    print(f'{kind}: collector exited {result.returncode}; not accepting zeros from a crashed scan')
+    print(f'{kind}: collector exited {result.returncode}; cannot accept a crashed scan',flush=True)
     entry['last_attempt']=now.isoformat()
     state_path.write_text(json.dumps(state,indent=2))
     sys.exit(1)
 
-for attempt in (2,3):
-    if not unresolved:
-        break
-    retry_env=collector_env.copy()
-    retry_env.pop('SVT_FIRST_TRACK_PREVIOUS',None)
-    retry_env['SVT_ONLY_TRACKS']=','.join(sorted(unresolved))
-    print(f'{kind}: scan {attempt} of 3 for {len(unresolved)} zero/missing tracks',flush=True)
-    retry_admin_ids=sorted(unresolved.intersection(admin_ids))
-    if retry_admin_ids:
-        retry_admin=subprocess.run(
-            ['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],
-             'Admin_Track_Collector',*retry_admin_ids],
-            capture_output=True,text=True,timeout=3600)
-        for line in retry_admin.stdout.splitlines():
-            m=re.match(r'STAT_TRACK\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|(\d+)',line)
-            if m and int(m.group(2))>0: tracks[m.group(1)]=int(m.group(2))
-        if retry_admin.returncode:
-            raise SystemExit('Admin track retry crashed; not accepting missing results')
-    legacy_unresolved=unresolved.difference(admin_ids)
-    if not legacy_unresolved:
-        unresolved={tid for tid in expected if tracks.get(tid,0)<=0}
-        continue
-    retry_env['SVT_ONLY_TRACKS']=','.join(sorted(legacy_unresolved))
-    retry_result=subprocess.run(
-        ['java','-cp',str(ROOT/'build')+os.pathsep+os.environ['COLLECTOR_CLASSPATH'],classname],
-        capture_output=True,text=True,timeout=2400,env=retry_env)
-    print(f'{kind}: scan {attempt} exit={retry_result.returncode}',flush=True)
-    retry_values={}
-    retry_unavailable=set()
-    for line in retry_result.stdout.splitlines():
-        match=re.match(r'STAT_TRACK\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|(\d+)',line)
-        if match and match.group(1) in unresolved:
-            retry_values[match.group(1)]=int(match.group(2))
-        elif line.startswith('STAT_TRACK_UNAVAILABLE|'):
-            missing=re.match(r'STAT_TRACK_UNAVAILABLE\|https://open\.spotify\.com/track/([A-Za-z0-9]+)\|',line)
-            if missing: retry_unavailable.add(missing.group(1))
-            print(f'{kind}: {line}',flush=True)
-    for tid,value in retry_values.items():
-        tracks[tid]=value
-        if value>0:
-            confirmed_zero_tracks.discard(tid)
-        elif tid not in retry_unavailable:
-            confirmed_zero_tracks.add(tid)
-    unresolved={tid for tid in expected if tracks.get(tid,0)<=0}
-
-# Only save zero when Spotify returned a clean zero, not after a page timeout.
-# A timed-out or missing track keeps this reporting date pending for retry.
-unverified=sorted(unresolved-confirmed_zero_tracks)
-if unverified:
-    print(f'{kind}: refusing to publish; {len(unverified)} tracks were never fetched successfully',flush=True)
-    for tid in unverified:
-        print(f'  unresolved: {tid}: {by_id.get(tid)}',flush=True)
-    entry['last_attempt']=now.isoformat()
-    state_path.write_text(json.dumps(state,indent=2))
-    raise SystemExit(1)
-for tid in sorted(unresolved):
+for tid in unresolved:
     tracks[tid]=0
-    print(f'{kind}: confirmed zero after 3 scans: {tid} {by_id.get(tid)}',flush=True)
+    print(f'{kind}: 3 attempts exhausted; recording 0 for {report_date}: {tid} {by_id.get(tid)}',flush=True)
 if unresolved:
-    print(f'{kind}: accepting {len(unresolved)} confirmed zero tracks; all expected IDs included',flush=True)
+    print(f'::warning::{kind} {report_date}: {len(unresolved)} unavailable track counts saved as 0 after three attempts',flush=True)
 
 # Compare with the latest saved group snapshot, including manually imported history.
 if not previous:
@@ -257,7 +201,9 @@ if not previous:
                 break
 if previous:
     old=previous['tracks']
-    comparable=[k for k in expected if k in old]
+    # Missing-value zeros are placeholders, never evidence of stream loss or growth.
+    prior_unavailable=set(previous.get('unavailable_tracks') or [])
+    comparable=[k for k in expected if k in old and k not in unresolved and k not in prior_unavailable]
     if kind=='solo' and previous.get('source')=='historical spreadsheet':
         # Trust the verified spreadsheet position of Better Half, not title
         # matching among other artists' recordings.
@@ -283,7 +229,7 @@ if previous:
             print(kind,'saved exact follower count',followers,'without replacing unchanged streams')
         print(kind,'Spotify counts unchanged; retry next hour')
         entry['last_attempt']=now.isoformat();state_path.write_text(json.dumps(state,indent=2));sys.exit(0)
-    regressions=sum(tracks[k]<old.get(k,0) for k in expected)
+    regressions=sum(tracks[k]<old.get(k,0) for k in comparable)
     if regressions>max(2,len(expected)//20):
         print(kind,'too many decreased counts; retry next hour')
         entry['last_attempt']=now.isoformat();state_path.write_text(json.dumps(state,indent=2));sys.exit(0)
@@ -301,6 +247,9 @@ else:
     preserved_ids=[]
     preserved_baselines={}
 snapshot={'date':report_date,'captured_at':now.isoformat(),'tracks':tracks,'listeners':listeners}
+if unresolved:
+    snapshot['unavailable_tracks']=unresolved
+    snapshot['unavailable_policy']='0 after 3 attempts; not a verified Spotify stream count'
 if kind=='solo' and solo_followers:
     snapshot['followers']=solo_followers
 if kind=='group':
