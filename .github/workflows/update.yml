@@ -14,7 +14,8 @@ permissions:
   contents: write
 
 concurrency:
-  group: spotify-stats
+  # Keep the new 6 PM schedule independent from legacy collection runs.
+  group: spotify-stats-6pm
   cancel-in-progress: false
 
 jobs:
