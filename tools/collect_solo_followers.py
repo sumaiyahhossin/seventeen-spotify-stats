@@ -20,9 +20,9 @@ ROOT=pathlib.Path(__file__).resolve().parents[1]
 DATA=ROOT/'data'
 OUTPUT=DATA/'solo-followers.json'
 TODAY=dt.datetime.now(ZoneInfo('America/New_York'))
-# Match the 2 PM New York reporting-day gate used by solo_followers_due.py.
-REPORT_DATE=TODAY.date() if TODAY.hour>=14 else TODAY.date()-dt.timedelta(days=1)
-REPORT_CUTOFF=dt.datetime.combine(REPORT_DATE,dt.time(14,0),tzinfo=ZoneInfo('America/New_York'))
+# Match the 6 PM New York reporting-day gate used by solo_followers_due.py.
+REPORT_DATE=TODAY.date() if TODAY.hour>=18 else TODAY.date()-dt.timedelta(days=1)
+REPORT_CUTOFF=dt.datetime.combine(REPORT_DATE,dt.time(18,0),tzinfo=ZoneInfo('America/New_York'))
 
 def load(path, default):
     try:
