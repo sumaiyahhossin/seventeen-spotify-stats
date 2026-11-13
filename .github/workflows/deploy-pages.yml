@@ -4,13 +4,13 @@ name: Deploy SEVENTEEN Spotify Stats to GitHub Pages
 on:
   push:
     branches: [main]
-    # Collector code and CI configuration don't change the published website.
-    paths-ignore:
-      - '.github/**'
-      - 'tools/**'
-      - 'src/**'
-      - '**/*.md'
-      - 'pom.xml'
+    # Ship site changes, and allow this deployment workflow to deploy its own fix.
+    paths:
+      - 'data/**'
+      - 'assets/**'
+      - '*.html'
+      - '*.js'
+      - '.github/workflows/deploy-pages.yml'
   workflow_dispatch:
   # Actions bot commits do not start push-triggered workflows. Deploy after
   # collectors finish, and skip the deployment when they made no new commit.
@@ -32,7 +32,8 @@ concurrency:
 
 jobs:
   deploy:
-    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
+    # A matrix job can fail after the other dataset published verified data.
+    # Deploy any new commit even if the companion collection failed.
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
