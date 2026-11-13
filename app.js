@@ -400,6 +400,9 @@ function safeGain(s,p,id){
  if(!p||!s||!s.tracks||!p.tracks||s.tracks[id]==null)return null;
  const prev=comparablePrevious(s,p,id);
  if(!prev||(s.anomalies||[]).includes(id)||(p.anomalies||[]).includes(prev.id))return null;
+ // A three-attempt zero is a missing observation, not a real cumulative counter.
+ if(s.tracks[id]===0||prev.value===0||
+    (s.unavailable_tracks||[]).includes(id)||(p.unavailable_tracks||[]).includes(prev.id))return null;
  const days=(Date.parse(s.date)-Date.parse(p.date))/86400000;
  if(days!==1)return null;
  const delta=s.tracks[id]-prev.value;
@@ -2719,6 +2722,8 @@ function snapshotDelta(now,old,id){
  const matched=historical?bridgeHistoricalTrack(now,old,id):null;
  const prev=matched?{id:matched,value:old.tracks[matched]}:comparablePrevious(now,old,id);
  if(!prev||(now.anomalies||[]).includes(id)||(old.anomalies||[]).includes(prev.id))return null;
+ if(now.tracks[id]===0||prev.value===0||
+    (now.unavailable_tracks||[]).includes(id)||(old.unavailable_tracks||[]).includes(prev.id))return null;
  const days=(Date.parse(now.date)-Date.parse(old.date))/86400000;
  if(!Number.isFinite(days)||days<=0)return null;
  const delta=now.tracks[id]-prev.value;
