@@ -408,7 +408,8 @@ function verifiedGainBetween(scope,id,newer,older,title,releaseDate){
  // Three-attempt zero means Spotify could not report a count; it is not
  // evidence of zero cumulative streams and must never create a huge daily gain.
  if((newer.unavailable_tracks||[]).includes(id)||(older.unavailable_tracks||[]).includes(id)||
-    newer.tracks?.[id]===0||older.tracks?.[id]===0)return null;
+    (newer.source!=='historical spreadsheet'&&newer.tracks?.[id]===0)||
+    (older.source!=='historical spreadsheet'&&older.tracks?.[id]===0))return null;
  const released=/^\d{4}-\d{2}-\d{2}$/.test(releaseDate||'');
  // A recording released during this period had zero pre-release streams.
  // Only use zero when its verified release date is later than the baseline.
