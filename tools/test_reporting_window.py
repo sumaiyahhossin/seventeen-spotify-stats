@@ -4,7 +4,7 @@ import datetime as dt
 import unittest
 from zoneinfo import ZoneInfo
 
-from reporting_window import available_reporting_date, oldest_due_date
+from reporting_window import available_reporting_date, oldest_due_date, publishing_alert_due
 
 NY = ZoneInfo("America/New_York")
 
@@ -67,6 +67,15 @@ class ReportingWindowTests(unittest.TestCase):
             dt.datetime(2026,11,10,22,59,tzinfo=utc)),dt.date(2026,11,8))
         self.assertEqual(available_reporting_date(
             dt.datetime(2026,11,10,23,0,tzinfo=utc)),dt.date(2026,11,9))
+
+    def test_missing_report_alert_after_ten_pm_until_saved(self):
+        latest = dt.date(2026, 11, 11)
+        self.assertFalse(publishing_alert_due(latest, moment(2026, 11, 13, 18)))
+        self.assertFalse(publishing_alert_due(latest, moment(2026, 11, 13, 21, 59)))
+        self.assertTrue(publishing_alert_due(latest, moment(2026, 11, 13, 22)))
+        self.assertTrue(publishing_alert_due(latest, moment(2026, 11, 14, 1)))
+        # Once the pending date is saved, the alert clears.
+        self.assertFalse(publishing_alert_due(dt.date(2026, 11, 12), moment(2026, 11, 14, 1)))
 
     def test_timezone_required(self):
         with self.assertRaises(ValueError):
